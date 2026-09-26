@@ -34,7 +34,6 @@ entity-per-file、subtree shard、page shard。
 
 ## Related Decisions
 
-- [git-canonical-transaction](../git-canonical-transaction/ADR.md)
 
 ## Status
 
