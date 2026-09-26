@@ -16,4 +16,5 @@ bash scripts/check-architecture.sh
 python3 scripts/check-adr.py
 python3 scripts/check-links.py
 python3 scripts/smoke-cli.py
+python3 scripts/smoke-state-precondition.py
 python3 scripts/validate-samples.py

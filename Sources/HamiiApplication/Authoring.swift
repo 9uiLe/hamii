@@ -58,10 +58,12 @@ public struct MutationResult: Codable {
     public var revision: Int
     public var patches: [SemanticPatch]
     public var diagnostics: [Diagnostic]
+    public var statePrecondition: ClientPrecondition?
 }
 
 public enum AuthoringError: Error, CustomStringConvertible {
     case staleRevision(expected: Int, actual: Int)
+    case staleState
     case notFound(String)
     case approvalRequired(String)
     case validation([Diagnostic])
@@ -70,6 +72,7 @@ public enum AuthoringError: Error, CustomStringConvertible {
     public var description: String {
         switch self {
         case .staleRevision(let expected, let actual): return "Expected revision \(expected), found \(actual)"
+        case .staleState: return "Client state precondition does not match the current Canonical observation"
         case .notFound(let value): return "Not found: \(value)"
         case .approvalRequired(let value): return "Approval required: \(value)"
         case .validation(let diagnostics): return diagnostics.map { "\($0.rule): \($0.message)" }.joined(separator: "; ")

@@ -1,5 +1,6 @@
 import Foundation
 import Darwin
+import CryptoKit
 import HamiiCore
 import HamiiApplication
 
@@ -11,6 +12,7 @@ public enum CanonicalError: Error, CustomStringConvertible {
     case filenameMismatch(String)
     case transactionConflict(String)
     case transactionCorrupt(String)
+    case invalidClientEpoch
 
     public var description: String {
         switch self {
@@ -21,6 +23,7 @@ public enum CanonicalError: Error, CustomStringConvertible {
         case .filenameMismatch(let name): return "Canonical file name does not match stable ID: \(name)"
         case .transactionConflict(let path): return "Canonical save conflicts with an external edit: \(path)"
         case .transactionCorrupt(let detail): return "Canonical save journal is invalid: \(detail)"
+        case .invalidClientEpoch: return "Client observation epoch is invalid"
         }
     }
 }
@@ -60,6 +63,7 @@ public final class CanonicalRepository: ProjectRepository {
             try transaction.recoverIfNeeded()
             if manager.fileExists(atPath: root.appendingPathComponent("hamii.json").path) { throw CanonicalError.alreadyExists }
             try AgentProfilesRepository(root: root).createDefault()
+            try rotateClientEpoch()
             try writeDocument(document, expected: nil)
         }
         return document
@@ -69,6 +73,31 @@ public final class CanonicalRepository: ProjectRepository {
         try withLock(exclusive: true) {
             try transaction.recoverIfNeeded()
             return try loadUnlocked(validate: true)
+        }
+    }
+
+    public func observe() throws -> ProjectObservation {
+        try withLock(exclusive: true) {
+            try transaction.recoverIfNeeded()
+            let document = try loadUnlocked(validate: true)
+            return ProjectObservation(document: document, statePrecondition: try clientPreconditionUnlocked())
+        }
+    }
+
+    public func commit(_ document: Document, expected: ProjectObservation) throws -> ProjectObservation {
+        try withLock(exclusive: true) {
+            try transaction.recoverIfNeeded()
+            guard try clientPreconditionUnlocked() == expected.statePrecondition else { throw AuthoringError.staleState }
+            let manifest = try readManifest()
+            guard manifest.revision == expected.document.revision,
+                  document.revision == expected.document.revision + 1 else {
+                throw AuthoringError.staleRevision(expected: expected.document.revision + 1, actual: manifest.revision)
+            }
+            // Advance before touching Canonical shards. A stopped save may
+            // invalidate a token unnecessarily, but cannot resurrect it.
+            try rotateClientEpoch()
+            try writeDocument(document, expected: expected.document)
+            return ProjectObservation(document: document, statePrecondition: try clientPreconditionUnlocked())
         }
     }
 
@@ -126,6 +155,7 @@ public final class CanonicalRepository: ProjectRepository {
             guard document.revision == expected.revision + 1 else {
                 throw AuthoringError.staleRevision(expected: expected.revision + 1, actual: document.revision)
             }
+            try rotateClientEpoch()
             try writeDocument(document, expected: expected)
         }
     }
@@ -176,6 +206,53 @@ public final class CanonicalRepository: ProjectRepository {
         guard flock(descriptor, exclusive ? LOCK_EX : LOCK_SH) == 0 else { throw CocoaError(.fileReadUnknown) }
         defer { flock(descriptor, LOCK_UN) }
         return try operation()
+    }
+
+    private var clientEpochURL: URL {
+        root.appendingPathComponent(".hamii/client-observation-epoch")
+    }
+
+    private func clientEpochUnlocked() throws -> String {
+        if !manager.fileExists(atPath: clientEpochURL.path) { try rotateClientEpoch() }
+        let value = try String(contentsOf: clientEpochURL, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines)
+        guard UUID(uuidString: value) != nil else { throw CanonicalError.invalidClientEpoch }
+        return value
+    }
+
+    private func rotateClientEpoch() throws {
+        let value = UUID().uuidString + "\n"
+        try Data(value.utf8).write(to: clientEpochURL, options: .atomic)
+    }
+
+    private func clientPreconditionUnlocked() throws -> ClientPrecondition {
+        var hash = SHA256()
+        func append(_ value: Data) {
+            var length = UInt64(value.count).bigEndian
+            withUnsafeBytes(of: &length) { hash.update(data: $0) }
+            hash.update(data: value)
+        }
+        append(Data("hamii-client-state-v1".utf8))
+        append(Data(root.resolvingSymlinksInPath().standardizedFileURL.path.utf8))
+        append(Data(try clientEpochUnlocked().utf8))
+        let folders = ["pages", "screens", "scopes", "components", "tokens", "assets", "interactions", "motions", "fixtures", "targets"]
+        var paths = [root.appendingPathComponent("hamii.json")]
+        let agentProfiles = root.appendingPathComponent("hamii-agent-profiles.json")
+        if manager.fileExists(atPath: agentProfiles.path) { paths.append(agentProfiles) }
+        for folder in folders {
+            let directory = root.appendingPathComponent(folder, isDirectory: true)
+            if manager.fileExists(atPath: directory.path) {
+                paths += try manager.contentsOfDirectory(at: directory, includingPropertiesForKeys: [.isSymbolicLinkKey])
+                    .filter { $0.pathExtension == "json" }
+            }
+        }
+        for path in paths.sorted(by: { $0.path < $1.path }) {
+            guard try path.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink != true else {
+                throw CanonicalError.invalidClientEpoch
+            }
+            append(Data(path.path.replacingOccurrences(of: root.path + "/", with: "").utf8))
+            append(try Data(contentsOf: path))
+        }
+        return ClientPrecondition(hash.finalize().map { String(format: "%02x", $0) }.joined())
     }
 
     private func read<T: Decodable>(_ url: URL) throws -> T {

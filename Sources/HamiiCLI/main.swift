@@ -19,6 +19,7 @@ private struct Output: Encodable {
     var category: String?
     var message: String?
     var document: Document?
+    var statePrecondition: ClientPrecondition?
     var mutation: MutationResult?
     var components: [ComponentDefinition]?
     var skills: [String]?
@@ -29,8 +30,9 @@ private struct Output: Encodable {
     var contract: IntegrationContract?
     var migration: MigrationPlan?
     var previewPlan: TargetPlan?
-    init(ok: Bool, category: String? = nil, message: String? = nil, document: Document? = nil, mutation: MutationResult? = nil, components: [ComponentDefinition]? = nil, skills: [String]? = nil, skill: String? = nil, diagnostics: [Diagnostic]? = nil, hits: [ComponentHit]? = nil, generated: GeneratedSource? = nil, contract: IntegrationContract? = nil, migration: MigrationPlan? = nil, previewPlan: TargetPlan? = nil) {
+    init(ok: Bool, category: String? = nil, message: String? = nil, document: Document? = nil, statePrecondition: ClientPrecondition? = nil, mutation: MutationResult? = nil, components: [ComponentDefinition]? = nil, skills: [String]? = nil, skill: String? = nil, diagnostics: [Diagnostic]? = nil, hits: [ComponentHit]? = nil, generated: GeneratedSource? = nil, contract: IntegrationContract? = nil, migration: MigrationPlan? = nil, previewPlan: TargetPlan? = nil) {
         self.ok = ok; self.category = category; self.message = message; self.document = document
+        self.statePrecondition = statePrecondition
         self.mutation = mutation; self.components = components; self.skills = skills
         self.skill = skill; self.diagnostics = diagnostics; self.hits = hits
         self.generated = generated; self.contract = contract; self.migration = migration
@@ -41,13 +43,13 @@ private struct Output: Encodable {
 private enum CLI {
     static let version = "0.1.0"
     static let skillTexts: [String: String] = [
-        "bootstrap": "hamii \(version)\nUse hamii skills list and hamii skills get NAME. Load only the relevant live skill. Global options: --project PATH --json. Create a Git-backed project with hamii init NAME --project PATH --json; inspect it with hamii inspect --project PATH --json. Do not guess commands or edit canonical files directly. Supply --revision for every mutation.",
-        "authoring": "hamii \(version)\nGlobal options: --project PATH --profile NAME --json. Inspect: hamii inspect. Mutations require --revision N from inspect. Commands: page create NAME; scope create PARENT_ID NAME; screen create SCOPE_ID NAME; target add PLATFORM FRAMEWORK; surface add PAGE_ID SCREEN_ID TARGET_ID DEVICE RUNTIME BUILD_ENVIRONMENT; surface target SURFACE_ID TARGET_ID; capability set TARGET_ID KEY SUPPORT; layer add SCREEN_ID PARENT_ID KIND NAME TEXT; layer text SCREEN_ID LAYER_ID TEXT. Use - for no text. Read the tokens, components or assets skill when needed. All mutations use the same Authoring Harness validation as GUI.",
-        "tokens": "hamii \(version)\ntoken create OWNER_SCOPE_ID NAME KIND LITERAL --revision N creates a primitive token; token alias OWNER_SCOPE_ID NAME KIND TARGET_TOKEN_ID --revision N creates a semantic alias. KIND is color|typography|spacing|radius|border|shadow|opacity|motion. Spacing literals are nonnegative finite numbers. layer token SCREEN_ID LAYER_ID spacing|padding TOKEN_ID|- --revision N sets or clears a layout token. ArchitectureScope ownership and token references are validated before save.",
-        "components": "hamii \(version)\ncomponent list CONSUMER_SCOPE_ID; component create OWNER_SCOPE_ID NAME --revision N; component instantiate SCREEN_ID PARENT_LAYER_ID DEFINITION_ID --revision N; component promote DEFINITION_ID ANCESTOR_SCOPE_ID --revision N. Promotion requires an Agent profile with explicit mayPromoteScope permission. Definition tree is referenced by instances; scope and availability are enforced by the mutation service.",
+        "bootstrap": "hamii \(version)\nUse hamii skills list and hamii skills get NAME. Load only the relevant live skill. Global options: --project PATH --json. Create a Git-backed project with hamii init NAME --project PATH --json; inspect it with hamii inspect --project PATH --json. Do not guess commands or edit canonical files directly. Supply the statePrecondition from inspect as --state TOKEN for every mutation.",
+        "authoring": "hamii \(version)\nGlobal options: --project PATH --profile NAME --json. Inspect: hamii inspect. Mutations require --state TOKEN from inspect or the previous mutation. Commands: page create NAME; scope create PARENT_ID NAME; screen create SCOPE_ID NAME; target add PLATFORM FRAMEWORK; surface add PAGE_ID SCREEN_ID TARGET_ID DEVICE RUNTIME BUILD_ENVIRONMENT; surface target SURFACE_ID TARGET_ID; capability set TARGET_ID KEY SUPPORT; layer add SCREEN_ID PARENT_ID KIND NAME TEXT; layer text SCREEN_ID LAYER_ID TEXT. Use - for no text. Read the tokens, components or assets skill when needed. All mutations use the same Authoring Harness validation as GUI.",
+        "tokens": "hamii \(version)\ntoken create OWNER_SCOPE_ID NAME KIND LITERAL --state TOKEN creates a primitive token; token alias OWNER_SCOPE_ID NAME KIND TARGET_TOKEN_ID --state TOKEN creates a semantic alias. KIND is color|typography|spacing|radius|border|shadow|opacity|motion. Spacing literals are nonnegative finite numbers. layer token SCREEN_ID LAYER_ID spacing|padding TOKEN_ID|- --state TOKEN sets or clears a layout token. ArchitectureScope ownership and token references are validated before save.",
+        "components": "hamii \(version)\ncomponent list CONSUMER_SCOPE_ID; component create OWNER_SCOPE_ID NAME --state TOKEN; component instantiate SCREEN_ID PARENT_LAYER_ID DEFINITION_ID --state TOKEN; component promote DEFINITION_ID ANCESTOR_SCOPE_ID --state TOKEN. Promotion requires an Agent profile with explicit mayPromoteScope permission. Definition tree is referenced by instances; scope and availability are enforced by the mutation service.",
         "validation": "hamii \(version)\nvalidate --project PATH --json returns diagnostics with rule, severity, entityID and message. index rebuild recreates the local index outside the repository from canonical files. query components CONSUMER_SCOPE_ID TERM uses the index and rejects stale Canonical revisions with staleIndex; run index rebuild after external edits. If canonical Git files are marked assume-unchanged or skip-worktree or use Git filters, clear those settings before rebuilding. migrate plan --json preflights a format without changing it. Unsupported persisted formats require an isolated migration edge.",
         "integration": "hamii \(version)\nintegration contract SCREEN_ID --json returns semantic inputs, events, token/asset references, native and accessibility intent. Unknown product mappings require review. generate swiftui SCREEN_ID TARGET_ID --json is a separate deterministic path for the supported static subset and returns an error for unsupported semantics.",
-        "assets": "hamii \(version)\nasset import SCOPE_ID NAME MEDIA_TYPE SOURCE_PATH --storage git --revision N writes a SHA-256 addressed repository blob and Asset metadata. Large binary Git/LFS policy is unresolved; choose Git storage explicitly. layer image SCREEN_ID PARENT_ID ASSET_ID NAME --revision N adds an image reference. Run validate --json to check blob integrity. Remote caches and thumbnails are not canonical data.",
+        "assets": "hamii \(version)\nasset import SCOPE_ID NAME MEDIA_TYPE SOURCE_PATH --storage git --state TOKEN writes a SHA-256 addressed repository blob and Asset metadata. Large binary Git/LFS policy is unresolved; choose Git storage explicitly. layer image SCREEN_ID PARENT_ID ASSET_ID NAME --state TOKEN adds an image reference. Run validate --json to check blob integrity. Remote caches and thumbnails are not canonical data.",
         "preview": "hamii \(version)\npreview plan SURFACE_ID --json checks declared target capabilities and semantic support for one AppSurface. A successful plan reports that the IR is supported; an installed and running Native Preview Host is a separate requirement. macOS SwiftUI supports the current in-process subset. iOS Simulator and Android Hosts are not yet implemented."
     ]
 
@@ -55,7 +57,7 @@ private enum CLI {
         var args = raw.filter { $0 != "--json" }
         let project = takeOption("--project", from: &args) ?? FileManager.default.currentDirectoryPath
         let profileName = takeOption("--profile", from: &args) ?? "builder"
-        let revisionText = takeOption("--revision", from: &args)
+        let stateText = takeOption("--state", from: &args)
         let storage = takeOption("--storage", from: &args)
         guard let verb = args.first else { throw CLIError(category: "usage", message: usage) }
         let path = URL(fileURLWithPath: project, isDirectory: true)
@@ -74,11 +76,17 @@ private enum CLI {
         }
         if verb == "init" {
             guard args.count == 2 else { throw CLIError(category: "usage", message: "init NAME") }
+            guard !FileManager.default.fileExists(atPath: path.appendingPathComponent("hamii.json").path) else {
+                throw CanonicalError.alreadyExists
+            }
             try initializeGit(at: path)
             let document = try repository.create(name: args[1])
-            return Output(ok: true, document: document)
+            return Output(ok: true, document: document, statePrecondition: try repository.observe().statePrecondition)
         }
-        if verb == "inspect" { return Output(ok: true, document: try service.document()) }
+        if verb == "inspect" {
+            let observed = try service.observe()
+            return Output(ok: true, document: observed.document, statePrecondition: observed.statePrecondition)
+        }
         if verb == "validate" {
             var diagnostics = try repository.diagnostics()
             do { _ = try AgentProfilesRepository(root: path).profiles() }
@@ -118,14 +126,15 @@ private enum CLI {
         if verb == "component", args.count == 3, args[1] == "list" {
             return Output(ok: true, components: try service.availableComponents(for: EntityID(args[2])))
         }
-        guard let revisionText, let revision = Int(revisionText) else {
-            throw CLIError(category: "usage", message: "Mutation requires --revision N")
+        guard let stateText, !stateText.isEmpty else {
+            throw CLIError(category: "usage", message: "Mutation requires --state TOKEN from inspect")
         }
+        let expectedState = ClientPrecondition(stateText)
         let profile = try AgentProfilesRepository(root: path).profile(named: profileName)
         if args.count == 6 && args[0] == "asset" && args[1] == "import" {
             guard storage == "git" else { throw CLIError(category: "usage", message: "Asset import requires explicit --storage git") }
             let data = try Data(contentsOf: URL(fileURLWithPath: args[5]))
-            let result = try service.importRepositoryAsset(data, name: args[3], scopeID: EntityID(args[2]), mediaType: args[4], expectedRevision: revision, author: .agent, agent: profile, blobs: CanonicalBlobStore(root: path))
+            let result = try service.importRepositoryAsset(data, name: args[3], scopeID: EntityID(args[2]), mediaType: args[4], expectedState: expectedState, author: .agent, agent: profile, blobs: CanonicalBlobStore(root: path))
             return Output(ok: true, mutation: result)
         }
         let intent: AuthoringIntent
@@ -168,11 +177,11 @@ private enum CLI {
         } else if args.count == 4 && args[0] == "component" && args[1] == "promote" {
             intent = .promoteComponent(definitionID: EntityID(args[2]), newOwnerID: EntityID(args[3]))
         } else { throw CLIError(category: "usage", message: usage) }
-        let result = try service.mutate(intent, expectedRevision: revision, author: .agent, agent: profile)
+        let result = try service.mutate(intent, expectedState: expectedState, author: .agent, agent: profile)
         return Output(ok: true, mutation: result)
     }
 
-    static let usage = "hamii [--project PATH] [--profile NAME] [--json] <version|init NAME|inspect|validate|preview plan SURFACE_ID|migrate plan|skills list|get NAME|index rebuild|query components SCOPE_ID TERM|generate swiftui SCREEN_ID TARGET_ID|integration contract SCREEN_ID|page create NAME|scope create PARENT_ID NAME|screen create SCOPE_ID NAME|target add PLATFORM FRAMEWORK|surface add PAGE_ID SCREEN_ID TARGET_ID DEVICE RUNTIME BUILD_ENVIRONMENT|surface target SURFACE_ID TARGET_ID|capability set TARGET_ID KEY SUPPORT|asset import SCOPE_ID NAME MEDIA_TYPE SOURCE_PATH --storage git|layer add SCREEN_ID PARENT_ID KIND NAME TEXT|layer text SCREEN_ID LAYER_ID TEXT|layer token SCREEN_ID LAYER_ID spacing|padding TOKEN_ID|-|token create SCOPE_ID NAME KIND VALUE|token alias SCOPE_ID NAME KIND TOKEN_ID|layer image SCREEN_ID PARENT_ID ASSET_ID NAME|component create SCOPE_ID NAME|component list SCOPE_ID|component instantiate SCREEN_ID PARENT_ID DEFINITION_ID|component promote DEFINITION_ID ANCESTOR_SCOPE_ID> [--revision N]"
+    static let usage = "hamii [--project PATH] [--profile NAME] [--json] <version|init NAME|inspect|validate|preview plan SURFACE_ID|migrate plan|skills list|get NAME|index rebuild|query components SCOPE_ID TERM|generate swiftui SCREEN_ID TARGET_ID|integration contract SCREEN_ID|page create NAME|scope create PARENT_ID NAME|screen create SCOPE_ID NAME|target add PLATFORM FRAMEWORK|surface add PAGE_ID SCREEN_ID TARGET_ID DEVICE RUNTIME BUILD_ENVIRONMENT|surface target SURFACE_ID TARGET_ID|capability set TARGET_ID KEY SUPPORT|asset import SCOPE_ID NAME MEDIA_TYPE SOURCE_PATH --storage git|layer add SCREEN_ID PARENT_ID KIND NAME TEXT|layer text SCREEN_ID LAYER_ID TEXT|layer token SCREEN_ID LAYER_ID spacing|padding TOKEN_ID|-|token create SCOPE_ID NAME KIND VALUE|token alias SCOPE_ID NAME KIND TOKEN_ID|layer image SCREEN_ID PARENT_ID ASSET_ID NAME|component create SCOPE_ID NAME|component list SCOPE_ID|component instantiate SCREEN_ID PARENT_ID DEFINITION_ID|component promote DEFINITION_ID ANCESTOR_SCOPE_ID> [--state TOKEN]"
 
     static func takeOption(_ name: String, from args: inout [String]) -> String? {
         guard let index = args.firstIndex(of: name), args.indices.contains(index + 1) else { return nil }
@@ -182,16 +191,24 @@ private enum CLI {
     }
 
     static func initializeGit(at path: URL) throws {
-        if FileManager.default.fileExists(atPath: path.appendingPathComponent(".git").path) { return }
         try FileManager.default.createDirectory(at: path, withIntermediateDirectories: true)
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/git")
-        process.arguments = ["-C", path.path, "init", "--quiet"]
-        process.standardOutput = Pipe()
-        process.standardError = Pipe()
-        try process.run()
-        process.waitUntilExit()
-        if process.terminationStatus != 0 { throw CLIError(category: "storage", message: "Could not initialize Git repository") }
+        if !FileManager.default.fileExists(atPath: path.appendingPathComponent(".git").path) {
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: "/usr/bin/git")
+            process.arguments = ["-C", path.path, "init", "--quiet"]
+            process.standardOutput = Pipe()
+            process.standardError = Pipe()
+            try process.run()
+            process.waitUntilExit()
+            if process.terminationStatus != 0 { throw CLIError(category: "storage", message: "Could not initialize Git repository") }
+        }
+        let ignore = path.appendingPathComponent(".gitignore")
+        var contents = (try? String(contentsOf: ignore, encoding: .utf8)) ?? ""
+        if !contents.split(whereSeparator: \.isNewline).contains(Substring(".hamii/")) {
+            if !contents.isEmpty && !contents.hasSuffix("\n") { contents += "\n" }
+            contents += ".hamii/\n"
+            try contents.write(to: ignore, atomically: true, encoding: .utf8)
+        }
     }
 }
 
@@ -233,7 +250,7 @@ do {
     let code: Int32
     switch error {
     case let value as CLIError: category = value.category; code = 2
-    case AuthoringError.staleRevision: category = "conflict"; code = 3
+    case AuthoringError.staleRevision, AuthoringError.staleState: category = "conflict"; code = 3
     case AuthoringError.approvalRequired: category = "approval"; code = 4
     case AuthoringError.mutationLimit: category = "permission"; code = 4
     case AuthoringError.notFound: category = "notFound"; code = 2

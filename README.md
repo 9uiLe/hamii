@@ -29,7 +29,7 @@ open .build/hamii.app
 ~/.swiftly/bin/swift run hamii -- --project /path/to/project --json skills get assets
 ```
 
-`init` は directory を Git repository にします。Semantic mutation は `--revision N` が必須です。例えば `screen create SCOPE_ID Profile --revision 0` は GUI と同じ Application Service と Validator を通ります。`--json` は structured output、失敗時は `category` と非ゼロ exit status を返します。AI は `skills list` / `skills get` でインストール済み version の操作方法を取得し、Canonical JSON や Local DB を直接編集しません。
+`init` は directory を Git repository にし、worktree 固有の `.hamii/` を Git ignore に登録します。`inspect --json` は `document.revision` と opaque な `statePrecondition.rawValue` を返します。Semantic mutation には `--state TOKEN` が必須です。例えば `screen create SCOPE_ID Profile --state TOKEN` は GUI と同じ Application Service と Validator を通り、結果から次の token を取得できます。古い token は `conflict` として拒否されます。`--json` は structured output、失敗時は `category` と非ゼロ exit status を返します。AI は `skills list` / `skills get` でインストール済み version の操作方法を取得し、Canonical JSON や Local DB を直接編集しません。
 
 Spacing Token は `skills get tokens` で操作方法を取得できます。`token create`、`token alias`、`layer token` は Scope と参照を検証し、Canvas と macOS Native Preview に spacing / padding を反映します。
 
@@ -56,11 +56,11 @@ Core は GUI、CLI、Git、SQLite、Simulator、AI provider を import しませ
 
 Project の `hamii.json` は identity、revision、独立した format version、Authoring Harness を保持します。`scopes/`、`pages/`、`screens/`、`components/`、`tokens/`、`assets/` などは stable ID の JSON files です。Git が共有正本です。保存時は読み込んだ Document の Canonical bytes と現在 bytes を照合し、外部変更を検知したら conflict で中断します。Multi-file save は `.hamii/` の journal で hamii の保存処理停止後に旧版または新版へ復旧します。`.hamii/write.lock` は現在 hamii process 同士の保存協調に使います。
 
-Canonical collaboration の Product Contract は「1 worktree = 1 coordinated writer domain」です。hamii GUI / CLI / AI と hamii-managed Git operation が共通の lock、generation、recovery、validation を通ります。独立 writer は別 branch / worktree を使い、Git merge candidate の Canonical semantic validation と Index generation を経て publish します。raw Git / 外部 editor による同一 worktree の直接変更は安全な共同編集経路ではありません。Managed Git と validated merge の production pipeline は実装待ちです。`hamii.json` の revision は mutation 順序であり、merge をまたぐ Canonical state identity や client session token ではありません。詳しくは [Current Architecture](docs/final-architecture.md) を参照してください。
+Canonical collaboration の Product Contract は「1 worktree = 1 coordinated writer domain」です。hamii GUI / CLI / AI と hamii-managed Git operation が共通の lock、generation、recovery、validation を通ります。独立 writer は別 branch / worktree を使い、Git merge candidate の Canonical semantic validation と Index generation を経て publish します。raw Git / 外部 editor による同一 worktree の直接変更は安全な共同編集経路ではありません。Managed Git と validated merge の production pipeline は実装待ちです。`hamii.json` の revision は mutation 順序であり、merge をまたぐ Canonical state identity や client session token ではありません。現在の `ClientPrecondition` は Canonical JSON bytes と worktree 固有の local epoch を結び付け、GUI / CLI mutation と Preview patch の基点を照合します。詳しくは [Current Architecture](docs/final-architecture.md) を参照してください。
 
 再構築可能な SQLite index は `~/Library/Application Support/hamii/indexes/` の Document / worktree 別領域に置き、Git に保存しません。外部編集後の検索は Canonical revision の不一致で `staleIndex` として拒否されるため、`hamii index rebuild` を実行します。Canonical file に Git の `assume-unchanged` / `skip-worktree` flag または Git filter がある場合は、設定を解除してから再構築します。自動復旧と増分再索引は検証中です。
 
-Repository Asset は `asset import SCOPE_ID NAME MEDIA_TYPE SOURCE_PATH --storage git --revision N` で明示的に取り込みます。バイナリは `assets/blobs/<sha256>` に一度だけ保存され、Asset の JSON は hash と参照を保持します。`validate` は blob の改ざんと欠落を検出します。大きなファイルの Git LFS 運用境界は [Asset ADR](adr/asset-storage-policy/ADR.md) で検証中です。Remote cache、thumbnail、decode 結果は Canonical Repository に含めません。
+Repository Asset は `asset import SCOPE_ID NAME MEDIA_TYPE SOURCE_PATH --storage git --state TOKEN` で明示的に取り込みます。バイナリは `assets/blobs/<sha256>` に一度だけ保存され、Asset の JSON は hash と参照を保持します。`validate` は blob の改ざんと欠落を検出します。大きなファイルの Git LFS 運用境界は [Asset ADR](adr/asset-storage-policy/ADR.md) で検証中です。Remote cache、thumbnail、decode 結果は Canonical Repository に含めません。
 
 Document Format v1 が唯一の Canonical Format です。`hamii migrate plan --json` は source version と利用可能な変換を preflight し、元 repository を変更しません。Historical transformation edge はまだありません。新形式の導入時は Current Core に旧型の分岐を追加せず、isolated migration と reviewable worktree 変換を実装します。
 
@@ -68,7 +68,7 @@ Document Format v1 が唯一の Canonical Format です。`hamii migrate plan --
 
 Layer の実装済み kind は Stack、Text、Image、Button、Scroll、Overlay、Component Instance です。Support coverage を追加するときは IR、validation、Canvas、Native Preview、generator、CLI の契約を揃え、target 別の support state を明示します。[Capability ADR](adr/capability-contract/ADR.md) が粒度と framework coverage を検証します。Unsupported な意味を暗黙に近似しません。
 
-`HamiiPreviewProtocol` は snapshot、base/new revision 付き patch、ack と build boundary を定義します。`HamiiNativeRuntime` は macOS の supported SwiftUI subset を実 OS の SwiftUI で描き、Text patch を compile なしで適用します。欠番 patch は拒否し、snapshot で再同期できます。iOS Simulator Host transport、frame/input、structure reconciliation と state preservation は個別 ADR/Spike の検証対象です。OS-dependent system UI は対象 OS の Host が描画します。
+`HamiiPreviewProtocol` は state precondition 付き snapshot、base/new state と revision を分けた patch、ack と build boundary を定義します。`HamiiNativeRuntime` は macOS の supported SwiftUI subset を実 OS の SwiftUI で描き、Text patch を compile なしで適用します。欠番 patch は拒否し、snapshot で再同期できます。iOS Simulator Host transport、frame/input、structure reconciliation と state preservation は個別 ADR/Spike の検証対象です。OS-dependent system UI は対象 OS の Host が描画します。
 
 [Starter sample](Samples/Starter/) は Page、Screen、AppSurface、Target capability、Text / Button Layer、Spacing Token を持つ Git 正本形式の例です。
 

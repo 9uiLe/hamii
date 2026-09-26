@@ -18,7 +18,7 @@ CanonicalSnapshot 由来の state identity、coordinated worktree generation、s
 
 ## Current Hypothesis
 
-**実装仮説、未検証:** client が opaque value を mutation / patch に付け、Application Service が coordinated observation boundary で照合する。Exact Canonical path/bytes identity、worktree identity、永続 transition marker を独立入力として結合する候補がある。Hash / UUID / generation の encoding と persistence protocol は実装・検証対象。IndexGeneration を client token と同一視しない。Raw Git 等の protocol 非参加 writer は Product Contract の保証外であり、観測できた変更は fail closed にする。
+**現在の実装:** client が opaque value を mutation / patch に付け、Application Service が照合する。token は worktree path、`.hamii` 内の永続 local epoch、現行 Canonical JSON path/bytes を結合する。hamii save 前に epoch を回し、同じ contents に戻っても古い token を再有効化しない。これは `WorktreeGeneration` や `IndexGeneration` の実装ではない。Raw Git 等の protocol 非参加 writer は Product Contract の保証外であり、観測できた変更は fail closed にする。
 
 ## Decision
 
@@ -30,12 +30,13 @@ Process restart 後は journal recovery と coordinated observation の再確立
 
 ## Unknowns
 
-実装上の残作業は coordinated transition marker の永続化と crash ordering、branch switch / merge の token 更新、別 GUI / CLI process と restart での照合、Preview patch acknowledgement と Undo / Redo base の結合、unknown external writer に対する defense-in-depth、token 計算・保持の cost、既存 `--revision` / Preview revision API の置換・追加である。Managed Git / validated merge の実装は External Git Write ADR、Index generation は Index ADR が扱う。
+残る implementation work は hamii-managed branch switch / merge による epoch 更新、validated merge の公開時に client を再同期させる境界、Undo / Redo base の結合、process crash / power loss 後の epoch durability、token 計算 cost の測定である。Raw external writer の無通知 A → B → A は正式保証外であり、watcher 等を positive proof にしない。Managed Git / validated merge の実装は External Git Write ADR、Index generation は Index ADR、停電耐久性は Power-loss ADR が扱う。
 
 ## Required Evidence
 
 - [Same-revision state change](spikes/same-revision-state-change/SPIKE.md): 2 client の通常 mutation 競合は拒否。same-revision branch switch / merge では旧 revision mutation を受理。raw Git A → B → A は bytes と revision が戻る。Preview revision-only gate は同一 revision の別 observation を区別できない。候補 token の production correctness は未検証。
 - [Existing merge result](../git-external-write-coordination/spikes/concurrent-worktree-merge/artifacts/semantic-and-resync-result.json): revision 3 のまま Canonical state が変わり、旧 revision mutation が受理された。Index は `staleIndex` を返した。
+- Production-shaped implementation checks: 別 `ProjectService` の古い token は hamii save 後に拒否する。同一 revision の実 branch switch 後は新しい Repository instance でも旧 token を拒否する。Process reopen では同じ observation の token を再確立でき、epoch 欠損では旧 token を失効し、破損では observation を拒否する。Agent profile JSON の変更も token を失効させる。CLI の same-revision merge smoke は旧 token を conflict とする。Preview gate は異なる base state の patch を拒否する。これらは hamii-managed Git publication の完成証明ではない。
 
 ## Decision Criteria
 

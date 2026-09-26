@@ -11,7 +11,8 @@ import HamiiPreviewProtocol
 
 @MainActor @Observable
 final class EditorSession {
-    var document: Document?
+    var document: HamiiCore.Document?
+    var statePrecondition: ClientPrecondition?
     var errorMessage: String?
     var selectedScreenID: EntityID?
     var selectedLayerID: EntityID?
@@ -34,13 +35,15 @@ final class EditorSession {
     func openProject(at url: URL) {
         do {
             let service = ProjectService(repository: CanonicalRepository(root: url))
-            let document = try service.document()
+            let observed = try service.observe()
+            let document = observed.document
             self.service = service
             self.projectRoot = url
             self.document = document
+            self.statePrecondition = observed.statePrecondition
             selectedScreenID = document.screens.first?.id
             selectedLayerID = nil
-            previewSession = makePreviewSession(document)
+            previewSession = makePreviewSession(document, statePrecondition: observed.statePrecondition)
             refreshAvailableComponents()
             errorMessage = nil
         } catch { errorMessage = String(describing: error) }
@@ -99,44 +102,55 @@ final class EditorSession {
                 ?? document.scopes.first(where: { $0.parentID == nil })?.id
             guard let scopeID else { return }
             let mediaType = UTType(filenameExtension: url.pathExtension)?.preferredMIMEType ?? "application/octet-stream"
-            performMutation { service, revision in
-                try service.importRepositoryAsset(data, name: url.lastPathComponent, scopeID: scopeID, mediaType: mediaType, expectedRevision: revision, author: .human, blobs: CanonicalBlobStore(root: projectRoot))
+            performMutation { service, state in
+                try service.importRepositoryAsset(data, name: url.lastPathComponent, scopeID: scopeID, mediaType: mediaType, expectedState: state, author: .human, blobs: CanonicalBlobStore(root: projectRoot))
             }
         } catch { errorMessage = String(describing: error) }
     }
     private func perform(_ intent: AuthoringIntent) {
-        performMutation { service, revision in
-            try service.mutate(intent, expectedRevision: revision, author: .human)
+        performMutation { service, state in
+            try service.mutate(intent, expectedState: state, author: .human)
         }
     }
 
-    private func performMutation(_ operation: (ProjectService, Int) throws -> MutationResult) {
-        guard let service, let revision = document?.revision else { return }
+    private func performMutation(_ operation: (ProjectService, ClientPrecondition) throws -> MutationResult) {
+        guard let service, let priorState = statePrecondition else { return }
         do {
-            let result = try operation(service, revision)
-            let updated = try service.document()
-            if let previewSession, !result.patches.isEmpty, result.patches.allSatisfy({ $0.path == "text" }) {
+            let result = try operation(service, priorState)
+            let observed = try service.observe()
+            let updated = observed.document
+            if let previewSession, result.statePrecondition == observed.statePrecondition,
+               !result.patches.isEmpty, result.patches.allSatisfy({ $0.path == "text" }) {
                 let changes = result.patches.compactMap { patch -> PreviewChange? in
                     guard let value = patch.newValue else { return nil }
                     return PreviewChange(layerID: patch.entityID, path: patch.path, value: value)
                 }
-                let patch = PreviewPatch(documentID: updated.id, surfaceID: previewSession.surface.id, baseRevision: result.revision - 1, revision: result.revision, boundary: .instantPatch, changes: changes)
-                if !previewSession.apply(patch).accepted { self.previewSession = makePreviewSession(updated) }
+                let patch = PreviewPatch(documentID: updated.id, surfaceID: previewSession.surface.id, baseRevision: result.revision - 1, revision: result.revision, baseState: priorState, newState: observed.statePrecondition, boundary: .instantPatch, changes: changes)
+                if !previewSession.apply(patch).accepted { self.previewSession = makePreviewSession(updated, statePrecondition: observed.statePrecondition) }
             } else {
-                previewSession = makePreviewSession(updated)
+                previewSession = makePreviewSession(updated, statePrecondition: observed.statePrecondition)
             }
             document = updated
+            statePrecondition = observed.statePrecondition
             refreshAvailableComponents()
             errorMessage = nil
-        } catch { errorMessage = String(describing: error) }
+        } catch {
+            if case AuthoringError.staleState = error, let observed = try? service.observe() {
+                document = observed.document
+                statePrecondition = observed.statePrecondition
+                previewSession = makePreviewSession(observed.document, statePrecondition: observed.statePrecondition)
+                refreshAvailableComponents()
+            }
+            errorMessage = String(describing: error)
+        }
     }
 
-    private func makePreviewSession(_ document: Document) -> NativePreviewSession? {
+    private func makePreviewSession(_ document: HamiiCore.Document, statePrecondition: ClientPrecondition) -> NativePreviewSession? {
         let surface = document.pages.flatMap(\.surfaces).first { surface in
             document.targets.contains { $0.id == surface.targetID && $0.platform == .macOS && $0.framework == .swiftUI }
         }
         guard let surface else { return nil }
-        return try? NativePreviewSession(document: document, surface: surface)
+        return try? NativePreviewSession(document: document, surface: surface, statePrecondition: statePrecondition)
     }
 
     private func refreshAvailableComponents() {
@@ -155,7 +169,7 @@ final class EditorSession {
 
 struct LayerCanvas: View {
     let layer: Layer
-    let document: Document
+    let document: HamiiCore.Document
     let projectRoot: URL?
     let select: (EntityID) -> Void
 

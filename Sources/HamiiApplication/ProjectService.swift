@@ -2,8 +2,17 @@ import Foundation
 import HamiiCore
 
 public protocol ProjectRepository {
-    func load() throws -> Document
-    func save(_ document: Document, expected: Document) throws
+    func observe() throws -> ProjectObservation
+    func commit(_ document: Document, expected: ProjectObservation) throws -> ProjectObservation
+}
+
+public struct ProjectObservation {
+    public let document: Document
+    public let statePrecondition: ClientPrecondition
+    public init(document: Document, statePrecondition: ClientPrecondition) {
+        self.document = document
+        self.statePrecondition = statePrecondition
+    }
 }
 
 public struct StoredBlob {
@@ -22,50 +31,52 @@ public final class ProjectService {
     private let repository: any ProjectRepository
     public init(repository: any ProjectRepository) { self.repository = repository }
 
-    public func document() throws -> Document { try repository.load() }
+    public func document() throws -> Document { try observe().document }
+    public func observe() throws -> ProjectObservation { try repository.observe() }
 
-    public func mutate(_ intent: AuthoringIntent, expectedRevision: Int, author: Author, agent: AgentHarness? = nil) throws -> MutationResult {
-        try mutate([intent], expectedRevision: expectedRevision, author: author, agent: agent)
+    public func mutate(_ intent: AuthoringIntent, expectedState: ClientPrecondition, author: Author, agent: AgentHarness? = nil) throws -> MutationResult {
+        try mutate([intent], expectedState: expectedState, author: author, agent: agent)
     }
 
-    public func mutate(_ intents: [AuthoringIntent], expectedRevision: Int, author: Author, agent: AgentHarness? = nil) throws -> MutationResult {
-        let current = try repository.load()
-        let (updated, result) = try MutationEngine.apply(intents, to: current, expectedRevision: expectedRevision, author: author, agent: agent)
-        if updated != current { try repository.save(updated, expected: current) }
+    public func mutate(_ intents: [AuthoringIntent], expectedState: ClientPrecondition, author: Author, agent: AgentHarness? = nil) throws -> MutationResult {
+        let observed = try repository.observe()
+        guard observed.statePrecondition == expectedState else { throw AuthoringError.staleState }
+        let (updated, originalResult) = try MutationEngine.apply(intents, to: observed.document, expectedRevision: observed.document.revision, author: author, agent: agent)
+        var result = originalResult
+        let current = updated == observed.document ? observed : try repository.commit(updated, expected: observed)
+        result.statePrecondition = current.statePrecondition
         return result
     }
 
     public func availableComponents(for scopeID: EntityID) throws -> [ComponentDefinition] {
-        let document = try repository.load()
+        let document = try repository.observe().document
         let scopes = ScopeEvaluator(document.scopes)
         let definitions = Dictionary(document.components.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         return document.components.filter { ComponentAvailability.reason($0, consumer: scopeID, scopes: scopes, definitions: definitions) == nil }
     }
 
     public func availableAssets(for scopeID: EntityID) throws -> [Asset] {
-        let document = try repository.load()
+        let document = try repository.observe().document
         let scopes = ScopeEvaluator(document.scopes)
         return document.assets.filter { scopes.canUse(owner: $0.ownerScopeID, consumer: scopeID) }
     }
 
     public func availableTokens(for scopeID: EntityID, kind: TokenKind) throws -> [DesignToken] {
-        let document = try repository.load()
+        let document = try repository.observe().document
         let scopes = ScopeEvaluator(document.scopes)
         return document.tokens.filter { $0.kind == kind && scopes.canUse(owner: $0.ownerScopeID, consumer: scopeID) }
     }
 
     public func promotionCandidate(for consumerScopeIDs: [EntityID]) throws -> EntityID? {
-        try ScopeEvaluator(repository.load().scopes).leastCommonAncestor(consumerScopeIDs)
+        try ScopeEvaluator(repository.observe().document.scopes).leastCommonAncestor(consumerScopeIDs)
     }
 
-    public func importRepositoryAsset(_ data: Data, name: String, scopeID: EntityID, mediaType: String, expectedRevision: Int, author: Author, agent: AgentHarness? = nil, blobs: any BinaryObjectStore) throws -> MutationResult {
-        let current = try repository.load()
-        guard current.revision == expectedRevision else {
-            throw AuthoringError.staleRevision(expected: expectedRevision, actual: current.revision)
-        }
+    public func importRepositoryAsset(_ data: Data, name: String, scopeID: EntityID, mediaType: String, expectedState: ClientPrecondition, author: Author, agent: AgentHarness? = nil, blobs: any BinaryObjectStore) throws -> MutationResult {
+        let current = try repository.observe()
+        guard current.statePrecondition == expectedState else { throw AuthoringError.staleState }
         if author == .agent, (agent?.maximumMutations ?? 0) < 1 { throw AuthoringError.mutationLimit }
-        guard current.scopes.contains(where: { $0.id == scopeID }) else { throw AuthoringError.notFound(scopeID.rawValue) }
+        guard current.document.scopes.contains(where: { $0.id == scopeID }) else { throw AuthoringError.notFound(scopeID.rawValue) }
         let stored = try blobs.put(data)
-        return try mutate(.createRepositoryAsset(name: name, scopeID: scopeID, mediaType: mediaType, path: stored.relativePath, contentHash: stored.sha256), expectedRevision: expectedRevision, author: author, agent: agent)
+        return try mutate(.createRepositoryAsset(name: name, scopeID: scopeID, mediaType: mediaType, path: stored.relativePath, contentHash: stored.sha256), expectedState: expectedState, author: author, agent: agent)
     }
 }

@@ -179,10 +179,11 @@ final class ArchitectureTests: XCTestCase {
         let service = ProjectService(repository: repository)
         let store = CanonicalBlobStore(root: path)
         let data = Data("image bytes".utf8)
-        XCTAssertThrowsError(try service.importRepositoryAsset(data, name: "Denied", scopeID: scopeID, mediaType: "image/png", expectedRevision: 0, author: .agent, agent: AgentHarness(profileName: "reviewer", maximumMutations: 0), blobs: store))
+        let initialState = try service.observe().statePrecondition
+        XCTAssertThrowsError(try service.importRepositoryAsset(data, name: "Denied", scopeID: scopeID, mediaType: "image/png", expectedState: initialState, author: .agent, agent: AgentHarness(profileName: "reviewer", maximumMutations: 0), blobs: store))
         XCTAssertFalse(FileManager.default.fileExists(atPath: path.appendingPathComponent("assets/blobs").path))
-        let first = try service.importRepositoryAsset(data, name: "Avatar", scopeID: scopeID, mediaType: "image/png", expectedRevision: 0, author: .human, blobs: store)
-        let second = try service.importRepositoryAsset(data, name: "Avatar Copy", scopeID: scopeID, mediaType: "image/png", expectedRevision: 1, author: .human, blobs: store)
+        let first = try service.importRepositoryAsset(data, name: "Avatar", scopeID: scopeID, mediaType: "image/png", expectedState: initialState, author: .human, blobs: store)
+        let second = try service.importRepositoryAsset(data, name: "Avatar Copy", scopeID: scopeID, mediaType: "image/png", expectedState: try XCTUnwrap(first.statePrecondition), author: .human, blobs: store)
         XCTAssertEqual(first.revision, 1)
         XCTAssertEqual(second.revision, 2)
         let assets = try repository.load().assets
@@ -272,7 +273,7 @@ final class ArchitectureTests: XCTestCase {
 
         let intent = AuthoringIntent.instantiate(screenID: screen.id, parentID: screen.root.id, definitionID: outer.id)
         for author in [Author.human, .agent] {
-            XCTAssertThrowsError(try service.mutate(intent, expectedRevision: 1, author: author, agent: AgentHarness(profileName: "test"))) { error in
+            XCTAssertThrowsError(try service.mutate(intent, expectedState: service.observe().statePrecondition, author: author, agent: AgentHarness(profileName: "test"))) { error in
                 guard case AuthoringError.validation(let diagnostics) = error else { return XCTFail("Wrong error") }
                 XCTAssertTrue(diagnostics.contains(where: { $0.rule == "component.denied" }))
             }
@@ -311,7 +312,7 @@ final class ArchitectureTests: XCTestCase {
         XCTAssertEqual(try service.availableAssets(for: checkout.id).map(\.id), [appAsset.id])
         let intent = AuthoringIntent.addImageLayer(screenID: screen.id, parentID: screen.root.id, assetID: productAsset.id, name: "Forbidden")
         for author in [Author.human, .agent] {
-            XCTAssertThrowsError(try service.mutate(intent, expectedRevision: 1, author: author, agent: AgentHarness(profileName: "builder"))) { error in
+            XCTAssertThrowsError(try service.mutate(intent, expectedState: service.observe().statePrecondition, author: author, agent: AgentHarness(profileName: "builder"))) { error in
                 guard case AuthoringError.validation(let diagnostics) = error else { return XCTFail("Wrong error") }
                 XCTAssertTrue(diagnostics.contains(where: { $0.rule == "scope.asset" }))
             }
@@ -325,26 +326,28 @@ final class ArchitectureTests: XCTestCase {
         let created = try repository.create(name: "Round Trip")
         let service = ProjectService(repository: repository)
         let scopeID = try XCTUnwrap(created.scopes.first?.id)
-        let result = try service.mutate(.createScreen(name: "Profile", scopeID: scopeID), expectedRevision: 0, author: .human)
+        let initialState = try service.observe().statePrecondition
+        let result = try service.mutate(.createScreen(name: "Profile", scopeID: scopeID), expectedState: initialState, author: .human)
         XCTAssertEqual(result.revision, 1)
         let screen = try XCTUnwrap(service.document().screens.first)
-        XCTAssertThrowsError(try service.mutate(.createPage(name: "Late"), expectedRevision: 0, author: .agent, agent: AgentHarness(profileName: "test")))
-        let edited = try service.mutate(.addLayer(screenID: screen.id, parentID: screen.root.id, kind: .text, name: "Heading", text: "Hello"), expectedRevision: 1, author: .agent, agent: AgentHarness(profileName: "test"))
+        XCTAssertThrowsError(try service.mutate(.createPage(name: "Late"), expectedState: initialState, author: .agent, agent: AgentHarness(profileName: "test")))
+        let edited = try service.mutate(.addLayer(screenID: screen.id, parentID: screen.root.id, kind: .text, name: "Heading", text: "Hello"), expectedState: try XCTUnwrap(result.statePrecondition), author: .agent, agent: AgentHarness(profileName: "test"))
         XCTAssertEqual(edited.patches.first?.path, "children")
         XCTAssertEqual(try repository.load().screens.first?.root.children.first?.text, "Hello")
         XCTAssertTrue(FileManager.default.fileExists(atPath: path.appendingPathComponent("screens/\(screen.id.rawValue).json").path))
     }
 
     func testPreviewPatchRejectsOutOfOrderAndBuildChanges() {
-        let base = PreviewPatch(documentID: EntityID("doc"), surfaceID: EntityID("surface"), baseRevision: 1, revision: 2, boundary: .instantPatch, changes: [PreviewChange(layerID: EntityID("layer"), path: "text", value: "Updated")])
-        XCTAssertFalse(PreviewRevisionGate.accept(base, after: 0).accepted)
-        XCTAssertTrue(PreviewRevisionGate.accept(base, after: 1).accepted)
+        let state = ClientPrecondition("state-1")
+        let base = PreviewPatch(documentID: EntityID("doc"), surfaceID: EntityID("surface"), baseRevision: 1, revision: 2, baseState: state, newState: ClientPrecondition("state-2"), boundary: .instantPatch, changes: [PreviewChange(layerID: EntityID("layer"), path: "text", value: "Updated")])
+        XCTAssertFalse(PreviewRevisionGate.accept(base, after: 0, state: state).accepted)
+        XCTAssertTrue(PreviewRevisionGate.accept(base, after: 1, state: state).accepted)
         var wrongBase = base
         wrongBase.baseRevision = 0
-        XCTAssertFalse(PreviewRevisionGate.accept(wrongBase, after: 1).accepted)
+        XCTAssertFalse(PreviewRevisionGate.accept(wrongBase, after: 1, state: state).accepted)
         var build = base
         build.boundary = .fullBuild
-        XCTAssertFalse(PreviewRevisionGate.accept(build, after: 1).accepted)
+        XCTAssertFalse(PreviewRevisionGate.accept(build, after: 1, state: state).accepted)
     }
 
     func testDisposableIndexRebuildsAvailabilityFromCanonicalDocument() throws {
@@ -599,25 +602,31 @@ final class ArchitectureTests: XCTestCase {
             ]
             let runtime = "macOS \(ProcessInfo.processInfo.operatingSystemVersion.majorVersion)"
             let surface = AppSurface(id: EntityID("surface_main"), targetID: target.id, device: "Mac", runtime: runtime, buildEnvironment: "macOS SDK", screenID: screen.id, architectureScopeID: scopeID)
-            let session = try NativePreviewSession(document: document, surface: surface)
-            let patch = PreviewPatch(documentID: document.id, surfaceID: surface.id, baseRevision: 0, revision: 1, boundary: .instantPatch, changes: [PreviewChange(layerID: text.id, path: "text", value: "After")])
+            let session = try NativePreviewSession(document: document, surface: surface, statePrecondition: ClientPrecondition("state-0"))
+            let patch = PreviewPatch(documentID: document.id, surfaceID: surface.id, baseRevision: 0, revision: 1, baseState: ClientPrecondition("state-0"), newState: ClientPrecondition("state-1"), boundary: .instantPatch, changes: [PreviewChange(layerID: text.id, path: "text", value: "After")])
             XCTAssertTrue(session.apply(patch).accepted)
             XCTAssertEqual(session.document.screens[0].root.children[0].text, "After")
             XCTAssertFalse(session.apply(patch).accepted)
-            let missing = PreviewPatch(documentID: document.id, surfaceID: surface.id, baseRevision: 2, revision: 3, boundary: .instantPatch, changes: [PreviewChange(layerID: text.id, path: "text", value: "Missing")])
+            let missing = PreviewPatch(documentID: document.id, surfaceID: surface.id, baseRevision: 2, revision: 3, baseState: ClientPrecondition("state-1"), newState: ClientPrecondition("state-3"), boundary: .instantPatch, changes: [PreviewChange(layerID: text.id, path: "text", value: "Missing")])
             XCTAssertFalse(session.apply(missing).accepted)
             var resynced = document
             resynced.revision = 3
             resynced.screens[0].root.children[0].text = "Snapshot"
             var updatedSurface = surface
             updatedSurface.device = "MacBook"
-            XCTAssertTrue(session.load(PreviewSnapshot(document: resynced, surface: updatedSurface)).accepted)
+            XCTAssertTrue(session.load(PreviewSnapshot(document: resynced, surface: updatedSurface, statePrecondition: ClientPrecondition("state-3"))).accepted)
             XCTAssertEqual(session.appliedRevision, 3)
             XCTAssertEqual(session.surface.device, "MacBook")
             XCTAssertEqual(session.document.screens[0].root.children[0].text, "Snapshot")
-            let resumed = PreviewPatch(documentID: document.id, surfaceID: surface.id, baseRevision: 3, revision: 4, boundary: .instantPatch, changes: [PreviewChange(layerID: text.id, path: "text", value: "Resumed")])
+            let resumed = PreviewPatch(documentID: document.id, surfaceID: surface.id, baseRevision: 3, revision: 4, baseState: ClientPrecondition("state-3"), newState: ClientPrecondition("state-4"), boundary: .instantPatch, changes: [PreviewChange(layerID: text.id, path: "text", value: "Resumed")])
             XCTAssertTrue(session.apply(resumed).accepted)
             XCTAssertEqual(session.document.screens[0].root.children[0].text, "Resumed")
+            var sameRevisionDifferentState = session.document
+            sameRevisionDifferentState.screens[0].root.children[0].text = "Merged elsewhere"
+            XCTAssertTrue(session.load(PreviewSnapshot(document: sameRevisionDifferentState, surface: updatedSurface, statePrecondition: ClientPrecondition("state-4-merged"))).accepted)
+            let oldSessionPatch = PreviewPatch(documentID: document.id, surfaceID: surface.id, baseRevision: 4, revision: 5, baseState: ClientPrecondition("state-4"), newState: ClientPrecondition("state-5"), boundary: .instantPatch, changes: [PreviewChange(layerID: text.id, path: "text", value: "Old session")])
+            XCTAssertFalse(session.apply(oldSessionPatch).accepted)
+            XCTAssertEqual(session.document.screens[0].root.children[0].text, "Merged elsewhere")
         }
     }
 
@@ -635,8 +644,8 @@ final class ArchitectureTests: XCTestCase {
             ]
             let runtime = "macOS \(ProcessInfo.processInfo.operatingSystemVersion.majorVersion)"
             let surface = AppSurface(id: EntityID("surface_main"), targetID: target.id, device: "Mac", runtime: runtime, buildEnvironment: "macOS SDK", screenID: document.screens[0].id, architectureScopeID: scopeID)
-            let session = try NativePreviewSession(document: document, surface: surface)
-            let invalid = PreviewPatch(documentID: document.id, surfaceID: surface.id, baseRevision: 0, revision: 1, boundary: .instantPatch, changes: [PreviewChange(layerID: button.id, path: "text", value: "")])
+            let session = try NativePreviewSession(document: document, surface: surface, statePrecondition: ClientPrecondition("state-0"))
+            let invalid = PreviewPatch(documentID: document.id, surfaceID: surface.id, baseRevision: 0, revision: 1, baseState: ClientPrecondition("state-0"), newState: ClientPrecondition("state-1"), boundary: .instantPatch, changes: [PreviewChange(layerID: button.id, path: "text", value: "")])
             let result = session.apply(invalid)
             XCTAssertFalse(result.accepted)
             XCTAssertTrue(result.diagnostics.contains(where: { $0.rule == "accessibility.controlLabel" }))
@@ -665,17 +674,18 @@ final class ArchitectureTests: XCTestCase {
         let service = ProjectService(repository: repository)
         let initial = try repository.create(name: "No-op")
         let scopeID = try XCTUnwrap(initial.scopes.first?.id)
-        let created = try service.mutate(.createScreen(name: "Welcome", scopeID: scopeID), expectedRevision: initial.revision, author: .human)
+        let created = try service.mutate(.createScreen(name: "Welcome", scopeID: scopeID), expectedState: service.observe().statePrecondition, author: .human)
         let screen = try XCTUnwrap(service.document().screens.first)
-        let inserted = try service.mutate(.addLayer(screenID: screen.id, parentID: screen.root.id, kind: .text, name: "Greeting", text: "Hello"), expectedRevision: created.revision, author: .human)
+        let inserted = try service.mutate(.addLayer(screenID: screen.id, parentID: screen.root.id, kind: .text, name: "Greeting", text: "Hello"), expectedState: try XCTUnwrap(created.statePrecondition), author: .human)
         let current = try service.document()
         let layerID = try XCTUnwrap(current.screens.first?.root.children.first?.id)
         let manifest = path.appendingPathComponent("hamii.json")
         let screenFile = path.appendingPathComponent("screens/\(screen.id.rawValue).json")
         let before = try Data(contentsOf: manifest)
         let screenBefore = try Data(contentsOf: screenFile)
-        let result = try service.mutate(.setText(screenID: screen.id, layerID: layerID, text: "Hello"), expectedRevision: inserted.revision, author: .human)
+        let result = try service.mutate(.setText(screenID: screen.id, layerID: layerID, text: "Hello"), expectedState: try XCTUnwrap(inserted.statePrecondition), author: .human)
         XCTAssertEqual(result.revision, inserted.revision)
+        XCTAssertEqual(result.statePrecondition, inserted.statePrecondition)
         XCTAssertTrue(result.patches.isEmpty)
         XCTAssertEqual(try Data(contentsOf: manifest), before)
         XCTAssertEqual(try Data(contentsOf: screenFile), screenBefore)

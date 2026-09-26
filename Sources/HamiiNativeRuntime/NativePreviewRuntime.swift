@@ -12,12 +12,13 @@ public enum NativePreviewError: Error {
 
 @MainActor @Observable
 public final class NativePreviewSession {
-    public private(set) var document: Document
+    public private(set) var document: HamiiCore.Document
     public private(set) var surface: AppSurface
     public private(set) var appliedRevision: Int
+    public private(set) var appliedState: ClientPrecondition
     public private(set) var emittedEvents: [String] = []
 
-    public init(document: Document, surface: AppSurface) throws {
+    public init(document: HamiiCore.Document, surface: AppSurface, statePrecondition: ClientPrecondition) throws {
         guard let target = document.targets.first(where: { $0.id == surface.targetID }), target.framework == .swiftUI else {
             throw NativePreviewError.unsupportedTarget
         }
@@ -36,48 +37,51 @@ public final class NativePreviewSession {
         self.document = document
         self.surface = surface
         appliedRevision = document.revision
+        appliedState = statePrecondition
     }
 
     public func apply(_ patch: PreviewPatch) -> PreviewAcknowledgement {
         guard patch.documentID == document.id, patch.surfaceID == surface.id else {
-            return PreviewAcknowledgement(revision: appliedRevision, accepted: false, diagnostics: [Diagnostic("preview.identity", "Patch belongs to another Document or Surface")])
+            return PreviewAcknowledgement(revision: appliedRevision, statePrecondition: appliedState, accepted: false, diagnostics: [Diagnostic("preview.identity", "Patch belongs to another Document or Surface")])
         }
-        let gate = PreviewRevisionGate.accept(patch, after: appliedRevision)
+        let gate = PreviewRevisionGate.accept(patch, after: appliedRevision, state: appliedState)
         guard gate.accepted else { return gate }
         guard let screenIndex = document.screens.firstIndex(where: { $0.id == surface.screenID }) else {
-            return PreviewAcknowledgement(revision: appliedRevision, accepted: false, diagnostics: [Diagnostic("preview.screen", "Screen is missing")])
+            return PreviewAcknowledgement(revision: appliedRevision, statePrecondition: appliedState, accepted: false, diagnostics: [Diagnostic("preview.screen", "Screen is missing")])
         }
         var next = document
         for change in patch.changes {
             guard change.path == "text", setText(change.value, id: change.layerID, in: &next.screens[screenIndex].root) else {
-                return PreviewAcknowledgement(revision: appliedRevision, accepted: false, diagnostics: [Diagnostic("preview.path", "Unsupported patch path or Layer ID", entityID: change.layerID)])
+                return PreviewAcknowledgement(revision: appliedRevision, statePrecondition: appliedState, accepted: false, diagnostics: [Diagnostic("preview.path", "Unsupported patch path or Layer ID", entityID: change.layerID)])
             }
         }
         next.revision = patch.revision
         let plan = TargetPlanner.plan(surface: surface, document: next)
         guard plan.canPreview else {
-            return PreviewAcknowledgement(revision: appliedRevision, accepted: false, diagnostics: plan.diagnostics)
+            return PreviewAcknowledgement(revision: appliedRevision, statePrecondition: appliedState, accepted: false, diagnostics: plan.diagnostics)
         }
         document = next
         appliedRevision = patch.revision
-        return PreviewAcknowledgement(revision: patch.revision, accepted: true)
+        appliedState = patch.newState
+        return PreviewAcknowledgement(revision: patch.revision, statePrecondition: appliedState, accepted: true)
     }
 
     public func load(_ snapshot: PreviewSnapshot) -> PreviewAcknowledgement {
         guard snapshot.document.id == document.id, snapshot.surface.id == surface.id else {
-            return PreviewAcknowledgement(revision: appliedRevision, accepted: false, diagnostics: [Diagnostic("preview.identity", "Snapshot belongs to another Document or Surface")])
+            return PreviewAcknowledgement(revision: appliedRevision, statePrecondition: appliedState, accepted: false, diagnostics: [Diagnostic("preview.identity", "Snapshot belongs to another Document or Surface")])
         }
         guard snapshot.document.revision >= appliedRevision else {
-            return PreviewAcknowledgement(revision: appliedRevision, accepted: false, diagnostics: [Diagnostic("preview.revision", "Snapshot revision precedes the applied revision")])
+            return PreviewAcknowledgement(revision: appliedRevision, statePrecondition: appliedState, accepted: false, diagnostics: [Diagnostic("preview.revision", "Snapshot revision precedes the applied revision")])
         }
         let errors = DocumentValidator.validate(snapshot.document).filter { $0.severity == .error }
-        guard errors.isEmpty else { return PreviewAcknowledgement(revision: appliedRevision, accepted: false, diagnostics: errors) }
-        do { _ = try NativePreviewSession(document: snapshot.document, surface: snapshot.surface) }
-        catch { return PreviewAcknowledgement(revision: appliedRevision, accepted: false, diagnostics: [Diagnostic("preview.snapshot", String(describing: error))]) }
+        guard errors.isEmpty else { return PreviewAcknowledgement(revision: appliedRevision, statePrecondition: appliedState, accepted: false, diagnostics: errors) }
+        do { _ = try NativePreviewSession(document: snapshot.document, surface: snapshot.surface, statePrecondition: snapshot.statePrecondition) }
+        catch { return PreviewAcknowledgement(revision: appliedRevision, statePrecondition: appliedState, accepted: false, diagnostics: [Diagnostic("preview.snapshot", String(describing: error))]) }
         document = snapshot.document
         surface = snapshot.surface
         appliedRevision = document.revision
-        return PreviewAcknowledgement(revision: appliedRevision, accepted: true)
+        appliedState = snapshot.statePrecondition
+        return PreviewAcknowledgement(revision: appliedRevision, statePrecondition: appliedState, accepted: true)
     }
 
     public func recordEvent(_ name: String) { emittedEvents.append(name) }
