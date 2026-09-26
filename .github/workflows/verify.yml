@@ -1,0 +1,18 @@
+name: Verify
+on:
+  push:
+  pull_request:
+
+jobs:
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Swift 6.4
+        run: |
+          curl -fsSL -o /tmp/swiftly.pkg https://download.swift.org/swiftly/darwin/swiftly.pkg
+          installer -pkg /tmp/swiftly.pkg -target CurrentUserHomeDirectory
+          ~/.swiftly/bin/swiftly init --assume-yes --no-modify-profile --quiet-shell-followup
+          ~/.swiftly/bin/swiftly use 6.4.0
+      - name: Verify architecture and behavior
+        run: bash scripts/check.sh

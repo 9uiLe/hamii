@@ -1,6 +1,6 @@
 # hamii Technical Spikes
 
-Status: 未実施の検証計画 / 2026-09-26。各 Spike は fixture、対象 OS/SDK/Xcode、実装 commit、実行 command、測定値 p50/p95、screenshot/event/a11y trace、失敗、判断更新を記録する。pending ADR に対応する検証は [`adr/<name>/spikes/<spike-name>/SPIKE.md`](../adr/) を計画の正本とし、成果物は各 Spike ディレクトリの `artifacts/` に置く。横断的な検証だけ `research/spikes/<id>/` に置く。数値目標は実験前に team が合意し、測定後に都合よく変更しない。P0 failure は製品の Preview/IR 約束を改訂する。
+Status: 検証中 / 2026-09-26。各 Spike は fixture、対象 OS/SDK/Xcode、実行 command、測定値、screenshot/event/a11y trace、失敗、判断更新を該当する範囲で記録する。pending ADR に対応する検証は [`adr/<name>/spikes/<spike-name>/SPIKE.md`](../adr/) を計画と結果の正本とし、成果物は各 Spike ディレクトリの `artifacts/` に置く。横断的な検証だけ `research/spikes/<id>/` に置く。数値目標は実験前に固定し、測定後に変更しない。P0 failure は製品の Preview/IR 約束を改訂する。Component Scope、Canonical transaction、Local Index の部分結果は各 Spike に記録済みで、残る検証は継続中。
 
 | ID | Priority | Hypothesis and prototype | Evidence / pass-fail gate |
 |---|---|---|---|
@@ -35,6 +35,7 @@ Status: 未実施の検証計画 / 2026-09-26。各 Spike は fixture、対象 O
 - [Shard and merge benchmark](../adr/git-canonical-sharding/spikes/shard-merge-benchmark/SPIKE.md)
 - [Crash recovery transaction](../adr/git-canonical-transaction/spikes/crash-recovery/SPIKE.md)
 - [Local Query Index の鮮度判定](../adr/index-consistency/spikes/index-drift/SPIKE.md)
+- [Git working tree fingerprint](../adr/index-consistency/spikes/git-working-tree-fingerprint/SPIKE.md)
 - [Isolated format upgrade](../adr/migration-core-boundary/spikes/isolated-format-upgrade/SPIKE.md)
 - [Ambiguous value review](../adr/migration-ambiguity-resolution/spikes/ambiguous-value-review/SPIKE.md)
 - [Migration worktree safety](../adr/migration-review-protocol/spikes/worktree-safety/SPIKE.md)
@@ -48,6 +49,9 @@ Status: 未実施の検証計画 / 2026-09-26。各 Spike は fixture、対象 O
 - [Value patch without compilation](../adr/swiftui-reconciliation/spikes/value-patch/SPIKE.md)
 - [SwiftUI Host reconciliation and state identity](../adr/swiftui-reconciliation/spikes/state-reconciliation/SPIKE.md)
 - [UIKit Preview の MVP inclusion](../adr/uikit-mvp-boundary/spikes/uikit-host-feasibility/SPIKE.md)
+- [Swift Macro metadata prototype](../adr/macro-driven-domain-metadata/spikes/metadata-prototype/SPIKE.md)
+- [Android Preview frame/input feasibility](../adr/android-preview-transport/spikes/frame-input-feasibility/SPIKE.md)
+- [Stable ID concurrent edit identities](../adr/stable-id-strategy/spikes/concurrent-edit-identities/SPIKE.md)
 
 各 `SPIKE.md` の `Result` / `Conclusion` と同じディレクトリ内の成果物を根拠に判断する。結果を先に commit し、実装・検証を終え、恒久 docs/実装へ移した後の別 commit で個別 ADR ディレクトリを削除する。[ADR workflow](adr-workflow.md) を参照。
 

@@ -1,0 +1,61 @@
+{
+  "id" : {
+    "rawValue" : "screen_9369ecd6-58a4-47e1-a455-2c62eee99a4d"
+  },
+  "name" : "Welcome",
+  "root" : {
+    "children" : [
+      {
+        "children" : [
+
+        ],
+        "id" : {
+          "rawValue" : "layer_1843a334-b6b0-4bf8-9d01-c20610e3f49b"
+        },
+        "kind" : "text",
+        "layout" : {
+
+        },
+        "name" : "Greeting",
+        "targetOverrides" : {
+
+        },
+        "text" : "Hello hamii"
+      },
+      {
+        "children" : [
+
+        ],
+        "id" : {
+          "rawValue" : "layer_e863987f-932d-4031-9f73-37bf40948360"
+        },
+        "kind" : "button",
+        "layout" : {
+
+        },
+        "name" : "Continue",
+        "targetOverrides" : {
+
+        },
+        "text" : "Continue"
+      }
+    ],
+    "id" : {
+      "rawValue" : "layer_6927db87-7da0-4077-b063-6d969ead2930"
+    },
+    "kind" : "stack",
+    "layout" : {
+      "axis" : "vertical",
+      "spacingTokenID" : {
+        "rawValue" : "token_8af3340c-ee6e-4a55-b230-0dcfb0ecaac0"
+      }
+    },
+    "name" : "Root",
+    "targetOverrides" : {
+
+    }
+  },
+  "scopeID" : {
+    "rawValue" : "scope_7eb344ab-f605-4994-8c3c-fba4e8c823c0"
+  }
+}

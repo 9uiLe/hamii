@@ -18,15 +18,16 @@ filesystem watcher + fingerprint、Git diff + working-tree fingerprint、full sc
 
 ## Current Hypothesis
 
-**未確定:** Git/working-tree fingerprint と source revision で、disposable SQLite index の鮮度と再構築を管理できる。
+**未確定:** Source revision だけでは不足することを Spike で確認した。Git HEAD + tracked diff + untracked content の digest は逐次 edit/commit switch を検出し、50k Layer 単一 shard でも latency budget 内だった。同時書込時の正確性は未検証。
 
 ## Unknowns
 
-filesystem watcher の取りこぼし、branch switch の invalidation 範囲、大規模 rebuild 時間、query 中の revision 競合。
+filesystem watcher の取りこぼし、Git pull と concurrent external edit、query 中の revision 競合、symlink/filter の working bytes、複数 shard の大規模 untracked project、incremental rebuild の性能。
 
 ## Required Evidence
 
-[spikes/index-drift/SPIKE.md](spikes/index-drift/SPIKE.md) を実施し、観測値と結論を同じディレクトリに記録する。未実施の結果を確定判断として扱わない。
+- [Index drift and scale](spikes/index-drift/SPIKE.md): revision-only 判定の反例と 1k/10k/50k scale を確認。
+- [Git working tree fingerprint](spikes/git-working-tree-fingerprint/SPIKE.md): 外部 edit、branch switch、dirty tree の digest と latency を検証する。
 
 ## Decision Criteria
 
@@ -34,4 +35,4 @@ filesystem watcher の取りこぼし、branch switch の invalidation 範囲、
 
 ## Status
 
-Spike Required
+Researching

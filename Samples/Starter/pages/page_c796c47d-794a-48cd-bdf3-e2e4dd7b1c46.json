@@ -1,0 +1,54 @@
+{
+  "id" : {
+    "rawValue" : "page_c796c47d-794a-48cd-bdf3-e2e4dd7b1c46"
+  },
+  "name" : "Design",
+  "surfaces" : [
+    {
+      "architectureScopeID" : {
+        "rawValue" : "scope_7eb344ab-f605-4994-8c3c-fba4e8c823c0"
+      },
+      "buildEnvironment" : "iOS SDK 26.5",
+      "device" : "iPhone 17",
+      "environment" : {
+
+      },
+      "id" : {
+        "rawValue" : "surface_3b0f4dcc-76a3-488f-babc-3d81da3c9a1c"
+      },
+      "previewConfiguration" : {
+
+      },
+      "runtime" : "iOS 26.5",
+      "screenID" : {
+        "rawValue" : "screen_9369ecd6-58a4-47e1-a455-2c62eee99a4d"
+      },
+      "targetID" : {
+        "rawValue" : "target_e8fae6de-450d-438c-8d41-2c81a3b8f2ab"
+      }
+    },
+    {
+      "architectureScopeID" : {
+        "rawValue" : "scope_7eb344ab-f605-4994-8c3c-fba4e8c823c0"
+      },
+      "buildEnvironment" : "macOS SDK 26",
+      "device" : "Mac",
+      "environment" : {
+
+      },
+      "id" : {
+        "rawValue" : "surface_bf6c019e-f6bb-40fe-b0e0-e35d77c56c02"
+      },
+      "previewConfiguration" : {
+
+      },
+      "runtime" : "macOS 26",
+      "screenID" : {
+        "rawValue" : "screen_9369ecd6-58a4-47e1-a455-2c62eee99a4d"
+      },
+      "targetID" : {
+        "rawValue" : "target_c3ab7f87-fd18-44bb-94d4-b3d4f4484980"
+      }
+    }
+  ]
+}

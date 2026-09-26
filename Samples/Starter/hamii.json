@@ -1,0 +1,100 @@
+{
+  "authoringHarness" : {
+    "maximumMutationNodes" : 100,
+    "requireAccessibleControls" : true,
+    "requireTokenSpacing" : false
+  },
+  "capabilityDeclarations" : [
+    {
+      "key" : {
+        "rawValue" : "layout.stack"
+      },
+      "reason" : "",
+      "support" : "portable",
+      "targetID" : {
+        "rawValue" : "target_e8fae6de-450d-438c-8d41-2c81a3b8f2ab"
+      }
+    },
+    {
+      "key" : {
+        "rawValue" : "component.text"
+      },
+      "reason" : "",
+      "support" : "exact",
+      "targetID" : {
+        "rawValue" : "target_e8fae6de-450d-438c-8d41-2c81a3b8f2ab"
+      }
+    },
+    {
+      "key" : {
+        "rawValue" : "component.button"
+      },
+      "reason" : "",
+      "support" : "exact",
+      "targetID" : {
+        "rawValue" : "target_e8fae6de-450d-438c-8d41-2c81a3b8f2ab"
+      }
+    },
+    {
+      "key" : {
+        "rawValue" : "token.spacing"
+      },
+      "reason" : "",
+      "support" : "exact",
+      "targetID" : {
+        "rawValue" : "target_e8fae6de-450d-438c-8d41-2c81a3b8f2ab"
+      }
+    },
+    {
+      "key" : {
+        "rawValue" : "layout.stack"
+      },
+      "reason" : "",
+      "support" : "portable",
+      "targetID" : {
+        "rawValue" : "target_c3ab7f87-fd18-44bb-94d4-b3d4f4484980"
+      }
+    },
+    {
+      "key" : {
+        "rawValue" : "component.text"
+      },
+      "reason" : "",
+      "support" : "exact",
+      "targetID" : {
+        "rawValue" : "target_c3ab7f87-fd18-44bb-94d4-b3d4f4484980"
+      }
+    },
+    {
+      "key" : {
+        "rawValue" : "component.button"
+      },
+      "reason" : "",
+      "support" : "exact",
+      "targetID" : {
+        "rawValue" : "target_c3ab7f87-fd18-44bb-94d4-b3d4f4484980"
+      }
+    },
+    {
+      "key" : {
+        "rawValue" : "token.spacing"
+      },
+      "reason" : "",
+      "support" : "exact",
+      "targetID" : {
+        "rawValue" : "target_c3ab7f87-fd18-44bb-94d4-b3d4f4484980"
+      }
+    }
+  ],
+  "formatVersion" : 1,
+  "id" : {
+    "rawValue" : "doc_643c4446-1965-4c95-9bf3-81bcfebe815d"
+  },
+  "name" : "Starter",
+  "revision" : 19,
+  "versions" : {
+    "authoringHarness" : 1,
+    "document" : 1,
+    "integrationProfile" : 1
+  }
+}

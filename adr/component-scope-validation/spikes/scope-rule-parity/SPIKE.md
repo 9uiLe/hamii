@@ -14,7 +14,7 @@
 
 ## Prototype Scope
 
-App/Commerce/Product/Checkout/Account tree、nested component、deny/allowOnly、promotion の小さな fixture を実装する。
+App/Commerce/Product/Checkout/Account tree、nested component、deny/allowOnly、promotion の小さな fixture を実装する。最初の検証は App/Checkout の nested Definition と deny policy に限定する。
 
 ## Out of Scope
 
@@ -34,11 +34,11 @@ Human/AI/Validator が同一 rule ID と結果を返し、sibling と transitive
 
 ## Result
 
-未実施。実測値、観察、失敗、成果物 link を記録する。
+`testNestedComponentAvailabilityMatchesPickerIndexAndMutation` で、App 所有の Outer → Inner の参照を作り、Inner の Checkout deny を設定した。Checkout に対し Picker、SQLite projection、Human mutation、Agent mutation が全て Outer を拒否し、mutation diagnostic は `component.denied` となった。`bash scripts/check.sh` で 19 tests 通過。Promotion 後の影響、allowOnly と複数 Scope、lookup latency は未計測。
 
 ## Conclusion
 
-未実施。ADR の判断への影響を記録し、削除前に commit する。
+共通 `ComponentAvailability.reason` の再帰判定で nested deny の不一致は解消できた。全ての必要 fixture と promotion 影響を調べるまで evaluator / materialized projection の最終判断は保留する。
 
 ## Artifacts
 

@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+check_imports() {
+  local directory="$1"
+  local forbidden="$2"
+  if rg -n "^[[:space:]]*import (${forbidden})$" "$directory"; then
+    echo "Forbidden dependency in $directory" >&2
+    exit 1
+  fi
+}
+
+check_imports Sources/HamiiCore 'AppKit|SwiftUI|UIKit|SQLite3|HamiiApplication|HamiiFormat|HamiiIndex|HamiiCLI|HamiiApp|HamiiMigrations'
+check_imports Sources/HamiiApplication 'AppKit|SwiftUI|UIKit|SQLite3|HamiiFormat|HamiiIndex|HamiiCLI|HamiiApp|HamiiMigrations'
+check_imports Sources/HamiiPreviewProtocol 'AppKit|SQLite3|HamiiFormat|HamiiIndex|HamiiCLI|HamiiApp|HamiiMigrations'
+check_imports Sources/HamiiGeneration 'AppKit|SQLite3|HamiiApplication|HamiiFormat|HamiiIndex|HamiiCLI|HamiiApp|HamiiMigrations'
+check_imports Sources/HamiiIntegration 'AppKit|SQLite3|HamiiApplication|HamiiFormat|HamiiIndex|HamiiCLI|HamiiApp|HamiiMigrations'
+check_imports Sources/HamiiMigrations 'AppKit|SwiftUI|UIKit|SQLite3|HamiiCore|HamiiApplication|HamiiFormat|HamiiIndex|HamiiCLI|HamiiApp'
+check_imports Sources/HamiiNativeRuntime 'AppKit|SQLite3|HamiiApplication|HamiiFormat|HamiiIndex|HamiiCLI|HamiiApp|HamiiMigrations'
+
+if rg -n 'adr/' Sources; then
+  echo 'Production sources must not depend on ADR files' >&2
+  exit 1
+fi
+
+echo 'Architecture dependencies valid'

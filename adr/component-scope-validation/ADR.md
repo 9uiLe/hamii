@@ -18,7 +18,7 @@ Page 階層と Scope は独立。sibling dependency は許さない。Promotion 
 
 ## Current Hypothesis
 
-**未確定:** 同一 evaluator と closure/index projection で Human/AI/Validator の判定を一致させられる。
+**未確定:** 共通 evaluator と SQLite projection は nested deny fixture で Human/AI/Validator の結果を一致させた。Promotion と allowOnly の範囲は未検証。
 
 ## Unknowns
 
@@ -34,4 +34,4 @@ Spike の成功/失敗基準に照らして方式を選び、必要な実装・�
 
 ## Status
 
-Spike Required
+Researching

@@ -1,0 +1,63 @@
+{
+  "platform": "26.2",
+  "gitVersion": "git version 2.52.0",
+  "rows": [
+    {
+      "layerCount": 1000,
+      "p50Ms": 62.875,
+      "p95Ms": 65.419,
+      "samplesMs": [
+        62.875,
+        65.419,
+        62.675,
+        61.691,
+        64.497
+      ],
+      "unbornEditDetected": true,
+      "trackedEditDetected": true,
+      "repeatEditDetected": true,
+      "stagedEditDetected": true,
+      "stagingPreservesFingerprint": true,
+      "untrackedEditDetected": true,
+      "switchDetected": true
+    },
+    {
+      "layerCount": 10000,
+      "p50Ms": 62.778,
+      "p95Ms": 66.729,
+      "samplesMs": [
+        62.165,
+        62.778,
+        66.729,
+        62.865,
+        59.923
+      ],
+      "unbornEditDetected": true,
+      "trackedEditDetected": true,
+      "repeatEditDetected": true,
+      "stagedEditDetected": true,
+      "stagingPreservesFingerprint": true,
+      "untrackedEditDetected": true,
+      "switchDetected": true
+    },
+    {
+      "layerCount": 50000,
+      "p50Ms": 62.436,
+      "p95Ms": 64.572,
+      "samplesMs": [
+        64.049,
+        62.436,
+        64.572,
+        61.092,
+        60.55
+      ],
+      "unbornEditDetected": true,
+      "trackedEditDetected": true,
+      "repeatEditDetected": true,
+      "stagedEditDetected": true,
+      "stagingPreservesFingerprint": true,
+      "untrackedEditDetected": true,
+      "switchDetected": true
+    }
+  ]
+}
