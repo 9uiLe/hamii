@@ -1,0 +1,17 @@
+{
+  "environment": {
+    "macOS": "26.2",
+    "git": "git version 2.52.0"
+  },
+  "observation": {
+    "rawGitSwitchWhileLockHeldMs": 10.913,
+    "rawGitIgnoredHamiiLock": true,
+    "readerDidNotCompleteWhileLockHeld": true,
+    "rawGitLeftPrototypeGenerationUnchanged": true,
+    "coordinatedPrototypeGenerationAfterSwitch": 1,
+    "coordinatedReaderSawFinalBranch": true,
+    "productionGitOperationAdapter": "not implemented",
+    "productionGenerationProtocol": "not implemented"
+  },
+  "scope": "one raw branch switch and one test-only coordinated switch; no production generation or client gate"
+}

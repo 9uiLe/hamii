@@ -1,0 +1,32 @@
+{
+  "environment": {
+    "macOS": "26.2",
+    "git": "git version 2.52.0"
+  },
+  "semanticOnlyInvalidMerge": {
+    "gitTextMergeExit": 0,
+    "unmergedPaths": [],
+    "diagnostics": [
+      "component.missing"
+    ],
+    "inspectExit": 7,
+    "indexRebuildExit": 7,
+    "invalidMergeNotCommitted": true,
+    "bothBranchesValidAfterAbort": true
+  },
+  "postMergeResync": {
+    "preMergeClientRevision": 3,
+    "mergedRevision": 3,
+    "clientCanonicalIdentityChanged": true,
+    "revisionAloneMissedMerge": true,
+    "preRebuildQueryExit": 8,
+    "preRebuildQueryCategory": "staleIndex",
+    "validationPassed": true,
+    "snapshotStableAcrossRebuild": true,
+    "postRebuildQueryPassed": true,
+    "oldRevisionMutationAcceptedAfterMerge": true,
+    "mergeCommitted": false,
+    "productionClientSessionInvalidation": "not implemented"
+  },
+  "scope": "disposable worktrees; sequential merge gate; no production merge/session protocol"
+}

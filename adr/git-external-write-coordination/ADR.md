@@ -1,4 +1,4 @@
-# External Git writes during Canonical save
+# Canonical collaboration and writer model
 
 ## Context
 
@@ -6,7 +6,7 @@
 
 ## Decision to Make
 
-1 worktree を 1 coordinated writer domain として扱う条件、非協調 external modification の検知・保存中断条件、別 branch / worktree 間の validated merge protocol を決める。
+hamii の正式な Canonical collaboration / writer model を何とするか。同一 worktree の writer guarantee と、独立 writer の変更を利用可能な Project へ統合する条件を一つの Product Contract として決める。
 
 ## Constraints
 
@@ -14,7 +14,9 @@
 
 ## Options
 
-worktree 分離 + validated merge、保存前後の external-change detection + conflict、協調可能な Git operation adapter、semantic merge boundary。単なる pre/post fingerprint は check と replace の race を閉じない。
+正式な writer model の候補は、worktree ごとの coordinated writer domain と別 worktree / branch の validated merge、または同一 worktree の非協調 writer を含む共同編集である。後者の lossless 保証は現在の check/replace race 反例を解決できていない。hamii-managed Git operation adapter と semantic merge gate は前者を成立させる実装候補である。単なる pre/post fingerprint は check と replace の race を閉じない。
+
+External-change detection は正式な writer model の外で起きた変更に対する defense-in-depth であり、すべての race を閉じることを Product Contract の成立条件とはしない。
 
 ## Current Hypothesis
 
@@ -22,16 +24,19 @@ worktree 分離 + validated merge、保存前後の external-change detection + 
 
 **Spike 用の coordinated writer boundary（製品保証として未決定）:** 同じ worktree で Canonical bytes を変更できる hamii GUI / CLI / AI の全操作、hamii 管理下の Git branch / checkout / pull、および CanonicalSnapshot / Index generation / Query が、同一の worktree lock と generation protocol に参加する条件を試す。`CanonicalRepository` の単一 save lock だけでは save 後の別 process への generation 通知を保証しない。VS Code、直接実行する Git CLI、外部 script、外部 AI、その他 lock に従わない writer はこの境界の外に置く。境界外の同一 worktree 変更は shared generation を更新せず false current を作る反例があり、正式な safe collaboration path としない。独立 writer は separate worktree / branch と validated merge で扱う候補を維持する。これを正式 Product Contract として採用できるか、境界を技術的にどう強制・検出するかは未解決。
 
+**New narrow evidence:** raw `git switch` は現行 `.hamii/write.lock` を無視した。別 worktree の Git text merge が成功しても、Component shard 削除と instance 追加の合成で `component.missing` となり、現行 validation / inspect / index rebuild は拒否した。正常 merge の別ケースでは両 branch と merged manifest が revision 3 のまま Canonical contents が変化し、旧 Index の検索は `staleIndex` を返した。一方、旧 revision 3 の `page create` は merge 後も受理され、revision guard だけでは client session を失効させられない。これは validated merge gate と client session resync の必要性を示すが、それらの production protocol の成立証明ではない。
+
 ## Unknowns
 
-worktree 分離の運用条件、checkout/pull/edit の検出可能範囲、check/replace 間の race を含む fail-closed boundary、同じ bytes へ収束する編集、merge conflict と semantic validation、conflict UX、複数プロセスの lock semantics。
+hamii-managed Git operation を実際の lock / generation / journal / Index / session protocol に組み込む方法、merge の semantic validation と公開境界、merge 後の client / Preview session 再同期、worktree 分離の運用条件、check/replace 間の race を含む defense-in-depth、conflict UX。直接実行する Git CLI は現行 lock を尊重しない。
 
 ## Required Evidence
 
 - [External writer interleaving](spikes/external-writer-interleaving/SPIKE.md): check と atomic replace の間の非協調 writer を検証する。
 - [Worktree isolation](spikes/worktree-isolation/SPIKE.md): separate worktree の逐次編集と、20 組の重なった CLI mutation を確認。同時 Git 操作と crash recovery は未測定。
 - [External change detection](spikes/external-change-detection/SPIKE.md): ready barrier で checkout した場合と load/save 間の逐次外部編集の conflict / bytes 保持を確認。その他の interleaving は未測定。
-- [Concurrent worktree merge](spikes/concurrent-worktree-merge/SPIKE.md): 非競合 Page と同一 Text property の merge を確認。semantic-only conflict は未測定。
+- [Concurrent worktree merge](spikes/concurrent-worktree-merge/SPIKE.md): 非競合 Page と同一 Text property の merge に加え、Git text merge 成功後の `component.missing`、merge 前後で同じ revision でも Canonical identity が異なるケース、旧 Index の `staleIndex` 拒否、旧 revision mutation の受理を確認。Production merge gate と client session invalidation は未実装。
+- [Managed Git operation](spikes/managed-git-operation/SPIKE.md): raw `git switch` は `.hamii/write.lock` を無視する。試験用 wrapper では reader と switch を同じ lock で囲み generation を進めた。Production adapter は未実装。
 - [Shared generation process-stop matrix](../index-consistency/spikes/shared-worktree-generation/SPIKE.md): 試験用 coordinated boundary で別 OS process の writer / reader の flock attempt/acquire を確認し、4地点で writer を SIGKILL。非協調 writer の扱いと正式な writer contract は未決定。
 
 ## Decision Criteria

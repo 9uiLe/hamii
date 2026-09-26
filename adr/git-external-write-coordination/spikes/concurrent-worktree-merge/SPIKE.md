@@ -38,13 +38,19 @@ scenario ごとの Git conflict、semantic diagnostic、保持された双方の
 
 ## Result
 
-**Measured, narrow case:** macOS 26.2 / Git 2.52.0 の一時 Repository で、別 branch / worktree に追加した異なる Page shard を commit 後に merge した。Git merge は成功し、双方の Page が残り、Canonical validation と fresh index rebuild も成功した。両 branch が revision 3 へ進んだため、merged Document も revision 3 だった。同じ Screen の同じ Text property を別々に更新した場合、Git merge は conflict を返し、`screens/<id>.json` を unmerged path として示した。双方の branch の編集は残った。**Unknown:** text conflict のない semantic invalid merge、merge 後の client / Preview session revision protocol、merge 中の別 writer、ユーザー向け conflict UX。これらは未測定。
+**Measured, narrow case:** macOS 26.2 / Git 2.52.0 の一時 Repository で、別 branch / worktree に追加した異なる Page shard を commit 後に merge した。Git merge は成功し、双方の Page が残り、Canonical validation と fresh index rebuild も成功した。両 branch が revision 3 へ進んだため、merged Document も revision 3 だった。同じ Screen の同じ Text property を別々に更新した場合、Git merge は conflict を返し、`screens/<id>.json` を unmerged path として示した。双方の branch の編集は残った。**Unknown:** production merge 中の別 writer とユーザー向け conflict UX。
+
+**Confirmed, semantic-only invalid merge:** 別 worktree で一方は未使用 ComponentDefinition shard を削除し、他方はその Component を Screen に instantiate した。それぞれの branch は単独で `validate` に成功。`git merge --no-commit --no-ff` は exit 0、unmerged path なしで成功したが、merge 後の `hamii validate` は `component.missing` を返した。`inspect` と `index rebuild` も exit 7 で拒否した。merge を commit せず abort すると両 branch の有効な状態が保持された。**Limit:** 現行 CLI は semantic-invalid working tree を拒否するが、production の自動 merge gate / publish protocol は未実装。
+
+**Confirmed, post-merge resync input:** 両 branch が別 Page を追加して revision 3 に到達した状態で、main worktree の Index を構築した。`git merge --no-commit --no-ff` 後も manifest revision は 3 だったが Canonical path/bytes identity は変わった。旧 Index の `query components` は exit 8 / `staleIndex` を返した。validation 後に同じ Canonical bytes を入力として `index rebuild` すると検索が再開した。さらに merge 前の revision 3 を使った `page create` は成功した。これは現行の revision guard だけでは旧 client session を失効させられない反例であり、この semantic mutation による既存変更の喪失は観測していない。**Not implemented:** merge による client / Preview session の失効と generation advancement。試験は merge を commit していない使い捨て worktree の逐次手順であり、同時 writer や atomic publish は検証しない。
 
 ## Conclusion
 
-非競合 Page 追加と同一 Text property conflict の 2 scenario は上記の挙動だった。**Unknown:** semantic-only conflict を含む validated merge protocol 全体。未測定 scenario を終えるまで方式と UX は決めない。
+Git text merge 成功だけでは Semantic validity を保証できない。`component.missing` は現行 validation で拒否でき、旧 Index は stale として拒否できた。正式な merge gate、generation / Index publication、client session resync、同時 Git 操作と UX は未解決であり、Product Contract はまだ決めない。
 
 ## Artifacts
 
 - [probe.py](artifacts/probe.py): 一時 Repository の非競合・競合 merge probe。
 - [result.json](artifacts/result.json): merge、validation、index rebuild の観測結果。
+- [semantic_and_resync_probe.py](artifacts/semantic_and_resync_probe.py): semantic-only invalid merge と post-merge Index / client identity の使い捨て probe。
+- [semantic-and-resync-result.json](artifacts/semantic-and-resync-result.json): exit status、diagnostic、revision / canonical identity、Index 再構築の観測結果。
