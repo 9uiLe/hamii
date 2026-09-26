@@ -22,13 +22,14 @@ Canonical Data が唯一の正本。`CanonicalSnapshot` は exact contents、sou
 
 ## Unknowns
 
-安全な Canonical freshness 判定を Query ごとに 4 Git subprocess 相当の cost を負わず実現する方法、Canonical files が同じでも Repository HEAD だけが変わる場合の不要な失効、確実な fast-path `current` 条件と slow verification protocol、複数 Canonical file の一貫した snapshot、最終 check 後を含む同時外部書込の保証境界、自動 full rebuild と incremental reindex の end-to-end UX / performance、stored reverse dependencies と targeted projection 計算、Git 操作中の generation の一貫性、Git flag/filter guard の大規模 shard での cost、他の Git filter / attributes、symlink、非常に多い shard、巨大 Project の rebuild cost。現行 Git-based revision calculation / rebuild policy を最終 protocol とするかは未決定。
+安全な Canonical freshness 判定を Query ごとに 4 Git subprocess 相当の cost を負わず実現する方法、Canonical files が同じでも Repository HEAD だけが変わる場合の不要な失効、確実な fast-path `current` 条件と slow verification protocol、hamii writer 間の cross-process generation 通知と observation lifetime、複数 Canonical file の一貫した snapshot、最終 check 後を含む同時外部書込の保証境界、自動 full rebuild と incremental reindex の end-to-end UX / performance、stored reverse dependencies と targeted projection 計算、Git 操作中の generation の一貫性、Git flag/filter guard の大規模 shard での cost、他の Git filter / attributes、symlink、非常に多い shard、巨大 Project の rebuild cost。現行 Git-based revision calculation / rebuild policy を最終 protocol とするかは未決定。
 
 ## Required Evidence
 
 - [Index drift and scale](spikes/index-drift/SPIKE.md): revision-only 判定の反例と 1k/10k/50k scale を確認。
 - [Consistent CanonicalSnapshot](spikes/consistent-canonical-snapshot/SPIKE.md): hamii-owned lock 下の reader/save 境界と pinned Git tree の保証範囲を確認。非協調 writer を含む current working tree の coherent snapshot は未解決。
 - [Safe freshness fast path](spikes/safe-freshness-fast-path/SPIKE.md): manifest + metadata shortcut の false negative を確認。`certainly current` の安全な一般条件と slow verifier は未確定。
+- [Known-current generation fast path](spikes/known-current-generation-fast-path/SPIKE.md): process-local marker は無通知の external edit、実 branch switch、別 hamii Repository instance の save で false current になる。Cross-process observation と source snapshot / index generation binding は未解決。
 - [End-to-end Index generation](spikes/end-to-end-index-generation/SPIKE.md): current full pipeline の15回 stage timing。Snapshot acquisition と production incremental generation を接続した end-to-end 測定は未完了。
 - [Git working tree fingerprint](spikes/git-working-tree-fingerprint/SPIKE.md): 外部 edit、branch switch、dirty tree の digest と latency を検証する。
 - [Nested repository query latency](spikes/nested-repository-query-latency/SPIKE.md): Git repository 内の下位 Project で query budget 超過を確認。

@@ -1,0 +1,27 @@
+{
+  "coldVerificationMs" : 317.47874999999999,
+  "environment" : "macOS arm64, Swift 6.4 debug XCTest, disposable Starter Git copy, one component, 15 warm runs",
+  "limits" : "Generation numbers are test-local markers, not Document.revision or a production CanonicalGeneration. Session is a process-local prototype. Direct SQLite bypasses production freshness and is unsafe with unobserved peer hamii saves, external writers, or Git operations. Peer writer is a separate CanonicalRepository instance in one process, not a separate process. Restart is simulated by constructing a new Session in one process. No watcher, cross-process lease, snapshot binding, persisted index generation ID, or safe cold-open proof is implemented.",
+  "productionQueryP50Ms" : 313.66158300000001,
+  "productionQueryP95Ms" : 357.27029099999999,
+  "productionQueryRejectedThatBranchSwitch" : true,
+  "productionQueryRejectedThatEdit" : true,
+  "productionQueryRejectedThatPeerSave" : true,
+  "restartVerificationMs" : 311.82549999999998,
+  "states" : {
+    "afterBranchSignal" : "unknown",
+    "afterDetectedExternalChange" : "unknown",
+    "afterExternalSignal" : "unknown",
+    "afterHamiiSaveBeforeIndex" : "knownStale",
+    "afterIndexPublication" : "knownCurrent",
+    "afterProcessRestart" : "unknown",
+    "coldOpen" : "unknown"
+  },
+  "unobservedBranchSwitchWouldFalselyReturnCurrent" : true,
+  "unobservedExternalEditWouldFalselyReturnCurrent" : true,
+  "unobservedHamiiPeerSaveWouldFalselyReturnCurrent" : true,
+  "warmDirectSQLiteP50Ms" : 0.32658300000000001,
+  "warmDirectSQLiteP95Ms" : 0.53125,
+  "warmGateP50Ms" : 0.00054100000000000003,
+  "warmGateP95Ms" : 0.00062500000000000001
+}

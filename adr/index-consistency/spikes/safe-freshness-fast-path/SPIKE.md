@@ -44,6 +44,8 @@ Fast check の p50/p95 と positive/unknown/stale 件数、slow verification の
 
 **Unknown / not implemented:** external writer が存在する可能性のある一般 worktree で positive を返せる trusted fast condition、cross-process epoch、watcher gap/overflow recovery、safe slow verifier、fast/slow hit rate、end-to-end latency。Coordinated-writer-only epoch は候補であって製品保証の決定ではない。
 
+[Known-current generation Spike](../known-current-generation-fast-path/SPIKE.md) では process-local epoch に相当する marker が、無通知の別 hamii save、外部編集、実 branch switch で false current を返す反例を確認した。`.hamii/write.lock` の存在だけでは Query session に変更が伝わらない。
+
 ## Conclusion
 
 低 cost という理由だけでは fast-path positive を許可できない。今回の manifest/metadata shortcut は **Failure Evidence**。安全に `current` と証明できる条件が未確定の間は現行 slow verification / `staleIndex` を維持し、方式を選定しない。
