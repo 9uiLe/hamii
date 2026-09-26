@@ -1,0 +1,14 @@
+{
+  "environment": {
+    "macOS": "26.2",
+    "git": "2.52.0",
+    "swift": "6.4"
+  },
+  "scenario": "Git switches to a branch with different Component bytes after the Canonical journal is ready and before transaction apply",
+  "command": "swift test --filter ArchitectureTests/testGitCheckoutBeforeCanonicalApplyStopsSaveAndPreservesExternalBytes",
+  "testOutcome": "passed",
+  "saveOutcome": "transactionConflict for components/component_checkout.json",
+  "externalBytesPreserved": true,
+  "journalPreserved": true,
+  "scope": "one deterministic checkout at the ready barrier; check-to-replace race, pull, hooks and concurrent retries not tested"
+}

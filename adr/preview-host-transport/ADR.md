@@ -18,11 +18,11 @@ local socket、Network framework connection、別の supported IPC/stream。
 
 ## Current Hypothesis
 
-**未確定:** Swift 6.4 の iOS Simulator 向け Runtime build と TCP Host probe の compile は成功した。Simulator 起動が CoreSimulatorService 接続断で止まり、session の実測は未完了。Transport は未確定。
+**未確定:** Swift 6.4 の iOS Simulator 向け Runtime build と TCP Host probe の compile は成功した。**Blocked:** transport validation is currently blocked by an independent Simulator boot failure. `simctl boot` は Preview Host install / launch / TCP connection より前に失敗する。transport 自体の成功・失敗、latency、recovery は未測定。
 
 ## Unknowns
 
-Simulator の接続経路、欠番検出、Host suspend/restart、schema mismatch、複数 Surface。Simulator 起動環境の復旧後、Transport の実測が必要。
+Simulator の接続経路、patch delivery と frame/update latency、disconnect / reconnect、Host restart / session recovery、schema mismatch、複数 Surface。CMIO XPC の停止原因は Simulator boot environment の blocker として Spike に記録し、この ADR の transport 採否とは分離する。
 
 ## Required Evidence
 
@@ -30,7 +30,7 @@ Simulator の接続経路、欠番検出、Host suspend/restart、schema mismatc
 
 ## Decision Criteria
 
-必要な Evidence から選択肢を比較し、採用理由と残る制約を記録する。判断と結果を先に commit し、必要な実装・検証と Current Architecture への反映を完了する。削除は [ADR workflow](../../docs/adr-workflow.md) の全条件を満たすまで行わない。
+実際に起動した Host で connect、patch delivery、frame/update latency、disconnect、reconnect、Host restart、session recovery を測るまで transport を判断しない。判断と結果を先に commit し、必要な実装・検証と Current Architecture への反映を完了する。削除は [ADR workflow](../../docs/adr-workflow.md) の全条件を満たすまで行わない。
 
 ## Related Decisions
 

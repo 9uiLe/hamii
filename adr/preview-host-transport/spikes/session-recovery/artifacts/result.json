@@ -14,7 +14,9 @@
   "simulatorBoot": {
     "defaultDeviceSet": "failed with NSPOSIXErrorDomain code 53",
     "isolatedDeviceSet": "failed with NSPOSIXErrorDomain code 53",
-    "coreSimulatorLog": "GTSimPortVendor createDefaultPortsForDevice timed out after 30 seconds; CoreSimulatorService connection interrupted"
+    "coreSimulatorLog": "GTSimPortVendor created 2 default ports; later SimDeviceIOBundleInterface remote invocation timed out after approximately 30 seconds and CoreSimulatorService connection was interrupted",
+    "sampledWaitChain": "CoreSimulatorService device bootstrap -> SimAudioProcessorServices -> ROCKit remote reply; SimAudioProcessorService -> CoreAudio HALSystem::InitializeShell -> AVFCapture CMIOProprietaryDefaultsSource -> synchronous XPC reply wait",
+    "rootCauseBoundary": "host CoreSimulator audio/AV capture initialization before Preview Host install or transport; reason CMIO XPC peer does not reply remains unknown"
   },
   "transportMeasurements": "not run; simulator did not boot"
 }

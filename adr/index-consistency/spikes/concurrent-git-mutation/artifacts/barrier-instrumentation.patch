@@ -1,0 +1,18 @@
+--- a/Sources/HamiiIndex/GitCanonicalRevisionCalculator.swift
++++ b/Sources/HamiiIndex/GitCanonicalRevisionCalculator.swift
+@@ -19,6 +19,15 @@
+         var hash = SHA256()
+         let status = try git(root, ["status", "--porcelain=v2", "--branch", "-z", "--untracked-files=all", "--ignored=matching", "--"] + gitPaths)
+         try afterInitialStatus?()
++        if let barrier = ProcessInfo.processInfo.environment["HAMII_INDEX_PROBE_AFTER_STATUS"] {
++            let base = URL(fileURLWithPath: barrier)
++            try Data().write(to: base.appendingPathExtension("ready"))
++            for _ in 0..<1_000 {
++                if FileManager.default.fileExists(atPath: base.appendingPathExtension("go").path) { break }
++                Thread.sleep(forTimeInterval: 0.01)
++            }
++            guard FileManager.default.fileExists(atPath: base.appendingPathExtension("go").path) else { throw IndexError.stale }
++        }
+         guard status.status == 0 else { throw IndexError.unverifiableSource }
+         // Git omits working-tree edits to assume-unchanged and skip-worktree
+         // paths from status. Refuse to identify such a source as current.

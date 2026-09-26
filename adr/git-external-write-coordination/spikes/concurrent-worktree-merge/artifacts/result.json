@@ -1,0 +1,21 @@
+{
+  "environment": {
+    "macOS": "26.2",
+    "git": "git version 2.52.0"
+  },
+  "nonconflicting": {
+    "gitMergeExit": 0,
+    "bothPageNamesPresent": true,
+    "mergedRevision": 3,
+    "canonicalValidationPassed": true,
+    "freshIndexRebuildPassed": true
+  },
+  "conflicting": {
+    "gitMergeExit": 1,
+    "unmergedPaths": [
+      "screens/screen_84388655-22ee-4a27-8fd8-efd1e56cafc0.json"
+    ],
+    "bothBranchEditsRetained": true
+  },
+  "scope": "sequential merge of two committed worktrees; semantic-only conflicts and concurrent merge not tested"
+}

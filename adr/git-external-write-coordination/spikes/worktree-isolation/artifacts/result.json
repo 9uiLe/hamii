@@ -1,0 +1,14 @@
+{
+  "environment": {
+    "macOS": "26.2",
+    "git": "git version 2.52.0"
+  },
+  "initialDocumentID": "doc_4225b148-6955-4892-bbfd-371e9a692c4d",
+  "mainRevision": 1,
+  "otherRevision": 1,
+  "mainHasOwnPageOnly": true,
+  "otherHasOwnPageOnly": true,
+  "separateLockPaths": true,
+  "separateJournalPaths": true,
+  "scope": "one sequential mutation in each worktree; merge and same-worktree external writes not tested"
+}

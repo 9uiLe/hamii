@@ -1,0 +1,93 @@
+{
+  "environment": {
+    "macOS": "26.2",
+    "git": "git version 2.52.0"
+  },
+  "pairs": [
+    {
+      "revision": 1,
+      "overlapped": true
+    },
+    {
+      "revision": 2,
+      "overlapped": true
+    },
+    {
+      "revision": 3,
+      "overlapped": true
+    },
+    {
+      "revision": 4,
+      "overlapped": true
+    },
+    {
+      "revision": 5,
+      "overlapped": true
+    },
+    {
+      "revision": 6,
+      "overlapped": true
+    },
+    {
+      "revision": 7,
+      "overlapped": true
+    },
+    {
+      "revision": 8,
+      "overlapped": true
+    },
+    {
+      "revision": 9,
+      "overlapped": true
+    },
+    {
+      "revision": 10,
+      "overlapped": true
+    },
+    {
+      "revision": 11,
+      "overlapped": true
+    },
+    {
+      "revision": 12,
+      "overlapped": true
+    },
+    {
+      "revision": 13,
+      "overlapped": true
+    },
+    {
+      "revision": 14,
+      "overlapped": true
+    },
+    {
+      "revision": 15,
+      "overlapped": true
+    },
+    {
+      "revision": 16,
+      "overlapped": true
+    },
+    {
+      "revision": 17,
+      "overlapped": true
+    },
+    {
+      "revision": 18,
+      "overlapped": true
+    },
+    {
+      "revision": 19,
+      "overlapped": true
+    },
+    {
+      "revision": 20,
+      "overlapped": true
+    }
+  ],
+  "overlappingPairs": 20,
+  "mainOwnPagesOnly": true,
+  "otherOwnPagesOnly": true,
+  "separateLockAndJournalPaths": true,
+  "scope": "Two concurrent CLI mutations per pair, on separate worktrees; no concurrent checkout/pull, crash recovery, or merge."
+}

@@ -1,0 +1,24 @@
+{
+  "environment": {
+    "macOS": "26.2",
+    "git": "2.52.0",
+    "swift": "6.4"
+  },
+  "scenario": "A clean filter maps same-length XaseButton working bytes to BaseButton in the Git index",
+  "gitStatus": "clean",
+  "cleanOIDEqualsIndexOID": true,
+  "canonicalWorkingName": "XaseButton",
+  "beforeGuard": {
+    "queryExit": 0,
+    "resultName": "BaseButton",
+    "staleResultReturned": true
+  },
+  "afterGuard": {
+    "queryExit": 8,
+    "queryCategory": "staleIndex",
+    "rebuildExit": 8,
+    "rebuildCategory": "staleIndex",
+    "hitsReturned": false
+  },
+  "limits": "Sequential local Git filter case only; concurrent Git operations and large shard cost remain unverified"
+}

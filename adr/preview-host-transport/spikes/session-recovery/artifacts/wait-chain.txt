@@ -1,0 +1,30 @@
+Environment: macOS 26.2 (25C56), Xcode 26.5 (17F42), iOS Simulator 26.5
+Reproduction: xcrun simctl boot F451BBC3-6DE7-4432-B0FC-F6572F905CBC
+Observed: NSPOSIXErrorDomain code 53, CoreSimulatorService connection interrupted
+
+CoreSimulator.log, 2026-09-26 22:18:24-22:18:54:
+  GTSimPortVendor created 2 default port(s).
+  ROCKRemoteProxy SimDeviceIOBundleInterface remote invocation timed out after ~30 s.
+  CoreSimulatorService restarted.
+
+sample CoreSimulatorService during boot, 2026-09-26 22:49:
+  SimDevice _onBootstrapQueue_bootWithOptions
+  -> SimDevice _onBootstrapQueue_initializeDeviceIO
+  -> SimDeviceIOServer loadAllBundlesWithError
+  -> SimAudioProcessorServices
+  -> ROCKit rock_ROCKInvocationInterfaceInvokeWithRemoteProxy
+  -> _dispatch_group_wait_slow
+
+sample SimAudioProcessorService PID 61448 during boot, 2026-09-26 22:49:38:
+  SimDeviceIOPortDescriptor ioPortDescriptorForState
+  -> AudioObjectAddPropertyListenerBlock
+  -> CoreAudio HALSystem::InitializeShell
+  -> AVFCapture proprietaryDefaultsDomainForAuditToken
+  -> CMIOProprietaryDefaultsSource proprietaryDefaultsDomainForAuditToken
+  -> xpc_connection_send_message_with_reply_sync
+  -> mach_msg2_trap
+
+Conclusion supported by these observations:
+  Simulator boot blocks while host-side audio/AV capture initialization awaits
+  a CMIO XPC reply. The exact CMIO peer and reason it does not reply are not
+  identified. The Preview Host has not been installed or launched at this point.

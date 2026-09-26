@@ -1,0 +1,181 @@
+{
+  "method": "Temporary in-process timing in GitCanonicalRevisionCalculator; instrumentation removed after run. CLI includes startup, SQLite, revision, output. Single run per command, 20 repetitions.",
+  "runs": [
+    {
+      "cliMs": 807.699,
+      "gitStatusMs": 92.651,
+      "gitFlagsMs": 98.789,
+      "gitAttributesMs": 93.976,
+      "revisionRemainderMs": 0.314
+    },
+    {
+      "cliMs": 274.099,
+      "gitStatusMs": 86.91,
+      "gitFlagsMs": 83.351,
+      "gitAttributesMs": 92.194,
+      "revisionRemainderMs": 0.633
+    },
+    {
+      "cliMs": 310.708,
+      "gitStatusMs": 94.362,
+      "gitFlagsMs": 96.494,
+      "gitAttributesMs": 101.993,
+      "revisionRemainderMs": 0.845
+    },
+    {
+      "cliMs": 290.544,
+      "gitStatusMs": 97.749,
+      "gitFlagsMs": 83.383,
+      "gitAttributesMs": 85.738,
+      "revisionRemainderMs": 0.474
+    },
+    {
+      "cliMs": 298.212,
+      "gitStatusMs": 90.627,
+      "gitFlagsMs": 91.661,
+      "gitAttributesMs": 99.685,
+      "revisionRemainderMs": 0.746
+    },
+    {
+      "cliMs": 311.184,
+      "gitStatusMs": 98.448,
+      "gitFlagsMs": 100.983,
+      "gitAttributesMs": 92.138,
+      "revisionRemainderMs": 0.529
+    },
+    {
+      "cliMs": 282.586,
+      "gitStatusMs": 89.016,
+      "gitFlagsMs": 86.036,
+      "gitAttributesMs": 91.25,
+      "revisionRemainderMs": 0.643
+    },
+    {
+      "cliMs": 297.763,
+      "gitStatusMs": 94.685,
+      "gitFlagsMs": 92.09,
+      "gitAttributesMs": 92.107,
+      "revisionRemainderMs": 0.543
+    },
+    {
+      "cliMs": 291.272,
+      "gitStatusMs": 93.678,
+      "gitFlagsMs": 90.453,
+      "gitAttributesMs": 89.174,
+      "revisionRemainderMs": 0.443
+    },
+    {
+      "cliMs": 294.18,
+      "gitStatusMs": 89.485,
+      "gitFlagsMs": 90.311,
+      "gitAttributesMs": 100.207,
+      "revisionRemainderMs": 0.99
+    },
+    {
+      "cliMs": 322.877,
+      "gitStatusMs": 97.951,
+      "gitFlagsMs": 100.079,
+      "gitAttributesMs": 100.884,
+      "revisionRemainderMs": 0.35
+    },
+    {
+      "cliMs": 277.487,
+      "gitStatusMs": 82.662,
+      "gitFlagsMs": 89.046,
+      "gitAttributesMs": 93.608,
+      "revisionRemainderMs": 0.891
+    },
+    {
+      "cliMs": 327.248,
+      "gitStatusMs": 99.041,
+      "gitFlagsMs": 93.604,
+      "gitAttributesMs": 107.799,
+      "revisionRemainderMs": 1.098
+    },
+    {
+      "cliMs": 295.846,
+      "gitStatusMs": 97.402,
+      "gitFlagsMs": 86.667,
+      "gitAttributesMs": 86.818,
+      "revisionRemainderMs": 0.483
+    },
+    {
+      "cliMs": 301.621,
+      "gitStatusMs": 91.793,
+      "gitFlagsMs": 89.678,
+      "gitAttributesMs": 101.293,
+      "revisionRemainderMs": 0.679
+    },
+    {
+      "cliMs": 298.642,
+      "gitStatusMs": 95.293,
+      "gitFlagsMs": 97.57,
+      "gitAttributesMs": 83.307,
+      "revisionRemainderMs": 0.447
+    },
+    {
+      "cliMs": 291.914,
+      "gitStatusMs": 89.693,
+      "gitFlagsMs": 89.855,
+      "gitAttributesMs": 99.088,
+      "revisionRemainderMs": 0.865
+    },
+    {
+      "cliMs": 327.946,
+      "gitStatusMs": 103.381,
+      "gitFlagsMs": 95.87,
+      "gitAttributesMs": 105.791,
+      "revisionRemainderMs": 0.295
+    },
+    {
+      "cliMs": 273.264,
+      "gitStatusMs": 85.665,
+      "gitFlagsMs": 83.363,
+      "gitAttributesMs": 92.356,
+      "revisionRemainderMs": 0.644
+    },
+    {
+      "cliMs": 310.624,
+      "gitStatusMs": 96.061,
+      "gitFlagsMs": 97.457,
+      "gitAttributesMs": 95.486,
+      "revisionRemainderMs": 1.017
+    }
+  ],
+  "summary": {
+    "cliMs": {
+      "p50Ms": 297.763,
+      "p95Ms": 327.946,
+      "maxMs": 807.699
+    },
+    "gitStatusMs": {
+      "p50Ms": 93.678,
+      "p95Ms": 99.041,
+      "maxMs": 103.381
+    },
+    "gitFlagsMs": {
+      "p50Ms": 90.453,
+      "p95Ms": 100.079,
+      "maxMs": 100.983
+    },
+    "gitAttributesMs": {
+      "p50Ms": 93.608,
+      "p95Ms": 105.791,
+      "maxMs": 107.799
+    },
+    "revisionRemainderMs": {
+      "p50Ms": 0.633,
+      "p95Ms": 1.017,
+      "maxMs": 1.098
+    }
+  },
+  "environment": {
+    "macOS": "26.2",
+    "git": "git version 2.50.1 (Apple Git-155)",
+    "swift": "6.4",
+    "binary": ".build/debug/hamii",
+    "sample": "Samples/Starter",
+    "canonicalJsonFiles": 8,
+    "documentRevision": 22
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "environment": {
+    "macOS": "26.2",
+    "git": "git version 2.52.0"
+  },
+  "baseHead": "a780b83b127c68da4ca4a2b89b65171c3904ded4",
+  "alternateHead": "ed640d3c0e0ad22b86f528235fbd80012d276ad3",
+  "baseManifestRevision": 1,
+  "alternateManifestRevision": 1,
+  "manifestRevisionSameOnBothBranches": true,
+  "beforeHits": 1,
+  "racedExit": 8,
+  "racedCategory": "staleIndex",
+  "racedHits": 0,
+  "racedReturnedOldResultAfterSwitch": false,
+  "afterExit": 8,
+  "afterCategory": "staleIndex",
+  "afterHits": 0,
+  "stderr": "",
+  "scope": "One deterministic switch after Git status but before flags/attributes; no other interleavings tested."
+}

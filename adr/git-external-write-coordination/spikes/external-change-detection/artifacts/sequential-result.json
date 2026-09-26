@@ -1,0 +1,26 @@
+{
+  "environment": {
+    "macOS": "26.2",
+    "swift": "6.4",
+    "testRunner": "swift test --filter SequentialExternalEditProbe"
+  },
+  "scenario": "Valid same-revision Component JSON is externally edited after load and before hamii save",
+  "beforeGuard": {
+    "testCases": 1,
+    "testFailures": 0,
+    "saveOutcome": "success",
+    "externalBytesPreserved": false,
+    "finalComponentName": "HamiiButton"
+  },
+  "afterGuard": {
+    "test": "ArchitectureTests.testExternalEditAfterLoadStopsSaveBeforeJournalAndPreservesBytes",
+    "testCases": 1,
+    "testFailures": 0,
+    "saveOutcome": "transactionConflict(components/component_probe.json)",
+    "externalBytesPreserved": true,
+    "journalCreated": false,
+    "finalRevision": 1,
+    "finalComponentName": "ExternalButton"
+  },
+  "limit": "Sequential scenario only; a noncooperating writer can still edit after comparison and before atomic replace"
+}

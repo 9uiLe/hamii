@@ -34,14 +34,21 @@ native frame capture、input event forwarding、production app の network layer
 
 ## Result
 
-Swift 6.4 / Xcode 26.5 / iOS 26.5 SDK で `HamiiNativeRuntime` を `arm64-apple-ios17.0-simulator` 向けに build できた。独立した SwiftUI + Network.framework TCP Host probe も iOS Simulator Mach-O として compile できた。macOS 26.2 の iPhone 17 Pro に `simctl boot` を実行すると、default device set と新規作成した isolated device set の両方で `NSPOSIXErrorDomain code 53` となり、Simulator を起動できなかった。CoreSimulator log は `GTSimPortVendor createDefaultPortsForDevice` の 30 秒 timeout と CoreSimulatorService の接続断を示した。したがって接続成功率、patch/ack latency、欠番復旧、Host restart、schema mismatch、複数 Surface は未測定。
+**Confirmed (build):** Swift 6.4 / Xcode 26.5 / iOS 26.5 SDK で `HamiiNativeRuntime` を `arm64-apple-ios17.0-simulator` 向けに build できた。独立した SwiftUI + Network.framework TCP Host probe も iOS Simulator Mach-O として compile できた。
+
+**Confirmed (boot blocker):** macOS 26.2 の iPhone 17 Pro で `simctl boot` は default device set と新規 isolated device set の両方で `NSPOSIXErrorDomain code 53` となった。iPhone 17 Pro Max でも再現した。Preview Host install、launch、TCP connection はいずれも実行前だった。
+
+**Measured (wait chain):** CoreSimulator log では `GTSimPortVendor` が 2 port を正常生成した後、`SimDeviceIOBundleInterface` の remote invocation が約 30 秒で timeout し、CoreSimulatorService が再起動した。起動中の CoreSimulatorService を `sample` すると、device bootstrap queue は `SimAudioProcessorServices` の bundle loading 中に ROCKit の remote reply を待っていた。相手の `SimAudioProcessorService` を `sample` すると、`AudioObjectAddPropertyListenerBlock` → CoreAudio `HALSystem::InitializeShell` → AVFCapture `CMIOProprietaryDefaultsSource` の同期 XPC reply 待ちで停止していた。
+
+**Inferred:** boot failure は host 環境の Simulator audio/AV capture 初期化経路にある。**Unknown:** CMIO の XPC 相手が応答しない最深部の理由。**Blocked:** Preview Host の transport 測定と目視確認。接続成功率、patch/ack latency、欠番復旧、Host restart、schema mismatch、複数 Surface は未測定。
 
 ## Conclusion
 
-Cross-platform Swift package と試作 Host の compile は成立した。Transport の採否を判断する Runtime Evidence は得られていない。Simulator 起動が安定する環境で probe を再実行し、事前 budget に照らして判断する。原因が Host code にあるとは結論しない。
+Transport validation is currently blocked by an independent Simulator boot failure. Compile 成功は transport 成立の証拠ではない。Simulator が起動し、実際の Host で connect、patch delivery、frame/update latency、disconnect、reconnect、Host restart、session recovery を測るまで ADR を未解決にする。CMIO 側の応答停止は現在環境の Spike blocker として追跡する。現時点では hamii Product Architecture の独立した判断境界がないため、この blocker のためだけに別 ADR は作らない。
 
 ## Artifacts
 
 - [SocketHost.swift](artifacts/SocketHost.swift): iOS Simulator TCP session 試作。production code ではない。
 - [probe.py](artifacts/probe.py): Swift 6.4 compile、Simulator 起動、snapshot/patch/ack/reconnect を測る script。
 - [result.json](artifacts/result.json): build 成功と Simulator 起動失敗の観測。
+- [wait-chain.txt](artifacts/wait-chain.txt): CoreSimulatorService と SimAudioProcessorService の boot 中の sample、および CoreSimulator log に基づく待機経路。
