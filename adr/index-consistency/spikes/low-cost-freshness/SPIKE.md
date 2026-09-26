@@ -43,11 +43,13 @@ Starter Sample の実 working tree で 40 回の CLI query、CLI version、Git �
 
 **Measured after branch-switch guard:** 最初と最後の Git status output を照合する安全ガードを追加した後、同じ Starter Sample と 40 回の独立操作計測を再実行した。CLI query p95 は 404.611 ms、p50 は 374.476 ms。別 run のガード前 p95 305.880 ms と比べると約 99 ms 高いが、独立 run 間の差を厳密な追加 call cost とみなさない。`version` にも最大 399.742 ms の外れ値があり、環境ノイズがある。新しい in-process breakdown は未測定。250 ms 比較基準は依然超過する。
 
+**Observed, nested Project false invalidation:** Starter Sample の Canonical files に Git 差分がない状態で、この Repository の ADR と source を 2 commit した。commit 前に再構築した Starter の Local Index に対する CLI query は exit 8 / `staleIndex` となり、`hamii index rebuild` 後は exit 0 に戻った。1 回の観測であり、stale data の返却ではない。現行 calculator は Repository HEAD OID を revision に含めるため、Canonical path 外だけを変更する commit でも index を保守的に失効させるとコードから推論できる。Canonical contents が同じ場合の低 cost かつ安全な同一性判定は未解決。
+
 **Not measured in this cost profile:** dirty shard / filtered path が多い規模、低 cost 候補の correctness、watcher 再同期、concurrent Git mutation、automatic recovery。branch switch の 1 条件は [Concurrent Git mutation Spike](../concurrent-git-mutation/SPIKE.md) で別に検証した。
 
 ## Conclusion
 
-この Starter 条件では SQLite 行読み取りより Git subprocess を複数回呼ぶ CanonicalRevision 計算が支配的だった。branch-switch の既知の race を拒否する追加 status guard 後は query p95 が約 405 ms となった。`CanonicalRevision` の抽象契約は保持し、計算 algorithm を確定しない。安全で低 cost な実装方式と自動復旧方式は **Unknown**。Index ADR は未解決。
+この Starter 条件では SQLite 行読み取りより Git subprocess を複数回呼ぶ CanonicalRevision 計算が支配的だった。branch-switch の既知の race を拒否する追加 status guard 後は query p95 が約 405 ms となった。Repository 内の別ファイルだけを commit しても現行 Index は保守的に失効した。`CanonicalRevision` の抽象契約は保持し、計算 algorithm を確定しない。安全で低 cost な実装方式と自動復旧方式は **Unknown**。Index ADR は未解決。
 
 ## Artifacts
 

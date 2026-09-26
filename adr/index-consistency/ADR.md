@@ -22,7 +22,7 @@ Canonical Data が唯一の正本。途中まで再構築した世代を検索�
 
 ## Unknowns
 
-安全な Canonical freshness 判定を Query ごとに 4 Git subprocess 相当の cost を負わず実現する方法、最終 check 後を含む同時外部書込の保証境界、自動 full rebuild と incremental reindex の UX / performance、reverse dependencies と affected derived indexes、Git 操作中の generation の一貫性、Git flag/filter guard の大規模 shard での cost、他の Git filter / attributes、symlink、非常に多い shard、巨大 Project の rebuild cost。現行 Git-based revision calculation / rebuild policy を最終 protocol とするかは未決定。
+安全な Canonical freshness 判定を Query ごとに 4 Git subprocess 相当の cost を負わず実現する方法、Canonical files が同じでも Repository HEAD だけが変わる場合の不要な失効、最終 check 後を含む同時外部書込の保証境界、自動 full rebuild と incremental reindex の UX / performance、reverse dependencies と affected derived indexes、Git 操作中の generation の一貫性、Git flag/filter guard の大規模 shard での cost、他の Git filter / attributes、symlink、非常に多い shard、巨大 Project の rebuild cost。現行 Git-based revision calculation / rebuild policy を最終 protocol とするかは未決定。
 
 ## Required Evidence
 
