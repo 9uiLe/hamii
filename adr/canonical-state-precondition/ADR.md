@@ -14,15 +14,23 @@ Client / Preview / mutation が、自分の観測した Canonical state と現�
 
 ## Options
 
-CanonicalSnapshot 由来の state identity、coordinated worktree generation、session epoch、これらを組み合わせた token を比較する。`DocumentRevision` 単独は反例により除外する。Token の形式、永続化、公開範囲、失効と再確立の protocol は未決定。
+CanonicalSnapshot 由来の state identity、coordinated worktree generation、session epoch、これらを組み合わせた token を比較した。`DocumentRevision` 単独は same-revision 反例、contents identity 単独は A → B → A の反例、process-local epoch 単独は restart / 別 process の知識欠落により除外する。Opaque token の具体的 encoding は Product semantics とは別の実装事項。
 
 ## Current Hypothesis
 
-**Meaning supported by evidence:** precondition は client が操作の基点とした exact Canonical observation を識別する。Coordinated writer domain 内で未観測の transition が一度でもあれば、同じ bytes に戻っても旧 precondition は失効する。**Implementation hypothesis, not yet validated:** client が opaque value を mutation / patch に付け、Application Service が coordinated observation boundary で照合する。Token は contents identity と永続 transition marker を別入力として扱う候補。IndexGeneration を client token と同一視しない。Raw Git 等の protocol 非参加 writer は Product Contract の保証外であり、観測できた変更は fail closed にする。
+**実装仮説、未検証:** client が opaque value を mutation / patch に付け、Application Service が coordinated observation boundary で照合する。Exact Canonical path/bytes identity、worktree identity、永続 transition marker を独立入力として結合する候補がある。Hash / UUID / generation の encoding と persistence protocol は実装・検証対象。IndexGeneration を client token と同一視しない。Raw Git 等の protocol 非参加 writer は Product Contract の保証外であり、観測できた変更は fail closed にする。
+
+## Decision
+
+`ClientPrecondition` は、client が操作の基点とした **exact Canonical observation** を指す opaque value とする。Coordinated writer domain 内で client が観測していない state transition が一度でもあれば、その precondition による mutation / patch は拒否する。同じ bytes に戻る A → B → A でも旧 precondition は再有効化しない。`DocumentRevision` は semantic mutation order と journal / Preview ordering に残すが、state identity の十分条件には使わない。
+
+Application Service は GUI と CLI / AI の mutation に同じ precondition rule を適用する。Preview snapshot / patch も ordering と base state を分け、Preview が持つ base state と patch の precondition が一致しない場合は拒否して snapshot 再同期する。Preview transport は対象外。`CanonicalStateIdentity`、coordinated `WorktreeGeneration`、`IndexGeneration`、`ClientPrecondition` は別概念として保持し、内部実装で値を共有する場合でも各保証を別に検証する。
+
+Process restart 後は journal recovery と coordinated observation の再確立が完了するまで新しい precondition を発行しない。既存 token は、同じ worktree の同じ Canonical observation と、その間に未観測の coordinated transition がないことを検証できた場合だけ有効とする。欠損・破損・観測不能は Unknown として拒否する。Protocol 非参加 writer の同一 worktree 変更は正式保証外であり、検出した差異は拒否する。External writer の A → B → A を無通知で検知できる保証は主張しない。
 
 ## Unknowns
 
-同じ contents に戻る transition の扱い、branch switch と merge の token 発行点、別 GUI / CLI process の再同期、process restart での再確立、Preview patch acknowledgement と Undo / Redo base の結合、unknown external writer に対する fail-closed boundary、token 計算・保持の cost。既存 `--revision` / Preview revision API をどう変更するかも未決定。
+実装上の残作業は coordinated transition marker の永続化と crash ordering、branch switch / merge の token 更新、別 GUI / CLI process と restart での照合、Preview patch acknowledgement と Undo / Redo base の結合、unknown external writer に対する defense-in-depth、token 計算・保持の cost、既存 `--revision` / Preview revision API の置換・追加である。Managed Git / validated merge の実装は External Git Write ADR、Index generation は Index ADR が扱う。
 
 ## Required Evidence
 
@@ -31,8 +39,8 @@ CanonicalSnapshot 由来の state identity、coordinated worktree generation、s
 
 ## Decision Criteria
 
-未観測の Canonical transition に対する false current を 0 にすること。coordinated writer domain、merge、restart、Unknown で precondition の意味が一貫し、GUI / CLI / Preview / Patch の各入口が同じ Application rule に従うこと。安全性を満たす候補について発行・照合 cost、再同期 UX、実装複雑度を比較する。
+未観測の **coordinated** Canonical transition に対する false current を 0 にすること。merge、restart、Unknown で precondition の意味が一貫し、GUI / CLI / Preview / Patch の各入口が同じ Application rule に従うこと。実装検証では発行・照合 cost、再同期 UX、crash ordering、実装複雑度を測る。Raw external writer の保証境界を拡張しない。
 
 ## Status
 
-Ready for Decision
+Implementation Required
