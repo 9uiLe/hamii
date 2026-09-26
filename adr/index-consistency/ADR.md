@@ -32,7 +32,7 @@ Canonical Data が唯一の正本。途中まで再構築した世代を検索�
 - [Single-process Git fingerprint](spikes/single-process-git-fingerprint/SPIKE.md): porcelain v2 と dirty bytes の低 latency 候補を検証する。
 - [Incremental reindex](spikes/incremental-reindex/SPIKE.md): 合成 graph で reverse dependencies と atomic generation publish を確認。実際の derived indexes は未実装・未測定。
 - [Concurrent Git mutation](spikes/concurrent-git-mutation/SPIKE.md): hidden Git flags と clean filter の逐次反例、および最初の status 後の branch switch race を確認した。ほかの同時 Git 操作は未測定。
-- [Low-cost freshness](spikes/low-cost-freshness/SPIKE.md): Starter Sample で CLI と Git subprocess の cost を分解。低 cost 候補の correctness は未測定。
+- [Low-cost freshness](spikes/low-cost-freshness/SPIKE.md): Starter Sample で CLI と Git subprocess の cost を分解。8～5000 shard の disposable fixture で現行 Git、double byte scan、size/mtime 候補の逐次変更検出と in-process latency を比較した。size/mtime 単独の反例を確認。複数 file の atomic snapshot と同時変更は未解決。
 - [Large project rebuild](spikes/large-project-rebuild/SPIKE.md): mostly-untracked と all-tracked Component shard の pilot を測定。dirty shard と dependency / memory matrix は未測定。
 
 ## Decision Criteria

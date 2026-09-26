@@ -17,7 +17,7 @@
 
 ## Prototype Scope
 
-Starter Sample の実 working tree で 40 回の CLI query、CLI version、Git の各 command、SQLite read を独立に計測する。次段階では 100 / 1000 / 5000 shard と staged / unstaged / untracked / filtered 状態を分け、候補 algorithm を同じ correctness oracle で比較する。
+Starter Sample の実 working tree で 40 回の CLI query、CLI version、Git の各 command、SQLite read を独立に計測する。次段階では disposable Git fixture の 8 / 100 / 1000 / 5000 Canonical JSON shard で候補 algorithm を同じ correctness oracle と in-process benchmark で比較する。Spike prototype は production module に追加しない。
 
 ## Out of Scope
 
@@ -37,6 +37,33 @@ Starter Sample の実 working tree で 40 回の CLI query、CLI version、Git �
 
 ## Result
 
+### 候補の correctness contract
+
+候補が `CanonicalRevision` として使える最低条件は、hamii が読む Canonical path と bytes が変わったら **異なる identity または明示的な拒否**を返し、検証不能な状態を current として返さないことである。Staged / unstaged / untracked shard、branch switch、Git clean filter、hidden flags、同じ size で mtime が復元された編集を含む。Canonical bytes が同じまま関係ない Git commit だけが増えた場合、同じ identity を返すのが不要な index rebuild を避けるうえで望ましい。これは correctness の必須条件とは分ける。
+
+| Candidate | 成立に必要な条件 | この Spike で見えた限界 |
+| --- | --- | --- |
+| 現行 `guarded-git` | clean tracked content と working Canonical bytes の対応を確認し、hidden flags / filter を拒否し、前後の Git status を照合する | unrelated commit でも HEAD OID が変わり保守的に失効。最後の照合後の外部書込を防げない。ほかの Git attributes / 同時操作の完全な検証はない |
+| 試作 `double-byte-scan` | Current loader と同一の Canonical path 集合を列挙し、実際に読む bytes を2回走査して一致を確認し、読めない file / symlink を拒否する | file 群の atomic snapshot ではない。両走査の間や最後の照合後の同時書込、loader との path 規則一致、巨大 project の cost は未解決 |
+| 試作 `size-mtime` | size / mtime がすべての bytes 変更を識別する必要がある | 同サイズ編集後に mtime を元へ戻すと identity が変わらない反例。単独の freshness 判定には不適格 |
+
+**Confirmed in disposable sequential fixtures:** 8 shard の各独立 Git Repository で、外部の同サイズ編集、staging、untracked Canonical shard、branch switch は3候補とも identity 変更を観測した。`assume-unchanged` edit と clean filter に隠された edit では現行方式は拒否し、double-byte-scan は bytes 変更を観測した。clean filter fixture で `git status --porcelain` は空だった。同サイズ編集後に mtime を復元した fixture では `size-mtime` の identity が同じままだった。関係ない非 Canonical file の commit では現行方式だけが identity を変えた。Canonical file を symlink に置換した場合は3候補とも拒否した。`changed` は candidate revision の差であり、index generation / query の end-to-end correctness 証明ではない。
+
+**Measured in-process, optimized Swift 6.4 prototype:** macOS 26.2 arm64、Git 2.52.0、すべて tracked の小さな JSON shard を新規 temporary Git Repository に作成した。production の `GitCanonicalRevisionCalculator.swift` をそのまま compile し、同一 process 内で候補順を回転させて測定した。表は nearest-rank p50 / p95、単位 ms。`dirty` は tracked の10%を編集し、`untracked` は tracked 1000 個に100個を追加した。値は各候補の revision 計算のみで、CLI 起動 / SQLite query / index rebuild は含まない。
+
+| Canonical JSON | runs | guarded-git | double-byte-scan | size-mtime |
+| --- | ---: | ---: | ---: | ---: |
+| 8 clean | 40 | 354.25 / 389.93 | 2.48 / 3.56 | 1.08 / 1.58 |
+| 100 clean | 25 | 332.49 / 363.00 | 26.68 / 46.76 | 12.00 / 25.06 |
+| 1000 clean | 15 | 334.83 / 414.67 | 355.17 / 477.46 | 159.99 / 261.64 |
+| 1000, 10% dirty | 10 | 338.69 / 481.29 | 347.96 / 506.19 | 158.98 / 243.98 |
+| 1000 + 10% untracked | 10 | 348.79 / 396.41 | 297.24 / 303.28 | 130.34 / 147.00 |
+| 5000 clean | 6 | 359.44 / 365.32 | 1540.35 / 1552.77 | 703.02 / 709.75 |
+
+各 file は約16 bytes で、5000 shard の Canonical bytes 総量は約80 KiB。double-byte-scan の大規模 cost は payload 容量だけでなく file 列挙 / open / read 回数の影響を受けると **推論**できるが、syscall 単位の profile は未実施。1000 の untracked 結果が clean より速いことを一般的性能傾向とはみなさない。連続した別 run でも値が揺れたため、単一条件の数 ms 差を候補間の優劣とみなさない。5000 の p95 は6回測定の最大値であり、分布推定として弱い。250 ms は既存の **CLI query** 比較基準なので、この in-process 値と同一指標として合否判定しない。
+
+**Unknown / not implemented:** concurrent Git mutation と複数 file の atomic snapshot、watcher / cache 再同期、実 Canonical loader と double-byte-scan の path 規則一致、巨大 file を含む実 Project、path-scoped Git identity、candidate を query / index generation と接続した場合の latency と correctness。方式は未選定。
+
 **Measured, Starter Sample only:** macOS 26.2、Apple Git 2.50.1、Swift 6.4 debug binary、Canonical JSON 8 files、tracked Canonical paths 8、SQLite 40 KiB、manifest revision 22（作業ツリーで manifest 変更あり）の条件で独立操作を各 40 回計測した。nearest-rank p95 は CLI `version` 5.754 ms、CLI `query components` 305.880 ms、`/usr/bin/git status` 18.794 ms、`ls-files -v` 14.344 ms、`check-attr filter` 13.752 ms、Python SQLite open/metadata/component query 0.142 ms。これらは別 subprocess の wall time であり、足し算して CLI の内訳とはできない。今回の CLI query は 250 ms 比較基準を超えた。Starter に ComponentDefinition はなく query hit は空である。
 
 **Measured, temporary in-process instrumentation:** 同じ CLI query path の別 run 20 回で `GitCanonicalRevisionCalculator` 内の各 Git `Process.run` から output read / wait までを測った。p95 は status 99.041 ms、flags 100.079 ms、filter attributes 105.791 ms、残りの revision parse/hash 1.017 ms、CLI 全体 327.946 ms。各 Git subprocess の起動・pipe・待機を含む計測であり、3 subprocess がこの fixture の query latency の主因と推定できる。1 回の CLI outlier は 807.699 ms。instrumentation は測定後に production source から除去した。独立操作と in-process の Git 時間差の詳細な OS 要因は未特定。
@@ -45,11 +72,11 @@ Starter Sample の実 working tree で 40 回の CLI query、CLI version、Git �
 
 **Observed, nested Project false invalidation:** Starter Sample の Canonical files に Git 差分がない状態で、この Repository の ADR と source を 2 commit した。commit 前に再構築した Starter の Local Index に対する CLI query は exit 8 / `staleIndex` となり、`hamii index rebuild` 後は exit 0 に戻った。1 回の観測であり、stale data の返却ではない。現行 calculator は Repository HEAD OID を revision に含めるため、Canonical path 外だけを変更する commit でも index を保守的に失効させるとコードから推論できる。Canonical contents が同じ場合の低 cost かつ安全な同一性判定は未解決。
 
-**Not measured in this cost profile:** dirty shard / filtered path が多い規模、低 cost 候補の correctness、watcher 再同期、concurrent Git mutation、automatic recovery。branch switch の 1 条件は [Concurrent Git mutation Spike](../concurrent-git-mutation/SPIKE.md) で別に検証した。
+**Not measured in the Starter cost profile:** dirty shard / filtered path が多い規模、watcher 再同期、concurrent Git mutation、automatic recovery。branch switch の 1 条件は [Concurrent Git mutation Spike](../concurrent-git-mutation/SPIKE.md) で別に検証した。
 
 ## Conclusion
 
-この Starter 条件では SQLite 行読み取りより Git subprocess を複数回呼ぶ CanonicalRevision 計算が支配的だった。branch-switch の既知の race を拒否する追加 status guard 後は query p95 が約 405 ms となった。Repository 内の別ファイルだけを commit しても現行 Index は保守的に失効した。`CanonicalRevision` の抽象契約は保持し、計算 algorithm を確定しない。安全で低 cost な実装方式と自動復旧方式は **Unknown**。Index ADR は未解決。
+この Starter 条件では SQLite 行読み取りより Git subprocess を複数回呼ぶ CanonicalRevision 計算が支配的だった。branch-switch の既知の race を拒否する追加 status guard 後は query p95 が約 405 ms となった。Repository 内の別ファイルだけを commit しても現行 Index は保守的に失効した。新しい候補比較では、full byte scan は少数 shard で速いが 5000 shard では高 cost、size/mtime は実 bytes の変化を見逃す反例があった。`CanonicalRevision` の抽象契約は保持し、計算 algorithm を確定しない。安全で低 cost な実装方式と自動復旧方式は **Unknown**。Index ADR は未解決。
 
 ## Artifacts
 
@@ -57,3 +84,6 @@ Starter Sample の実 working tree で 40 回の CLI query、CLI version、Git �
 - [result-before-second-status.json](artifacts/result-before-second-status.json): branch-switch guard 前の条件と各操作の raw wall time。
 - [result.json](artifacts/result.json): branch-switch guard 後の条件と各操作の raw wall time。
 - [in-process-result.json](artifacts/in-process-result.json): 一時的な calculator 内計測の raw wall time。Status、flags、attributes の Git call 境界と parse/hash 終端を測定した。計測コードは production に残さない。
+- [candidates.swift](artifacts/candidates.swift): optimized Swift の byte / metadata 候補と同一 process benchmark。現行 Git 候補は production source を直接 compile する。
+- [compare.py](artifacts/compare.py): disposable Git fixture の correctness cases と shard 数別 benchmark。`swiftc -O Sources/HamiiIndex/CanonicalRevision.swift Sources/HamiiIndex/GitCanonicalRevisionCalculator.swift adr/index-consistency/spikes/low-cost-freshness/artifacts/candidates.swift -o /tmp/hamii-freshness-probe` の後、`python3 adr/index-consistency/spikes/low-cost-freshness/artifacts/compare.py /tmp/hamii-freshness-probe --swiftc swiftc` で再測定できる。Swift 6.4 toolchain を選択する。
+- [candidate-results.json](artifacts/candidate-results.json): fixture ごとの比較結果と raw latency。
