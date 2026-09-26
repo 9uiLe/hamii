@@ -38,6 +38,7 @@ public final class LocalIndex {
             try? FileManager.default.removeItem(at: url)
             if sqlite3_open(url.path, &database) != SQLITE_OK { throw IndexError.sqlite("Could not recreate index") }
         }
+        _ = sqlite3_busy_timeout(database, 5_000)
         try execute("CREATE TABLE IF NOT EXISTS metadata (key TEXT PRIMARY KEY, value TEXT NOT NULL)")
         try execute("CREATE TABLE IF NOT EXISTS components (id TEXT PRIMARY KEY, name TEXT NOT NULL, owner_scope_id TEXT NOT NULL, usage_count INTEGER NOT NULL)")
         try execute("CREATE INDEX IF NOT EXISTS components_name ON components(name)")
@@ -90,8 +91,15 @@ public final class LocalIndex {
             bind(consumerScopeID.rawValue, at: 1, to: statement)
             bind("%\(text)%", at: 2, to: statement)
             var hits: [ComponentHit] = []
-            while sqlite3_step(statement) == SQLITE_ROW {
+            var step = sqlite3_step(statement)
+            while step == SQLITE_ROW {
                 hits.append(ComponentHit(id: EntityID(column(statement, 0)), name: column(statement, 1), ownerScopeID: EntityID(column(statement, 2)), usageCount: Int(sqlite3_column_int(statement, 3))))
+                step = sqlite3_step(statement)
+            }
+            if step != SQLITE_DONE {
+                let message = String(cString: sqlite3_errmsg(database))
+                sqlite3_finalize(statement)
+                throw IndexError.sqlite(message)
             }
             sqlite3_finalize(statement)
             guard try CanonicalSourceFingerprint.current(at: projectRoot) == sourceFingerprint else { throw IndexError.stale }
