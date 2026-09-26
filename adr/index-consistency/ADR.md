@@ -2,7 +2,7 @@
 
 ## Context
 
-Git Repository の分割 JSON は共有 Canonical Data であり、Local SQLite は `~/Library/Application Support/hamii/indexes/` に置く再構築可能な私有の Materialized Query View である。Index を Git で共有しないことと、stale な index から検索結果を返さないことは確定した製品ルールである。現在は `CanonicalRevision` mismatch 時に `staleIndex` を返して検索を拒否する。この fail-closed behavior を自動復旧の検証中も維持する。Canonical Format migration と使い捨て Index schema rebuild は別責務である。
+Git Repository の分割 JSON は共有 Canonical Data であり、Local SQLite は `~/Library/Application Support/hamii/indexes/` に置く再構築可能な私有の Materialized Query View である。Index を Git で共有しないことと、stale な index から検索結果を返さないことは確定した製品ルールである。現在は `CanonicalRevision` mismatch 時に `staleIndex` を返して検索を拒否する。この fail-closed behavior を自動復旧の検証中も維持する。Canonical Format migration と使い捨て Index schema rebuild は別責務である。`CanonicalRevision` algorithm より先に、「同一時点の何を観測したか」を表す `CanonicalSnapshot` 境界を検証する。
 
 ## Decision to Make
 
@@ -10,7 +10,7 @@ stale result を返さない安全性を維持したまま、Canonical freshness
 
 ## Constraints
 
-Canonical Data が唯一の正本。`CanonicalRevision` は hamii Canonical Data の意味的な状態、`IndexGeneration` は公開済みの derived snapshot であり別概念。Git commit だけが変わり Canonical files が同じなら、その commit 自体を意味的な失効理由にしない。途中まで再構築した世代を検索へ見せない。どの候補でも検証不能・競合・鮮度不一致なら検索を拒否する。Git 操作と再索引の同時実行を通常の逐次変更と区別する。外部 writer の分離・統合方式は [External Git Write ADR](../git-external-write-coordination/ADR.md) で扱う。
+Canonical Data が唯一の正本。`CanonicalSnapshot` は exact contents、source metadata、observation guarantee を持ち、その一貫した contents から `CanonicalRevision` を導出する。`CanonicalRevision` は hamii Canonical Data の意味的な状態、`IndexGeneration` は公開済みの derived snapshot であり別概念。Git commit だけが変わり Canonical files が同じなら、その commit 自体を意味的な失効理由にしない。途中まで再構築した世代を検索へ見せない。どの候補でも検証不能・競合・鮮度不一致なら検索を拒否する。Git 操作と再索引の同時実行を通常の逐次変更と区別する。外部 writer の分離・統合方式は [External Git Write ADR](../git-external-write-coordination/ADR.md) で扱う。
 
 ## Options
 
@@ -27,6 +27,9 @@ Canonical Data が唯一の正本。`CanonicalRevision` は hamii Canonical Data
 ## Required Evidence
 
 - [Index drift and scale](spikes/index-drift/SPIKE.md): revision-only 判定の反例と 1k/10k/50k scale を確認。
+- [Consistent CanonicalSnapshot](spikes/consistent-canonical-snapshot/SPIKE.md): hamii-owned lock 下の reader/save 境界と pinned Git tree の保証範囲を確認。非協調 writer を含む current working tree の coherent snapshot は未解決。
+- [Safe freshness fast path](spikes/safe-freshness-fast-path/SPIKE.md): manifest + metadata shortcut の false negative を確認。`certainly current` の安全な一般条件と slow verifier は未確定。
+- [End-to-end Index generation](spikes/end-to-end-index-generation/SPIKE.md): current full pipeline の15回 stage timing。Snapshot acquisition と production incremental generation を接続した end-to-end 測定は未完了。
 - [Git working tree fingerprint](spikes/git-working-tree-fingerprint/SPIKE.md): 外部 edit、branch switch、dirty tree の digest と latency を検証する。
 - [Nested repository query latency](spikes/nested-repository-query-latency/SPIKE.md): Git repository 内の下位 Project で query budget 超過を確認。
 - [Single-process Git fingerprint](spikes/single-process-git-fingerprint/SPIKE.md): porcelain v2 と dirty bytes の低 latency 候補を検証する。

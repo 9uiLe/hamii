@@ -10,7 +10,7 @@
 
 ## Constraints
 
-外部 bytes を無断上書きしない。競合が疑われたら保存を中断する。Git repository は共有正本であり、hamii のみが file system を所有する前提にしない。同一 worktree への非協調 writer を正式な safe collaboration path として扱わない。
+外部 bytes を無断上書きしない。競合が疑われたら保存を中断する。Git repository は共有正本であり、hamii のみが file system を所有する前提にしない。同一 worktree への非協調 writer を正式な safe collaboration path として扱わない。Index 側の [CanonicalSnapshot Spike](../index-consistency/spikes/consistent-canonical-snapshot/SPIKE.md) は、この writer coordination の保証範囲を入力条件として使うが、複数 writer の許可・統合方式を決めない。
 
 ## Options
 
