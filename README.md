@@ -63,9 +63,9 @@ Document Format v1 が唯一の Canonical Format です。`hamii migrate plan --
 
 Layer の実装済み kind は Stack、Text、Image、Button、Scroll、Overlay、Component Instance です。Support coverage を追加するときは IR、validation、Canvas、Native Preview、generator、CLI の契約を揃え、target 別の support state を明示します。[Capability ADR](adr/capability-contract/ADR.md) が粒度と framework coverage を検証します。Unsupported な意味を暗黙に近似しません。
 
-`HamiiPreviewProtocol` は patch revision と build boundary を定義します。`HamiiNativeRuntime` は macOS の supported SwiftUI subset を実 OS の SwiftUI で描き、Text patch を compile なしで適用します。iOS Simulator Host transport、frame/input、structure reconciliation と state preservation は個別 ADR/Spike の検証対象です。OS-dependent system UI は対象 OS の Host が描画します。
+`HamiiPreviewProtocol` は snapshot、base/new revision 付き patch、ack と build boundary を定義します。`HamiiNativeRuntime` は macOS の supported SwiftUI subset を実 OS の SwiftUI で描き、Text patch を compile なしで適用します。欠番 patch は拒否し、snapshot で再同期できます。iOS Simulator Host transport、frame/input、structure reconciliation と state preservation は個別 ADR/Spike の検証対象です。OS-dependent system UI は対象 OS の Host が描画します。
 
-[Starter sample](Samples/Starter/) は Page、Screen、AppSurface、Target capability、Text Layer を持つ Git 正本形式の例です。
+[Starter sample](Samples/Starter/) は Page、Screen、AppSurface、Target capability、Text / Button Layer、Spacing Token を持つ Git 正本形式の例です。
 
 `hamii generate swiftui SCREEN_ID TARGET_ID --json` は対応した静的 subset の standalone source を返します。Runtime binding や未対応 semantics は error になります。`hamii integration contract SCREEN_ID --json` は product repository に渡す input/event/token/asset contract を返し、source generation とは別経路です。
 
