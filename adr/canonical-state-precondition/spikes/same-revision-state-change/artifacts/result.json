@@ -1,0 +1,29 @@
+{
+  "environment": {
+    "macOS": "27.0",
+    "git": "git version 2.52.0"
+  },
+  "caseA_twoClients": {
+    "initialRevision": 0,
+    "clientBExit": 3,
+    "clientBCategory": "conflict",
+    "clientBRejected": true
+  },
+  "caseC_equalRevisionBranchSwitch": {
+    "revisionBefore": 1,
+    "revisionAfterSwitch": 1,
+    "canonicalIdentityChanged": true,
+    "oldRevisionMutationAccepted": true,
+    "eachCLICommandIsANewProcess": true
+  },
+  "caseD_restartObservation": "CLI commands each run in a new OS process; old revision is accepted after branch switch",
+  "aba_rawGit": {
+    "startAndEndBytesEqual": true,
+    "intermediateBytesDiffer": true,
+    "startAndEndRevisionEqual": true,
+    "oldRevisionMutationAccepted": true,
+    "rawGitOutsideCoordinatedWriterContract": true
+  },
+  "caseB_merge": "prior semantic-and-resync-result.json: revision 3 unchanged; old mutation accepted",
+  "caseE_preview": "requires separate Preview protocol probe"
+}

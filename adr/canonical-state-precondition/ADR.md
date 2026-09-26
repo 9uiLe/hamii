@@ -18,7 +18,7 @@ CanonicalSnapshot 由来の state identity、coordinated worktree generation、s
 
 ## Current Hypothesis
 
-**Tentative:** client が受け取った opaque state precondition を mutation / patch に付け、Application Service が同じ coordinated observation boundary で照合する。branch switch / merge / process restart / unknown external change は旧 token を失効させるか Unknown に落とす。Token が CanonicalSnapshot identity と worktree generation のどちらを保持するかは Spike 後に決める。
+**Meaning supported by evidence:** precondition は client が操作の基点とした exact Canonical observation を識別する。Coordinated writer domain 内で未観測の transition が一度でもあれば、同じ bytes に戻っても旧 precondition は失効する。**Implementation hypothesis, not yet validated:** client が opaque value を mutation / patch に付け、Application Service が coordinated observation boundary で照合する。Token は contents identity と永続 transition marker を別入力として扱う候補。IndexGeneration を client token と同一視しない。Raw Git 等の protocol 非参加 writer は Product Contract の保証外であり、観測できた変更は fail closed にする。
 
 ## Unknowns
 
@@ -26,7 +26,7 @@ CanonicalSnapshot 由来の state identity、coordinated worktree generation、s
 
 ## Required Evidence
 
-- [Same-revision state change](spikes/same-revision-state-change/SPIKE.md): merge の既存反例を起点に、same-revision / different branch、branch switch、process restart、二つの GUI / CLI session、Preview session を比較し、古い token による mutation / patch を拒否できる条件を測る。
+- [Same-revision state change](spikes/same-revision-state-change/SPIKE.md): 2 client の通常 mutation 競合は拒否。same-revision branch switch / merge では旧 revision mutation を受理。raw Git A → B → A は bytes と revision が戻る。Preview revision-only gate は同一 revision の別 observation を区別できない。候補 token の production correctness は未検証。
 - [Existing merge result](../git-external-write-coordination/spikes/concurrent-worktree-merge/artifacts/semantic-and-resync-result.json): revision 3 のまま Canonical state が変わり、旧 revision mutation が受理された。Index は `staleIndex` を返した。
 
 ## Decision Criteria
@@ -35,4 +35,4 @@ CanonicalSnapshot 由来の state identity、coordinated worktree generation、s
 
 ## Status
 
-Spike Required
+Ready for Decision

@@ -37,12 +37,18 @@ client が観測していない Canonical transition の後、古い token に�
 
 ## Result
 
-**Existing evidence only; this Spike's candidate comparison is not run:** [External Git merge probe](../../../git-external-write-coordination/spikes/concurrent-worktree-merge/SPIKE.md) は、merge 前後で revision 3 が同じでも Canonical contents が変わり、旧 revision 3 の `page create` が受理されることを確認した。既存 Index は同じ変更を `staleIndex` として拒否した。これは revision-only precondition の反例であり、新 token 候補の正しさはまだ検証していない。
+**Confirmed, current CLI, macOS 27.0 / Git 2.52.0:** Case A: 2 client が revision 0 を観測し、A が Page を作成した後、B の revision 0 mutation は exit 3 / `conflict` で拒否された。Case C: 同じ revision 1 の異なる branch へ切り替えると Canonical contents は変わったが、旧 revision 1 の mutation が成功した。CLI command ごとに別 OS process を起動しており、Case D の process-local な知識は引き継がれない。Case B は [既存 merge probe](../../../git-external-write-coordination/spikes/concurrent-worktree-merge/SPIKE.md) で revision 3 のまま contents が変わり、旧 mutation が成功した。Case E: 実 `PreviewRevisionGate` に base / applied revision 3 の異なる Canonical observation を与えても、現行 protocol は区別する field を持たず patch を受理した。
+
+**Confirmed ABA counterexample outside the coordinated writer contract:** raw Git で State A → B → A と切り替えると最初と最後の Canonical bytes、manifest revision は同一になり、旧 revision mutation が成功した。Content digest だけでも最初と最後を区別できない。raw Git は正式な coordinated writer domain の外であり、この試験を保証対象内の failure と一般化しない。一方、hamii-managed transition では A → B → A も観測していない transition として扱うなら、永続する transition marker が必要という判断材料になる。
+
+**Not measured:** 実 GUI の別 session、candidate token の implementation、Preview Host 上の patch、coordinated Git adapter、process restart 後の永続 token 検証、外部 writer との race。今回の Preview test は protocol gate 単体であり transport 評価ではない。
 
 ## Conclusion
 
-`DocumentRevision` 単独は候補から除外する。Client session token / state identity の方式は追加 interleaving と候補比較まで決めない。
+`DocumentRevision` 単独は候補から除外する。Content identity 単独も A → B → A の transition を区別しない。Client precondition は「client が基点とした exact Canonical observation」を指し、coordinated writer domain 内の未観測 transition を拒否する必要がある。具体的な encoding や WorktreeGeneration / IndexGeneration との同一性は、この Spike だけでは証明されない。
 
 ## Artifacts
 
-この Spike 固有の artifact はまだない。既存の [merge probe result](../../../git-external-write-coordination/spikes/concurrent-worktree-merge/artifacts/semantic-and-resync-result.json) を入力 evidence とする。
+- [probe.py](artifacts/probe.py)、[result.json](artifacts/result.json): CLI / Git の2 client、同一 revision branch switch、process restart、raw Git ABA。
+- [CanonicalStatePreconditionSpikeTests.swift](../../../../Tests/HamiiTests/CanonicalStatePreconditionSpikeTests.swift): 現行 PreviewRevisionGate の同一 revision 反例。
+- [Existing merge probe result](../../../git-external-write-coordination/spikes/concurrent-worktree-merge/artifacts/semantic-and-resync-result.json): merge の Case B。
