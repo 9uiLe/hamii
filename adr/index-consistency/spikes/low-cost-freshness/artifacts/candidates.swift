@@ -10,14 +10,13 @@ private func paths(at root: URL) throws -> [URL] {
     let fm = FileManager.default
     var result: [URL] = []
     let manifest = root.appendingPathComponent("hamii.json")
-    if fm.fileExists(atPath: manifest.path) { result.append(manifest) }
+    guard fm.fileExists(atPath: manifest.path) else { throw IndexError.unverifiableSource }
+    result.append(manifest)
     for directory in canonicalDirectories {
         let base = root.appendingPathComponent(directory)
         guard fm.fileExists(atPath: base.path) else { continue }
-        guard let enumerator = fm.enumerator(at: base, includingPropertiesForKeys: [.isRegularFileKey, .isSymbolicLinkKey]) else {
-            throw IndexError.unverifiableSource
-        }
-        for case let url as URL in enumerator where url.pathExtension == "json" {
+        // CanonicalRepository.readAll only reads immediate JSON children.
+        for url in try fm.contentsOfDirectory(at: base, includingPropertiesForKeys: nil) where url.pathExtension == "json" {
             result.append(url)
         }
     }
@@ -34,13 +33,14 @@ private func digest(_ hash: SHA256) -> String {
     hash.finalize().map { String(format: "%02x", $0) }.joined()
 }
 
-private func fullBytePass(at root: URL) throws -> String {
+private func fullBytePass(at root: URL, afterRead: ((URL) throws -> Void)? = nil) throws -> String {
     var hash = SHA256()
     for url in try paths(at: root) {
         let values = try url.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey])
         guard values.isRegularFile == true, values.isSymbolicLink != true else { throw IndexError.unverifiableSource }
         append(Data(url.path.dropFirst(root.path.count).utf8), to: &hash)
         append(try Data(contentsOf: url), to: &hash)
+        try afterRead?(url)
     }
     return digest(hash)
 }
@@ -50,6 +50,33 @@ private func fullByteRevision(at root: URL) throws -> String {
     let second = try fullBytePass(at: root)
     guard first == second else { throw IndexError.stale }
     return second
+}
+
+// Deterministic interleaving: both passes read A=0,B=1 although no such
+// complete filesystem state exists. The writes are A=1 then B=1; reset is
+// B=0 then A=0. This hook is only reachable through the spike's race command.
+private func inconsistentSnapshotProbe(at root: URL) throws -> [String: Any] {
+    let a = root.appendingPathComponent("components/a.json")
+    let b = root.appendingPathComponent("components/b.json")
+    func write(_ url: URL, _ value: Int) throws { try Data("{\"value\":\(value)}\n".utf8).write(to: url) }
+    try write(a, 0); try write(b, 0)
+    let states = [(0, 0), (1, 0), (1, 1)]
+    var stable: [String] = []
+    for (av, bv) in states {
+        try write(a, av); try write(b, bv)
+        stable.append(try fullBytePass(at: root))
+    }
+    try write(a, 0); try write(b, 0)
+    let hook: (URL) throws -> Void = { url in
+        if url.lastPathComponent == "a.json" { try write(a, 1); try write(b, 1) }
+    }
+    let first = try fullBytePass(at: root, afterRead: hook)
+    try write(b, 0); try write(a, 0)
+    let second = try fullBytePass(at: root, afterRead: hook)
+    let final = try fullBytePass(at: root)
+    return ["passesEqual": first == second, "acceptedDigestMatchesFinalBytes": first == final,
+            "acceptedDigestMatchesAnyStableState": stable.contains(first),
+            "writeOrder": "A=1,B=1; reset B=0,A=0; repeat"]
 }
 
 // Negative control: cheap metadata cannot identify Canonical bytes reliably.
@@ -83,6 +110,12 @@ private func percentile(_ sorted: [Double], _ rank: Double) -> Double {
         let args = Array(CommandLine.arguments.dropFirst())
         guard args.count >= 3 else { fatalError("usage: probe <identity|bench> <candidate|all> <root> [runs]") }
         let root = URL(fileURLWithPath: args[2]).standardizedFileURL
+        if args[0] == "race" {
+            let result = try inconsistentSnapshotProbe(at: root)
+            let data = try JSONSerialization.data(withJSONObject: result, options: [.sortedKeys])
+            print(String(decoding: data, as: UTF8.self))
+            return
+        }
         if args[0] == "identity" {
             do {
                 print(try revision(args[1], at: root))

@@ -37,6 +37,10 @@ hamii Canonical save と外部 writer の bytes 保護。その判断は [Extern
 
 ## Result
 
+**Confirmed in regression replay:** Current production CLI on disposable repositories still returns exit 8 / `staleIndex` with no hits for Canonical component edits hidden by one Git clean filter, `assume-unchanged`, and `skip-worktree`. Rebuild also rejects the filter/flag states. This replays the sequential safety baseline; it does not establish general concurrent writer safety.
+
+**Confirmed in actual LocalIndex query test:** `IndexProjectionSpikeTests.testActualIndexQueryRejectsBranchSwitchAfterReadingRows` switches from A to B inside the query's revision calculator call after SQLite rows were read. The old A hit is rejected with `IndexError.stale`; the Canonical loader observes B. Both branches have the same manifest revision. This is a separate interleaving from the prior switch between two Git status calls. An external switch after the final revision check remains untested. A spike-only generation prototype with real `IndexProjection` rows rolls back a staged generation when the source identity changes before publish; no production incremental reindexer exists.
+
 **Measured, sequential Git index flags:** macOS 26.2 / Git 2.52.0 の一時 Repository で、tracked Component JSON に `assume-unchanged` または `skip-worktree` を付けて内容を変更すると、`git status --porcelain` は空になった。追加ガードの前には `assume-unchanged` で旧 Component 名が current として返る反例を観測した。`git ls-files -v` の flag guard を追加した後は、両 flag で CLI query と index rebuild が exit 8 / `staleIndex` を返し、query は `hits` を返さなかった。
 
 **Measured, one Git clean filter:** `components/*.json` に clean filter を設定し、同じ長さの Component 名 `BaseButton` を working tree で `XaseButton` に変更した。filter が index content を `BaseButton` へ正規化するため、Git status は空、clean OID と index OID は一致した。これは現在の revision 計算が transformed representation から実 working bytes の変更を識別できない反例である。filter guard の前には CLI query が旧 `BaseButton` を current として返した。tracked Canonical path の `filter` attribute を確認して拒否する guard の後は、query と rebuild が exit 8 / `staleIndex` となり、hits を返さなかった。現行実装は filter を使う Canonical path を安全側で拒否するが、Git filter のある Repository 全般を architecture 上サポート不能と結論しない。
@@ -58,5 +62,7 @@ Git の hidden tracked flag と clean filter による逐次 stale result の反
 - [branch-switch-race-probe.py](artifacts/branch-switch-race-probe.py): 最初の status 後に checkout を挿入する再現 probe。
 - [barrier-instrumentation.patch](artifacts/barrier-instrumentation.patch): probe 専用の一時 barrier。production code には含めない。
 - [branch-switch-race-before-guard.json](artifacts/branch-switch-race-before-guard.json)、[branch-switch-race-result.json](artifacts/branch-switch-race-result.json): guard 前後の raw outcome。
+- [regression_replay.py](artifacts/regression_replay.py)、[regression-replay-result.json](artifacts/regression-replay-result.json): production CLI の filter / hidden-flag fail-closed regression replay。
+- [IndexProjectionSpikeTests.swift](../../../../Tests/HamiiTests/IndexProjectionSpikeTests.swift): query row read 後の実 branch switch test。
 
 Pull / external edit と query/reindex が交錯する barrier probe と raw event trace は未作成。
