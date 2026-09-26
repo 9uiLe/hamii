@@ -1,0 +1,250 @@
+{
+  "platform": "26.2",
+  "filesystem": "/dev/disk3s5 on /System/Volumes/Data (apfs, local, journaled, nobrowse, protect, root data)",
+  "trials": 40,
+  "p50Ms": 38.554,
+  "p95Ms": 43.492,
+  "externalConflict": "detected; journal and external bytes preserved",
+  "rows": [
+    {
+      "stop": "temp",
+      "attempt": 0,
+      "recoveredRevision": 0,
+      "elapsedMs": 35.154
+    },
+    {
+      "stop": "temp",
+      "attempt": 1,
+      "recoveredRevision": 0,
+      "elapsedMs": 35.179
+    },
+    {
+      "stop": "temp",
+      "attempt": 2,
+      "recoveredRevision": 0,
+      "elapsedMs": 35.116
+    },
+    {
+      "stop": "temp",
+      "attempt": 3,
+      "recoveredRevision": 0,
+      "elapsedMs": 35.17
+    },
+    {
+      "stop": "temp",
+      "attempt": 4,
+      "recoveredRevision": 0,
+      "elapsedMs": 34.904
+    },
+    {
+      "stop": "ready",
+      "attempt": 0,
+      "recoveredRevision": 0,
+      "elapsedMs": 38.365
+    },
+    {
+      "stop": "ready",
+      "attempt": 1,
+      "recoveredRevision": 0,
+      "elapsedMs": 37.931
+    },
+    {
+      "stop": "ready",
+      "attempt": 2,
+      "recoveredRevision": 0,
+      "elapsedMs": 38.35
+    },
+    {
+      "stop": "ready",
+      "attempt": 3,
+      "recoveredRevision": 0,
+      "elapsedMs": 40.703
+    },
+    {
+      "stop": "ready",
+      "attempt": 4,
+      "recoveredRevision": 0,
+      "elapsedMs": 38.769
+    },
+    {
+      "stop": "a",
+      "attempt": 0,
+      "recoveredRevision": 0,
+      "elapsedMs": 38.455
+    },
+    {
+      "stop": "a",
+      "attempt": 1,
+      "recoveredRevision": 0,
+      "elapsedMs": 39.393
+    },
+    {
+      "stop": "a",
+      "attempt": 2,
+      "recoveredRevision": 0,
+      "elapsedMs": 38.653
+    },
+    {
+      "stop": "a",
+      "attempt": 3,
+      "recoveredRevision": 0,
+      "elapsedMs": 39.224
+    },
+    {
+      "stop": "a",
+      "attempt": 4,
+      "recoveredRevision": 0,
+      "elapsedMs": 37.889
+    },
+    {
+      "stop": "b",
+      "attempt": 0,
+      "recoveredRevision": 0,
+      "elapsedMs": 47.349
+    },
+    {
+      "stop": "b",
+      "attempt": 1,
+      "recoveredRevision": 0,
+      "elapsedMs": 46.278
+    },
+    {
+      "stop": "b",
+      "attempt": 2,
+      "recoveredRevision": 0,
+      "elapsedMs": 38.811
+    },
+    {
+      "stop": "b",
+      "attempt": 3,
+      "recoveredRevision": 0,
+      "elapsedMs": 37.756
+    },
+    {
+      "stop": "b",
+      "attempt": 4,
+      "recoveredRevision": 0,
+      "elapsedMs": 39.933
+    },
+    {
+      "stop": "c",
+      "attempt": 0,
+      "recoveredRevision": 0,
+      "elapsedMs": 38.889
+    },
+    {
+      "stop": "c",
+      "attempt": 1,
+      "recoveredRevision": 0,
+      "elapsedMs": 38.169
+    },
+    {
+      "stop": "c",
+      "attempt": 2,
+      "recoveredRevision": 0,
+      "elapsedMs": 37.671
+    },
+    {
+      "stop": "c",
+      "attempt": 3,
+      "recoveredRevision": 0,
+      "elapsedMs": 38.942
+    },
+    {
+      "stop": "c",
+      "attempt": 4,
+      "recoveredRevision": 0,
+      "elapsedMs": 38.429
+    },
+    {
+      "stop": "manifest",
+      "attempt": 0,
+      "recoveredRevision": 1,
+      "elapsedMs": 38.064
+    },
+    {
+      "stop": "manifest",
+      "attempt": 1,
+      "recoveredRevision": 1,
+      "elapsedMs": 38.096
+    },
+    {
+      "stop": "manifest",
+      "attempt": 2,
+      "recoveredRevision": 1,
+      "elapsedMs": 38.31
+    },
+    {
+      "stop": "manifest",
+      "attempt": 3,
+      "recoveredRevision": 1,
+      "elapsedMs": 43.492
+    },
+    {
+      "stop": "manifest",
+      "attempt": 4,
+      "recoveredRevision": 1,
+      "elapsedMs": 39.759
+    },
+    {
+      "stop": "cleanup",
+      "attempt": 0,
+      "recoveredRevision": 1,
+      "elapsedMs": 37.03
+    },
+    {
+      "stop": "cleanup",
+      "attempt": 1,
+      "recoveredRevision": 1,
+      "elapsedMs": 37.619
+    },
+    {
+      "stop": "cleanup",
+      "attempt": 2,
+      "recoveredRevision": 1,
+      "elapsedMs": 39.372
+    },
+    {
+      "stop": "cleanup",
+      "attempt": 3,
+      "recoveredRevision": 1,
+      "elapsedMs": 39.045
+    },
+    {
+      "stop": "cleanup",
+      "attempt": 4,
+      "recoveredRevision": 1,
+      "elapsedMs": 38.293
+    },
+    {
+      "stop": "normal",
+      "attempt": 0,
+      "recoveredRevision": 1,
+      "elapsedMs": 42.094
+    },
+    {
+      "stop": "normal",
+      "attempt": 1,
+      "recoveredRevision": 1,
+      "elapsedMs": 41.401
+    },
+    {
+      "stop": "normal",
+      "attempt": 2,
+      "recoveredRevision": 1,
+      "elapsedMs": 40.313
+    },
+    {
+      "stop": "normal",
+      "attempt": 3,
+      "recoveredRevision": 1,
+      "elapsedMs": 40.783
+    },
+    {
+      "stop": "normal",
+      "attempt": 4,
+      "recoveredRevision": 1,
+      "elapsedMs": 41.997
+    }
+  ]
+}
