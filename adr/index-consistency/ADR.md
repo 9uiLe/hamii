@@ -10,7 +10,7 @@ stale result を返さない安全性を維持したまま、Canonical freshness
 
 ## Constraints
 
-Canonical Data が唯一の正本。`CanonicalSnapshot` は exact contents、source metadata、observation guarantee を持ち、その一貫した contents から `CanonicalRevision` を導出する。`CanonicalRevision` は hamii Canonical Data の意味的な状態、`IndexGeneration` は公開済みの derived snapshot であり別概念。Git commit だけが変わり Canonical files が同じなら、その commit 自体を意味的な失効理由にしない。途中まで再構築した世代を検索へ見せない。どの候補でも検証不能・競合・鮮度不一致なら検索を拒否する。Git 操作と再索引の同時実行を通常の逐次変更と区別する。**Safe fast path の前提は worktree の writer guarantee が既知であること。** 同一 worktree の writer contract と外部 writer の分離・統合方式は [External Git Write ADR](../git-external-write-coordination/ADR.md) で扱う。
+Canonical Data が唯一の正本。`CanonicalSnapshot` は exact contents、source metadata、observation guarantee を持ち、その一貫した contents から `CanonicalRevision` を導出する。`CanonicalRevision` は hamii Canonical Data の意味的な状態、`IndexGeneration` は公開済みの derived snapshot であり別概念。Git commit だけが変わり Canonical files が同じなら、その commit 自体を意味的な失効理由にしない。途中まで再構築した世代を検索へ見せない。どの候補でも検証不能・競合・鮮度不一致なら検索を拒否する。Git 操作と再索引の同時実行を通常の逐次変更と区別する。**Safe fast path の前提は worktree の writer guarantee が既知であり、実際の operation がその保証境界に参加していること。** [External Git Write ADR](../git-external-write-coordination/ADR.md) は「1 worktree = 1 coordinated writer domain」を Product Contract として決めたが、production の managed Git / generation protocol は実装待ち。Index は writer の許可を決めず、その保証の下で current を証明する。
 
 ## Options
 
@@ -31,7 +31,7 @@ Canonical Data が唯一の正本。`CanonicalSnapshot` は exact contents、sou
 - [Safe freshness fast path](spikes/safe-freshness-fast-path/SPIKE.md): manifest + metadata shortcut の false negative を確認。`certainly current` の安全な一般条件と slow verifier は未確定。
 - [Known-current generation fast path](spikes/known-current-generation-fast-path/SPIKE.md): process-local marker は無通知の external edit、実 branch switch、別 hamii Repository instance の save で false current になる。Cross-process observation と source snapshot / index generation binding は未解決。
 - [Shared worktree generation](spikes/shared-worktree-generation/SPIKE.md): test-only shared lock / 永続 generation で2 Repository instance、協調 branch switch と Query cost を確認。別 OS process の writer / reader が flock で競合した合図と4地点の SIGKILL を確認。起動時 Unknown からは journal 解決・coordinated Snapshot の同一性・Index source generation / generation ID の結合が揃ったときだけ検索を再開する試験用 gate を検証。非協調 writer は false current となり、writer contract と production binding は未解決。
-- [External Git writer model evidence](../git-external-write-coordination/spikes/managed-git-operation/SPIKE.md): raw `git switch` が現行 lock / 試験用 generation を迂回することを確認。これは writer guarantee を Index 内で仮定できない反例であり、Product Contract は External Git Write ADR の未決定事項。
+- [External Git writer model evidence](../git-external-write-coordination/spikes/managed-git-operation/SPIKE.md): raw `git switch` が現行 lock / 試験用 generation を迂回することを確認。Product Contract は External Git Write ADR で決定した。Production がその protocol を実装・強制するまでは shared generation を arbitrary worktree freshness proof に使わない。
 - [End-to-end Index generation](spikes/end-to-end-index-generation/SPIKE.md): current full pipeline の15回 stage timing。Snapshot acquisition と production incremental generation を接続した end-to-end 測定は未完了。
 - [Git working tree fingerprint](spikes/git-working-tree-fingerprint/SPIKE.md): 外部 edit、branch switch、dirty tree の digest と latency を検証する。
 - [Nested repository query latency](spikes/nested-repository-query-latency/SPIKE.md): Git repository 内の下位 Project で query budget 超過を確認。

@@ -43,7 +43,7 @@
 
 ## Conclusion
 
-別 worktree での逐次編集と 20 組の重なった CLI 保存は成立した。**Unknown:** Git 操作や crash recovery を含む writer domain 保証。分離条件と制限を追加検証してから policy を決める。
+別 worktree での逐次編集と 20 組の重なった CLI 保存は成立した。Product Contract は [External Git Write ADR](../../ADR.md) に決定した。**Unknown:** production の managed Git operation、merge publication、crash / power-loss 境界を含む実装保証。この測定を全 worktree operation の証明とは扱わない。
 
 ## Artifacts
 

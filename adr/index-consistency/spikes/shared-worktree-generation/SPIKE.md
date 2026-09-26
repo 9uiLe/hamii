@@ -58,7 +58,7 @@ Production への generation protocol 導入、`CanonicalRevision` algorithm の
 
 ## Conclusion
 
-Shared generation は、**既知の coordinated writer domain 内**で低 cost な Query を成立させる有力な条件付き仮説になった。今回の prototype はその domain を製品として強制できること、Snapshot と generation の binding、crash recovery / power-loss、外部 writer の扱いを証明していない。External Git Write ADR が同一 worktree の writer guarantee を定めるまで Safe Fast Path は採用しない。Production は現行 `staleIndex` 拒否を維持し、Index ADR は `Spike Required`。
+Shared generation は、**既知の coordinated writer domain 内**で低 cost な Query を成立させる有力な条件付き仮説になった。External Git Write ADR は同一 worktree の Product Contract を決めたが、この prototype は production が domain を強制できること、Snapshot と generation の binding、crash recovery / power-loss、Index generation publication を証明していない。これらを検証するまで Safe Fast Path は採用しない。Production は現行 `staleIndex` 拒否を維持し、Index ADR は `Spike Required`。
 
 ## Artifacts
 

@@ -13,7 +13,7 @@
 - 異なる shard、同じ shard の異なる property、同じ property の競合をどこまで Git merge で扱えるか。
 - Git merge が text conflict を出さず、semantic rule だけを破る場合を検出できるか。
 - merge 後に fresh index rebuild と Query validation をどう実行するか。
-- 両 branch が同じ document revision で別々に進んだ場合、merge 後の revision と Preview / client session をどう再同期するか。
+- 両 branch が同じ document revision で別々に進んだ場合、merge 後に state identity の違いを観測できるか。Client / Preview token の選択は [Canonical state precondition ADR](../../../canonical-state-precondition/ADR.md) で扱う。
 - conflict で停止した worktree の未統合 bytes と branch をどう保持するか。
 
 ## Prototype Scope
@@ -46,7 +46,7 @@ scenario ごとの Git conflict、semantic diagnostic、保持された双方の
 
 ## Conclusion
 
-Git text merge 成功だけでは Semantic validity を保証できない。`component.missing` は現行 validation で拒否でき、旧 Index は stale として拒否できた。正式な merge gate、generation / Index publication、client session resync、同時 Git 操作と UX は未解決であり、Product Contract はまだ決めない。
+Git text merge 成功だけでは Semantic validity を保証できない。`component.missing` は現行 validation で拒否でき、旧 Index は stale として拒否できた。Product Contract は [External Git Write ADR](../../ADR.md) に決定し、正式な merge gate と generation / Index publication は実装待ち。Client session precondition は独立 ADR で検証する。
 
 ## Artifacts
 

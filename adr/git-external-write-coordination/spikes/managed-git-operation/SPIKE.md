@@ -42,7 +42,7 @@ lock を無視する Git を hamii-managed operation と誤分類する、また
 
 ## Conclusion
 
-raw Git は現行 hamii lock の writer domain に属さない。Git operation を hamii-managed と呼ぶには lock / generation / recovery / Index / session への統合が必要。正式 Product Contract と実装方法は ADR で引き続き検討する。
+raw Git は現行 hamii lock の writer domain に属さない。Product Contract は [External Git Write ADR](../../ADR.md) に決定した。Git operation を hamii-managed と呼ぶには lock / generation / recovery / validation への production 統合が必要。Client session precondition は独立 ADR、Index publication は Index ADR が扱う。
 
 ## Artifacts
 

@@ -20,15 +20,21 @@ External-change detection は正式な writer model の外で起きた変更に�
 
 ## Current Hypothesis
 
-**未確定:** 「1 worktree = 1 coordinated writer domain。独立 writer は別 branch / worktree と validated merge で協働」が有力仮説。**Confirmed:** 現行 lock は hamii 同士だけが尊重する。journal は旧新 bytes のみを保持する。**Measured:** load 後・save 前の同一 revision 外部編集は旧 API で上書きされた。期待 Document の bytes 照合を保存境界へ追加した後、同じ逐次条件では conflict として中断し外部 bytes を保持した。**Measured in a minimal APFS model:** content check と atomic replace の間の非協調 edit は上書きされ、旧新 journal から復旧不能だった。これは production の全 interleaving を測った結果ではない。現行実装に非協調同時書込の lossless 保証はない。
+**実装仮説、未確定:** hamii-managed Git operation と Canonical save / read を同じ worktree lock、generation、recovery protocol に参加させる。merge candidate は別の一時 worktree で検証し、成功した Index generation と一緒に publish できる可能性がある。具体的な transaction / publication mechanism は未検証。**Confirmed:** 現行 lock は hamii 同士だけが尊重する。journal は旧新 bytes のみを保持する。**Measured:** load 後・save 前の同一 revision 外部編集は旧 API で上書きされた。期待 Document の bytes 照合を保存境界へ追加した後、同じ逐次条件では conflict として中断し外部 bytes を保持した。**Measured in a minimal APFS model:** content check と atomic replace の間の非協調 edit は上書きされ、旧新 journal から復旧不能だった。これは production の全 interleaving を測った結果ではない。現行実装に非協調同時書込の lossless 保証はない。
 
-**Spike 用の coordinated writer boundary（製品保証として未決定）:** 同じ worktree で Canonical bytes を変更できる hamii GUI / CLI / AI の全操作、hamii 管理下の Git branch / checkout / pull、および CanonicalSnapshot / Index generation / Query が、同一の worktree lock と generation protocol に参加する条件を試す。`CanonicalRepository` の単一 save lock だけでは save 後の別 process への generation 通知を保証しない。VS Code、直接実行する Git CLI、外部 script、外部 AI、その他 lock に従わない writer はこの境界の外に置く。境界外の同一 worktree 変更は shared generation を更新せず false current を作る反例があり、正式な safe collaboration path としない。独立 writer は separate worktree / branch と validated merge で扱う候補を維持する。これを正式 Product Contract として採用できるか、境界を技術的にどう強制・検出するかは未解決。
+**Prototype boundary:** 同じ worktree の hamii GUI / CLI / AI、hamii-managed Git operation、CanonicalSnapshot / Index generation / Query を共通の worktree lock と generation protocol に参加させる試験を行った。現行 `CanonicalRepository` の save lock だけではこの全体 protocol は成立しない。直接実行する Git CLI や外部 editor は lock を迂回できる。
 
 **New narrow evidence:** raw `git switch` は現行 `.hamii/write.lock` を無視した。別 worktree の Git text merge が成功しても、Component shard 削除と instance 追加の合成で `component.missing` となり、現行 validation / inspect / index rebuild は拒否した。正常 merge の別ケースでは両 branch と merged manifest が revision 3 のまま Canonical contents が変化し、旧 Index の検索は `staleIndex` を返した。一方、旧 revision 3 の `page create` は merge 後も受理され、revision guard だけでは client session を失効させられない。これは validated merge gate と client session resync の必要性を示すが、それらの production protocol の成立証明ではない。
 
+## Decision
+
+**Product Contract:** 一つの worktree は一つの coordinated writer domain とする。hamii GUI、hamii CLI / AI、hamii-managed Git operation は、共通の worktree lock、generation、recovery、validation を通す。raw Git CLI、外部 editor / script / AI、その他 hamii protocol に従わない writer による同一 worktree の直接変更は、safe collaboration path として保証しない。外部変更の検知と保存中断は defense-in-depth であり、非協調 writer の全 race を閉じる保証ではない。
+
+独立 writer は別 branch / worktree で作業する。統合は Git merge **candidate** を Canonical parse、schema、stable ID、reference、Scope / Component、その他 Authoring rule で検証し、同じ source state に結び付いた Index generation を構築・検証してから publish する。Git merge exit 0 だけでは hamii merge success と扱わない。失敗時は candidate を拒否し、双方の有効な branch / worktree を保持する。publish と client session 再同期の具体的 protocol は未実装であり、後者の state precondition は [Canonical state precondition ADR](../canonical-state-precondition/ADR.md) が決める。Index freshness / recovery は [Index consistency ADR](../index-consistency/ADR.md) が決める。
+
 ## Unknowns
 
-hamii-managed Git operation を実際の lock / generation / journal / Index / session protocol に組み込む方法、merge の semantic validation と公開境界、merge 後の client / Preview session 再同期、worktree 分離の運用条件、check/replace 間の race を含む defense-in-depth、conflict UX。直接実行する Git CLI は現行 lock を尊重しない。
+hamii-managed Git operation を実際の lock / generation / journal protocol に組み込む方法、merge candidate の隔離・semantic validation・Index generation・atomic publish、失敗時の review / conflict UX、worktree identity と移動の扱い。Client / Preview token の選択は別 ADR。Power loss は [Power-loss ADR](../canonical-power-loss-durability/ADR.md)。
 
 ## Required Evidence
 
@@ -37,12 +43,12 @@ hamii-managed Git operation を実際の lock / generation / journal / Index / s
 - [External change detection](spikes/external-change-detection/SPIKE.md): ready barrier で checkout した場合と load/save 間の逐次外部編集の conflict / bytes 保持を確認。その他の interleaving は未測定。
 - [Concurrent worktree merge](spikes/concurrent-worktree-merge/SPIKE.md): 非競合 Page と同一 Text property の merge に加え、Git text merge 成功後の `component.missing`、merge 前後で同じ revision でも Canonical identity が異なるケース、旧 Index の `staleIndex` 拒否、旧 revision mutation の受理を確認。Production merge gate と client session invalidation は未実装。
 - [Managed Git operation](spikes/managed-git-operation/SPIKE.md): raw `git switch` は `.hamii/write.lock` を無視する。試験用 wrapper では reader と switch を同じ lock で囲み generation を進めた。Production adapter は未実装。
-- [Shared generation process-stop matrix](../index-consistency/spikes/shared-worktree-generation/SPIKE.md): 試験用 coordinated boundary で別 OS process の writer / reader の flock attempt/acquire を確認し、4地点で writer を SIGKILL。非協調 writer の扱いと正式な writer contract は未決定。
+- [Shared generation process-stop matrix](../index-consistency/spikes/shared-worktree-generation/SPIKE.md): 試験用 coordinated boundary で別 OS process の writer / reader の flock attempt/acquire を確認し、4地点で writer を SIGKILL。Product Contract はこの保証境界を採用するが、production generation protocol の成立証明にはならない。
 
 ## Decision Criteria
 
-正式な共同作業経路で外部変更を黙って失わないこと、競合が疑われる場合に保存を中断すること、復旧が再実行可能であること、ユーザーが conflict の対象を特定できること。各保証が協調 writer と非協調 writer のどちらに適用されるかを明記する。
+Product Contract の判断条件は、正式な共同作業経路で変更を黙って失わないこと、非協調 writer に保証を誤適用しないこと、Git text merge と Canonical semantic merge を区別できること。実装完了条件は、lock / recovery / generation を通る managed Git operation、隔離した merge candidate の検証と publish、失敗時の双方の branch 保持、client / Index 側との境界の検証である。
 
 ## Status
 
-Spike Required
+Implementation Required
