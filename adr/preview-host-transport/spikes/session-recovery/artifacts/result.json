@@ -1,0 +1,20 @@
+{
+  "environment": {
+    "macOS": "26.2",
+    "Xcode": "26.5 (17F42)",
+    "Swift": "6.4",
+    "iOSRuntime": "26.5",
+    "deviceType": "iPhone 17 Pro"
+  },
+  "build": {
+    "hamiiNativeRuntimeForIOSSimulator": "passed",
+    "socketProbeMachO": "passed",
+    "machOPlatform": "iOS Simulator"
+  },
+  "simulatorBoot": {
+    "defaultDeviceSet": "failed with NSPOSIXErrorDomain code 53",
+    "isolatedDeviceSet": "failed with NSPOSIXErrorDomain code 53",
+    "coreSimulatorLog": "GTSimPortVendor createDefaultPortsForDevice timed out after 30 seconds; CoreSimulatorService connection interrupted"
+  },
+  "transportMeasurements": "not run; simulator did not boot"
+}

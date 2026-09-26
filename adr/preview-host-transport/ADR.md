@@ -18,11 +18,11 @@ local socket、Network framework connection、別の supported IPC/stream。
 
 ## Current Hypothesis
 
-**未確定:** 常駐 session と full snapshot fallback が成立する可能性はあるが transport は未確定。
+**未確定:** Swift 6.4 の iOS Simulator 向け Runtime build と TCP Host probe の compile は成功した。Simulator 起動が CoreSimulatorService 接続断で止まり、session の実測は未完了。Transport は未確定。
 
 ## Unknowns
 
-Simulator の接続経路、欠番検出、Host suspend/restart、schema mismatch、複数 Surface。
+Simulator の接続経路、欠番検出、Host suspend/restart、schema mismatch、複数 Surface。Simulator 起動環境の復旧後、Transport の実測が必要。
 
 ## Required Evidence
 
