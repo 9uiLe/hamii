@@ -8,12 +8,21 @@ public enum BuildBoundary: String, Codable {
 public struct PreviewPatch: Codable, Equatable {
     public var documentID: EntityID
     public var surfaceID: EntityID
+    public var baseRevision: Int
     public var revision: Int
     public var boundary: BuildBoundary
     public var changes: [PreviewChange]
-    public init(documentID: EntityID, surfaceID: EntityID, revision: Int, boundary: BuildBoundary, changes: [PreviewChange]) {
-        self.documentID = documentID; self.surfaceID = surfaceID; self.revision = revision
+    public init(documentID: EntityID, surfaceID: EntityID, baseRevision: Int, revision: Int, boundary: BuildBoundary, changes: [PreviewChange]) {
+        self.documentID = documentID; self.surfaceID = surfaceID; self.baseRevision = baseRevision; self.revision = revision
         self.boundary = boundary; self.changes = changes
+    }
+}
+
+public struct PreviewSnapshot: Codable {
+    public var document: Document
+    public var surface: AppSurface
+    public init(document: Document, surface: AppSurface) {
+        self.document = document; self.surface = surface
     }
 }
 
@@ -37,8 +46,8 @@ public struct PreviewAcknowledgement: Codable, Equatable {
 
 public enum PreviewRevisionGate {
     public static func accept(_ patch: PreviewPatch, after appliedRevision: Int) -> PreviewAcknowledgement {
-        guard patch.revision == appliedRevision + 1 else {
-            return PreviewAcknowledgement(revision: appliedRevision, accepted: false, diagnostics: [Diagnostic("preview.revision", "Patch revision must follow the applied revision")])
+        guard patch.baseRevision == appliedRevision, patch.revision == patch.baseRevision + 1 else {
+            return PreviewAcknowledgement(revision: appliedRevision, accepted: false, diagnostics: [Diagnostic("preview.revision", "Patch base revision must match the applied revision and advance once")])
         }
         guard patch.boundary == .instantPatch || patch.boundary == .runtimeReconciliation else {
             return PreviewAcknowledgement(revision: appliedRevision, accepted: false, diagnostics: [Diagnostic("preview.buildRequired", "This change requires a build")])

@@ -13,7 +13,7 @@ public enum NativePreviewError: Error {
 @MainActor @Observable
 public final class NativePreviewSession {
     public private(set) var document: Document
-    public let surface: AppSurface
+    public private(set) var surface: AppSurface
     public private(set) var appliedRevision: Int
     public private(set) var emittedEvents: [String] = []
 
@@ -61,6 +61,23 @@ public final class NativePreviewSession {
         document = next
         appliedRevision = patch.revision
         return PreviewAcknowledgement(revision: patch.revision, accepted: true)
+    }
+
+    public func load(_ snapshot: PreviewSnapshot) -> PreviewAcknowledgement {
+        guard snapshot.document.id == document.id, snapshot.surface.id == surface.id else {
+            return PreviewAcknowledgement(revision: appliedRevision, accepted: false, diagnostics: [Diagnostic("preview.identity", "Snapshot belongs to another Document or Surface")])
+        }
+        guard snapshot.document.revision >= appliedRevision else {
+            return PreviewAcknowledgement(revision: appliedRevision, accepted: false, diagnostics: [Diagnostic("preview.revision", "Snapshot revision precedes the applied revision")])
+        }
+        let errors = DocumentValidator.validate(snapshot.document).filter { $0.severity == .error }
+        guard errors.isEmpty else { return PreviewAcknowledgement(revision: appliedRevision, accepted: false, diagnostics: errors) }
+        do { _ = try NativePreviewSession(document: snapshot.document, surface: snapshot.surface) }
+        catch { return PreviewAcknowledgement(revision: appliedRevision, accepted: false, diagnostics: [Diagnostic("preview.snapshot", String(describing: error))]) }
+        document = snapshot.document
+        surface = snapshot.surface
+        appliedRevision = document.revision
+        return PreviewAcknowledgement(revision: appliedRevision, accepted: true)
     }
 
     public func recordEvent(_ name: String) { emittedEvents.append(name) }

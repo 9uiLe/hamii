@@ -120,7 +120,7 @@ final class EditorSession {
                     guard let value = patch.newValue else { return nil }
                     return PreviewChange(layerID: patch.entityID, path: patch.path, value: value)
                 }
-                let patch = PreviewPatch(documentID: updated.id, surfaceID: previewSession.surface.id, revision: result.revision, boundary: .instantPatch, changes: changes)
+                let patch = PreviewPatch(documentID: updated.id, surfaceID: previewSession.surface.id, baseRevision: result.revision - 1, revision: result.revision, boundary: .instantPatch, changes: changes)
                 if !previewSession.apply(patch).accepted { self.previewSession = makePreviewSession(updated) }
             } else {
                 previewSession = makePreviewSession(updated)

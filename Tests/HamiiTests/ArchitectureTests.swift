@@ -251,9 +251,12 @@ final class ArchitectureTests: XCTestCase {
     }
 
     func testPreviewPatchRejectsOutOfOrderAndBuildChanges() {
-        let base = PreviewPatch(documentID: EntityID("doc"), surfaceID: EntityID("surface"), revision: 2, boundary: .instantPatch, changes: [PreviewChange(layerID: EntityID("layer"), path: "text", value: "Updated")])
+        let base = PreviewPatch(documentID: EntityID("doc"), surfaceID: EntityID("surface"), baseRevision: 1, revision: 2, boundary: .instantPatch, changes: [PreviewChange(layerID: EntityID("layer"), path: "text", value: "Updated")])
         XCTAssertFalse(PreviewRevisionGate.accept(base, after: 0).accepted)
         XCTAssertTrue(PreviewRevisionGate.accept(base, after: 1).accepted)
+        var wrongBase = base
+        wrongBase.baseRevision = 0
+        XCTAssertFalse(PreviewRevisionGate.accept(wrongBase, after: 1).accepted)
         var build = base
         build.boundary = .fullBuild
         XCTAssertFalse(PreviewRevisionGate.accept(build, after: 1).accepted)
@@ -415,10 +418,24 @@ final class ArchitectureTests: XCTestCase {
             let runtime = "macOS \(ProcessInfo.processInfo.operatingSystemVersion.majorVersion)"
             let surface = AppSurface(id: EntityID("surface_main"), targetID: target.id, device: "Mac", runtime: runtime, buildEnvironment: "macOS SDK", screenID: screen.id, architectureScopeID: scopeID)
             let session = try NativePreviewSession(document: document, surface: surface)
-            let patch = PreviewPatch(documentID: document.id, surfaceID: surface.id, revision: 1, boundary: .instantPatch, changes: [PreviewChange(layerID: text.id, path: "text", value: "After")])
+            let patch = PreviewPatch(documentID: document.id, surfaceID: surface.id, baseRevision: 0, revision: 1, boundary: .instantPatch, changes: [PreviewChange(layerID: text.id, path: "text", value: "After")])
             XCTAssertTrue(session.apply(patch).accepted)
             XCTAssertEqual(session.document.screens[0].root.children[0].text, "After")
             XCTAssertFalse(session.apply(patch).accepted)
+            let missing = PreviewPatch(documentID: document.id, surfaceID: surface.id, baseRevision: 2, revision: 3, boundary: .instantPatch, changes: [PreviewChange(layerID: text.id, path: "text", value: "Missing")])
+            XCTAssertFalse(session.apply(missing).accepted)
+            var resynced = document
+            resynced.revision = 3
+            resynced.screens[0].root.children[0].text = "Snapshot"
+            var updatedSurface = surface
+            updatedSurface.device = "MacBook"
+            XCTAssertTrue(session.load(PreviewSnapshot(document: resynced, surface: updatedSurface)).accepted)
+            XCTAssertEqual(session.appliedRevision, 3)
+            XCTAssertEqual(session.surface.device, "MacBook")
+            XCTAssertEqual(session.document.screens[0].root.children[0].text, "Snapshot")
+            let resumed = PreviewPatch(documentID: document.id, surfaceID: surface.id, baseRevision: 3, revision: 4, boundary: .instantPatch, changes: [PreviewChange(layerID: text.id, path: "text", value: "Resumed")])
+            XCTAssertTrue(session.apply(resumed).accepted)
+            XCTAssertEqual(session.document.screens[0].root.children[0].text, "Resumed")
         }
     }
 
@@ -437,7 +454,7 @@ final class ArchitectureTests: XCTestCase {
             let runtime = "macOS \(ProcessInfo.processInfo.operatingSystemVersion.majorVersion)"
             let surface = AppSurface(id: EntityID("surface_main"), targetID: target.id, device: "Mac", runtime: runtime, buildEnvironment: "macOS SDK", screenID: document.screens[0].id, architectureScopeID: scopeID)
             let session = try NativePreviewSession(document: document, surface: surface)
-            let invalid = PreviewPatch(documentID: document.id, surfaceID: surface.id, revision: 1, boundary: .instantPatch, changes: [PreviewChange(layerID: button.id, path: "text", value: "")])
+            let invalid = PreviewPatch(documentID: document.id, surfaceID: surface.id, baseRevision: 0, revision: 1, boundary: .instantPatch, changes: [PreviewChange(layerID: button.id, path: "text", value: "")])
             let result = session.apply(invalid)
             XCTAssertFalse(result.accepted)
             XCTAssertTrue(result.diagnostics.contains(where: { $0.rule == "accessibility.controlLabel" }))
