@@ -5,10 +5,12 @@ import HamiiCore
 public enum IndexError: Error, CustomStringConvertible {
     case sqlite(String)
     case stale
+    case unverifiableSource
     public var description: String {
         switch self {
         case .sqlite(let message): return "SQLite index: \(message)"
         case .stale: return "Local index is missing or stale; run hamii index rebuild"
+        case .unverifiableSource: return "Cannot verify Canonical Git state; use a Git worktree and clear assume-unchanged/skip-worktree flags or Git filters before rebuilding the index"
         }
     }
 }
@@ -21,16 +23,17 @@ public struct ComponentHit: Codable, Equatable {
 }
 
 public final class LocalIndex {
-    public static let schemaVersion = 4
+    public static let schemaVersion = 5
     public let url: URL
     private let projectRoot: URL
+    private let revisionCalculator: any CanonicalRevisionCalculating
     private var database: OpaquePointer?
 
-    public init(projectRoot: URL) throws {
+    public init(projectRoot: URL, documentID: EntityID, revisionCalculator: any CanonicalRevisionCalculating, storageRoot: URL? = nil) throws {
         self.projectRoot = projectRoot.standardizedFileURL
-        let local = projectRoot.appendingPathComponent(".hamii", isDirectory: true)
-        try FileManager.default.createDirectory(at: local, withIntermediateDirectories: true)
-        url = local.appendingPathComponent("index.sqlite")
+        self.revisionCalculator = revisionCalculator
+        url = LocalIndexLocation.url(projectRoot: projectRoot, documentID: documentID, storageRoot: storageRoot)
+        try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         if sqlite3_open(url.path, &database) != SQLITE_OK { throw IndexError.sqlite("Could not open index") }
         if try currentSchemaVersion() != Self.schemaVersion {
             sqlite3_close(database)
@@ -49,30 +52,26 @@ public final class LocalIndex {
 
     deinit { sqlite3_close(database) }
 
-    public func rebuild(from document: Document, sourceFingerprint: String) throws {
+    public func rebuild(from document: Document, canonicalRevision: CanonicalRevision) throws {
         try execute("BEGIN IMMEDIATE TRANSACTION")
         do {
             try execute("DELETE FROM components")
             try execute("DELETE FROM scope_closure")
             try execute("DELETE FROM component_availability")
             try execute("DELETE FROM metadata")
-            let scopes = ScopeEvaluator(document.scopes)
-            let definitions = Dictionary(document.components.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
-            for scope in document.scopes {
-                for ancestor in scopes.ancestorsIncludingSelf(of: scope.id) ?? [] {
-                    try insert("INSERT INTO scope_closure(consumer_id, ancestor_id) VALUES (?, ?)", [scope.id.rawValue, ancestor.rawValue])
-                }
+            let projection = IndexProjection(document: document)
+            for row in projection.scopeClosure {
+                try insert("INSERT INTO scope_closure(consumer_id, ancestor_id) VALUES (?, ?)", [row.consumer.rawValue, row.ancestor.rawValue])
             }
-            for component in document.components {
-                let count = document.screens.reduce(0) { $0 + countInstances(of: component.id, in: $1.root) }
-                try insert("INSERT INTO components(id, name, owner_scope_id, usage_count) VALUES (?, ?, ?, ?)", [component.id.rawValue, component.name, component.ownerScopeID.rawValue, String(count)])
-                for scope in document.scopes where ComponentAvailability.reason(component, consumer: scope.id, scopes: scopes, definitions: definitions) == nil {
-                    try insert("INSERT INTO component_availability(consumer_id, component_id) VALUES (?, ?)", [scope.id.rawValue, component.id.rawValue])
-                }
+            for row in projection.components {
+                try insert("INSERT INTO components(id, name, owner_scope_id, usage_count) VALUES (?, ?, ?, ?)", [row.id.rawValue, row.name, row.ownerScopeID.rawValue, String(row.usageCount)])
+            }
+            for row in projection.availability {
+                try insert("INSERT INTO component_availability(consumer_id, component_id) VALUES (?, ?)", [row.consumer.rawValue, row.component.rawValue])
             }
             try insert("INSERT INTO metadata(key, value) VALUES ('documentID', ?)", [document.id.rawValue])
             try insert("INSERT INTO metadata(key, value) VALUES ('revision', ?)", [String(document.revision)])
-            try insert("INSERT INTO metadata(key, value) VALUES ('sourceFingerprint', ?)", [sourceFingerprint])
+            try insert("INSERT INTO metadata(key, value) VALUES ('canonicalRevision', ?)", [canonicalRevision.rawValue])
             try execute("COMMIT")
         } catch {
             try? execute("ROLLBACK")
@@ -85,7 +84,7 @@ public final class LocalIndex {
         do {
             guard try metadata("documentID") == documentID.rawValue,
                   try metadata("revision") == String(revision),
-                  let sourceFingerprint = try metadata("sourceFingerprint") else { throw IndexError.stale }
+                  let indexedRevision = try metadata("canonicalRevision") else { throw IndexError.stale }
             let sql = "SELECT c.id, c.name, c.owner_scope_id, c.usage_count FROM components c JOIN component_availability a ON a.component_id = c.id WHERE a.consumer_id = ? AND c.name LIKE ? ORDER BY c.name"
             let statement = try prepare(sql)
             bind(consumerScopeID.rawValue, at: 1, to: statement)
@@ -102,7 +101,7 @@ public final class LocalIndex {
                 throw IndexError.sqlite(message)
             }
             sqlite3_finalize(statement)
-            guard try CanonicalSourceFingerprint.current(at: projectRoot) == sourceFingerprint else { throw IndexError.stale }
+            guard try revisionCalculator.current(at: projectRoot).rawValue == indexedRevision else { throw IndexError.stale }
             try execute("COMMIT")
             return hits
         } catch {
@@ -152,8 +151,4 @@ public final class LocalIndex {
         return String(cString: value)
     }
 
-    private func countInstances(of componentID: EntityID, in layer: Layer) -> Int {
-        let selfCount = layer.component?.definitionID == componentID ? 1 : 0
-        return selfCount + layer.children.reduce(0) { $0 + countInstances(of: componentID, in: $1) }
-    }
 }

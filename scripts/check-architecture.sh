@@ -18,6 +18,11 @@ check_imports Sources/HamiiIntegration 'AppKit|SQLite3|HamiiApplication|HamiiFor
 check_imports Sources/HamiiMigrations 'AppKit|SwiftUI|UIKit|SQLite3|HamiiCore|HamiiApplication|HamiiFormat|HamiiIndex|HamiiCLI|HamiiApp'
 check_imports Sources/HamiiNativeRuntime 'AppKit|SQLite3|HamiiApplication|HamiiFormat|HamiiIndex|HamiiCLI|HamiiApp|HamiiMigrations'
 
+if rg -n 'GitCanonicalRevisionCalculator|git[[:space:]]*\(|Process\(' Sources/HamiiIndex/LocalIndex.swift; then
+  echo 'LocalIndex query/store code must use the CanonicalRevisionCalculating port' >&2
+  exit 1
+fi
+
 if rg -n 'adr/' Sources; then
   echo 'Production sources must not depend on ADR files' >&2
   exit 1

@@ -3,7 +3,7 @@ import HamiiCore
 
 public protocol ProjectRepository {
     func load() throws -> Document
-    func save(_ document: Document, expectedRevision: Int) throws
+    func save(_ document: Document, expected: Document) throws
 }
 
 public struct StoredBlob {
@@ -31,7 +31,7 @@ public final class ProjectService {
     public func mutate(_ intents: [AuthoringIntent], expectedRevision: Int, author: Author, agent: AgentHarness? = nil) throws -> MutationResult {
         let current = try repository.load()
         let (updated, result) = try MutationEngine.apply(intents, to: current, expectedRevision: expectedRevision, author: author, agent: agent)
-        try repository.save(updated, expectedRevision: expectedRevision)
+        if updated != current { try repository.save(updated, expected: current) }
         return result
     }
 

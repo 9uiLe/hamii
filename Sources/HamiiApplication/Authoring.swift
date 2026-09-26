@@ -193,6 +193,9 @@ public enum MutationEngine {
         }
         let diagnostics = DocumentValidator.validate(document)
         if diagnostics.contains(where: { $0.severity == .error }) { throw AuthoringError.validation(diagnostics) }
+        if document == current {
+            return (current, MutationResult(revision: current.revision, patches: [], diagnostics: diagnostics))
+        }
         document.revision += 1
         return (document, MutationResult(revision: document.revision, patches: patches, diagnostics: diagnostics))
     }

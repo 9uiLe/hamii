@@ -12,10 +12,12 @@ hamii で現在実行できる範囲を示します。製品境界と依存規�
 
 現在実行できる Native Preview は、宣言済みの Stack / Text / Button / System Image と Text value patch を扱う macOS SwiftUI 実装、および編集用 Canvas です。他の Target / Framework declaration は model の入力であり、宣言だけで Preview Host が利用可能にはなりません。Standalone source generation は静的 SwiftUI subset を扱い、未対応 semantics を error として報告します。Repository Asset は content-addressed blob として取り込めますが、その blob の Native Preview 描画は未実装です。
 
-`HamiiNativeRuntime` は iOS 26.5 Simulator SDK 向けに Swift 6.4 で compile できます。iOS Host の session protocol は [Host Session Spike](../adr/preview-host-transport/spikes/session-recovery/SPIKE.md) で検証中です。この環境では Simulator 起動が CoreSimulatorService 接続断で失敗したため、Host の runtime behavior と画面は未確認です。
+`HamiiNativeRuntime` は iOS 26.5 Simulator SDK 向けに Swift 6.4 で compile できます。iOS Host の session protocol は [Host Session Spike](../adr/preview-host-transport/spikes/session-recovery/SPIKE.md) で検証中です。現在の環境では Simulator boot 中の audio/AV capture 初期化が XPC reply 待ちで timeout し、Host install より前に `simctl boot` が失敗します。これは transport validation の blocker です。Host の runtime behavior、画面、transport latency / recovery は未測定・未確認です。
 
 Spacing Token は GUI と CLI から作成・参照・Stack spacing / container padding へ指定できます。Canvas と macOS Native Preview は alias を解決して同じ値を適用します。その他の Token kind の解決と Inspector は未実装です。
 
 `bash scripts/check.sh` は実装済み契約を検証します。この検証だけでは Native Preview parity、次の format change に対する migration safety、production integration の品質は証明できません。これらは [Technical Spikes](spikes.md) に紐づく実験で測定します。
 
-`hamii query components` は Source Fingerprint の不一致を `staleIndex` として拒否します。外部変更後は `hamii index rebuild` で再構築してください。再構築は full rebuild であり、Git の同時書込と増分再索引は [Index ADR](../adr/index-consistency/ADR.md) の検証対象です。
+Canonical save は読み込み時点の Document から期待 Canonical bytes を再構成し、保存直前の現在 bytes と照合します。load/save 間の逐次外部編集では conflict を返し、外部 bytes を保持することを統合テストで確認しました。照合と atomic replace の間に非協調 writer が入る race は未解決で、[External Git Write ADR](../adr/git-external-write-coordination/ADR.md) の対象です。
+
+`hamii query components` は Canonical revision の不一致を `staleIndex` として拒否し、結果を返しません。現行計算方式は Git の `assume-unchanged` / `skip-worktree` または filter が Canonical file にある場合も拒否します。外部変更後は `hamii index rebuild` で再構築してください。最初の Git status 後に branch switch が完了する制御された race は、最後に status を再照合して拒否します。任意の同時外部書込への保証はありません。Starter Sample の CLI query p95 は追加 status guard 後の 40-run で約 405 msとなり、今回の 250 ms 比較基準を超えました。guard 前の計測では Git subprocess 3 回が各 p95 約 99～106 ms を占めました。詳細な条件と raw data は [Low-cost freshness Spike](../adr/index-consistency/spikes/low-cost-freshness/SPIKE.md) にあります。5000 Component shard の pilot では、filter guard 追加前に mostly-untracked の query 5 回最大値が約 474 ms、all-tracked が約 230 ms でした。自動 full rebuild、増分再索引、任意の Git 同時書込、atomic generation publish は未実装・未検証で、[Index ADR](../adr/index-consistency/ADR.md) の検証対象です。

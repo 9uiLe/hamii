@@ -60,7 +60,7 @@ public final class CanonicalRepository: ProjectRepository {
             try transaction.recoverIfNeeded()
             if manager.fileExists(atPath: root.appendingPathComponent("hamii.json").path) { throw CanonicalError.alreadyExists }
             try AgentProfilesRepository(root: root).createDefault()
-            try writeDocument(document, oldRevision: nil)
+            try writeDocument(document, expected: nil)
         }
         return document
     }
@@ -116,24 +116,30 @@ public final class CanonicalRepository: ProjectRepository {
         }
     }
 
-    public func save(_ document: Document, expectedRevision: Int) throws {
+    public func save(_ document: Document, expected: Document) throws {
         try withLock(exclusive: true) {
             try transaction.recoverIfNeeded()
             let manifest = try readManifest()
-            guard manifest.revision == expectedRevision else {
-                throw AuthoringError.staleRevision(expected: expectedRevision, actual: manifest.revision)
+            guard manifest.revision == expected.revision else {
+                throw AuthoringError.staleRevision(expected: expected.revision, actual: manifest.revision)
             }
-            guard document.revision == expectedRevision + 1 else {
-                throw AuthoringError.staleRevision(expected: expectedRevision + 1, actual: document.revision)
+            guard document.revision == expected.revision + 1 else {
+                throw AuthoringError.staleRevision(expected: expected.revision + 1, actual: document.revision)
             }
-            try writeDocument(document, oldRevision: expectedRevision)
+            try writeDocument(document, expected: expected)
         }
     }
 
-    private func writeDocument(_ document: Document, oldRevision: Int?) throws {
+    private func writeDocument(_ document: Document, expected: Document?) throws {
         let diagnostics = allDiagnostics(document)
         if diagnostics.contains(where: { $0.severity == .error }) { throw CanonicalError.invalid(diagnostics) }
         try manager.createDirectory(at: root, withIntermediateDirectories: true)
+        let files = try encodedFiles(document)
+        let oldFiles = try expected.map(encodedFiles) ?? [:]
+        try transaction.commit(newFiles: files, expectedOldFiles: oldFiles, oldRevision: expected?.revision, newRevision: document.revision)
+    }
+
+    private func encodedFiles(_ document: Document) throws -> [String: Data] {
         var files: [String: Data] = [:]
         try encodeAll(document.pages, folder: "pages", into: &files)
         try encodeAll(document.screens, folder: "screens", into: &files)
@@ -147,7 +153,7 @@ public final class CanonicalRepository: ProjectRepository {
         try encodeAll(document.targets, folder: "targets", into: &files)
         let manifest = Manifest(formatVersion: 1, id: document.id, name: document.name, revision: document.revision, versions: document.versions, authoringHarness: document.authoringHarness, capabilityDeclarations: document.capabilityDeclarations, tokenTemplate: document.tokenTemplate)
         files["hamii.json"] = try encode(manifest)
-        try transaction.commit(newFiles: files, oldRevision: oldRevision, newRevision: document.revision)
+        return files
     }
 
     private func allDiagnostics(_ document: Document) -> [Diagnostic] {

@@ -67,6 +67,7 @@ with tempfile.TemporaryDirectory(prefix="hamii-cli-") as directory:
     subprocess.run(["git", "-C", directory, "add", "-A"], check=True, capture_output=True)
     subprocess.run(["git", "-C", directory, "-c", "user.name=Smoke", "-c", "user.email=smoke@example.invalid", "commit", "-qm", "baseline"], check=True, capture_output=True)
     assert run("index", "rebuild")["ok"]
+    assert not (Path(directory) / ".hamii/index.sqlite").exists()
     assert len(run("query", "components", scope, "Button")["hits"]) == 1
     component_file = Path(directory) / "components" / f"{component_id}.json"
     original = component_file.read_text()
@@ -90,4 +91,52 @@ with tempfile.TemporaryDirectory(prefix="hamii-cli-") as directory:
     assert stale_untracked.returncode == 8 and json.loads(stale_untracked.stdout)["category"] == "staleIndex"
     untracked_file.unlink()
     assert len(run("query", "components", scope, "RenamedButton")["hits"]) == 1
+    subprocess.run(["git", "-C", directory, "update-index", "--assume-unchanged", str(component_file)], check=True, capture_output=True)
+    component_file.write_text(component_file.read_text().replace("RenamedButton", "HiddenEdit"))
+    hidden = subprocess.run(
+        [str(binary), "--project", directory, "--json", "query", "components", scope, "RenamedButton"],
+        capture_output=True, text=True, timeout=15,
+    )
+    assert hidden.returncode == 8 and json.loads(hidden.stdout)["category"] == "staleIndex"
+    assert "clear assume-unchanged/skip-worktree" in json.loads(hidden.stdout)["message"]
+    blocked_rebuild = subprocess.run(
+        [str(binary), "--project", directory, "--json", "index", "rebuild"],
+        capture_output=True, text=True, timeout=15,
+    )
+    assert blocked_rebuild.returncode == 8 and json.loads(blocked_rebuild.stdout)["category"] == "staleIndex"
+    subprocess.run(["git", "-C", directory, "update-index", "--no-assume-unchanged", str(component_file)], check=True, capture_output=True)
+    assert run("index", "rebuild")["ok"]
+    subprocess.run(["git", "-C", directory, "update-index", "--skip-worktree", str(component_file)], check=True, capture_output=True)
+    component_file.write_text(component_file.read_text().replace("HiddenEdit", "SkippedEdit"))
+    skipped = subprocess.run(
+        [str(binary), "--project", directory, "--json", "query", "components", scope, "HiddenEdit"],
+        capture_output=True, text=True, timeout=15,
+    )
+    assert skipped.returncode == 8 and json.loads(skipped.stdout)["category"] == "staleIndex"
+    assert "clear assume-unchanged/skip-worktree" in json.loads(skipped.stdout)["message"]
+    blocked_rebuild = subprocess.run(
+        [str(binary), "--project", directory, "--json", "index", "rebuild"],
+        capture_output=True, text=True, timeout=15,
+    )
+    assert blocked_rebuild.returncode == 8 and json.loads(blocked_rebuild.stdout)["category"] == "staleIndex"
+    subprocess.run(["git", "-C", directory, "update-index", "--no-skip-worktree", str(component_file)], check=True, capture_output=True)
+    subprocess.run(["git", "-C", directory, "add", "-A"], check=True, capture_output=True)
+    subprocess.run(["git", "-C", directory, "-c", "user.name=Smoke", "-c", "user.email=smoke@example.invalid", "commit", "-qm", "filter baseline"], check=True, capture_output=True)
+    assert run("index", "rebuild")["ok"]
+    (Path(directory) / ".git/info/attributes").write_text("components/*.json filter=hamii-normalize\n")
+    subprocess.run(["git", "-C", directory, "config", "filter.hamii-normalize.clean", "sed 's/XkippedEdit/SkippedEdit/g'"], check=True, capture_output=True)
+    subprocess.run(["git", "-C", directory, "config", "filter.hamii-normalize.smudge", "cat"], check=True, capture_output=True)
+    component_file.write_text(component_file.read_text().replace("SkippedEdit", "XkippedEdit"))
+    filtered_status = subprocess.run(["git", "-C", directory, "status", "--porcelain", "--", "components"], check=True, capture_output=True, text=True)
+    assert not filtered_status.stdout.strip()
+    filtered_query = subprocess.run(
+        [str(binary), "--project", directory, "--json", "query", "components", scope, "SkippedEdit"],
+        capture_output=True, text=True, timeout=15,
+    )
+    assert filtered_query.returncode == 8 and json.loads(filtered_query.stdout)["category"] == "staleIndex"
+    filtered_rebuild = subprocess.run(
+        [str(binary), "--project", directory, "--json", "index", "rebuild"],
+        capture_output=True, text=True, timeout=15,
+    )
+    assert filtered_rebuild.returncode == 8 and json.loads(filtered_rebuild.stdout)["category"] == "staleIndex"
 print("CLI contract valid")

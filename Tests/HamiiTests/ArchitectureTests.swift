@@ -3,7 +3,7 @@ import XCTest
 import HamiiCore
 import HamiiApplication
 @testable import HamiiFormat
-import HamiiIndex
+@testable import HamiiIndex
 import HamiiGeneration
 import HamiiIntegration
 import HamiiMigrations
@@ -19,10 +19,11 @@ final class ArchitectureTests: XCTestCase {
             defer { try? FileManager.default.removeItem(at: path) }
             let repository = CanonicalRepository(root: path)
             var base = try repository.create(name: "Journal")
+            let created = base
             let scopeID = try XCTUnwrap(base.scopes.first?.id)
             base.pages = [Page(id: EntityID("page_old"), name: "Old")]
             base.revision = 1
-            try repository.save(base, expectedRevision: 0)
+            try repository.save(base, expected: created)
             var updated = base
             updated.pages = [Page(id: EntityID("page_new"), name: "New")]
             updated.screens = [Screen(id: EntityID("screen_new"), name: "New", scopeID: scopeID, root: Layer(id: EntityID("layer_new"), kind: .stack, name: "Root"))]
@@ -36,7 +37,7 @@ final class ArchitectureTests: XCTestCase {
                 default: break
                 }
             }
-            XCTAssertThrowsError(try interrupted.save(updated, expectedRevision: 1), "stop: \(stop)")
+            XCTAssertThrowsError(try interrupted.save(updated, expected: base), "stop: \(stop)")
             if !["prepared", "complete"].contains(stop) {
                 XCTAssertEqual(try MigrationPreflight.plan(repository: path).state, "pendingCanonicalTransaction")
             }
@@ -68,16 +69,17 @@ final class ArchitectureTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: path) }
         let repository = CanonicalRepository(root: path)
         var base = try repository.create(name: "Conflict")
+        let created = base
         base.pages = [Page(id: EntityID("page_old"), name: "Old")]
         base.revision = 1
-        try repository.save(base, expectedRevision: 0)
+        try repository.save(base, expected: created)
         var updated = base
         updated.pages = [Page(id: EntityID("page_new"), name: "New")]
         updated.revision = 2
         let interrupted = CanonicalRepository(root: path) { step in
             if case .ready = step { throw Stopped() }
         }
-        XCTAssertThrowsError(try interrupted.save(updated, expectedRevision: 1))
+        XCTAssertThrowsError(try interrupted.save(updated, expected: base))
         let externalFile = path.appendingPathComponent("pages/page_old.json")
         let external = Data("external edit".utf8)
         try external.write(to: externalFile)
@@ -88,6 +90,86 @@ final class ArchitectureTests: XCTestCase {
         XCTAssertEqual(try Data(contentsOf: externalFile), external)
         XCTAssertTrue(FileManager.default.fileExists(atPath: path.appendingPathComponent(".hamii/transaction.ready").path))
     }
+
+    func testGitCheckoutBeforeCanonicalApplyStopsSaveAndPreservesExternalBytes() throws {
+        enum ProbeError: Error { case git }
+        let path = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: path) }
+        func git(_ arguments: [String]) throws {
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: "/usr/bin/git")
+            process.arguments = ["-C", path.path] + arguments
+            try process.run()
+            process.waitUntilExit()
+            guard process.terminationStatus == 0 else { throw ProbeError.git }
+        }
+
+        try FileManager.default.createDirectory(at: path, withIntermediateDirectories: true)
+        try git(["init", "-q", "-b", "main"])
+        try Data(".hamii/\n".utf8).write(to: path.appendingPathComponent(".gitignore"))
+        let repository = CanonicalRepository(root: path)
+        var base = try repository.create(name: "Checkout")
+        let created = base
+        let scopeID = try XCTUnwrap(base.scopes.first?.id)
+        let componentID = EntityID("component_checkout")
+        base.components = [ComponentDefinition(id: componentID, name: "BaseButton", ownerScopeID: scopeID, root: Layer(id: EntityID("layer_checkout"), kind: .stack, name: "Root"))]
+        base.revision = 1
+        try repository.save(base, expected: created)
+        try git(["add", "-A"])
+        try git(["-c", "user.name=Probe", "-c", "user.email=probe@example.invalid", "commit", "-qm", "baseline"])
+
+        let componentFile = path.appendingPathComponent("components/\(componentID.rawValue).json")
+        try git(["switch", "-qc", "external"])
+        let baselineBytes = try Data(contentsOf: componentFile)
+        let externalBytes = try XCTUnwrap(String(data: baselineBytes, encoding: .utf8)).replacingOccurrences(of: "BaseButton", with: "ExternalButton").data(using: .utf8)!
+        try externalBytes.write(to: componentFile)
+        try git(["add", "-A"])
+        try git(["-c", "user.name=Probe", "-c", "user.email=probe@example.invalid", "commit", "-qm", "external edit"])
+        try git(["switch", "-q", "main"])
+
+        var updated = base
+        updated.components[0].name = "HamiiButton"
+        updated.revision = 2
+        let interrupted = CanonicalRepository(root: path) { step in
+            if case .ready = step { try git(["switch", "-q", "external"]) }
+        }
+        XCTAssertThrowsError(try interrupted.save(updated, expected: base)) { error in
+            guard case CanonicalError.transactionConflict(let file) = error else { return XCTFail("Wrong error: \(error)") }
+            XCTAssertEqual(file, "components/\(componentID.rawValue).json")
+        }
+        XCTAssertEqual(try Data(contentsOf: componentFile), externalBytes)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: path.appendingPathComponent(".hamii/transaction.ready").path))
+    }
+
+    func testExternalEditAfterLoadStopsSaveBeforeJournalAndPreservesBytes() throws {
+        let path = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: path) }
+        let repository = CanonicalRepository(root: path)
+        var base = try repository.create(name: "External edit")
+        let created = base
+        let owner = try XCTUnwrap(base.scopes.first?.id)
+        base.components = [ComponentDefinition(id: EntityID("component_probe"), name: "BaseButton", ownerScopeID: owner, root: Layer(id: EntityID("layer_probe"), kind: .stack, name: "Root"))]
+        base.revision = 1
+        try repository.save(base, expected: created)
+
+        let loaded = try repository.load()
+        let componentFile = path.appendingPathComponent("components/component_probe.json")
+        let externalBytes = try XCTUnwrap(String(data: Data(contentsOf: componentFile), encoding: .utf8)?
+            .replacingOccurrences(of: "BaseButton", with: "ExternalButton").data(using: .utf8))
+        try externalBytes.write(to: componentFile)
+
+        var intended = loaded
+        intended.components[0].name = "HamiiButton"
+        intended.revision = 2
+        XCTAssertThrowsError(try repository.save(intended, expected: loaded)) { error in
+            guard case CanonicalError.transactionConflict(let file) = error else { return XCTFail("Wrong error: \(error)") }
+            XCTAssertEqual(file, "components/component_probe.json")
+        }
+        XCTAssertEqual(try Data(contentsOf: componentFile), externalBytes)
+        XCTAssertEqual(try repository.load().components[0].name, "ExternalButton")
+        XCTAssertFalse(FileManager.default.fileExists(atPath: path.appendingPathComponent(".hamii/transaction.ready").path))
+    }
+
     func testRepositoryAssetUsesContentAddressedBlobAndRejectsCorruption() throws {
         let path = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: path) }
@@ -166,6 +248,7 @@ final class ArchitectureTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: path) }
         let repository = CanonicalRepository(root: path)
         var document = try repository.create(name: "Nested availability")
+        let created = document
         let appID = try XCTUnwrap(document.scopes.first?.id)
         let checkout = ArchitectureScope(id: EntityID("scope_checkout"), name: "Checkout", parentID: appID)
         document.scopes.append(checkout)
@@ -177,13 +260,14 @@ final class ArchitectureTests: XCTestCase {
         let screen = Screen(id: EntityID("screen_checkout"), name: "Checkout", scopeID: checkout.id, root: Layer(id: EntityID("layer_checkout_root"), kind: .stack, name: "Root"))
         document.screens = [screen]
         document.revision = 1
-        try repository.save(document, expectedRevision: 0)
+        try repository.save(document, expected: created)
+        try initializeGit(at: path)
 
         let service = ProjectService(repository: repository)
         XCTAssertEqual(try service.availableComponents(for: checkout.id).count, 0)
-        let index = try LocalIndex(projectRoot: path)
-        let fingerprint = try CanonicalSourceFingerprint.current(at: path)
-        try index.rebuild(from: document, sourceFingerprint: fingerprint)
+        let index = try LocalIndex(projectRoot: path, documentID: document.id, revisionCalculator: GitCanonicalRevisionCalculator(), storageRoot: path.appendingPathComponent("test-indexes"))
+        let revision = try GitCanonicalRevisionCalculator().current(at: path)
+        try index.rebuild(from: document, canonicalRevision: revision)
         XCTAssertEqual(try index.components(matching: "Outer", consumerScopeID: checkout.id, documentID: document.id, revision: 1).count, 0)
 
         let intent = AuthoringIntent.instantiate(screenID: screen.id, parentID: screen.root.id, definitionID: outer.id)
@@ -211,6 +295,7 @@ final class ArchitectureTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: path) }
         let repository = CanonicalRepository(root: path)
         var document = try repository.create(name: "Asset Scope")
+        let created = document
         let appID = try XCTUnwrap(document.scopes.first?.id)
         let product = ArchitectureScope(id: EntityID("scope_product"), name: "Product", parentID: appID)
         let checkout = ArchitectureScope(id: EntityID("scope_checkout"), name: "Checkout", parentID: appID)
@@ -221,7 +306,7 @@ final class ArchitectureTests: XCTestCase {
         let screen = Screen(id: EntityID("screen_checkout"), name: "Checkout", scopeID: checkout.id, root: Layer(id: EntityID("layer_root"), kind: .stack, name: "Root"))
         document.screens = [screen]
         document.revision = 1
-        try repository.save(document, expectedRevision: 0)
+        try repository.save(document, expected: created)
         let service = ProjectService(repository: repository)
         XCTAssertEqual(try service.availableAssets(for: checkout.id).map(\.id), [appAsset.id])
         let intent = AuthoringIntent.addImageLayer(screenID: screen.id, parentID: screen.root.id, assetID: productAsset.id, name: "Forbidden")
@@ -267,6 +352,7 @@ final class ArchitectureTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: path) }
         let repository = CanonicalRepository(root: path)
         var document = try repository.create(name: "Index")
+        let created = document
         let appID = try XCTUnwrap(document.scopes.first?.id)
         let denied = ArchitectureScope(id: EntityID("scope_denied"), name: "Denied", parentID: appID)
         document.scopes.append(denied)
@@ -274,15 +360,16 @@ final class ArchitectureTests: XCTestCase {
         component.availability.denyScopeIDs = [denied.id]
         document.components.append(component)
         document.revision = 1
-        try repository.save(document, expectedRevision: 0)
-        let index = try LocalIndex(projectRoot: path)
-        let fingerprint = try CanonicalSourceFingerprint.current(at: path)
-        try index.rebuild(from: document, sourceFingerprint: fingerprint)
+        try repository.save(document, expected: created)
+        try initializeGit(at: path)
+        let index = try LocalIndex(projectRoot: path, documentID: document.id, revisionCalculator: GitCanonicalRevisionCalculator(), storageRoot: path.appendingPathComponent("test-indexes"))
+        let revision = try GitCanonicalRevisionCalculator().current(at: path)
+        try index.rebuild(from: document, canonicalRevision: revision)
         XCTAssertEqual(try index.components(matching: "But", consumerScopeID: appID, documentID: document.id, revision: 1).count, 1)
         XCTAssertEqual(try index.components(matching: "But", consumerScopeID: denied.id, documentID: document.id, revision: 1).count, 0)
         try FileManager.default.removeItem(at: index.url)
-        let rebuilt = try LocalIndex(projectRoot: path)
-        try rebuilt.rebuild(from: repository.load(), sourceFingerprint: fingerprint)
+        let rebuilt = try LocalIndex(projectRoot: path, documentID: document.id, revisionCalculator: GitCanonicalRevisionCalculator(), storageRoot: path.appendingPathComponent("test-indexes"))
+        try rebuilt.rebuild(from: repository.load(), canonicalRevision: revision)
         XCTAssertEqual(try rebuilt.components(matching: "But", consumerScopeID: appID, documentID: document.id, revision: 1).count, 1)
         let componentFile = path.appendingPathComponent("components/\(component.id.rawValue).json")
         var externalBytes = try Data(contentsOf: componentFile)
@@ -290,6 +377,94 @@ final class ArchitectureTests: XCTestCase {
         try externalBytes.write(to: componentFile)
         XCTAssertThrowsError(try rebuilt.components(matching: "But", consumerScopeID: appID, documentID: document.id, revision: 1)) { error in
             guard case IndexError.stale = error else { return XCTFail("Expected stale index") }
+        }
+    }
+
+    func testLocalIndexLocationIsOutsideRepositoryAndIsolatesWorktrees() {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let otherWorktree = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let documentID = EntityID("document_shared")
+        let first = LocalIndexLocation.url(projectRoot: root, documentID: documentID)
+        let second = LocalIndexLocation.url(projectRoot: otherWorktree, documentID: documentID)
+        let differentDocument = LocalIndexLocation.url(projectRoot: root, documentID: EntityID("document_other"))
+        XCTAssertFalse(first.path.hasPrefix(root.path + "/"))
+        XCTAssertNotEqual(first, second)
+        XCTAssertNotEqual(first, differentDocument)
+        XCTAssertEqual(first.lastPathComponent, "index.sqlite")
+    }
+
+    func testIndexProjectionCountsNestedScreenInstances() throws {
+        var document = Document(name: "Usage")
+        let owner = try XCTUnwrap(document.scopes.first?.id)
+        let firstID = EntityID("component_first")
+        let secondID = EntityID("component_second")
+        document.components = [
+            ComponentDefinition(id: firstID, name: "First", ownerScopeID: owner, root: Layer(id: EntityID("definition_first"), kind: .stack, name: "Root")),
+            ComponentDefinition(id: secondID, name: "Second", ownerScopeID: owner, root: Layer(id: EntityID("definition_second"), kind: .stack, name: "Root"))
+        ]
+        let first = Layer(id: EntityID("instance_first"), kind: .componentInstance, name: "First", component: ComponentInstance(definitionID: firstID))
+        let firstAgain = Layer(id: EntityID("instance_first_again"), kind: .componentInstance, name: "First Again", component: ComponentInstance(definitionID: firstID))
+        let second = Layer(id: EntityID("instance_second"), kind: .componentInstance, name: "Second", component: ComponentInstance(definitionID: secondID))
+        let nested = Layer(id: EntityID("nested"), kind: .stack, name: "Nested", children: [second, firstAgain])
+        document.screens = [Screen(id: EntityID("screen_usage"), name: "Usage", scopeID: owner, root: Layer(id: EntityID("root_usage"), kind: .stack, name: "Root", children: [first, nested]))]
+        let counts = Dictionary(uniqueKeysWithValues: IndexProjection(document: document).components.map { ($0.id, $0.usageCount) })
+        XCTAssertEqual(counts[firstID], 2)
+        XCTAssertEqual(counts[secondID], 1)
+    }
+
+    func testCanonicalRevisionRejectsDirectoryWithoutGit() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        _ = try CanonicalRepository(root: root).create(name: "No Git")
+        XCTAssertThrowsError(try GitCanonicalRevisionCalculator().current(at: root)) { error in
+            guard case IndexError.unverifiableSource = error else { return XCTFail("Wrong error: \(error)") }
+        }
+    }
+
+    func testCanonicalRevisionRejectsBranchSwitchBetweenGitChecks() throws {
+        enum ProbeError: Error { case git(String) }
+        let path = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: path) }
+        try FileManager.default.createDirectory(at: path, withIntermediateDirectories: true)
+        func git(_ arguments: [String]) throws -> String {
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: "/usr/bin/git")
+            process.arguments = ["-C", path.path] + arguments
+            let output = Pipe()
+            process.standardOutput = output
+            process.standardError = Pipe()
+            try process.run()
+            let text = String(data: output.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
+            process.waitUntilExit()
+            guard process.terminationStatus == 0 else { throw ProbeError.git(arguments.joined(separator: " ")) }
+            return text.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        _ = try git(["init", "-q"])
+        try Data(".hamii/\n".utf8).write(to: path.appendingPathComponent(".gitignore"))
+        let repository = CanonicalRepository(root: path)
+        let created = try repository.create(name: "Branch race")
+        let owner = try XCTUnwrap(created.scopes.first?.id)
+        var base = created
+        base.components = [ComponentDefinition(id: EntityID("component_race"), name: "BaseButton", ownerScopeID: owner, root: Layer(id: EntityID("layer_race"), kind: .stack, name: "Root"))]
+        base.revision = 1
+        try repository.save(base, expected: created)
+        _ = try git(["add", "-A"])
+        _ = try git(["-c", "user.name=Probe", "-c", "user.email=probe@example.invalid", "commit", "-qm", "base"])
+        let baseBranch = try git(["symbolic-ref", "--short", "HEAD"])
+        _ = try git(["switch", "-qc", "alternate"])
+        let componentFile = path.appendingPathComponent("components/component_race.json")
+        let alternate = try XCTUnwrap(String(data: Data(contentsOf: componentFile), encoding: .utf8)?
+            .replacingOccurrences(of: "BaseButton", with: "XaseButton").data(using: .utf8))
+        try alternate.write(to: componentFile)
+        _ = try git(["add", "-A"])
+        _ = try git(["-c", "user.name=Probe", "-c", "user.email=probe@example.invalid", "commit", "-qm", "alternate"])
+        _ = try git(["switch", "-q", baseBranch])
+
+        let calculator = GitCanonicalRevisionCalculator(afterInitialStatus: {
+            _ = try git(["switch", "-q", "alternate"])
+        })
+        XCTAssertThrowsError(try calculator.current(at: path)) { error in
+            guard case IndexError.stale = error else { return XCTFail("Wrong error: \(error)") }
         }
     }
 
@@ -481,5 +656,38 @@ final class ArchitectureTests: XCTestCase {
         let invalid: [AuthoringIntent] = [.createPage(name: "One"), .createScope(name: "Broken", parentID: EntityID("scope_missing"))]
         XCTAssertThrowsError(try MutationEngine.apply(invalid, to: document, expectedRevision: 0, author: .human))
         XCTAssertEqual(document.pages.count, 0)
+    }
+
+    func testEquivalentMutationDoesNotWriteCanonicalRevision() throws {
+        let path = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: path) }
+        let repository = CanonicalRepository(root: path)
+        let service = ProjectService(repository: repository)
+        let initial = try repository.create(name: "No-op")
+        let scopeID = try XCTUnwrap(initial.scopes.first?.id)
+        let created = try service.mutate(.createScreen(name: "Welcome", scopeID: scopeID), expectedRevision: initial.revision, author: .human)
+        let screen = try XCTUnwrap(service.document().screens.first)
+        let inserted = try service.mutate(.addLayer(screenID: screen.id, parentID: screen.root.id, kind: .text, name: "Greeting", text: "Hello"), expectedRevision: created.revision, author: .human)
+        let current = try service.document()
+        let layerID = try XCTUnwrap(current.screens.first?.root.children.first?.id)
+        let manifest = path.appendingPathComponent("hamii.json")
+        let screenFile = path.appendingPathComponent("screens/\(screen.id.rawValue).json")
+        let before = try Data(contentsOf: manifest)
+        let screenBefore = try Data(contentsOf: screenFile)
+        let result = try service.mutate(.setText(screenID: screen.id, layerID: layerID, text: "Hello"), expectedRevision: inserted.revision, author: .human)
+        XCTAssertEqual(result.revision, inserted.revision)
+        XCTAssertTrue(result.patches.isEmpty)
+        XCTAssertEqual(try Data(contentsOf: manifest), before)
+        XCTAssertEqual(try Data(contentsOf: screenFile), screenBefore)
+        XCTAssertEqual(try service.document().revision, inserted.revision)
+    }
+
+    private func initializeGit(at root: URL) throws {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/git")
+        process.arguments = ["-C", root.path, "init", "-q"]
+        try process.run()
+        process.waitUntilExit()
+        XCTAssertEqual(process.terminationStatus, 0)
     }
 }
