@@ -1,6 +1,7 @@
 import CryptoKit
 import Darwin
 import Foundation
+import SQLite3
 import XCTest
 import HamiiCore
 @testable import HamiiFormat
@@ -9,11 +10,14 @@ import HamiiIndex
 /// Real child processes and SIGKILL around a test-only coordinated generation protocol.
 final class SharedGenerationCrashSpikeTests: XCTestCase {
     private struct Record: Codable { var phase: String; var generation: Int }
-    private final class BootTrust: @unchecked Sendable { var verified = false }
+    private final class BootTrust: @unchecked Sendable { var verified = false; var checkedBeforeVerification = false }
     private struct Calculator: CanonicalRevisionCalculating {
         let trust: BootTrust?
         func current(at root: URL) throws -> CanonicalRevision {
-            if let trust, !trust.verified { throw IndexError.stale }
+            if let trust, !trust.verified {
+                trust.checkedBeforeVerification = true
+                throw IndexError.stale
+            }
             let record = try JSONDecoder().decode(Record.self, from: Data(contentsOf: root.appendingPathComponent(".hamii/prototype-generation.json")))
             guard record.phase == "current" else { throw IndexError.stale }
             return CanonicalRevision("gen-\(record.generation)")
@@ -67,6 +71,37 @@ final class SharedGenerationCrashSpikeTests: XCTestCase {
         return hash.finalize().map { String(format: "%02x", $0) }.joined()
     }
 
+    private func indexMetadata(_ url: URL, key: String) throws -> String? {
+        var database: OpaquePointer?
+        guard sqlite3_open_v2(url.path, &database, SQLITE_OPEN_READONLY, nil) == SQLITE_OK else { throw IndexError.sqlite("metadata open") }
+        defer { sqlite3_close(database) }
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(database, "SELECT value FROM metadata WHERE key = ?", -1, &statement, nil) == SQLITE_OK else {
+            throw IndexError.sqlite("metadata prepare")
+        }
+        defer { sqlite3_finalize(statement) }
+        let transient = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
+        _ = sqlite3_bind_text(statement, 1, key, -1, transient)
+        guard sqlite3_step(statement) == SQLITE_ROW, let bytes = sqlite3_column_text(statement, 0) else { return nil }
+        return String(cString: bytes)
+    }
+
+    private func publishPrototypeIndexGenerationID(_ url: URL) throws -> String {
+        let id = UUID().uuidString
+        var database: OpaquePointer?
+        guard sqlite3_open(url.path, &database) == SQLITE_OK else { throw IndexError.sqlite("generation open") }
+        defer { sqlite3_close(database) }
+        let sql = "BEGIN IMMEDIATE; INSERT OR REPLACE INTO metadata(key, value) VALUES ('prototypeIndexGenerationID', '\(id)'); COMMIT;"
+        guard sqlite3_exec(database, sql, nil, nil, nil) == SQLITE_OK else { throw IndexError.sqlite("generation publish") }
+        return id
+    }
+
+    private func mayActivateBootTrust(journalResolved: Bool, snapshotBefore: String, snapshotAfter: String,
+                                      sharedGeneration: Int, indexedSource: String?, publishedGenerationID: String?) -> Bool {
+        journalResolved && snapshotBefore == snapshotAfter && indexedSource == "gen-\(sharedGeneration)" &&
+            publishedGenerationID?.isEmpty == false
+    }
+
     private func testBundle() -> URL {
         URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
             .appendingPathComponent(".build/out/Products/Debug/HamiiTests.xctest")
@@ -106,6 +141,33 @@ final class SharedGenerationCrashSpikeTests: XCTestCase {
             try index.rebuild(from: repository.load(), canonicalRevision: CanonicalRevision("gen-0"))
         }
         return (base, index)
+    }
+
+    func testBootTransitionRejectsBrokenSnapshotAndIndexBinding() throws {
+        let temporary = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: temporary) }
+        let root = temporary.appendingPathComponent("Project")
+        let (_, index) = try fixture(root, indexRoot: temporary.appendingPathComponent("Indexes"))
+        let before = try snapshot(root)
+        let source = try indexMetadata(index.url, key: "canonicalRevision")
+        XCTAssertFalse(mayActivateBootTrust(journalResolved: false, snapshotBefore: before, snapshotAfter: before,
+                                             sharedGeneration: 0, indexedSource: source, publishedGenerationID: "id"))
+        XCTAssertFalse(mayActivateBootTrust(journalResolved: true, snapshotBefore: before, snapshotAfter: before,
+                                             sharedGeneration: 0, indexedSource: source, publishedGenerationID: nil))
+        let id = try publishPrototypeIndexGenerationID(index.url)
+        XCTAssertTrue(mayActivateBootTrust(journalResolved: true, snapshotBefore: before, snapshotAfter: try snapshot(root),
+                                            sharedGeneration: 0, indexedSource: source, publishedGenerationID: id))
+        let component = root.appendingPathComponent("components/component_probe.json")
+        let original = try Data(contentsOf: component)
+        let text = try XCTUnwrap(String(data: original, encoding: .utf8))
+        try XCTUnwrap(text.replacingOccurrences(of: "Alpha", with: "Omega").data(using: .utf8)).write(to: component)
+        XCTAssertFalse(mayActivateBootTrust(journalResolved: true, snapshotBefore: before, snapshotAfter: try snapshot(root),
+                                             sharedGeneration: 0, indexedSource: source, publishedGenerationID: id))
+        try original.write(to: component)
+        try persist(Record(phase: "current", generation: 1), root: root)
+        let changedGeneration = try JSONDecoder().decode(Record.self, from: Data(contentsOf: root.appendingPathComponent(".hamii/prototype-generation.json")))
+        XCTAssertFalse(mayActivateBootTrust(journalResolved: true, snapshotBefore: before, snapshotAfter: try snapshot(root),
+                                             sharedGeneration: changedGeneration.generation, indexedSource: source, publishedGenerationID: id))
     }
 
     func testWriterWorker() throws {
@@ -166,18 +228,51 @@ final class SharedGenerationCrashSpikeTests: XCTestCase {
         } catch { bootRejected = true }
         XCTAssertTrue(bootRejected)
 
-        let recovered: (String, String, Int, Bool) = try withLock(root, exclusive: true) {
+        let recovered: (String, String, Int, Bool, String, [String: Bool]) = try withLock(root, exclusive: true) {
             let repository = CanonicalRepository(root: root)
+            let journalBeforeLoad = FileManager.default.fileExists(atPath: root.appendingPathComponent(".hamii/transaction.ready").path)
             let document = try repository.load() // This runs Canonical journal recovery first.
             let source = try snapshot(root)
-            let hadJournal = FileManager.default.fileExists(atPath: root.appendingPathComponent(".hamii/transaction.ready").path)
+            let journalResolved = !FileManager.default.fileExists(atPath: root.appendingPathComponent(".hamii/transaction.ready").path)
+            XCTAssertTrue(journalResolved)
+            func queryRejected() -> Bool {
+                do {
+                    _ = try index.components(matching: "", consumerScopeID: EntityID("scope_app"),
+                                             documentID: EntityID(documentID), revision: document.revision)
+                    return false
+                } catch { return true }
+            }
+            let afterJournalRejected = queryRejected()
+            XCTAssertTrue(afterJournalRejected)
             let next = before.generation + 1
             try persist(Record(phase: "current", generation: next), root: root)
+            let afterCanonicalGenerationRejected = queryRejected()
+            XCTAssertTrue(afterCanonicalGenerationRejected)
             try index.rebuild(from: document, canonicalRevision: CanonicalRevision("gen-\(next)"))
+            let afterIndexRowsRejected = queryRejected()
+            XCTAssertTrue(afterIndexRowsRejected)
+            let generationID = try publishPrototypeIndexGenerationID(index.url)
+            let afterGenerationIDRejected = queryRejected()
+            XCTAssertTrue(afterGenerationIDRejected)
+            let indexedSource = try indexMetadata(index.url, key: "canonicalRevision")
+            let publishedID = try indexMetadata(index.url, key: "prototypeIndexGenerationID")
             let after = try snapshot(root)
             XCTAssertEqual(source, after)
+            XCTAssertEqual(indexedSource, "gen-\(next)")
+            XCTAssertEqual(publishedID, generationID)
+            XCTAssertFalse(generationID.isEmpty)
+            XCTAssertTrue(trust.checkedBeforeVerification)
+            guard publishedID == generationID,
+                  mayActivateBootTrust(journalResolved: journalResolved, snapshotBefore: source, snapshotAfter: after,
+                                       sharedGeneration: next, indexedSource: indexedSource, publishedGenerationID: publishedID) else {
+                throw IndexError.stale
+            }
             trust.verified = true
-            return (document.components[0].name, source, document.revision, hadJournal)
+            let gates = ["afterJournalRejected": afterJournalRejected,
+                         "afterCanonicalGenerationRejected": afterCanonicalGenerationRejected,
+                         "afterIndexRowsRejected": afterIndexRowsRejected,
+                         "afterIndexGenerationIDRejected": afterGenerationIDRejected]
+            return (document.components[0].name, source, document.revision, journalBeforeLoad, generationID, gates)
         }
         let hits = try withLock(root, exclusive: false) {
             try index.components(matching: recovered.0, consumerScopeID: EntityID("scope_app"),
@@ -186,7 +281,10 @@ final class SharedGenerationCrashSpikeTests: XCTestCase {
         XCTAssertEqual(hits.map(\.name), [recovered.0])
         let report: [String: Any] = ["bootRejected": bootRejected, "recoveredName": recovered.0,
                                       "snapshotDigest": recovered.1, "revision": recovered.2,
-                                      "journalRemainsAfterRecovery": recovered.3,
+                                      "journalPresentBeforeLoad": recovered.3,
+                                      "indexGenerationID": recovered.4,
+                                      "transitionGates": recovered.5,
+                                      "journalRemainsAfterRecovery": FileManager.default.fileExists(atPath: root.appendingPathComponent(".hamii/transaction.ready").path),
                                       "queryAfterRecovery": hits.map(\.name)]
         let bytes = try JSONSerialization.data(withJSONObject: report, options: [.prettyPrinted, .sortedKeys])
         try bytes.write(to: URL(fileURLWithPath: resultPath))
@@ -211,21 +309,27 @@ final class SharedGenerationCrashSpikeTests: XCTestCase {
                 "HAMII_CRASH_SPIKE_STAGE": stage, "HAMII_CRASH_SPIKE_MARKER": marker.path]) { _, new in new })
             try awaitFile(marker, process: writer)
             let reader = Process()
+            let attemptMarker = temporary.appendingPathComponent("reader.attempt")
+            let acquiredMarker = temporary.appendingPathComponent("reader.acquired")
             let sourceRoot = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
             reader.executableURL = URL(fileURLWithPath: "/usr/bin/python3")
             reader.arguments = [sourceRoot.appendingPathComponent("adr/index-consistency/spikes/shared-worktree-generation/artifacts/restart_query_probe.py").path,
-                                root.path, index.url.path, "Alpha", "--boot-gate"]
+                                root.path, index.url.path, "Alpha", "--boot-gate", attemptMarker.path, acquiredMarker.path]
             let readerOutput = Pipe()
             reader.standardOutput = readerOutput
             reader.standardError = readerOutput
             try reader.run()
+            try awaitFile(attemptMarker, process: reader)
             Thread.sleep(forTimeInterval: 0.15)
-            let blockedOnWriter = reader.isRunning
+            let blockedOnWriter = reader.isRunning && !FileManager.default.fileExists(atPath: acquiredMarker.path)
             XCTAssertTrue(blockedOnWriter)
             kill(writer.processIdentifier, SIGKILL)
             writer.waitUntilExit()
+            let killedBySignal9 = writer.terminationReason == .uncaughtSignal && writer.terminationStatus == SIGKILL
+            XCTAssertTrue(killedBySignal9)
             let readerBytes = readerOutput.fileHandleForReading.readDataToEndOfFile()
             reader.waitUntilExit()
+            XCTAssertTrue(FileManager.default.fileExists(atPath: acquiredMarker.path))
             XCTAssertEqual(reader.terminationStatus, 0, String(data: readerBytes, encoding: .utf8) ?? "")
             let bootReader = try JSONSerialization.jsonObject(with: readerBytes) as! [String: Any]
             XCTAssertEqual(bootReader["status"] as? String, "staleIndex")
@@ -250,14 +354,22 @@ final class SharedGenerationCrashSpikeTests: XCTestCase {
             let report = try JSONSerialization.jsonObject(with: Data(contentsOf: result)) as! [String: Any]
             XCTAssertEqual(report["bootRejected"] as? Bool, true)
             XCTAssertEqual(report["journalRemainsAfterRecovery"] as? Bool, false)
+            XCTAssertEqual(report["journalPresentBeforeLoad"] as? Bool, stage == "save")
+            let gates = try XCTUnwrap(report["transitionGates"] as? [String: Bool])
+            XCTAssertTrue(gates.values.allSatisfy { $0 })
+            XCTAssertFalse((report["indexGenerationID"] as? String ?? "").isEmpty)
             let expected = stage == "pending" || stage == "save" ? "Alpha" : "Beta"
             XCTAssertEqual(report["recoveredName"] as? String, expected)
             XCTAssertEqual(report["queryAfterRecovery"] as? [String], [expected])
-            results.append(["stage": stage, "writerKilledBySignal9": writer.terminationStatus == 9,
+            results.append(["stage": stage, "writerKilledBySignal9": killedBySignal9,
+                            "readerAttemptedLockBeforeKill": FileManager.default.fileExists(atPath: attemptMarker.path),
+                            "readerAcquiredLockAfterKill": FileManager.default.fileExists(atPath: acquiredMarker.path),
                             "readerBlockedDuringWriterLock": blockedOnWriter,
                             "bootGatedReaderStatusAfterKill": bootReader["status"] ?? "missing",
                             "rawReaderStatusAfterKill": rawReader["status"] ?? "missing",
                             "journalPresentBeforeRecovery": journalPresentBeforeRecovery,
+                            "transitionGatesRejected": gates,
+                            "indexGenerationID": report["indexGenerationID"] ?? "missing",
                             "bootRejected": report["bootRejected"] ?? false,
                             "journalCleared": report["journalRemainsAfterRecovery"] as? Bool == false,
                             "recoveredName": expected, "snapshotDigest": report["snapshotDigest"] ?? "missing"])

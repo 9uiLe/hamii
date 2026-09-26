@@ -32,7 +32,7 @@ worktree 分離の運用条件、checkout/pull/edit の検出可能範囲、chec
 - [Worktree isolation](spikes/worktree-isolation/SPIKE.md): separate worktree の逐次編集と、20 組の重なった CLI mutation を確認。同時 Git 操作と crash recovery は未測定。
 - [External change detection](spikes/external-change-detection/SPIKE.md): ready barrier で checkout した場合と load/save 間の逐次外部編集の conflict / bytes 保持を確認。その他の interleaving は未測定。
 - [Concurrent worktree merge](spikes/concurrent-worktree-merge/SPIKE.md): 非競合 Page と同一 Text property の merge を確認。semantic-only conflict は未測定。
-- [Shared generation process-stop matrix](../index-consistency/spikes/shared-worktree-generation/SPIKE.md): 試験用 coordinated boundary で別 OS process の writer / reader を競合させ、4地点で writer を SIGKILL。非協調 writer の扱いと正式な writer contract は未決定。
+- [Shared generation process-stop matrix](../index-consistency/spikes/shared-worktree-generation/SPIKE.md): 試験用 coordinated boundary で別 OS process の writer / reader の flock attempt/acquire を確認し、4地点で writer を SIGKILL。非協調 writer の扱いと正式な writer contract は未決定。
 
 ## Decision Criteria
 

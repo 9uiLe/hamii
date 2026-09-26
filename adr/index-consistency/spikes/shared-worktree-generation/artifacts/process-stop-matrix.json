@@ -3,49 +3,85 @@
     {
       "bootGatedReaderStatusAfterKill" : "staleIndex",
       "bootRejected" : true,
+      "indexGenerationID" : "5780E117-A003-452A-9919-CAFB536F835B",
       "journalCleared" : true,
       "journalPresentBeforeRecovery" : false,
       "rawReaderStatusAfterKill" : "staleIndex",
+      "readerAcquiredLockAfterKill" : true,
+      "readerAttemptedLockBeforeKill" : true,
       "readerBlockedDuringWriterLock" : true,
       "recoveredName" : "Alpha",
-      "snapshotDigest" : "e905fc8d88022d0bae8f5b6104a5fb2d7823b1b9aa2bc55fc9ce0f2178772527",
+      "snapshotDigest" : "47188d5603d3093a8d82a2f3017e06d7f6c477a76951e0e99bbf9de28b67422c",
       "stage" : "pending",
+      "transitionGatesRejected" : {
+        "afterCanonicalGenerationRejected" : true,
+        "afterIndexGenerationIDRejected" : true,
+        "afterIndexRowsRejected" : true,
+        "afterJournalRejected" : true
+      },
       "writerKilledBySignal9" : true
     },
     {
       "bootGatedReaderStatusAfterKill" : "staleIndex",
       "bootRejected" : true,
+      "indexGenerationID" : "84A32B0D-FB6A-4382-B2D2-4BFBB6A671FA",
       "journalCleared" : true,
       "journalPresentBeforeRecovery" : true,
       "rawReaderStatusAfterKill" : "staleIndex",
+      "readerAcquiredLockAfterKill" : true,
+      "readerAttemptedLockBeforeKill" : true,
       "readerBlockedDuringWriterLock" : true,
       "recoveredName" : "Alpha",
-      "snapshotDigest" : "49ec35a338f0a95f4b00efab30af8a7c9927e26d92b128b5e0b6ed347e7c554c",
+      "snapshotDigest" : "085de2fb875918b1de5f2eea9de2372dafb6010b6535e1c0b033a807fe3e625b",
       "stage" : "save",
+      "transitionGatesRejected" : {
+        "afterCanonicalGenerationRejected" : true,
+        "afterIndexGenerationIDRejected" : true,
+        "afterIndexRowsRejected" : true,
+        "afterJournalRejected" : true
+      },
       "writerKilledBySignal9" : true
     },
     {
       "bootGatedReaderStatusAfterKill" : "staleIndex",
       "bootRejected" : true,
+      "indexGenerationID" : "6E1A6666-C0AF-47F5-9A59-47A7A458654B",
       "journalCleared" : true,
       "journalPresentBeforeRecovery" : false,
       "rawReaderStatusAfterKill" : "staleIndex",
+      "readerAcquiredLockAfterKill" : true,
+      "readerAttemptedLockBeforeKill" : true,
       "readerBlockedDuringWriterLock" : true,
       "recoveredName" : "Beta",
-      "snapshotDigest" : "c7e716d4742858b6eb5cd61872bf65a6872655b76f29f4374f8834cfc6214abd",
+      "snapshotDigest" : "52af68904e2d182938bee94bd60255a374e781e3be210c434f78811f681da81f",
       "stage" : "generationFinalized",
+      "transitionGatesRejected" : {
+        "afterCanonicalGenerationRejected" : true,
+        "afterIndexGenerationIDRejected" : true,
+        "afterIndexRowsRejected" : true,
+        "afterJournalRejected" : true
+      },
       "writerKilledBySignal9" : true
     },
     {
       "bootGatedReaderStatusAfterKill" : "staleIndex",
       "bootRejected" : true,
+      "indexGenerationID" : "E017126D-8775-4197-80E7-9C3CE1F13B9C",
       "journalCleared" : true,
       "journalPresentBeforeRecovery" : false,
       "rawReaderStatusAfterKill" : "current",
+      "readerAcquiredLockAfterKill" : true,
+      "readerAttemptedLockBeforeKill" : true,
       "readerBlockedDuringWriterLock" : true,
       "recoveredName" : "Beta",
-      "snapshotDigest" : "d0fef54becca9bc2bf4acea5e305e13101b2f72c5b45ddb86f36db68c2b50f1d",
+      "snapshotDigest" : "aac90ffa9554f9d4632810c446280166a91af85abef46f135d827a0500669ba3",
       "stage" : "indexPublished",
+      "transitionGatesRejected" : {
+        "afterCanonicalGenerationRejected" : true,
+        "afterIndexGenerationIDRejected" : true,
+        "afterIndexRowsRejected" : true,
+        "afterJournalRejected" : true
+      },
       "writerKilledBySignal9" : true
     }
   ]

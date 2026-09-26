@@ -11,9 +11,15 @@ root = pathlib.Path(sys.argv[1])
 index = pathlib.Path(sys.argv[2])
 term = sys.argv[3]
 boot_gate = len(sys.argv) > 4 and sys.argv[4] == "--boot-gate"
+attempt_marker = pathlib.Path(sys.argv[5]) if len(sys.argv) > 5 else None
+acquired_marker = pathlib.Path(sys.argv[6]) if len(sys.argv) > 6 else None
 start = time.perf_counter_ns()
 with (root / ".hamii" / "prototype-generation.lock").open("rb") as lock:
+    if attempt_marker:
+        attempt_marker.write_text("attempting flock\n")
     fcntl.flock(lock, fcntl.LOCK_SH)
+    if acquired_marker:
+        acquired_marker.write_text("acquired flock\n")
     state = json.loads((root / ".hamii" / "prototype-generation.json").read_text())
     if boot_gate:
         result = {"status": "staleIndex", "reason": "unverifiedProcessStartup"}
