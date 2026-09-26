@@ -18,7 +18,7 @@ filesystem watcher + fingerprint、Git diff + working-tree fingerprint、full sc
 
 ## Current Hypothesis
 
-**未確定:** Source revision だけでは不足することを Spike で確認した。Git HEAD + tracked diff + untracked content の digest は逐次 edit/commit switch を検出し、50k Layer 単一 shard でも latency budget 内だった。CLI はこの fingerprint を index metadata と照合し、通常の外部 edit を stale として拒否する。同時書込時の正確性と増分再索引は未検証。
+**未確定:** Source revision だけでは不足することを Spike で確認した。Git HEAD + tracked diff + untracked content の digest は逐次 edit/commit switch を検出する。CLI はこの fingerprint を index metadata と照合し、通常の外部 edit を stale として拒否する。一方、nested Git repository 内の Starter Sample では query p95 321.9 ms となり、既存の 250 ms budget を超えた。同時書込時の正確性と増分再索引は未検証。
 
 ## Unknowns
 
@@ -28,6 +28,7 @@ filesystem watcher の取りこぼし、Git pull と concurrent external edit、
 
 - [Index drift and scale](spikes/index-drift/SPIKE.md): revision-only 判定の反例と 1k/10k/50k scale を確認。
 - [Git working tree fingerprint](spikes/git-working-tree-fingerprint/SPIKE.md): 外部 edit、branch switch、dirty tree の digest と latency を検証する。
+- [Nested repository query latency](spikes/nested-repository-query-latency/SPIKE.md): Git repository 内の下位 Project で query budget 超過を確認。
 
 ## Decision Criteria
 

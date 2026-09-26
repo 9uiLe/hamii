@@ -96,12 +96,8 @@ private enum CLI {
             return Output(ok: true, message: "Indexed revision \(document.revision)")
         }
         if args.count == 4 && args[0] == "query" && args[1] == "components" {
-            let before = try CanonicalSourceFingerprint.current(at: path)
             let (id, revision) = try repository.identityAndRevision()
-            let stable = try CanonicalSourceFingerprint.current(at: path)
-            guard before == stable else { throw IndexError.stale }
-            let hits = try LocalIndex(projectRoot: path).components(matching: args[3], consumerScopeID: EntityID(args[2]), documentID: id, revision: revision, sourceFingerprint: stable)
-            guard try CanonicalSourceFingerprint.current(at: path) == stable else { throw IndexError.stale }
+            let hits = try LocalIndex(projectRoot: path).components(matching: args[3], consumerScopeID: EntityID(args[2]), documentID: id, revision: revision)
             return Output(ok: true, hits: hits)
         }
         if args.count == 4 && args[0] == "generate" && args[1] == "swiftui" {

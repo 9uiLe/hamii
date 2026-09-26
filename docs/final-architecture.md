@@ -48,7 +48,7 @@ Git に置く `hamii.json` と entity ごとの JSON が Canonical Data です�
 
 Repository Asset の blob は `assets/blobs/<sha256>` に置き、Asset entity は source path と content hash を持ちます。同じ content は同じ blob を共有します。CLI の `asset import ... --storage git` が取り込み、Canonical validation は欠落と hash 不一致を拒否します。Remote Asset は URL が正本、Runtime-bound Asset は binding が正本で、Preview Fixture とは別です。Large binary の Git/LFS 境界は [Asset ADR](../adr/asset-storage-policy/ADR.md) の判断待ちです。Derived cache は Git に置きません。
 
-`.hamii/index.sqlite` は削除可能です。`hamii index rebuild` が Canonical Document から component、usage、scope closure、availability を再構築します。再構築時に Git HEAD、Canonical JSON の tracked diff と untracked bytes から Source Fingerprint を保存します。`hamii query components` は読み取り前後の fingerprint と index metadata を照合し、外部編集や branch 切替を検出した場合は `staleIndex` を返します。Git の同時書込と増分再索引は [Index ADR](../adr/index-consistency/ADR.md) の検証対象です。
+`.hamii/index.sqlite` は削除可能です。`hamii index rebuild` が Canonical Document から component、usage、scope closure、availability を再構築します。再構築時に Git HEAD、Canonical JSON の tracked diff と untracked bytes から Source Fingerprint を保存します。`hamii query components` は SQLite の一貫した読み取り後に現在の fingerprint と index metadata を照合し、外部編集や branch 切替を検出した場合は `staleIndex` を返します。Git の同時書込と増分再索引は [Index ADR](../adr/index-consistency/ADR.md) の検証対象です。
 
 Document Format v1 が唯一の Canonical Format です。`HamiiMigrations` は Core を import せず raw manifest を preflight し、未知 version を Manual / no migration edge として報告します。未復旧の Canonical journal がある場合、migration plan は blocker を返します。変換 edge が必要になった場合は Current Core の外で classification、reviewable worktree、validation、commit を通します。[Migration ADR](../adr/migration-core-boundary/ADR.md) と [Review ADR](../adr/migration-review-protocol/ADR.md) が実装境界を定めます。
 

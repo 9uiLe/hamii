@@ -23,9 +23,11 @@ public struct ComponentHit: Codable, Equatable {
 public final class LocalIndex {
     public static let schemaVersion = 3
     public let url: URL
+    private let projectRoot: URL
     private var database: OpaquePointer?
 
     public init(projectRoot: URL) throws {
+        self.projectRoot = projectRoot.standardizedFileURL
         let local = projectRoot.appendingPathComponent(".hamii", isDirectory: true)
         try FileManager.default.createDirectory(at: local, withIntermediateDirectories: true)
         url = local.appendingPathComponent("index.sqlite")
@@ -77,20 +79,28 @@ public final class LocalIndex {
         }
     }
 
-    public func components(matching text: String, consumerScopeID: EntityID, documentID: EntityID, revision: Int, sourceFingerprint: String) throws -> [ComponentHit] {
-        guard try metadata("documentID") == documentID.rawValue,
-              try metadata("revision") == String(revision),
-              try metadata("sourceFingerprint") == sourceFingerprint else { throw IndexError.stale }
-        let sql = "SELECT c.id, c.name, c.owner_scope_id, c.usage_count FROM components c JOIN component_availability a ON a.component_id = c.id WHERE a.consumer_id = ? AND c.name LIKE ? ORDER BY c.name"
-        let statement = try prepare(sql)
-        defer { sqlite3_finalize(statement) }
-        bind(consumerScopeID.rawValue, at: 1, to: statement)
-        bind("%\(text)%", at: 2, to: statement)
-        var hits: [ComponentHit] = []
-        while sqlite3_step(statement) == SQLITE_ROW {
-            hits.append(ComponentHit(id: EntityID(column(statement, 0)), name: column(statement, 1), ownerScopeID: EntityID(column(statement, 2)), usageCount: Int(sqlite3_column_int(statement, 3))))
+    public func components(matching text: String, consumerScopeID: EntityID, documentID: EntityID, revision: Int) throws -> [ComponentHit] {
+        try execute("BEGIN DEFERRED TRANSACTION")
+        do {
+            guard try metadata("documentID") == documentID.rawValue,
+                  try metadata("revision") == String(revision),
+                  let sourceFingerprint = try metadata("sourceFingerprint") else { throw IndexError.stale }
+            let sql = "SELECT c.id, c.name, c.owner_scope_id, c.usage_count FROM components c JOIN component_availability a ON a.component_id = c.id WHERE a.consumer_id = ? AND c.name LIKE ? ORDER BY c.name"
+            let statement = try prepare(sql)
+            bind(consumerScopeID.rawValue, at: 1, to: statement)
+            bind("%\(text)%", at: 2, to: statement)
+            var hits: [ComponentHit] = []
+            while sqlite3_step(statement) == SQLITE_ROW {
+                hits.append(ComponentHit(id: EntityID(column(statement, 0)), name: column(statement, 1), ownerScopeID: EntityID(column(statement, 2)), usageCount: Int(sqlite3_column_int(statement, 3))))
+            }
+            sqlite3_finalize(statement)
+            guard try CanonicalSourceFingerprint.current(at: projectRoot) == sourceFingerprint else { throw IndexError.stale }
+            try execute("COMMIT")
+            return hits
+        } catch {
+            try? execute("ROLLBACK")
+            throw error
         }
-        return hits
     }
 
     private func metadata(_ key: String) throws -> String? {

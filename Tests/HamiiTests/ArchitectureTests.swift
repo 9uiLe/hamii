@@ -184,7 +184,7 @@ final class ArchitectureTests: XCTestCase {
         let index = try LocalIndex(projectRoot: path)
         let fingerprint = try CanonicalSourceFingerprint.current(at: path)
         try index.rebuild(from: document, sourceFingerprint: fingerprint)
-        XCTAssertEqual(try index.components(matching: "Outer", consumerScopeID: checkout.id, documentID: document.id, revision: 1, sourceFingerprint: fingerprint).count, 0)
+        XCTAssertEqual(try index.components(matching: "Outer", consumerScopeID: checkout.id, documentID: document.id, revision: 1).count, 0)
 
         let intent = AuthoringIntent.instantiate(screenID: screen.id, parentID: screen.root.id, definitionID: outer.id)
         for author in [Author.human, .agent] {
@@ -278,12 +278,19 @@ final class ArchitectureTests: XCTestCase {
         let index = try LocalIndex(projectRoot: path)
         let fingerprint = try CanonicalSourceFingerprint.current(at: path)
         try index.rebuild(from: document, sourceFingerprint: fingerprint)
-        XCTAssertEqual(try index.components(matching: "But", consumerScopeID: appID, documentID: document.id, revision: 1, sourceFingerprint: fingerprint).count, 1)
-        XCTAssertEqual(try index.components(matching: "But", consumerScopeID: denied.id, documentID: document.id, revision: 1, sourceFingerprint: fingerprint).count, 0)
+        XCTAssertEqual(try index.components(matching: "But", consumerScopeID: appID, documentID: document.id, revision: 1).count, 1)
+        XCTAssertEqual(try index.components(matching: "But", consumerScopeID: denied.id, documentID: document.id, revision: 1).count, 0)
         try FileManager.default.removeItem(at: index.url)
         let rebuilt = try LocalIndex(projectRoot: path)
         try rebuilt.rebuild(from: repository.load(), sourceFingerprint: fingerprint)
-        XCTAssertEqual(try rebuilt.components(matching: "But", consumerScopeID: appID, documentID: document.id, revision: 1, sourceFingerprint: fingerprint).count, 1)
+        XCTAssertEqual(try rebuilt.components(matching: "But", consumerScopeID: appID, documentID: document.id, revision: 1).count, 1)
+        let componentFile = path.appendingPathComponent("components/\(component.id.rawValue).json")
+        var externalBytes = try Data(contentsOf: componentFile)
+        externalBytes.append(0x0A)
+        try externalBytes.write(to: componentFile)
+        XCTAssertThrowsError(try rebuilt.components(matching: "But", consumerScopeID: appID, documentID: document.id, revision: 1)) { error in
+            guard case IndexError.stale = error else { return XCTFail("Expected stale index") }
+        }
     }
 
     func testComponentResolutionKeepsInstanceAsReferenceAndRejectsOverrideConflicts() throws {

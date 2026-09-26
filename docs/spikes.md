@@ -35,6 +35,7 @@ Status: 検証中 / 2026-09-26。各 Spike は fixture、対象 OS/SDK/Xcode、�
 - [Shard and merge benchmark](../adr/git-canonical-sharding/spikes/shard-merge-benchmark/SPIKE.md)
 - [Local Query Index の鮮度判定](../adr/index-consistency/spikes/index-drift/SPIKE.md)
 - [Git working tree fingerprint](../adr/index-consistency/spikes/git-working-tree-fingerprint/SPIKE.md)
+- [Nested Git repository query latency](../adr/index-consistency/spikes/nested-repository-query-latency/SPIKE.md)
 - [Isolated format upgrade](../adr/migration-core-boundary/spikes/isolated-format-upgrade/SPIKE.md)
 - [Ambiguous value review](../adr/migration-ambiguity-resolution/spikes/ambiguous-value-review/SPIKE.md)
 - [Migration worktree safety](../adr/migration-review-protocol/spikes/worktree-safety/SPIKE.md)

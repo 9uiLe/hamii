@@ -1,0 +1,13 @@
+{
+  "sample": "Samples/Starter",
+  "runs": 8,
+  "samplesMs": [269.9, 280.4, 287.4, 321.9, 291.4, 285.8, 302.1, 291.4],
+  "p95Ms": 321.9,
+  "budgetP95Ms": 250,
+  "gitSubcommandsMs": {
+    "revParse": 6.9,
+    "diff": 6.7,
+    "lsFiles": 7.7
+  },
+  "beforeSingleFingerprintQueryMs": [866.7, 1011.1, 900.8, 906.4, 917.7, 900.1, 875.2, 907.4]
+}
