@@ -1,8 +1,42 @@
-# Pending: Asset の Git/LFS 閾値と remote policy
+# Repository Asset の Git / LFS 保存規則
 
-- **Status:** 未確定 / Needs Benchmark
-- **Decision needed:** どの binary を通常 Git と LFS に分け、remote cache と generated asset の採用をどう制御するか。
-- **Current constraint:** canonical Asset ID と content hash を分離。derived thumbnail/cache は Git に入れない。runtime-bound asset は binding metadata のみ。
-- **Options:** size threshold、type-specific threshold、project policy。LFS object 欠落時は preflight failure。
-- **Validation:** [SPIKE.md](SPIKE.md) に検証手順と成果物を記録する。
-- **Resolve when:** policy defaults と asset engine/docs/validation が決まったら削除する。
+## Context
+
+Repository binary の保存先は clone size と共同作業者の object availability に影響する。
+
+## Decision to Make
+
+Repository Asset を通常 Git と LFS に振り分ける policy と欠落時の preflight を決める。
+
+## Constraints
+
+Logical Asset ID と content hash を分離する。正本 binary は integrity check できる。
+
+## Options
+
+size threshold、type-specific threshold、project policy。
+
+## Current Hypothesis
+
+**未確定:** 小さい asset は通常 Git、大きい asset は LFS とする可能性がある。閾値は未確定。
+
+## Unknowns
+
+閾値、clone/pull cost、LFS 未導入・object 欠落時の UX。
+
+## Required Evidence
+
+- [Git / LFS threshold and availability](spikes/git-lfs-threshold/SPIKE.md)
+
+## Decision Criteria
+
+必要な Evidence から選択肢を比較し、採用理由と残る制約を記録する。判断と結果を先に commit し、必要な実装・検証と Current Architecture への反映を完了する。削除は [ADR workflow](../../docs/adr-workflow.md) の全条件を満たすまで行わない。
+
+## Related Decisions
+
+- [remote-asset-cache](../remote-asset-cache/ADR.md)
+- [generated-asset-adoption](../generated-asset-adoption/ADR.md)
+
+## Status
+
+Spike Required

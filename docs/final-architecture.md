@@ -1,6 +1,6 @@
 # hamii — Product & System Architecture
 
-Status: **設計基準（実装前）** / 2026-09-26。ここでの「採用」は製品方針であり、Native Host の性能や同等性を実証した意味ではない。確認済みの外部事実には一次資料を付け、hamii 固有の判断は設計上の推論として扱う。検証手順は [Technical Spikes](spikes.md)、確定した設計判断は [Decision Records](architecture-decisions.md)、未確定の検証事項は [`adr/`](../adr/) に置く。
+Status: **設計基準（実装前）** / 2026-09-26。ここでの「採用」は製品方針であり、Native Host の性能や同等性を実証した意味ではない。確認済みの外部事実には一次資料を付け、hamii 固有の判断は設計上の推論として扱う。検証手順は [Technical Spikes](spikes.md)、未解決の判断と検証は [`adr/`](../adr/) に置き、[ADR workflow](adr-workflow.md) に従う。
 
 ## 1. Executive Summary
 
@@ -144,7 +144,7 @@ Typed node schema は許可 property、child cardinality、target lowering、val
 
 ## 13. Capability Model
 
-Capability key は `feature + property + target + target runtime version`。結果は `Exact`、`Portable`、`Target-specific`、`Approximate`、`Unsupported`、`External Integration Required`。`Exact` は宣言した semantic contract の一致で pixel 同一を意味しない。Approximate は loss report と明示選択が必要。Unsupported は preview/export を block。External Integration Required は contract 出力可、standalone 実行不可。Canvas/Picker/Validator/Target Plan/Generator/AI Query は同じ registry を参照する。
+Capability key は暫定的に `feature + property + target + target runtime version` を候補とし、正確な粒度は [capability-contract ADR](../adr/capability-contract/ADR.md) で検証する。結果は `Exact`、`Portable`、`Target-specific`、`Approximate`、`Unsupported`、`External Integration Required`。`Exact` は宣言した semantic contract の一致で pixel 同一を意味しない。Approximate は loss report と明示選択が必要。Unsupported は preview/export を block。External Integration Required は contract 出力可、standalone 実行不可。Canvas/Picker/Validator/Target Plan/Generator/AI Query は同じ registry を参照する。
 
 例: `layout.stack` は SwiftUI/UIKit/Compose で Portable、`navigation.toolbar` は target ごとの semantic rule、`asset.remoteImage` は Preview では supported でも production loader は External Integration Required としうる。UIKit の navigation bar は controller 管理なので rectangle の width/height として扱わない。[UINavigationController](https://developer.apple.com/documentation/uikit/uinavigationcontroller)。Capability table の実際の coverage は Spike 01–04 で確定する。
 
@@ -211,7 +211,7 @@ fixtures/<id>.json  assets/catalog/<id>.json  assets/objects/sha256/...
 harness/authoring.json  integration/<profile-id>.json
 ```
 
-Stable ID を file identity とし、name/rename を path に使わない。Canonical schema は domain serialization であり Swift struct/SQLite schema と独立。JSON canonical ordering/formatting、single entity writer、reference validation、atomic staged save、crash recovery journal を規定する。Git に partial transaction が残らないよう multi-file save は temporary staging + manifest revision の切替と recovery を検証する。`NSDocument` は file/package lifecycle の候補だが Git repo directory との integration は Spike で決める。[NSDocument](https://developer.apple.com/documentation/appkit/nsdocument/)。外部 editor による file 変更は再parse・conflict check を通し、直接 Core memory を変更しない。
+Stable ID を file identity とし、name/rename を path に使わない。Canonical schema は domain serialization であり Swift struct/SQLite schema と独立。JSON canonical ordering/formatting と reference validation を要求する。Multi-file save の方式は temporary staging + manifest revision + recovery journal を候補とし、[git-canonical-transaction ADR](../adr/git-canonical-transaction/ADR.md) で決める。`NSDocument` は file/package lifecycle の候補だが Git repo directory との integration は Spike で決める。[NSDocument](https://developer.apple.com/documentation/appkit/nsdocument/)。外部 editor による file 変更は再parse・conflict check を通し、直接 Core memory を変更しない。
 
 ## 21. Local Query Architecture
 
@@ -223,7 +223,7 @@ Git files → changed-entity detector → Current Format parser → Current Mode
                   Scope/Component/Layer/Usage/FTS Query API → Human/AI
 ```
 
-Index は component usage、scope closure、token/asset usage、dependency graph、layer locator、FTS を持つ。`canonical commit/tree hash + working-tree fingerprint + index schema version` で鮮度を判定し、外部 pull や未commit変更を検知する。Query result は source revision を返す。破損・schema mismatch・drift は index を削除して rebuild。SQLite migration history を維持しない。大規模 document の incremental reindex と full rebuild は Benchmark が必要。
+Index は component usage、scope closure、token/asset usage、dependency graph、layer locator、FTS を持つ。`canonical commit/tree hash + working-tree fingerprint + index schema version` は鮮度判定の候補であり、[index-consistency ADR](../adr/index-consistency/ADR.md) で検証する。Query result は source revision を返す。破損・schema mismatch・drift は index を削除して rebuild。SQLite migration history を維持しない。大規模 document の incremental reindex と full rebuild は Benchmark が必要。
 
 ## 22. Migration Architecture
 
@@ -318,7 +318,7 @@ IntegrationContract → IntegrationLayer + Harness → AI/repository adapter
 
 ## 33. ADRs
 
-[ADR-001〜030](architecture-decisions.md) は確定した設計判断の記録。未確定・未対応の技術選択だけを [`adr/`](../adr/) の個別ディレクトリに置く。`ADR.md` と必要な `SPIKE.md`、成果物を同居させる。Spike/実装で解決した項目は判断を docs または code に反映してから個別ディレクトリを削除する。目標は `.gitkeep` 以外 0 件。旧 18 ADR は今回の Scope/Git/Migration/Harness の追加により失効した。
+この文書が Current Architecture の説明であり、過去の判断記録は Git history に残す。未確定・未検証・未対応の課題だけを [`adr/`](../adr/) の個別ディレクトリに置く。`ADR.md` と必要な `spikes/<name>/SPIKE.md`、Spike 固有の成果物を同じ ADR ディレクトリの下に置く。判断・Spike の結果を削除前の commit に残し、実装・検証を終え、恒久的なルールを docs/code に移した後の別 commit でディレクトリを削除する。詳細は [ADR workflow](adr-workflow.md)。目標は `.gitkeep` 以外 0 件。
 
 ## 34. Risks
 

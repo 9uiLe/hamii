@@ -1,6 +1,6 @@
 # hamii Technical Spikes
 
-Status: 未実施の検証計画 / 2026-09-26。各 Spike は fixture、対象 OS/SDK/Xcode、実装 commit、実行 command、測定値 p50/p95、screenshot/event/a11y trace、失敗、判断更新を記録する。pending ADR に対応する検証は [`adr/<name>/SPIKE.md`](../adr/) を計画の正本とし、成果物は同じ ADR ディレクトリの `artifacts/` に置く。横断的な検証だけ `research/spikes/<id>/` に置く。数値目標は実験前に team が合意し、測定後に都合よく変更しない。P0 failure は製品の Preview/IR 約束を改訂する。
+Status: 未実施の検証計画 / 2026-09-26。各 Spike は fixture、対象 OS/SDK/Xcode、実装 commit、実行 command、測定値 p50/p95、screenshot/event/a11y trace、失敗、判断更新を記録する。pending ADR に対応する検証は [`adr/<name>/spikes/<spike-name>/SPIKE.md`](../adr/) を計画の正本とし、成果物は各 Spike ディレクトリの `artifacts/` に置く。横断的な検証だけ `research/spikes/<id>/` に置く。数値目標は実験前に team が合意し、測定後に都合よく変更しない。P0 failure は製品の Preview/IR 約束を改訂する。
 
 | ID | Priority | Hypothesis and prototype | Evidence / pass-fail gate |
 |---|---|---|---|
@@ -21,24 +21,42 @@ Status: 未実施の検証計画 / 2026-09-26。各 Spike は fixture、対象 O
 
 ## Pending ADR と個別 Spike
 
-- [IR capability contract](../adr/capability-contract/SPIKE.md) — 01/03
-- [SwiftUI reconciliation](../adr/swiftui-reconciliation/SPIKE.md) — 02/04
-- [UIKit MVP boundary](../adr/uikit-mvp-boundary/SPIKE.md) — 03
-- [Preview Host transport](../adr/preview-host-transport/SPIKE.md) — 04
-- [Git canonical transaction](../adr/git-canonical-transaction/SPIKE.md) — 08
-- [Index consistency](../adr/index-consistency/SPIKE.md) — 09
-- [Migration review protocol](../adr/migration-review-protocol/SPIKE.md) — 10/11
-- [Asset storage policy](../adr/asset-storage-policy/SPIKE.md) — 12
-- [Product integration contract](../adr/product-integration-contract/SPIKE.md) — 14
+下表の ID は計画上の分類。個別実験の計画と結果の正本は次の `SPIKE.md`。
 
-各 `SPIKE.md` の `Result` と同じディレクトリ内の成果物を根拠に ADR を閉じる。終了後は結果を恒久 docs/実装へ移し、個別 ADR ディレクトリを削除する。
+- [Scope-aware AI Context Retrieval](../adr/ai-context-retrieval/spikes/scope-aware-context/SPIKE.md)
+- [Git / LFS threshold and availability](../adr/asset-storage-policy/spikes/git-lfs-threshold/SPIKE.md)
+- [Authoring Harness の共通 policy 実行](../adr/authoring-policy-enforcement/spikes/actor-policy-parity/SPIKE.md)
+- [Large Canvas benchmark](../adr/canvas-renderer-performance/spikes/large-canvas/SPIKE.md)
+- [Capability の契約粒度](../adr/capability-contract/spikes/capability-granularity/SPIKE.md)
+- [Component Scope の共通検証境界](../adr/component-scope-validation/spikes/scope-rule-parity/SPIKE.md)
+- [Component Variant と Instance の解決](../adr/component-variant-resolution/spikes/instance-resolution/SPIKE.md)
+- [Compose IR validation](../adr/compose-target-timing/spikes/compose-ir-validation/SPIKE.md)
+- [Custom Component artifact update](../adr/custom-component-loading/spikes/artifact-update/SPIKE.md)
+- [Shard and merge benchmark](../adr/git-canonical-sharding/spikes/shard-merge-benchmark/SPIKE.md)
+- [Crash recovery transaction](../adr/git-canonical-transaction/spikes/crash-recovery/SPIKE.md)
+- [Local Query Index の鮮度判定](../adr/index-consistency/spikes/index-drift/SPIKE.md)
+- [Isolated format upgrade](../adr/migration-core-boundary/spikes/isolated-format-upgrade/SPIKE.md)
+- [Ambiguous value review](../adr/migration-ambiguity-resolution/spikes/ambiguous-value-review/SPIKE.md)
+- [Migration worktree safety](../adr/migration-review-protocol/spikes/worktree-safety/SPIKE.md)
+- [Host/source conformance](../adr/native-preview-parity/spikes/host-source-conformance/SPIKE.md)
+- [Native-semantic IR の最小 taxonomy](../adr/native-semantic-ir/spikes/minimal-ir/SPIKE.md)
+- [Frame capture and revision fidelity](../adr/preview-frame-capture/spikes/frame-latency/SPIKE.md)
+- [Host session and recovery](../adr/preview-host-transport/spikes/session-recovery/SPIKE.md)
+- [Preview input routing](../adr/preview-input-forwarding/spikes/input-routing/SPIKE.md)
+- [Product Integration Contract の実証](../adr/product-integration-contract/spikes/repository-mapping/SPIKE.md)
+- [Remote cache and offline behavior](../adr/remote-asset-cache/spikes/offline-cache/SPIKE.md)
+- [Value patch without compilation](../adr/swiftui-reconciliation/spikes/value-patch/SPIKE.md)
+- [SwiftUI Host reconciliation and state identity](../adr/swiftui-reconciliation/spikes/state-reconciliation/SPIKE.md)
+- [UIKit Preview の MVP inclusion](../adr/uikit-mvp-boundary/spikes/uikit-host-feasibility/SPIKE.md)
+
+各 `SPIKE.md` の `Result` / `Conclusion` と同じディレクトリ内の成果物を根拠に判断する。結果を先に commit し、実装・検証を終え、恒久 docs/実装へ移した後の別 commit で個別 ADR ディレクトリを削除する。[ADR workflow](adr-workflow.md) を参照。
 
 ## Additional cross-cutting measurements
 
-- **Native parity:** 同じ IR/fixture/OS で Host と generated app の bounds、visual、a11y tree、event trace を別々に比較。Pixel average 単独で合格させない。
-- **Canvas:** 1k/10k/50k Layer で viewport culling、LOD、selection、memory pressure と pan/zoom frame p95 を測り、必要なら Metal を比較。
-- **Custom Native Component:** source 変更後の build/relink/install/signing/Host restart 範囲を記録。「Component Build が軽い」は計測まで claim しない。
-- **Compose/CMP timing:** Spike 01 の IR が SwiftUI/UIKit で固まる前に Compose Android の小さな lowering を作り、portable semantics の歪みを見つける。CMP iOS Host は Android Host と別 artifact として Later に検証する。[JetBrains platform specifics](https://kotlinlang.org/docs/multiplatform/compose-platform-specifics.html)。
+- **Native parity:** [Host/source conformance](../adr/native-preview-parity/spikes/host-source-conformance/SPIKE.md) — 同じ IR/fixture/OS で Host と generated app の bounds、visual、a11y tree、event trace を別々に比較。Pixel average 単独で合格させない。
+- **Canvas:** [Large Canvas benchmark](../adr/canvas-renderer-performance/spikes/large-canvas/SPIKE.md) — 1k/10k/50k Layer で viewport culling、LOD、selection、memory pressure と pan/zoom frame p95 を測り、必要なら Metal を比較。
+- **Custom Native Component:** [Artifact update](../adr/custom-component-loading/spikes/artifact-update/SPIKE.md) — source 変更後の build/relink/install/signing/Host restart 範囲を記録。「Component Build が軽い」は計測まで claim しない。
+- **Compose/CMP timing:** [Compose IR validation](../adr/compose-target-timing/spikes/compose-ir-validation/SPIKE.md) — Spike 01 の IR が SwiftUI/UIKit で固まる前に Compose Android の小さな lowering を作り、portable semantics の歪みを見つける。CMP iOS Host は Android Host と別 artifact として Later に検証する。[JetBrains platform specifics](https://kotlinlang.org/docs/multiplatform/compose-platform-specifics.html)。
 
 ## Decision gates
 

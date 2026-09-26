@@ -1,8 +1,42 @@
-# Pending: Git Canonical Format の分割粒度と保存 transaction
+# Canonical multi-file save transaction
 
-- **Status:** 未確定 / Needs Benchmark
-- **Decision needed:** Layer ごと/部分 tree ごと/page ごとの shard 粒度、および multi-file save の atomicity/recovery protocol。
-- **Current constraint:** Git の canonical files だけで復元可能。stable ID path、deterministic serialization、部分書込の正本化を防ぐ。
-- **Options:** entity-per-file + manifest revision、page shard + journal、別の atomic staging protocol。SQLite authoritative は現方針に反するため失敗時の比較対象。
-- **Validation:** [SPIKE.md](SPIKE.md) に検証手順と成果物を記録する。
-- **Resolve when:** format layout、save/recovery implementation、validation を docs/code に固定して削除する。
+## Context
+
+分割 canonical files の途中停止は entity 間参照を壊し得る。
+
+## Decision to Make
+
+一つの document revision として multi-file save を commit/recover する protocol を決める。
+
+## Constraints
+
+Git files が正本で SQLite は派生。途中書込を complete revision と扱わない。
+
+## Options
+
+temporary staging + manifest revision + journal、page atomic replace、別の recovery protocol。
+
+## Current Hypothesis
+
+**未確定:** staging と manifest revision を使える可能性があるが、fsync/recovery は未実証。
+
+## Unknowns
+
+kill timing、filesystem durability、外部編集との衝突、recovery の再実行性。
+
+## Required Evidence
+
+- [Crash recovery transaction](spikes/crash-recovery/SPIKE.md)
+
+## Decision Criteria
+
+必要な Evidence から選択肢を比較し、採用理由と残る制約を記録する。判断と結果を先に commit し、必要な実装・検証と Current Architecture への反映を完了する。削除は [ADR workflow](../../docs/adr-workflow.md) の全条件を満たすまで行わない。
+
+## Related Decisions
+
+- [git-canonical-sharding](../git-canonical-sharding/ADR.md)
+- [index-consistency](../index-consistency/ADR.md)
+
+## Status
+
+Spike Required

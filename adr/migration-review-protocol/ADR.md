@@ -1,8 +1,42 @@
-# Pending: Migration の review と ambiguous value 解決
+# Migration の repository isolation / review workflow
 
-- **Status:** 未確定 / Needs Prototype
-- **Decision needed:** dirty tree、manual/lossy edge、Git worktree/branch、review commit を macOS UI でどう扱うか。
-- **Current constraint:** Core は Current Format のみ。元 repo は preflight/review 前に変えない。曖昧な color→token は推測しない。
-- **Options:** temp worktree + report、snapshot/commit choice、manual resolution editor。cross-version branch merge は拒否する。
-- **Validation:** [SPIKE.md](SPIKE.md) に検証手順と成果物を記録する。
-- **Resolve when:** Migration Coordinator、UI、report format、docs に手順が揃ったら削除する。
+## Context
+
+Format migration は repository 全体を変更し、dirty tree や途中失敗で元の作業を失う可能性がある。
+
+## Decision to Make
+
+migration をどの作業領域・branch/commit/review 手順で実行するか。
+
+## Constraints
+
+Core は Current Format のみ。元 tree を review 前に無断変更しない。異なる format version を直接 semantic merge しない。
+
+## Options
+
+temporary worktree + branch、snapshot/commit choice、別の isolated staging。
+
+## Current Hypothesis
+
+**未確定:** isolated worktree + review commit が安全そうだが、具体 UX と recovery は未実証。
+
+## Unknowns
+
+dirty tree、LFS 欠落、途中 kill、worktree cleanup、review diff の分かりやすさ。
+
+## Required Evidence
+
+- [Migration worktree safety](spikes/worktree-safety/SPIKE.md)
+
+## Decision Criteria
+
+必要な Evidence から選択肢を比較し、採用理由と残る制約を記録する。判断と結果を先に commit し、必要な実装・検証と Current Architecture への反映を完了する。削除は [ADR workflow](../../docs/adr-workflow.md) の全条件を満たすまで行わない。
+
+## Related Decisions
+
+- [migration-core-boundary](../migration-core-boundary/ADR.md)
+- [migration-ambiguity-resolution](../migration-ambiguity-resolution/ADR.md)
+
+## Status
+
+Spike Required
