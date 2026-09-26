@@ -18,11 +18,11 @@ filesystem watcher + fingerprint、Git diff + working-tree fingerprint、full sc
 
 ## Current Hypothesis
 
-**未確定:** Source revision だけでは不足することを Spike で確認した。Git HEAD + tracked diff + untracked content の digest は逐次 edit/commit switch を検出し、50k Layer 単一 shard でも latency budget 内だった。同時書込時の正確性は未検証。
+**未確定:** Source revision だけでは不足することを Spike で確認した。Git HEAD + tracked diff + untracked content の digest は逐次 edit/commit switch を検出し、50k Layer 単一 shard でも latency budget 内だった。CLI はこの fingerprint を index metadata と照合し、通常の外部 edit を stale として拒否する。同時書込時の正確性と増分再索引は未検証。
 
 ## Unknowns
 
-filesystem watcher の取りこぼし、Git pull と concurrent external edit、query 中の revision 競合、symlink/filter の working bytes、複数 shard の大規模 untracked project、incremental rebuild の性能。
+filesystem watcher の取りこぼし、Git pull と concurrent external edit、query 中の revision 競合、symlink/filter の working bytes、複数 shard の大規模 untracked project、incremental rebuild の性能。fingerprint を index freshness の最終 protocol とするかは未決定。
 
 ## Required Evidence
 

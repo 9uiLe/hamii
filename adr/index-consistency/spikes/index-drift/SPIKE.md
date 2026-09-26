@@ -44,7 +44,7 @@ macOS 26.2 で 1k / 10k / 50k Layer の full rebuild は 23.387 / 130.058 / 593.
 
 ## Conclusion
 
-full rebuild と query の性能は試した fixture では十分だった。ただし性能だけで incremental detection protocol は決められない。外部編集は manifest revision を変えないため、source fingerprint または同等の changed-entity evidence が必要。Git pull / branch switch、dirty working tree、file metadata が保たれる編集を含む方式比較と計測を続ける。現時点で ADR の決定はしない。
+full rebuild と query の性能は試した fixture では十分だった。ただし性能だけで incremental detection protocol は決められない。外部編集は manifest revision を変えないため、source fingerprint または同等の changed-entity evidence が必要。Git HEAD、tracked diff、untracked bytes の fingerprint を query の fail-closed guard に追加し、tracked Component 名の外部編集後に `staleIndex`、再構築後に新版検索を CLI smoke test で確認した。Git pull / branch switch、dirty working tree、file metadata が保たれる編集を含む方式比較と計測を続ける。現時点で ADR の決定はしない。
 
 ## Artifacts
 

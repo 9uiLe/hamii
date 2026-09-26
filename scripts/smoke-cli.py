@@ -62,6 +62,21 @@ with tempfile.TemporaryDirectory(prefix="hamii-cli-") as directory:
         capture_output=True, text=True, timeout=15,
     )
     assert denied.returncode == 4 and json.loads(denied.stdout)["category"] == "permission"
+    component_result = run("component", "create", scope, "Button", "--revision", "6")
+    component_id = component_result["mutation"]["patches"][0]["entityID"]["rawValue"]
+    subprocess.run(["git", "-C", directory, "add", "-A"], check=True, capture_output=True)
+    subprocess.run(["git", "-C", directory, "-c", "user.name=Smoke", "-c", "user.email=smoke@example.invalid", "commit", "-qm", "baseline"], check=True, capture_output=True)
     assert run("index", "rebuild")["ok"]
-    assert run("query", "components", scope, "Button")["hits"] == []
+    assert len(run("query", "components", scope, "Button")["hits"]) == 1
+    component_file = Path(directory) / "components" / f"{component_id}.json"
+    original = component_file.read_text()
+    component_file.write_text(original.replace('"name" : "Button"', '"name" : "RenamedButton"'))
+    assert component_file.read_text() != original
+    stale = subprocess.run(
+        [str(binary), "--project", directory, "--json", "query", "components", scope, "Button"],
+        capture_output=True, text=True, timeout=15,
+    )
+    assert stale.returncode == 8 and json.loads(stale.stdout)["category"] == "staleIndex"
+    assert run("index", "rebuild")["ok"]
+    assert len(run("query", "components", scope, "RenamedButton")["hits"]) == 1
 print("CLI contract valid")

@@ -53,7 +53,7 @@ HamiiMigrations     (raw historical format preflight boundary)
 
 Core は GUI、CLI、Git、SQLite、Simulator、AI provider を import しません。`HamiiApplication` は semantic intent を検証済み patch に変換します。`HamiiFormat` は Current Canonical Format だけを読みます。
 
-Project の `hamii.json` は identity、revision、独立した format version、Authoring Harness を保持します。`scopes/`、`pages/`、`screens/`、`components/`、`tokens/`、`assets/` などは stable ID の JSON files です。Git が共有正本です。Multi-file save は `.hamii/` の journal でプロセス停止後に旧版または新版へ復旧します。`.hamii/index.sqlite` は再構築可能な index で Git に保存しません。
+Project の `hamii.json` は identity、revision、独立した format version、Authoring Harness を保持します。`scopes/`、`pages/`、`screens/`、`components/`、`tokens/`、`assets/` などは stable ID の JSON files です。Git が共有正本です。Multi-file save は `.hamii/` の journal でプロセス停止後に旧版または新版へ復旧します。`.hamii/index.sqlite` は再構築可能な index で Git に保存しません。外部編集後の検索は source fingerprint の不一致で拒否されるため、`hamii index rebuild` を実行します。
 
 Repository Asset は `asset import SCOPE_ID NAME MEDIA_TYPE SOURCE_PATH --storage git --revision N` で明示的に取り込みます。バイナリは `assets/blobs/<sha256>` に一度だけ保存され、Asset の JSON は hash と参照を保持します。`validate` は blob の改ざんと欠落を検出します。大きなファイルの Git LFS 運用境界は [Asset ADR](adr/asset-storage-policy/ADR.md) で検証中です。Remote cache、thumbnail、decode 結果は Canonical Repository に含めません。
 

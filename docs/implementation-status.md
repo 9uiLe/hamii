@@ -16,4 +16,4 @@ Spacing Token は GUI と CLI から作成・参照・Stack spacing / container 
 
 `bash scripts/check.sh` は実装済み契約を検証します。この検証だけでは Native Preview parity、次の format change に対する migration safety、production integration の品質は証明できません。これらは [Technical Spikes](spikes.md) に紐づく実験で測定します。
 
-`hamii query components` の鮮度判定は現在 Document revision のみです。Canonical JSON の外部編集で revision が変わらない場合、query が古い結果を返すことを [Index Drift Spike](../adr/index-consistency/spikes/index-drift/SPIKE.md) で再現しています。現在の信頼できる検索手順は外部変更後に `hamii index rebuild` を実行することです。
+`hamii query components` は Source Fingerprint の不一致を `staleIndex` として拒否します。外部変更後は `hamii index rebuild` で再構築してください。再構築は full rebuild であり、Git の同時書込と増分再索引は [Index ADR](../adr/index-consistency/ADR.md) の検証対象です。

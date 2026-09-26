@@ -1,6 +1,6 @@
 # hamii Technical Spikes
 
-Status: 検証中 / 2026-09-26。各 Spike は fixture、対象 OS/SDK/Xcode、実行 command、測定値、screenshot/event/a11y trace、失敗、判断更新を該当する範囲で記録する。pending ADR に対応する検証は [`adr/<name>/spikes/<spike-name>/SPIKE.md`](../adr/) を計画と結果の正本とし、成果物は各 Spike ディレクトリの `artifacts/` に置く。横断的な検証だけ `research/spikes/<id>/` に置く。数値目標は実験前に固定し、測定後に変更しない。P0 failure は製品の Preview/IR 約束を改訂する。Component Scope、Canonical transaction、Local Index の部分結果は各 Spike に記録済みで、残る検証は継続中。
+Status: 検証中 / 2026-09-26。各 Spike は fixture、対象 OS/SDK/Xcode、実行 command、測定値、screenshot/event/a11y trace、失敗、判断更新を該当する範囲で記録する。pending ADR に対応する検証は [`adr/<name>/spikes/<spike-name>/SPIKE.md`](../adr/) を計画と結果の正本とし、成果物は各 Spike ディレクトリの `artifacts/` に置く。横断的な検証だけ `research/spikes/<id>/` に置く。数値目標は実験前に固定し、測定後に変更しない。P0 failure は製品の Preview/IR 約束を改訂する。Component Scope と Local Index の部分結果は各 Spike に記録済みで、残る検証は継続中。
 
 | ID | Priority | Hypothesis and prototype | Evidence / pass-fail gate |
 |---|---|---|---|

@@ -45,7 +45,7 @@ private enum CLI {
         "authoring": "hamii \(version)\nGlobal options: --project PATH --profile NAME --json. Inspect: hamii inspect. Mutations require --revision N from inspect. Commands: page create NAME; scope create PARENT_ID NAME; screen create SCOPE_ID NAME; target add PLATFORM FRAMEWORK; surface add PAGE_ID SCREEN_ID TARGET_ID DEVICE RUNTIME BUILD_ENVIRONMENT; surface target SURFACE_ID TARGET_ID; capability set TARGET_ID KEY SUPPORT; layer add SCREEN_ID PARENT_ID KIND NAME TEXT; layer text SCREEN_ID LAYER_ID TEXT. Use - for no text. Read the tokens, components or assets skill when needed. All mutations use the same Authoring Harness validation as GUI.",
         "tokens": "hamii \(version)\ntoken create OWNER_SCOPE_ID NAME KIND LITERAL --revision N creates a primitive token; token alias OWNER_SCOPE_ID NAME KIND TARGET_TOKEN_ID --revision N creates a semantic alias. KIND is color|typography|spacing|radius|border|shadow|opacity|motion. Spacing literals are nonnegative finite numbers. layer token SCREEN_ID LAYER_ID spacing|padding TOKEN_ID|- --revision N sets or clears a layout token. ArchitectureScope ownership and token references are validated before save.",
         "components": "hamii \(version)\ncomponent list CONSUMER_SCOPE_ID; component create OWNER_SCOPE_ID NAME --revision N; component instantiate SCREEN_ID PARENT_LAYER_ID DEFINITION_ID --revision N; component promote DEFINITION_ID ANCESTOR_SCOPE_ID --revision N. Promotion requires an Agent profile with explicit mayPromoteScope permission. Definition tree is referenced by instances; scope and availability are enforced by the mutation service.",
-        "validation": "hamii \(version)\nvalidate --project PATH --json returns diagnostics with rule, severity, entityID and message. index rebuild recreates .hamii/index.sqlite from canonical files. query components CONSUMER_SCOPE_ID TERM uses the index and rejects stale revisions. migrate plan --json preflights a format without changing it. Unsupported persisted formats require an isolated migration edge.",
+        "validation": "hamii \(version)\nvalidate --project PATH --json returns diagnostics with rule, severity, entityID and message. index rebuild recreates .hamii/index.sqlite from canonical files. query components CONSUMER_SCOPE_ID TERM uses the index and rejects stale source fingerprints or revisions with staleIndex; run index rebuild after external edits. migrate plan --json preflights a format without changing it. Unsupported persisted formats require an isolated migration edge.",
         "integration": "hamii \(version)\nintegration contract SCREEN_ID --json returns semantic inputs, events, token/asset references, native and accessibility intent. Unknown product mappings require review. generate swiftui SCREEN_ID TARGET_ID --json is a separate deterministic path for the supported static subset and returns an error for unsupported semantics.",
         "assets": "hamii \(version)\nasset import SCOPE_ID NAME MEDIA_TYPE SOURCE_PATH --storage git --revision N writes a SHA-256 addressed repository blob and Asset metadata. Large binary Git/LFS policy is unresolved; choose Git storage explicitly. layer image SCREEN_ID PARENT_ID ASSET_ID NAME --revision N adds an image reference. Run validate --json to check blob integrity. Remote caches and thumbnails are not canonical data.",
         "preview": "hamii \(version)\npreview plan SURFACE_ID --json checks declared target capabilities and semantic support for one AppSurface. A successful plan reports that the IR is supported; an installed and running Native Preview Host is a separate requirement. macOS SwiftUI supports the current in-process subset. iOS Simulator and Android Hosts are not yet implemented."
@@ -87,13 +87,21 @@ private enum CLI {
             return Output(ok: valid, category: valid ? nil : "validation", diagnostics: diagnostics)
         }
         if args == ["index", "rebuild"] {
+            let before = try CanonicalSourceFingerprint.current(at: path)
             let document = try service.document()
-            try LocalIndex(projectRoot: path).rebuild(from: document)
+            let stable = try CanonicalSourceFingerprint.current(at: path)
+            guard before == stable else { throw IndexError.stale }
+            try LocalIndex(projectRoot: path).rebuild(from: document, sourceFingerprint: stable)
+            guard try CanonicalSourceFingerprint.current(at: path) == stable else { throw IndexError.stale }
             return Output(ok: true, message: "Indexed revision \(document.revision)")
         }
         if args.count == 4 && args[0] == "query" && args[1] == "components" {
+            let before = try CanonicalSourceFingerprint.current(at: path)
             let (id, revision) = try repository.identityAndRevision()
-            let hits = try LocalIndex(projectRoot: path).components(matching: args[3], consumerScopeID: EntityID(args[2]), documentID: id, revision: revision)
+            let stable = try CanonicalSourceFingerprint.current(at: path)
+            guard before == stable else { throw IndexError.stale }
+            let hits = try LocalIndex(projectRoot: path).components(matching: args[3], consumerScopeID: EntityID(args[2]), documentID: id, revision: revision, sourceFingerprint: stable)
+            guard try CanonicalSourceFingerprint.current(at: path) == stable else { throw IndexError.stale }
             return Output(ok: true, hits: hits)
         }
         if args.count == 4 && args[0] == "generate" && args[1] == "swiftui" {

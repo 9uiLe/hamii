@@ -21,7 +21,7 @@ public struct ComponentHit: Codable, Equatable {
 }
 
 public final class LocalIndex {
-    public static let schemaVersion = 2
+    public static let schemaVersion = 3
     public let url: URL
     private var database: OpaquePointer?
 
@@ -46,7 +46,7 @@ public final class LocalIndex {
 
     deinit { sqlite3_close(database) }
 
-    public func rebuild(from document: Document) throws {
+    public func rebuild(from document: Document, sourceFingerprint: String) throws {
         try execute("BEGIN IMMEDIATE TRANSACTION")
         do {
             try execute("DELETE FROM components")
@@ -69,6 +69,7 @@ public final class LocalIndex {
             }
             try insert("INSERT INTO metadata(key, value) VALUES ('documentID', ?)", [document.id.rawValue])
             try insert("INSERT INTO metadata(key, value) VALUES ('revision', ?)", [String(document.revision)])
+            try insert("INSERT INTO metadata(key, value) VALUES ('sourceFingerprint', ?)", [sourceFingerprint])
             try execute("COMMIT")
         } catch {
             try? execute("ROLLBACK")
@@ -76,8 +77,10 @@ public final class LocalIndex {
         }
     }
 
-    public func components(matching text: String, consumerScopeID: EntityID, documentID: EntityID, revision: Int) throws -> [ComponentHit] {
-        guard try metadata("documentID") == documentID.rawValue, try metadata("revision") == String(revision) else { throw IndexError.stale }
+    public func components(matching text: String, consumerScopeID: EntityID, documentID: EntityID, revision: Int, sourceFingerprint: String) throws -> [ComponentHit] {
+        guard try metadata("documentID") == documentID.rawValue,
+              try metadata("revision") == String(revision),
+              try metadata("sourceFingerprint") == sourceFingerprint else { throw IndexError.stale }
         let sql = "SELECT c.id, c.name, c.owner_scope_id, c.usage_count FROM components c JOIN component_availability a ON a.component_id = c.id WHERE a.consumer_id = ? AND c.name LIKE ? ORDER BY c.name"
         let statement = try prepare(sql)
         defer { sqlite3_finalize(statement) }

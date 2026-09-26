@@ -182,8 +182,9 @@ final class ArchitectureTests: XCTestCase {
         let service = ProjectService(repository: repository)
         XCTAssertEqual(try service.availableComponents(for: checkout.id).count, 0)
         let index = try LocalIndex(projectRoot: path)
-        try index.rebuild(from: document)
-        XCTAssertEqual(try index.components(matching: "Outer", consumerScopeID: checkout.id, documentID: document.id, revision: 1).count, 0)
+        let fingerprint = try CanonicalSourceFingerprint.current(at: path)
+        try index.rebuild(from: document, sourceFingerprint: fingerprint)
+        XCTAssertEqual(try index.components(matching: "Outer", consumerScopeID: checkout.id, documentID: document.id, revision: 1, sourceFingerprint: fingerprint).count, 0)
 
         let intent = AuthoringIntent.instantiate(screenID: screen.id, parentID: screen.root.id, definitionID: outer.id)
         for author in [Author.human, .agent] {
@@ -272,13 +273,14 @@ final class ArchitectureTests: XCTestCase {
         document.revision = 1
         try repository.save(document, expectedRevision: 0)
         let index = try LocalIndex(projectRoot: path)
-        try index.rebuild(from: document)
-        XCTAssertEqual(try index.components(matching: "But", consumerScopeID: appID, documentID: document.id, revision: 1).count, 1)
-        XCTAssertEqual(try index.components(matching: "But", consumerScopeID: denied.id, documentID: document.id, revision: 1).count, 0)
+        let fingerprint = try CanonicalSourceFingerprint.current(at: path)
+        try index.rebuild(from: document, sourceFingerprint: fingerprint)
+        XCTAssertEqual(try index.components(matching: "But", consumerScopeID: appID, documentID: document.id, revision: 1, sourceFingerprint: fingerprint).count, 1)
+        XCTAssertEqual(try index.components(matching: "But", consumerScopeID: denied.id, documentID: document.id, revision: 1, sourceFingerprint: fingerprint).count, 0)
         try FileManager.default.removeItem(at: index.url)
         let rebuilt = try LocalIndex(projectRoot: path)
-        try rebuilt.rebuild(from: repository.load())
-        XCTAssertEqual(try rebuilt.components(matching: "But", consumerScopeID: appID, documentID: document.id, revision: 1).count, 1)
+        try rebuilt.rebuild(from: repository.load(), sourceFingerprint: fingerprint)
+        XCTAssertEqual(try rebuilt.components(matching: "But", consumerScopeID: appID, documentID: document.id, revision: 1, sourceFingerprint: fingerprint).count, 1)
     }
 
     func testComponentResolutionKeepsInstanceAsReferenceAndRejectsOverrideConflicts() throws {
