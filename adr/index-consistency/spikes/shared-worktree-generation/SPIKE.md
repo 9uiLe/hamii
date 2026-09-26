@@ -26,7 +26,7 @@ Production への generation protocol 導入、`CanonicalRevision` algorithm の
 
 ## Measurements
 
-2 Repository instance、fresh process Query、保存前 pending、保存後 pending、世代進行後かつ Index 公開前、future Index、協調 branch switch、非協調 edit の結果。30 warm Query の p50/p95 と generation record の2回の書込 cost。実 crash / process kill、power loss、multi-process contention は別測定とする。
+2 Repository instance、fresh process Query、保存前 pending、保存後 pending、世代進行後かつ Index 公開前、future Index、協調 branch switch、非協調 edit の結果。30 warm Query の p50/p95 と generation record の2回の書込 cost。別 OS process の writer / reader が同じ prototype lock を競合し、4地点で実 `SIGKILL` した際の起動時拒否・journal 回復・同一 source snapshot からの再索引。Power loss と長時間の multi-process contention は別測定とする。
 
 ## Success Criteria
 
@@ -44,7 +44,11 @@ Production への generation protocol 導入、`CanonicalRevision` algorithm の
 
 **Confirmed counterexample:** `.hamii/prototype-generation.lock` を無視する外部 writer が Component JSON を直接変更すると、共有 generation と Index source generation は一致したままで、prototype Query は旧 row を `current` と返した。したがって shared generation equality は **全 writer が protocol に従うという前提の外では安全な判定ではない**。Filesystem watcher に event が来ないことも positive proof にはできない。
 
-**Blocked / unvalidated:** prototype lock は現行 `.hamii/write.lock` と別であり、実 CLI / GUI や外部 Git を強制的に包まない。Crash は処理地点で停止させた simulation で、`SIGKILL` / power-loss injection ではない。`pending` からの Canonical journal を含む recovery、世代 record と CanonicalSnapshot の同一 source identity、実複数プロセス同時 writer、worktree relocation、record 欠損/破損、SQLite generation ID / rollback、large-project contention は未検証。`LocalIndex` の `canonicalRevision` 列を試験用 generation に流用したことは schema / API 決定ではない。
+**Confirmed, real process-stop matrix:** [focused XCTest](../../../../Tests/HamiiTests/SharedGenerationCrashSpikeTests.swift) は別 OS process の writer (`xctest`) と reader (`python3`) を同じ test-only lock で競合させ、`pending`、Canonical shard 適用中の `save`、世代確定後、Index 公開後の4地点で writer を `SIGKILL` した。reader は writer lock 中に待ち、起動時 gate を通る reader は kill 後の全地点で `staleIndex` を返した。新 recovery process の最初の `LocalIndex` Query も `staleIndex`。`save` 地点では `.hamii/transaction.ready` が残り、`CanonicalRepository.load` が旧 manifest に沿って rollback し、journal を削除した。他の地点では完全な Canonical state を読んだ。Recovery は lock 下で Canonical bytes の path/bytes digest を Index rebuild 前後で比較し、実 `LocalIndex.rebuild` に同じ load 済み Document を渡した後にのみ Query を再開した。`pending` / `save` は Alpha、世代確定 / Index 公開は Beta を返した。[matrix](artifacts/process-stop-matrix.json) に4ケースの結果を残した。
+
+**Failure evidence for restart policy:** Index 公開後の地点では、起動時 gate を持たない raw reader は kill 後に generation equality だけを見て `current` を返した。起動時にまず `Unknown` / 検索拒否へ落とすという条件は shared generation equality から自動的には得られない。今回の boot gate は test-only であり、production に実装されていない。
+
+**Blocked / unvalidated:** prototype lock は現行 `.hamii/write.lock` と別であり、実 CLI / GUI や外部 Git を強制的に包まない。4地点では実 OS process を `SIGKILL` したが、power-loss injection ではない。Recovery 時の path/bytes 再読込は coordinated lock 内の fixture に限る証拠であり、非協調 writer 下の atomic Snapshot を証明しない。`pending` からの一般的な recovery classification、世代 record と CanonicalSnapshot の永続 identity、同時 writer throughput、worktree relocation、record 欠損/破損、SQLite generation ID / rollback、large-project contention は未検証。`LocalIndex` の `canonicalRevision` 列を試験用 generation に流用したことは schema / API 決定ではない。
 
 ## Conclusion
 
@@ -55,3 +59,4 @@ Shared generation は、**既知の coordinated writer domain 内**で低 cost �
 - [SharedWorktreeGenerationSpikeTests.swift](../../../../Tests/HamiiTests/SharedWorktreeGenerationSpikeTests.swift): 実 CanonicalRepository / LocalIndex と test-only shared protocol。`HAMII_SHARED_GENERATION_SPIKE_RESULT=/tmp/hamii-shared-generation-result.json swift test --filter SharedWorktreeGenerationSpikeTests` で再測定する。
 - [restart_query_probe.py](artifacts/restart_query_probe.py): 新 OS process による永続 generation / SQLite metadata の読込。
 - [shared-generation-result.json](artifacts/shared-generation-result.json): 1 run の状態・timing・制約。
+- [SharedGenerationCrashSpikeTests.swift](../../../../Tests/HamiiTests/SharedGenerationCrashSpikeTests.swift)、[process-stop-matrix.json](artifacts/process-stop-matrix.json): 4 OS-process `SIGKILL` barrier、reader lock 競合、起動時拒否、Canonical journal recovery、再索引。`HAMII_CRASH_SPIKE_MATRIX_RESULT=/tmp/hamii-crash-matrix.json swift test --filter SharedGenerationCrashSpikeTests/testRealProcessStopsAcrossGenerationPhases` で再実行する。

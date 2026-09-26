@@ -10,11 +10,14 @@ import time
 root = pathlib.Path(sys.argv[1])
 index = pathlib.Path(sys.argv[2])
 term = sys.argv[3]
+boot_gate = len(sys.argv) > 4 and sys.argv[4] == "--boot-gate"
 start = time.perf_counter_ns()
 with (root / ".hamii" / "prototype-generation.lock").open("rb") as lock:
     fcntl.flock(lock, fcntl.LOCK_SH)
     state = json.loads((root / ".hamii" / "prototype-generation.json").read_text())
-    if state["phase"] != "current":
+    if boot_gate:
+        result = {"status": "staleIndex", "reason": "unverifiedProcessStartup"}
+    elif state["phase"] != "current":
         result = {"status": "staleIndex", "reason": "pending"}
     else:
         with sqlite3.connect(index) as connection:

@@ -1,0 +1,52 @@
+{
+  "cases" : [
+    {
+      "bootGatedReaderStatusAfterKill" : "staleIndex",
+      "bootRejected" : true,
+      "journalCleared" : true,
+      "journalPresentBeforeRecovery" : false,
+      "rawReaderStatusAfterKill" : "staleIndex",
+      "readerBlockedDuringWriterLock" : true,
+      "recoveredName" : "Alpha",
+      "snapshotDigest" : "e905fc8d88022d0bae8f5b6104a5fb2d7823b1b9aa2bc55fc9ce0f2178772527",
+      "stage" : "pending",
+      "writerKilledBySignal9" : true
+    },
+    {
+      "bootGatedReaderStatusAfterKill" : "staleIndex",
+      "bootRejected" : true,
+      "journalCleared" : true,
+      "journalPresentBeforeRecovery" : true,
+      "rawReaderStatusAfterKill" : "staleIndex",
+      "readerBlockedDuringWriterLock" : true,
+      "recoveredName" : "Alpha",
+      "snapshotDigest" : "49ec35a338f0a95f4b00efab30af8a7c9927e26d92b128b5e0b6ed347e7c554c",
+      "stage" : "save",
+      "writerKilledBySignal9" : true
+    },
+    {
+      "bootGatedReaderStatusAfterKill" : "staleIndex",
+      "bootRejected" : true,
+      "journalCleared" : true,
+      "journalPresentBeforeRecovery" : false,
+      "rawReaderStatusAfterKill" : "staleIndex",
+      "readerBlockedDuringWriterLock" : true,
+      "recoveredName" : "Beta",
+      "snapshotDigest" : "c7e716d4742858b6eb5cd61872bf65a6872655b76f29f4374f8834cfc6214abd",
+      "stage" : "generationFinalized",
+      "writerKilledBySignal9" : true
+    },
+    {
+      "bootGatedReaderStatusAfterKill" : "staleIndex",
+      "bootRejected" : true,
+      "journalCleared" : true,
+      "journalPresentBeforeRecovery" : false,
+      "rawReaderStatusAfterKill" : "current",
+      "readerBlockedDuringWriterLock" : true,
+      "recoveredName" : "Beta",
+      "snapshotDigest" : "d0fef54becca9bc2bf4acea5e305e13101b2f72c5b45ddb86f36db68c2b50f1d",
+      "stage" : "indexPublished",
+      "writerKilledBySignal9" : true
+    }
+  ]
+}
