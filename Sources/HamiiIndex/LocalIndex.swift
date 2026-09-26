@@ -21,7 +21,7 @@ public struct ComponentHit: Codable, Equatable {
 }
 
 public final class LocalIndex {
-    public static let schemaVersion = 3
+    public static let schemaVersion = 4
     public let url: URL
     private let projectRoot: URL
     private var database: OpaquePointer?

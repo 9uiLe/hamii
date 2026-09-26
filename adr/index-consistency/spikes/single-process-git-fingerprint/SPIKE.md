@@ -34,11 +34,11 @@ scenario ごとの digest 変化と、nested Project で 8 回の Python subproc
 
 ## Result
 
-macOS 26.2 / Git 2.52.0 で、一時 Git repository の unborn edit、tracked edit、stage、untracked、ignored、rename/delete、commit switch の content/path 変化を全て区別した。stage 前後で working bytes が同じ場合は同じ digest だった。branch switch 後には ignored Canonical file が残り、base commit の digest とは異なったが、alternate commit からの変化は検出した。`Samples/Starter` の status-based fingerprint 8 回は 9.089、7.325、7.225、10.808、8.681、7.529、7.060、7.441 ms。p95 10.808 ms で事前の status 単体 100 ms gate を満たした。Swift `Process` と CLI query 全体の latency は未計測。
+macOS 26.2 / Git 2.52.0 で、一時 Git repository の unborn edit、tracked edit、stage、untracked、ignored、rename/delete、commit switch の content/path 変化を全て区別した。stage 前後で working bytes が同じ場合は同じ digest だった。branch switch 後には ignored Canonical file が残り、base commit の digest とは異なったが、alternate commit からの変化は検出した。`Samples/Starter` の status-based fingerprint 8 回は 9.089、7.325、7.225、10.808、8.681、7.529、7.060、7.441 ms。p95 10.808 ms で事前の status 単体 100 ms gate を満たした。Swift 実装後の CLI query p95 は [Nested repository query latency](../nested-repository-query-latency/SPIKE.md) で 103.752 ms と測定した。
 
 ## Conclusion
 
-single-process status は逐次変更と nested Project の subprocess cost について採用候補となる。Swift 実装で query 全体の p95 を測り、concurrent write、symlink/filter、assume-unchanged、large shard の未検証点を ADR に残す。これだけで最終 protocol は決定しない。
+single-process status は逐次変更と nested Project の subprocess cost について 250 ms query budget を満たした。concurrent write、symlink/filter、assume-unchanged、large shard の未検証点を ADR に残す。これだけで最終 protocol は決定しない。
 
 ## Artifacts
 

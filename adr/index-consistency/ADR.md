@@ -18,8 +18,7 @@ filesystem watcher + fingerprint、Git diff + working-tree fingerprint、full sc
 
 ## Current Hypothesis
 
-**未確定:** Source revision だけでは不足することを Spike で確認した。Git HEAD + tracked diff + untracked content の digest は逐次 edit/commit switch を検出する。CLI はこの fingerprint を index metadata と照合し、通常の外部 edit を stale として拒否する。一方、nested Git repository 内の Starter Sample では query p95 321.9 ms となり、既存の 250 ms budget を超えた。同時書込時の正確性と増分再索引は未検証。
-`git status --porcelain=v2 --branch -z` 1 回で HEAD と dirty Canonical path を取得する Spike は、逐次変更を検出し、nested Project で status 単体 p95 10.808 ms だった。Swift query 全体の latency は未計測。
+**未確定:** Source revision だけでは不足することを Spike で確認した。`git status --porcelain=v2 --branch -z` と dirty/untracked Canonical bytes の digest は逐次 edit/commit switch を検出した。CLI はこの fingerprint を index metadata と照合し、外部 edit を stale として拒否する。nested Git repository 内の Starter Sample で query p95 は 103.752 ms となり、既存の 250 ms budget を満たした。同時書込時の正確性、symlink/filter、large shard と増分再索引は未検証。
 
 ## Unknowns
 

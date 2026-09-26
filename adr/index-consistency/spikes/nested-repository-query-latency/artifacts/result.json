@@ -9,5 +9,7 @@
     "diff": 6.7,
     "lsFiles": 7.7
   },
-  "beforeSingleFingerprintQueryMs": [866.7, 1011.1, 900.8, 906.4, 917.7, 900.1, 875.2, 907.4]
+  "beforeSingleFingerprintQueryMs": [866.7, 1011.1, 900.8, 906.4, 917.7, 900.1, 875.2, 907.4],
+  "afterSingleStatusQueryMs": [102.211, 102.169, 92.304, 97.388, 101.902, 101.169, 103.752, 102.857],
+  "afterSingleStatusP95Ms": 103.752
 }

@@ -79,4 +79,15 @@ with tempfile.TemporaryDirectory(prefix="hamii-cli-") as directory:
     assert stale.returncode == 8 and json.loads(stale.stdout)["category"] == "staleIndex"
     assert run("index", "rebuild")["ok"]
     assert len(run("query", "components", scope, "RenamedButton")["hits"]) == 1
+    subprocess.run(["git", "-C", directory, "add", str(component_file)], check=True, capture_output=True)
+    assert len(run("query", "components", scope, "RenamedButton")["hits"]) == 1
+    untracked_file = Path(directory) / "components/untracked.json"
+    untracked_file.write_text("{}\n")
+    stale_untracked = subprocess.run(
+        [str(binary), "--project", directory, "--json", "query", "components", scope, "Button"],
+        capture_output=True, text=True, timeout=15,
+    )
+    assert stale_untracked.returncode == 8 and json.loads(stale_untracked.stdout)["category"] == "staleIndex"
+    untracked_file.unlink()
+    assert len(run("query", "components", scope, "RenamedButton")["hits"]) == 1
 print("CLI contract valid")
