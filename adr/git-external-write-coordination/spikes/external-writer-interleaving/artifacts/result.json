@@ -1,0 +1,28 @@
+{
+  "macOS": "26.2",
+  "filesystem": "APFS",
+  "rows": [
+    {
+      "order": "external-before-check",
+      "final": "{\"name\":\"external\"}",
+      "externalPreserved": true,
+      "journalCanReconstructExternal": false,
+      "guardObserved": "{\"name\":\"external\"}",
+      "conflict": true
+    },
+    {
+      "order": "external-between-check-and-replace",
+      "final": "{\"name\":\"hamii\"}",
+      "externalPreserved": false,
+      "journalCanReconstructExternal": false,
+      "guardObserved": "{\"name\":\"old\"}"
+    },
+    {
+      "order": "external-after-replace",
+      "final": "{\"name\":\"external\"}",
+      "externalPreserved": true,
+      "journalCanReconstructExternal": false,
+      "guardObserved": "{\"name\":\"old\"}"
+    }
+  ]
+}

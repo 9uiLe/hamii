@@ -5,7 +5,7 @@ hamii で現在実行できる範囲を示します。製品境界と依存規�
 | 分類 | 現在の状態 |
 |---|---|
 | Aligned | Native-semantic IR が編集の正本です。GUI と CLI は `ProjectService` と同じ検証 pipeline を使います。ArchitectureScope ownership、component reference、target capability declaration、Git の分割 JSON、使い捨て SQLite query index、CLI skills、独立した format preflight を実装しています。 |
-| Needs Refactor | Canvas は小さな SwiftUI editor です。IR が扱う意味を落とさず、描画と Inspector を拡張する必要があります。Canonical save の process-crash recovery は実装済みですが、停電耐久性と外部 Git 書込との同時性は未検証です。Query index は現在 full rebuild です。 |
+| Needs Refactor | Canvas は小さな SwiftUI editor です。IR が扱う意味を落とさず、描画と Inspector を拡張する必要があります。Canonical save の process-crash recovery は実装済みですが、停電耐久性と非協調外部 Git 書込の lossless 保証は未確立です。Query index は現在 full rebuild です。 |
 | Missing | iOS Simulator / Android Preview Host、product repository integration adapter、historical format transformation edge、semantic merge、state を保持する runtime reconciliation、custom native component build、remote asset cache、Interaction と Token の全種別の編集機能。 |
 | Obsolete | Runtime の legacy format parser、MCP adapter、GUI/CLI 別々の mutation engine は package に含めません。 |
 | Unresolved | 狭い決定境界と必要な調査・計測は ADR queue にあります。 |
