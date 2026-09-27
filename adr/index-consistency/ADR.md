@@ -26,6 +26,7 @@ Canonical Data が唯一の正本。`CanonicalSnapshot` は exact contents、sou
 
 ## Required Evidence
 
+- [Fast Query Read Boundary](spikes/fast-query-read-boundary/SPIKE.md): startup witness の照合から実 SQLite row read まで一つの worktree lock を保持する test-only candidate を、別 OS process の coordinated save / Index rebuild と競合させる。Production Query の変更や Safe Fast Path の採否はこの Evidence 後に判断する。
 - [Startup Current Witness](spikes/startup-current-witness/SPIKE.md): 実 production Snapshot / shared generation / SQLite Index descriptor / Git oracle を同一 coordinated observation で照合してから process-local witness を発行した。別 OS process writer との lock race、Index rebuild・missing/corrupt binding・restart を検証し、test-only warm shadow cost を測定した。Production Query の Safe Fast Path 採用と slow fallback policy は未決定。
 - [Production CanonicalGeneration integration](spikes/production-generation-integration/SPIKE.md): 共通 persistent Stable / Pending record を通常 save、managed switch、validated merge へ接続し、検証した実 process SIGKILL case と SQLite source binding を確認した。Production Query は現行 oracle のままで、Safe Fast Path の採否は未決定。
 - [Production Canonical writer coverage](spikes/production-writer-coverage/SPIKE.md): 初回 create、commit / save、managed switch / recovery、validated merge publish / recovery の正式 writer と、Index rebuild / Query / merge check / semantic no-op の非 writer を source audit で分類した。停止・再起動 correctness は後続の production 検証が必要。
