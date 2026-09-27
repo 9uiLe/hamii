@@ -57,6 +57,7 @@ Stale / missing Index を自動で再構築するか、manual full rebuild を�
 
 ## Required Evidence
 
+- [Explicitly Unbound Index の Slow Query](spikes/explicit-unbound-query/SPIKE.md): 既存 CLI contract は外部編集後の stale → 明示的 rebuild → Git-oracle slow Query を許可する。Bound generation を slow Query に一律要求した未コミット候補はこの contract を壊した。意図的 unbound と metadata 欠損・破損の区別が必要。
 - [Fast Query Read Boundary](spikes/fast-query-read-boundary/SPIKE.md): test-only candidate は実 SQLite `ComponentHit` rows と production oracle の全 field を照合した。別 OS process の save / rebuild は verdict 後の row read 完了まで lock を取得できず、旧 witness はその後に失効した。Missing / corrupt / mismatched metadata は rows を返さない。Production Query は変更していない。
 - [Startup Current Witness](spikes/startup-current-witness/SPIKE.md): 一つの coordinated slow observation で Snapshot / Stable generation / Index descriptor / Git oracle を検証した後だけ process-local witness を発行した。Restart、Index rebuild、別 OS process writer、metadata failure と test-only warm cost を確認した。
 - [Production CanonicalGeneration Integration](spikes/production-generation-integration/SPIKE.md) と [Production Writer Coverage](spikes/production-writer-coverage/SPIKE.md): 正式 writer の Stable / Pending record、SIGKILL recovery、source binding、entry point coverage。
