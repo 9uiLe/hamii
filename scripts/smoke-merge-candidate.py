@@ -32,6 +32,11 @@ def commit(root, message):
     git(root, "commit", "-qm", message)
 
 
+def managed_switch(root, branch):
+    state = hamii(root, "inspect")[1]["statePrecondition"]["rawValue"]
+    return hamii(root, "git", "switch", branch, "--state", state)[1]["statePrecondition"]["rawValue"]
+
+
 def setup(root):
     created = hamii(root, "init", "Merge candidate")[1]
     git(root, "config", "user.name", "hamii smoke")
@@ -54,12 +59,11 @@ with tempfile.TemporaryDirectory(prefix="hamii-merge-check-") as directory:
     root = Path(directory) / "valid"
     root.mkdir()
     main, _, _, _ = setup(root)
-    git(root, "switch", "-qc", "other")
-    state = hamii(root, "inspect")[1]["statePrecondition"]["rawValue"]
+    git(root, "branch", "other")
+    state = managed_switch(root, "other")
     hamii(root, "page", "create", "From other", "--state", state)
     commit(root, "other page")
-    git(root, "switch", "-q", main)
-    state = hamii(root, "inspect")[1]["statePrecondition"]["rawValue"]
+    state = managed_switch(root, main)
     hamii(root, "page", "create", "From main", "--state", state)
     commit(root, "main page")
     before_head = git(root, "rev-parse", "HEAD")
@@ -82,11 +86,11 @@ with tempfile.TemporaryDirectory(prefix="hamii-merge-check-") as directory:
     invalid = Path(directory) / "invalid"
     invalid.mkdir()
     main, screen, layer, component = setup(invalid)
-    git(invalid, "switch", "-qc", "other")
-    state = hamii(invalid, "inspect")[1]["statePrecondition"]["rawValue"]
+    git(invalid, "branch", "other")
+    state = managed_switch(invalid, "other")
     hamii(invalid, "component", "instantiate", screen, layer, component, "--state", state)
     commit(invalid, "use component")
-    git(invalid, "switch", "-q", main)
+    managed_switch(invalid, main)
     git(invalid, "rm", f"components/{component}.json")
     commit(invalid, "remove unused component")
     before_head = git(invalid, "rev-parse", "HEAD")
