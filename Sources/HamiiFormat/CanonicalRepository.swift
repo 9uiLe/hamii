@@ -29,6 +29,144 @@ public enum CanonicalError: Error, CustomStringConvertible {
     }
 }
 
+#if DEBUG
+struct SinglePassCandidateResult {
+    let snapshot: CanonicalSnapshot
+    let relativePaths: [String]
+    let readCounts: [String: Int]
+    let capturedBytes: Int
+    let milliseconds: [String: Double]
+}
+
+private struct CapturedCanonicalFile {
+    let relativePath: String
+    let url: URL
+    let bytes: Data
+}
+
+extension CanonicalRepository {
+    // Evidence-only path. The caller holds WorktreeCoordinator for the entire
+    // observation; normal repository, Query, and save methods never call it.
+    func singlePassSnapshotCandidate() throws -> SinglePassCandidateResult {
+        func mark() -> Double { ProcessInfo.processInfo.systemUptime }
+        func elapsed(_ start: Double) -> Double { (mark() - start) * 1_000 }
+        let totalStart = mark()
+        try transaction.recoverIfNeeded()
+        var stages: [String: Double] = [:]
+        let discoveryStart = mark()
+        let paths = try canonicalJSONPaths()
+        stages["pathDiscovery"] = elapsed(discoveryStart)
+
+        let captureStart = mark()
+        var captured: [CapturedCanonicalFile] = []
+        var readCounts: [String: Int] = [:]
+        for url in paths {
+            let relative = url.path.replacingOccurrences(of: root.path + "/", with: "")
+            let bytes = try Data(contentsOf: url)
+            captured.append(CapturedCanonicalFile(relativePath: relative, url: url, bytes: bytes))
+            readCounts[relative, default: 0] += 1
+        }
+        stages["bytesCapture"] = elapsed(captureStart)
+        let byPath = Dictionary(uniqueKeysWithValues: captured.map { ($0.relativePath, $0.bytes) })
+        let manifestBytes = byPath["hamii.json"]!
+
+        let manifestStart = mark()
+        let header = try JSONDecoder().decode(FormatHeader.self, from: manifestBytes)
+        guard header.formatVersion == 1 else { throw CanonicalError.unsupportedFormat(header.formatVersion) }
+        let manifest = try JSONDecoder().decode(Manifest.self, from: manifestBytes)
+        guard manifest.formatVersion == 1,
+              manifest.versions.document == 1,
+              manifest.versions.authoringHarness == 1 else {
+            throw CanonicalError.unsupportedFormat(manifest.formatVersion)
+        }
+        stages["manifestDecode"] = elapsed(manifestStart)
+
+        var document = Document(name: manifest.name)
+        document.id = manifest.id
+        document.revision = manifest.revision
+        document.versions = manifest.versions
+        document.authoringHarness = manifest.authoringHarness
+        document.capabilityDeclarations = manifest.capabilityDeclarations
+        document.tokenTemplate = manifest.tokenTemplate
+
+        let entityStart = mark()
+        document.pages = try decodeCaptured("pages", from: captured)
+        document.screens = try decodeCaptured("screens", from: captured)
+        document.scopes = try decodeCaptured("scopes", from: captured)
+        document.components = try decodeCaptured("components", from: captured)
+        document.tokens = try decodeCaptured("tokens", from: captured)
+        document.assets = try decodeCaptured("assets", from: captured)
+        document.interactions = try decodeCaptured("interactions", from: captured)
+        document.motions = try decodeCaptured("motions", from: captured)
+        document.fixtures = try decodeCaptured("fixtures", from: captured)
+        document.targets = try decodeCaptured("targets", from: captured)
+        stages["entityDecode"] = elapsed(entityStart)
+
+        let validationStart = mark()
+        let diagnostics = allDiagnostics(document)
+        if diagnostics.contains(where: { $0.severity == .error }) {
+            throw CanonicalError.invalid(diagnostics)
+        }
+        stages["documentAndAssetValidation"] = elapsed(validationStart)
+
+        let profileStart = mark()
+        // Missing profiles must fail like AgentProfilesRepository.profiles().
+        let profileBytes = try byPath["hamii-agent-profiles.json"]
+            ?? Data(contentsOf: root.appendingPathComponent("hamii-agent-profiles.json"))
+        let profileDocument = try JSONDecoder().decode(AgentProfilesDocument.self, from: profileBytes)
+        guard profileDocument.formatVersion == 1 else {
+            throw AgentProfileError.unsupportedFormat(profileDocument.formatVersion)
+        }
+        let names = profileDocument.profiles.map(\.profileName)
+        if let duplicate = names.first(where: { name in names.filter { $0 == name }.count > 1 }) {
+            throw AgentProfileError.duplicateProfile(duplicate)
+        }
+        stages["agentProfileValidation"] = elapsed(profileStart)
+
+        let identityStart = mark()
+        let identity = hashIdentity(byPath)
+        stages["identityHash"] = elapsed(identityStart)
+        stages["snapshotTotal"] = elapsed(totalStart)
+        return SinglePassCandidateResult(
+            snapshot: CanonicalSnapshot(document: document, identity: identity),
+            relativePaths: captured.map(\.relativePath), readCounts: readCounts,
+            capturedBytes: captured.reduce(0) { $0 + $1.bytes.count },
+            milliseconds: stages)
+    }
+
+    private func decodeCaptured<T: Decodable & Identifiable>(
+        _ folder: String, from files: [CapturedCanonicalFile]
+    ) throws -> [T] where T.ID == EntityID {
+        try files.filter { $0.relativePath.hasPrefix(folder + "/") }
+            .sorted { $0.url.lastPathComponent < $1.url.lastPathComponent }
+            .map { file in
+                let value = try JSONDecoder().decode(T.self, from: file.bytes)
+                guard file.url.deletingPathExtension().lastPathComponent == value.id.rawValue else {
+                    throw CanonicalError.filenameMismatch(file.url.lastPathComponent)
+                }
+                return value
+            }
+    }
+
+    func withStableSinglePassCandidate<T>(
+        onLockAcquired: (() throws -> Void)? = nil,
+        _ operation: (SinglePassCandidateResult, StableCanonicalGeneration) throws -> T
+    ) throws -> T {
+        try coordinator.withExclusive {
+            try onLockAcquired?()
+            try transaction.recoverIfNeeded()
+            try coordinator.requireReady()
+            let stable = try generations.readStable()
+            let candidate = try singlePassSnapshotCandidate()
+            guard stable.snapshotIdentity == candidate.snapshot.identity else {
+                throw CanonicalGenerationError.unknownState
+            }
+            return try operation(candidate, stable)
+        }
+    }
+}
+#endif
+
 private struct Manifest: Codable {
     var formatVersion: Int
     var id: EntityID

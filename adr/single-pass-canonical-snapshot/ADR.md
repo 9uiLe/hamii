@@ -28,11 +28,11 @@ CanonicalSnapshot の Document decode、Agent profile validation、content ident
 
 ## Unknowns
 
-Manifest header/full decode と Agent profile validation の同一 bytes 性、per-folder order と validation error parity、stable generation / symlink / external edit rejection、memory footprint、Snapshot・Phase 1・writer wait の実測便益。
+Test-only Spike は同一 bytes 性、per-folder order、検証した error category、stable generation / symlink gate、Snapshot・Phase 1・writer wait の局所計測を得た。Production への採用前には、保持した `Data` と decoded Document の同時利用による大規模 Project の peak memory、複数故障時の error priority、Index recovery の end-to-end 統合効果、CI の全体検証を評価する。非協調 writer の同時変更保証はこの Decision Boundary に含めない。
 
 ## Required Evidence
 
-- [Byte-coherent acquisition Spike](spikes/byte-coherent-acquisition/SPIKE.md): test-only candidate の success/error/race/measurement 比較。
+- [Byte-coherent acquisition Spike](spikes/byte-coherent-acquisition/SPIKE.md): test-only candidate の success/error/race/measurement 比較。検証したケースの結果は同 Spike に記録済み。
 - Candidate と production の Document、ordered entity IDs、CanonicalSnapshotIdentity、diagnostics、stable generation 判定が一致すること。
 - 1 / 1000 / 5000 / mixed fixture で読み込み回数・bytes・p50/p95・writer wait を測ること。
 

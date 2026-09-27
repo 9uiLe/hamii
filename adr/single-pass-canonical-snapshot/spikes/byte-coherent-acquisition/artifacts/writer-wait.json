@@ -1,0 +1,7 @@
+{
+  "candidateSnapshotMS": 552.7069583331468,
+  "fixture": "5000 Components; same repository; separate sequential OS-process writer probes; stable Snapshot plus Git oracle under coordinated lock",
+  "legacySnapshotMS": 742.7189166628523,
+  "legacyWriterLockWaitMS": 1109.413250000216,
+  "writerLockWaitMS": 952.0035833411384
+}

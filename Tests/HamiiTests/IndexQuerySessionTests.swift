@@ -2047,3 +2047,409 @@ final class IndexQuerySessionTests: XCTestCase {
     func testProductionFastReadBlocksCoordinatedSave() throws { try race("save") }
     func testProductionFastReadBlocksIndexRebuild() throws { try race("rebuild") }
 }
+
+extension IndexQuerySessionTests {
+    func testSinglePassCandidateMatchesSnapshotAndReadsEachCanonicalJSONOnce() throws {
+        for kind in ["1", "1000", "5000", "mixed"] {
+            let count = kind == "mixed" ? 20 : Int(kind)!
+            let fixture = try fixture(componentCount: count)
+            defer { try? FileManager.default.removeItem(at: fixture.directory) }
+            if kind == "mixed" { try addMixedSemanticContent(fixture) }
+            let repository = CanonicalRepository(root: fixture.root)
+            try repository.withStableSnapshotForDerivedRecovery { legacy, stable in
+                let candidate = try repository.singlePassSnapshotCandidate()
+                XCTAssertEqual(candidate.snapshot.document, legacy.document)
+                XCTAssertEqual(candidate.snapshot.identity, legacy.identity)
+                XCTAssertEqual(candidate.snapshot.identity, stable.snapshotIdentity)
+                XCTAssertEqual(candidate.snapshot.document.components.map(\.id),
+                               legacy.document.components.map(\.id))
+                XCTAssertEqual(candidate.snapshot.document.scopes.map(\.id),
+                               legacy.document.scopes.map(\.id))
+                let expectedPaths = try repository.canonicalJSONPaths().map {
+                    $0.path.replacingOccurrences(of: repository.root.path + "/", with: "")
+                }
+                XCTAssertEqual(candidate.relativePaths, expectedPaths)
+                XCTAssertEqual(Set(candidate.readCounts.keys), Set(expectedPaths))
+                XCTAssertTrue(candidate.readCounts.values.allSatisfy { $0 == 1 })
+                let uniqueBytes = try expectedPaths.reduce(0) {
+                    $0 + (try Data(contentsOf: repository.root.appendingPathComponent($1))).count
+                }
+                XCTAssertEqual(candidate.capturedBytes, uniqueBytes)
+            }
+            let accepted = try repository.withStableSinglePassCandidate { candidate, stable in
+                XCTAssertEqual(candidate.snapshot.identity, stable.snapshotIdentity)
+                return candidate.snapshot.document.components.count
+            }
+            XCTAssertEqual(accepted, count)
+        }
+    }
+
+    func testSinglePassCandidatePreservesRepositoryAssetAndAliasIdentity() throws {
+        let fixture = try fixture()
+        defer { try? FileManager.default.removeItem(at: fixture.directory) }
+        let repository = CanonicalRepository(root: fixture.root)
+        let service = ProjectService(repository: repository)
+        let data = Data("image bytes".utf8)
+        _ = try service.importRepositoryAsset(data, name: "Avatar", scopeID: fixture.scopeID,
+            mediaType: "image/png", expectedState: service.observe().statePrecondition,
+            author: .human, blobs: CanonicalBlobStore(root: fixture.root))
+        try repository.withStableSnapshotForDerivedRecovery { legacy, stable in
+            let candidate = try repository.singlePassSnapshotCandidate()
+            XCTAssertEqual(candidate.snapshot.document, legacy.document)
+            XCTAssertEqual(candidate.snapshot.identity, legacy.identity)
+            XCTAssertEqual(candidate.snapshot.identity, stable.snapshotIdentity)
+            XCTAssertEqual(candidate.snapshot.document.assets.count, 1)
+            XCTAssertEqual(candidate.readCounts["assets/\(legacy.document.assets[0].id.rawValue).json"], 1)
+        }
+
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("hamii-single-pass-alias-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: root) }
+        _ = try CanonicalRepository(root: root).create(name: "Snapshot alias")
+        let alias: String
+        if root.path.hasPrefix("/var/") {
+            alias = "/private" + root.path
+        } else if root.path.hasPrefix("/private/var/") {
+            alias = String(root.path.dropFirst("/private".count))
+        } else {
+            throw XCTSkip("No /var and /private/var alias on this host")
+        }
+        func observation(_ root: URL) throws -> SinglePassCandidateResult {
+            let repository = CanonicalRepository(root: root)
+            return try repository.withStableSinglePassCandidate { result, _ in result }
+        }
+        let direct = try observation(root)
+        let alternate = try observation(URL(fileURLWithPath: alias))
+        XCTAssertEqual(direct.snapshot.identity, alternate.snapshot.identity)
+        XCTAssertEqual(direct.relativePaths, alternate.relativePaths)
+    }
+
+    func testSinglePassCandidateIdentityTracksExactCanonicalBytes() throws {
+        let fixture = try fixture()
+        defer { try? FileManager.default.removeItem(at: fixture.directory) }
+        let repository = CanonicalRepository(root: fixture.root)
+        let file = fixture.root.appendingPathComponent("components/component_alpha.json")
+        let before = try repository.withStableSnapshotForDerivedRecovery { snapshot, _ in
+            let candidate = try repository.singlePassSnapshotCandidate()
+            XCTAssertEqual(candidate.snapshot.identity, snapshot.identity)
+            return snapshot
+        }
+        let bytes = try Data(contentsOf: file)
+        try Data([0x20] + bytes).write(to: file, options: .atomic)
+        let after = try WorktreeCoordinator(root: fixture.root).withExclusive {
+            let legacy = try repository.snapshotDuringManagedGitTransition()
+            let candidate = try repository.singlePassSnapshotCandidate()
+            XCTAssertEqual(candidate.snapshot.identity, legacy.identity)
+            XCTAssertEqual(candidate.snapshot.document, legacy.document)
+            return legacy
+        }
+        XCTAssertEqual(before.document, after.document)
+        XCTAssertNotEqual(before.identity, after.identity)
+        XCTAssertThrowsError(try repository.withStableSinglePassCandidate { _, _ in }) { error in
+            guard case CanonicalGenerationError.unknownState = error else {
+                return XCTFail("Wrong stale-generation error: \(error)")
+            }
+        }
+    }
+
+    private func singlePassErrorCategory(_ error: Error) -> String {
+        switch error {
+        case CanonicalError.unsupportedFormat: return "unsupportedFormat"
+        case CanonicalError.filenameMismatch: return "filenameMismatch"
+        case CanonicalError.invalidClientEpoch: return "symlinkRejected"
+        case CanonicalError.invalid(let diagnostics):
+            return "invalid:\(diagnostics.map(\.rule).sorted().joined(separator: ","))"
+        case AgentProfileError.unsupportedFormat: return "agentProfileFormat"
+        case AgentProfileError.duplicateProfile: return "agentProfileDuplicate"
+        case is DecodingError: return "decoding"
+        default:
+            let ns = error as NSError
+            return "\(ns.domain):\(ns.code)"
+        }
+    }
+
+    func testSinglePassCandidatePreservesErrorCategories() throws {
+        let cases = ["missingManifest", "unsupportedManifest", "malformedManifest", "malformedEntity",
+                     "filenameMismatch", "brokenScope", "missingAssetBlob",
+                     "unsupportedProfiles", "duplicateProfiles", "missingProfiles",
+                     "manifestSymlink", "componentSymlink", "profileSymlink"]
+        for scenario in cases {
+            let fixture = try fixture()
+            defer { try? FileManager.default.removeItem(at: fixture.directory) }
+            let manifest = fixture.root.appendingPathComponent("hamii.json")
+            let component = fixture.root.appendingPathComponent("components/component_alpha.json")
+            let profiles = fixture.root.appendingPathComponent("hamii-agent-profiles.json")
+            func changeJSON(_ file: URL, _ change: (inout [String: Any]) -> Void) throws {
+                var object = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
+                change(&object)
+                try JSONSerialization.data(withJSONObject: object).write(to: file)
+            }
+            func symlink(_ file: URL) throws {
+                let copy = fixture.directory.appendingPathComponent("symlink-target.json")
+                try Data(contentsOf: file).write(to: copy)
+                try FileManager.default.removeItem(at: file)
+                try FileManager.default.createSymbolicLink(at: file, withDestinationURL: copy)
+            }
+            switch scenario {
+            case "missingManifest":
+                try FileManager.default.removeItem(at: manifest)
+            case "unsupportedManifest":
+                try changeJSON(manifest) { $0["formatVersion"] = 2 }
+            case "malformedManifest":
+                try Data("{".utf8).write(to: manifest)
+            case "malformedEntity":
+                try Data("{".utf8).write(to: component)
+            case "filenameMismatch":
+                try changeJSON(component) { $0["id"] = ["rawValue": "component_other"] }
+            case "brokenScope":
+                try changeJSON(component) { $0["ownerScopeID"] = ["rawValue": "scope_missing"] }
+            case "missingAssetBlob":
+                let service = ProjectService(repository: CanonicalRepository(root: fixture.root))
+                _ = try service.importRepositoryAsset(Data("blob".utf8), name: "Avatar",
+                    scopeID: fixture.scopeID, mediaType: "image/png",
+                    expectedState: service.observe().statePrecondition, author: .human,
+                    blobs: CanonicalBlobStore(root: fixture.root))
+                let asset = try XCTUnwrap(CanonicalRepository(root: fixture.root).load().assets.first)
+                guard case .repository(let path) = asset.source else { return XCTFail("Expected blob") }
+                try FileManager.default.removeItem(at: fixture.root.appendingPathComponent(path))
+            case "unsupportedProfiles":
+                try changeJSON(profiles) { $0["formatVersion"] = 2 }
+            case "duplicateProfiles":
+                try changeJSON(profiles) { object in
+                    var values = object["profiles"] as! [[String: Any]]
+                    values.append(values[0])
+                    object["profiles"] = values
+                }
+            case "missingProfiles":
+                try FileManager.default.removeItem(at: profiles)
+            case "manifestSymlink": try symlink(manifest)
+            case "componentSymlink": try symlink(component)
+            case "profileSymlink": try symlink(profiles)
+            default: XCTFail("Unknown scenario")
+            }
+            let repository = CanonicalRepository(root: fixture.root)
+            let categories = try WorktreeCoordinator(root: fixture.root).withExclusive { () -> (String, String) in
+                func legacy() -> String {
+                    do {
+                        _ = try repository.snapshotDuringManagedGitTransition()
+                        return "accepted"
+                    } catch { return singlePassErrorCategory(error) }
+                }
+                func candidate() -> String {
+                    do {
+                        _ = try repository.singlePassSnapshotCandidate()
+                        return "accepted"
+                    } catch { return singlePassErrorCategory(error) }
+                }
+                return (legacy(), candidate())
+            }
+            XCTAssertNotEqual(categories.0, "accepted", scenario)
+            XCTAssertEqual(categories.0, categories.1, scenario)
+        }
+    }
+
+    func testSinglePassCandidateRejectsRawEditAgainstStableGeneration() throws {
+        let fixture = try fixture()
+        defer { try? FileManager.default.removeItem(at: fixture.directory) }
+        try changeComponent(fixture, from: "Alpha", to: "Externally edited")
+        let repository = CanonicalRepository(root: fixture.root)
+        XCTAssertThrowsError(try repository.withStableSinglePassCandidate { _, _ in }) { error in
+            guard case CanonicalGenerationError.unknownState = error else {
+                return XCTFail("Wrong candidate error: \(error)")
+            }
+        }
+        XCTAssertThrowsError(try repository.withStableSnapshotForDerivedRecovery { _, _ in }) { error in
+            guard case CanonicalGenerationError.unknownState = error else {
+                return XCTFail("Wrong production error: \(error)")
+            }
+        }
+    }
+
+    func testSinglePassCandidateKeepsCoordinatedWriterOutsideSnapshot() throws {
+        let fixture = try fixture(componentCount: 5_000)
+        defer { try? FileManager.default.removeItem(at: fixture.directory) }
+        let attempt = fixture.directory.appendingPathComponent("single-pass-writer-attempt")
+        let result = fixture.directory.appendingPathComponent("single-pass-writer-result.json")
+        var worker: Process?
+        defer {
+            if let worker, worker.isRunning {
+                kill(worker.processIdentifier, SIGKILL)
+                worker.waitUntilExit()
+            }
+        }
+        let repository = CanonicalRepository(root: fixture.root)
+        var completed = 0.0
+        var candidateSnapshotMS = 0.0
+        try repository.withStableSinglePassCandidate(onLockAcquired: {
+            worker = try self.child("testRecoveryLockProbeWorker", environment: [
+                "HAMII_LOCK_PROBE_PROJECT": fixture.root.path,
+                "HAMII_LOCK_PROBE_ATTEMPT": attempt.path,
+                "HAMII_LOCK_PROBE_RESULT": result.path
+            ])
+            try self.awaitFile(attempt, process: worker!)
+        }) { candidate, _ in
+            _ = try GitCanonicalRevisionCalculator().current(at: fixture.root)
+            completed = ProcessInfo.processInfo.systemUptime
+            candidateSnapshotMS = try XCTUnwrap(candidate.milliseconds["snapshotTotal"])
+            XCTAssertEqual(candidate.snapshot.document.components.count, 5_000)
+            XCTAssertFalse(FileManager.default.fileExists(atPath: result.path))
+        }
+        let child = try XCTUnwrap(worker)
+        try awaitFile(result, process: child)
+        child.waitUntilExit()
+        XCTAssertEqual(child.terminationStatus, 0)
+        let observed = try JSONDecoder().decode([String: Double].self, from: Data(contentsOf: result))
+        XCTAssertLessThan(try XCTUnwrap(observed["attemptedAt"]), completed)
+        XCTAssertLessThan(completed, try XCTUnwrap(observed["acquiredAt"]))
+        if let output = ProcessInfo.processInfo.environment["HAMII_SINGLE_PASS_WRITER_WAIT_RESULT"] {
+            let legacyAttempt = fixture.directory.appendingPathComponent("legacy-writer-attempt")
+            let legacyResult = fixture.directory.appendingPathComponent("legacy-writer-result.json")
+            var legacyWorker: Process?
+            defer {
+                if let legacyWorker, legacyWorker.isRunning {
+                    kill(legacyWorker.processIdentifier, SIGKILL)
+                    legacyWorker.waitUntilExit()
+                }
+            }
+            var legacySnapshotMS = 0.0
+            var legacyCompleted = 0.0
+            try repository.withStableSnapshotForDerivedRecovery(onLockAcquired: {
+                legacyWorker = try self.child("testRecoveryLockProbeWorker", environment: [
+                    "HAMII_LOCK_PROBE_PROJECT": fixture.root.path,
+                    "HAMII_LOCK_PROBE_ATTEMPT": legacyAttempt.path,
+                    "HAMII_LOCK_PROBE_RESULT": legacyResult.path
+                ])
+                try self.awaitFile(legacyAttempt, process: legacyWorker!)
+            }, onObservation: { observation in
+                if observation.stage == .snapshotAcquisition {
+                    legacySnapshotMS = observation.milliseconds
+                }
+            }) { snapshot, _ in
+                _ = try GitCanonicalRevisionCalculator().current(at: fixture.root)
+                legacyCompleted = ProcessInfo.processInfo.systemUptime
+                XCTAssertEqual(snapshot.document.components.count, 5_000)
+            }
+            let secondChild = try XCTUnwrap(legacyWorker)
+            try awaitFile(legacyResult, process: secondChild)
+            secondChild.waitUntilExit()
+            XCTAssertEqual(secondChild.terminationStatus, 0)
+            let legacy = try JSONDecoder().decode([String: Double].self, from: Data(contentsOf: legacyResult))
+            XCTAssertLessThan(try XCTUnwrap(legacy["attemptedAt"]), legacyCompleted)
+            XCTAssertLessThan(legacyCompleted, try XCTUnwrap(legacy["acquiredAt"]))
+            let times = ["writerLockWaitMS": try XCTUnwrap(observed["writerLockWaitMS"]),
+                         "candidateSnapshotMS": candidateSnapshotMS,
+                         "attemptedAt": try XCTUnwrap(observed["attemptedAt"]),
+                         "snapshotAndOracleCompletedAt": completed,
+                         "acquiredAt": try XCTUnwrap(observed["acquiredAt"]),
+                         "legacyWriterLockWaitMS": try XCTUnwrap(legacy["writerLockWaitMS"]),
+                         "legacySnapshotMS": legacySnapshotMS,
+                         "legacyAttemptedAt": try XCTUnwrap(legacy["attemptedAt"]),
+                         "legacySnapshotAndOracleCompletedAt": legacyCompleted,
+                         "legacyAcquiredAt": try XCTUnwrap(legacy["acquiredAt"])]
+            try JSONEncoder().encode(times).write(to: URL(fileURLWithPath: output), options: .atomic)
+        }
+    }
+}
+
+extension IndexQuerySessionTests {
+    func testSinglePassCandidateDoesNotBypassHiddenGitSourceRejection() throws {
+        for condition in ["assume-unchanged", "skip-worktree", "filter"] {
+            let fixture = try fixture()
+            defer { try? FileManager.default.removeItem(at: fixture.directory) }
+            let canonicalPath = "components/component_alpha.json"
+            if condition == "filter" {
+                try Data("\(canonicalPath) filter=hamii-test\n".utf8)
+                    .write(to: fixture.root.appendingPathComponent(".git/info/attributes"))
+                try git(fixture.root, ["config", "filter.hamii-test.clean", "cat"])
+            } else {
+                try git(fixture.root, ["update-index", "--\(condition)", canonicalPath])
+            }
+            let repository = CanonicalRepository(root: fixture.root)
+            try repository.withStableSinglePassCandidate { candidate, stable in
+                XCTAssertEqual(candidate.snapshot.identity, stable.snapshotIdentity)
+                XCTAssertThrowsError(try GitCanonicalRevisionCalculator().current(at: fixture.root), condition) { error in
+                    guard case IndexError.unverifiableSource = error else {
+                        return XCTFail("Wrong Git oracle error for \(condition): \(error)")
+                    }
+                }
+            }
+            let published = try index(fixture).url
+            try FileManager.default.removeItem(at: published)
+            XCTAssertThrowsError(try query(session(fixture), fixture), condition)
+            XCTAssertFalse(FileManager.default.fileExists(atPath: published.path), condition)
+        }
+    }
+
+    private struct SinglePassBenchmarkSample: Codable {
+        let fixture: String
+        let iteration: Int
+        let legacySnapshotMS: Double
+        let candidateSnapshotMS: Double
+        let legacyPhase1MS: Double
+        let candidatePhase1MS: Double
+        let candidateStages: [String: Double]
+        let capturedBytes: Int
+        let canonicalFileCount: Int
+    }
+
+    func testMeasuredSinglePassSnapshotCandidate() throws {
+        guard let output = ProcessInfo.processInfo.environment["HAMII_SINGLE_PASS_CANDIDATE_RESULT"] else {
+            throw XCTSkip("Set HAMII_SINGLE_PASS_CANDIDATE_RESULT for paired Snapshot measurements")
+        }
+        var samples: [SinglePassBenchmarkSample] = []
+        for kind in ["1", "1000", "5000", "mixed"] {
+            let count = kind == "mixed" ? 20 : Int(kind)!
+            let fixture = try fixture(componentCount: count)
+            defer { try? FileManager.default.removeItem(at: fixture.directory) }
+            if kind == "mixed" { try addMixedSemanticContent(fixture) }
+            let repository = CanonicalRepository(root: fixture.root)
+            for iteration in 0..<5 {
+                var legacySnapshotMS = 0.0
+                var candidateSnapshotMS = 0.0
+                var legacyPhase1MS = 0.0
+                var candidatePhase1MS = 0.0
+                var legacy: CanonicalSnapshot?
+                var candidate: SinglePassCandidateResult?
+                func measureLegacy() throws {
+                    let started = ProcessInfo.processInfo.systemUptime
+                    var observations: [CanonicalObservationMeasurement] = []
+                    legacy = try repository.withStableSnapshotForDerivedRecovery(
+                        onObservation: { observations.append($0) }) { snapshot, _ in
+                        _ = try GitCanonicalRevisionCalculator().current(at: fixture.root)
+                        return snapshot
+                    }
+                    legacyPhase1MS = (ProcessInfo.processInfo.systemUptime - started) * 1_000
+                    legacySnapshotMS = try XCTUnwrap(observations.first(where: {
+                        $0.stage == .snapshotAcquisition
+                    })?.milliseconds)
+                }
+                func measureCandidate() throws {
+                    let started = ProcessInfo.processInfo.systemUptime
+                    candidate = try repository.withStableSinglePassCandidate { result, _ in
+                        _ = try GitCanonicalRevisionCalculator().current(at: fixture.root)
+                        return result
+                    }
+                    candidatePhase1MS = (ProcessInfo.processInfo.systemUptime - started) * 1_000
+                    candidateSnapshotMS = try XCTUnwrap(candidate?.milliseconds["snapshotTotal"])
+                }
+                if iteration.isMultiple(of: 2) {
+                    try measureLegacy(); try measureCandidate()
+                } else {
+                    try measureCandidate(); try measureLegacy()
+                }
+                let measured = try XCTUnwrap(candidate)
+                XCTAssertEqual(measured.snapshot.document, legacy?.document)
+                XCTAssertEqual(measured.snapshot.identity, legacy?.identity)
+                XCTAssertTrue(measured.readCounts.values.allSatisfy { $0 == 1 })
+                samples.append(SinglePassBenchmarkSample(fixture: kind, iteration: iteration,
+                    legacySnapshotMS: legacySnapshotMS, candidateSnapshotMS: candidateSnapshotMS,
+                    legacyPhase1MS: legacyPhase1MS, candidatePhase1MS: candidatePhase1MS,
+                    candidateStages: measured.milliseconds, capturedBytes: measured.capturedBytes,
+                    canonicalFileCount: measured.readCounts.count))
+            }
+        }
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        try encoder.encode(samples).write(to: URL(fileURLWithPath: output), options: .atomic)
+    }
+}
