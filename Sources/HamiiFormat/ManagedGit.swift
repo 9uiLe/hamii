@@ -22,6 +22,13 @@ public enum ManagedGitError: Error, CustomStringConvertible {
 
 enum ManagedGitStep: Equatable { case pending, switched, validated }
 
+public struct MergeCandidate {
+    public let root: URL
+    public let document: Document
+    public let sourceHead: String
+    public let candidateHead: String
+}
+
 /// A Git adapter that participates in WorktreeCoordinator. A pending marker
 /// prevents normal Canonical access after an interrupted switch. Recovery
 /// accepts only a complete, clean source or target branch state.
@@ -116,6 +123,41 @@ public final class ManagedGit {
         }
     }
 
+    public func withMergeCandidate<T>(_ targetBranch: String, expectedState: ClientPrecondition,
+                                      validate: (MergeCandidate) throws -> T) throws -> T {
+        try coordinator.withExclusive {
+            try coordinator.requireReady()
+            try requireWorktreeRoot()
+            let current = try repository.observeDuringManagedGitTransition()
+            guard current.statePrecondition == expectedState else { throw AuthoringError.staleState }
+            try requireCleanWorktree()
+            guard (try? git("check-ref-format", "--branch", targetBranch)) != nil,
+                  (try? git("rev-parse", "--verify", "refs/heads/\(targetBranch)^{commit}")) != nil else {
+                throw ManagedGitError.invalidBranch(targetBranch)
+            }
+            let sourceHead = try head()
+            let container = FileManager.default.temporaryDirectory.appendingPathComponent("hamii-merge-candidate-\(UUID().uuidString)", isDirectory: true)
+            let candidateRoot = container.appendingPathComponent("worktree", isDirectory: true)
+            try FileManager.default.createDirectory(at: container, withIntermediateDirectories: true)
+            var added = false
+            defer {
+                if added { _ = try? git("worktree", "remove", "--force", candidateRoot.path) }
+                try? FileManager.default.removeItem(at: container)
+            }
+            _ = try git("worktree", "add", "--detach", candidateRoot.path, sourceHead)
+            added = true
+            _ = try git(at: candidateRoot, "merge", "--no-ff", "--no-edit", targetBranch)
+            let candidateHead = try git(at: candidateRoot, "rev-parse", "HEAD")
+            guard try head() == sourceHead else { throw ManagedGitError.changedDuringTransition }
+            try requireCleanWorktree()
+            let candidateRepository = CanonicalRepository(root: candidateRoot)
+            let document = try candidateRepository.observe().document
+            _ = try AgentProfilesRepository(root: candidateRoot).profiles()
+            return try validate(MergeCandidate(root: candidateRoot, document: document,
+                                               sourceHead: sourceHead, candidateHead: candidateHead))
+        }
+    }
+
     private func requireWorktreeRoot() throws {
         let actual = try git("rev-parse", "--show-toplevel")
         guard URL(fileURLWithPath: actual).resolvingSymlinksInPath().standardizedFileURL == root.resolvingSymlinksInPath().standardizedFileURL else {
@@ -133,9 +175,17 @@ public final class ManagedGit {
     private func head() throws -> String { try git("rev-parse", "HEAD") }
 
     @discardableResult private func git(_ arguments: String...) throws -> String {
+        try git(at: root, arguments)
+    }
+
+    private func git(at worktree: URL, _ arguments: String...) throws -> String {
+        try git(at: worktree, arguments)
+    }
+
+    private func git(at worktree: URL, _ arguments: [String]) throws -> String {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/git")
-        process.arguments = ["-C", root.path] + arguments
+        process.arguments = ["-C", worktree.path] + arguments
         let output = Pipe()
         process.standardOutput = output
         process.standardError = output

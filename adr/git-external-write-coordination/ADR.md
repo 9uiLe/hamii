@@ -36,7 +36,7 @@ External-change detection は正式な writer model の外で起きた変更に�
 
 ## Unknowns
 
-残る実装は managed Git switch の production generation / Index 連携、merge candidate の隔離・semantic validation・Index generation・atomic publish、partial Git state の修復 UX、worktree identity と移動の扱い。Client / Preview token の選択は別 ADR。Power loss は [Power-loss ADR](../canonical-power-loss-durability/ADR.md)。
+残る実装は managed Git switch の production generation / Index 連携、検証済み merge candidate と Index generation の atomic publish、partial Git state の修復 UX、worktree identity と移動の扱い。`git merge check` は一時 worktree 内の semantic validation と一時 Index rebuild を行い、公開しない。Client / Preview token の選択は別 ADR。Power loss は [Power-loss ADR](../canonical-power-loss-durability/ADR.md)。
 
 ## Required Evidence
 
@@ -47,6 +47,7 @@ External-change detection は正式な writer model の外で起きた変更に�
 - [Managed Git operation](spikes/managed-git-operation/SPIKE.md): raw `git switch` は `.hamii/write.lock` を無視する。試験用 wrapper では reader と switch を同じ lock で囲み generation を進めた。Production adapter は未実装。
 - [Shared generation process-stop matrix](../index-consistency/spikes/shared-worktree-generation/SPIKE.md): 試験用 coordinated boundary で別 OS process の writer / reader の flock attempt/acquire を確認し、4地点で writer を SIGKILL。Product Contract はこの保証境界を採用するが、production generation protocol の成立証明にはならない。
 - Managed switch implementation tests: 同一 revision の branch switch 後に旧 client token を拒否する。pending・switched・validated の注入停止で通常の Canonical observation を拒否し、既知 HEAD と valid Canonical state の recovery 後に再開する。Unsupported Canonical format の target は source branch へ戻し、旧 token は失効したままにする。注入停止は SIGKILL / power loss の再検証ではない。
+- Isolated merge candidate CLI smoke: 非競合 merge を一時 worktree で Canonical validation・一時 Index rebuild まで通し、source HEAD と client token を変更しない。Git text merge 成功後の `component.missing` を拒否し、両側の valid branch を保持する。Candidate publication は未実装。
 
 ## Decision Criteria
 
