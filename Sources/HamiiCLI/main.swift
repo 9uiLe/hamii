@@ -106,19 +106,23 @@ private enum CLI {
             return Output(ok: valid, category: valid ? nil : "validation", diagnostics: diagnostics)
         }
         if args == ["index", "rebuild"] {
-            let calculator = GitCanonicalRevisionCalculator()
-            let before = try calculator.current(at: path)
-            let document = try service.document()
-            let stable = try calculator.current(at: path)
-            guard before == stable else { throw IndexError.stale }
-            try LocalIndex(projectRoot: path, documentID: document.id, revisionCalculator: calculator).rebuild(from: document, canonicalRevision: stable)
-            guard try calculator.current(at: path) == stable else { throw IndexError.stale }
-            return Output(ok: true, message: "Indexed revision \(document.revision)")
+            return try repository.withCoordinatedDocument { document in
+                let calculator = GitCanonicalRevisionCalculator()
+                let before = try calculator.current(at: path)
+                let stable = try calculator.current(at: path)
+                guard before == stable else { throw IndexError.stale }
+                try LocalIndex(projectRoot: path, documentID: document.id, revisionCalculator: calculator)
+                    .rebuild(from: document, canonicalRevision: stable)
+                guard try calculator.current(at: path) == stable else { throw IndexError.stale }
+                return Output(ok: true, message: "Indexed revision \(document.revision)")
+            }
         }
         if args.count == 4 && args[0] == "query" && args[1] == "components" {
-            let (id, revision) = try repository.identityAndRevision()
-            let hits = try LocalIndex(projectRoot: path, documentID: id, revisionCalculator: GitCanonicalRevisionCalculator()).components(matching: args[3], consumerScopeID: EntityID(args[2]), documentID: id, revision: revision)
-            return Output(ok: true, hits: hits)
+            return try repository.withCoordinatedIdentity { id, revision in
+                let hits = try LocalIndex(projectRoot: path, documentID: id, revisionCalculator: GitCanonicalRevisionCalculator())
+                    .components(matching: args[3], consumerScopeID: EntityID(args[2]), documentID: id, revision: revision)
+                return Output(ok: true, hits: hits)
+            }
         }
         if args.count == 4 && args[0] == "generate" && args[1] == "swiftui" {
             return Output(ok: true, generated: try SwiftUIGenerator.generate(document: service.document(), screenID: EntityID(args[2]), targetID: EntityID(args[3])))

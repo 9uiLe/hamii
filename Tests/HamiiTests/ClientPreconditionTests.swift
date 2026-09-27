@@ -125,6 +125,8 @@ final class ClientPreconditionTests: XCTestCase {
             XCTAssertThrowsError(try repository.observe()) { error in
                 guard case CanonicalError.managedGitPending = error else { return XCTFail("Wrong error: \(error)") }
             }
+            XCTAssertThrowsError(try repository.withCoordinatedIdentity { _, _ in true })
+            XCTAssertThrowsError(try repository.withCoordinatedDocument { _ in true })
             let recovered = try ManagedGit(root: root).recover()
             XCTAssertNotEqual(from.statePrecondition, recovered.statePrecondition)
             XCTAssertEqual(try repository.observe().statePrecondition, recovered.statePrecondition)

@@ -83,11 +83,33 @@ public final class CanonicalRepository: ProjectRepository {
     }
 
     public func observe() throws -> ProjectObservation {
+        try withCoordinatedObservation { $0 }
+    }
+
+    public func withCoordinatedObservation<T>(_ operation: (ProjectObservation) throws -> T) throws -> T {
         try coordinator.withExclusive {
             try transaction.recoverIfNeeded()
             try coordinator.requireReady()
             let document = try loadUnlocked(validate: true)
-            return ProjectObservation(document: document, statePrecondition: try clientPreconditionUnlocked())
+            let observed = ProjectObservation(document: document, statePrecondition: try clientPreconditionUnlocked())
+            return try operation(observed)
+        }
+    }
+
+    public func withCoordinatedDocument<T>(_ operation: (Document) throws -> T) throws -> T {
+        try coordinator.withExclusive {
+            try transaction.recoverIfNeeded()
+            try coordinator.requireReady()
+            return try operation(loadUnlocked(validate: true))
+        }
+    }
+
+    public func withCoordinatedIdentity<T>(_ operation: (EntityID, Int) throws -> T) throws -> T {
+        try coordinator.withExclusive {
+            try transaction.recoverIfNeeded()
+            try coordinator.requireReady()
+            let manifest = try readManifest()
+            return try operation(manifest.id, manifest.revision)
         }
     }
 
@@ -147,12 +169,7 @@ public final class CanonicalRepository: ProjectRepository {
     }
 
     public func identityAndRevision() throws -> (EntityID, Int) {
-        try coordinator.withExclusive {
-            try transaction.recoverIfNeeded()
-            try coordinator.requireReady()
-            let manifest = try readManifest()
-            return (manifest.id, manifest.revision)
-        }
+        try withCoordinatedIdentity { ($0, $1) }
     }
 
     public func save(_ document: Document, expected: Document) throws {
