@@ -111,21 +111,23 @@ final class SharedWorktreeGenerationSpikeTests: XCTestCase {
         let calculator = SharedCalculator()
         let index = try LocalIndex(projectRoot: project, documentID: base.id, revisionCalculator: calculator,
                                    storageRoot: temporary.appendingPathComponent("Indexes"))
+        var indexedSnapshot = try testIndexSnapshot(base)
         try withLock(project, exclusive: true) {
-            try index.rebuild(from: first.load(), canonicalRevision: calculator.current(at: project))
+            _ = try index.rebuild(from: indexedSnapshot, canonicalRevision: calculator.current(at: project))
         }
         func query(_ term: String, revision: Int) throws -> [ComponentHit] {
             try withLock(project, exclusive: false) {
-                try index.components(matching: term, consumerScopeID: owner, documentID: base.id, revision: revision)
+                try index.components(matching: term, consumerScopeID: owner, documentID: base.id,
+                                     revision: revision, expectedSourceIdentity: indexedSnapshot.identity)
             }
         }
         XCTAssertEqual(try query("Alpha", revision: base.revision).count, 1)
         try withLock(project, exclusive: true) {
-            try index.rebuild(from: base, canonicalRevision: CanonicalRevision("gen-1"))
+            _ = try index.rebuild(from: indexedSnapshot, canonicalRevision: CanonicalRevision("gen-1"))
         }
         XCTAssertThrowsError(try query("Alpha", revision: base.revision))
         try withLock(project, exclusive: true) {
-            try index.rebuild(from: base, canonicalRevision: calculator.current(at: project))
+            _ = try index.rebuild(from: indexedSnapshot, canonicalRevision: calculator.current(at: project))
         }
 
         let second = CanonicalRepository(root: project)
@@ -150,8 +152,9 @@ final class SharedWorktreeGenerationSpikeTests: XCTestCase {
         }
         XCTAssertThrowsError(try query("Alpha", revision: beta.revision))
         XCTAssertEqual(try childQuery(project, index: index.url, term: "Alpha")["reason"] as? String, "generationMismatch")
+        indexedSnapshot = try testIndexSnapshot(beta)
         try withLock(project, exclusive: true) {
-            try index.rebuild(from: second.load(), canonicalRevision: calculator.current(at: project))
+            _ = try index.rebuild(from: indexedSnapshot, canonicalRevision: calculator.current(at: project))
         }
         XCTAssertEqual(try query("Beta", revision: beta.revision).count, 1)
         // This fresh OS process reads only persisted generation and SQLite metadata.
@@ -187,8 +190,9 @@ final class SharedWorktreeGenerationSpikeTests: XCTestCase {
         }
         XCTAssertThrowsError(try query("Beta", revision: beta.revision))
         XCTAssertEqual(try childQuery(project, index: index.url, term: "Beta")["reason"] as? String, "generationMismatch")
+        indexedSnapshot = try testIndexSnapshot(beta)
         try withLock(project, exclusive: true) {
-            try index.rebuild(from: first.load(), canonicalRevision: calculator.current(at: project))
+            _ = try index.rebuild(from: indexedSnapshot, canonicalRevision: calculator.current(at: project))
         }
         XCTAssertEqual(try query("Beta", revision: beta.revision).count, 1)
 

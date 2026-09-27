@@ -104,7 +104,8 @@ final class KnownCurrentGenerationSpikeTests: XCTestCase {
         let coldState = session.freshness
         XCTAssertEqual(coldState, .unknown)
         let (source, coldVerificationMs) = try timed { try calculator.current(at: project) }
-        try index.rebuild(from: withComponent, canonicalRevision: source)
+        let baseSnapshot = try repository.withCoordinatedSnapshot { $0 }
+        try index.rebuild(from: baseSnapshot, canonicalRevision: source)
         session.verifiedOpen(generation: 1, indexed: true)
         XCTAssertEqual(session.freshness, .knownCurrent)
 
@@ -120,7 +121,8 @@ final class KnownCurrentGenerationSpikeTests: XCTestCase {
             warmDirectQueryMs.append(directMs)
             let (hits, actualMs) = try timed {
                 try index.components(matching: "BaseButton", consumerScopeID: scope,
-                                     documentID: withComponent.id, revision: withComponent.revision)
+                                     documentID: withComponent.id, revision: withComponent.revision,
+                                     expectedSourceIdentity: baseSnapshot.identity)
             }
             XCTAssertEqual(hits.count, 1)
             productionQueryMs.append(actualMs)
@@ -134,7 +136,8 @@ final class KnownCurrentGenerationSpikeTests: XCTestCase {
         let afterSave = session.freshness
         XCTAssertEqual(afterSave, .knownStale)
         let nextSource = try calculator.current(at: project)
-        try index.rebuild(from: renamed, canonicalRevision: nextSource)
+        let renamedSnapshot = try repository.withCoordinatedSnapshot { $0 }
+        try index.rebuild(from: renamedSnapshot, canonicalRevision: nextSource)
         session.published()
         let afterPublish = session.freshness
         XCTAssertEqual(afterPublish, .knownCurrent)
@@ -161,7 +164,8 @@ final class KnownCurrentGenerationSpikeTests: XCTestCase {
         XCTAssertTrue(falselyKnownCurrent)
         XCTAssertEqual(try directRowCount(index.url, name: "NextButton"), 1)
         XCTAssertThrowsError(try index.components(matching: "NextButton", consumerScopeID: scope,
-                                                  documentID: renamed.id, revision: renamed.revision)) { error in
+                                                  documentID: renamed.id, revision: renamed.revision,
+                                                  expectedSourceIdentity: renamedSnapshot.identity)) { error in
             XCTAssertEqual(String(describing: error), String(describing: IndexError.stale))
         }
         session.externalSignal()
@@ -183,7 +187,8 @@ final class KnownCurrentGenerationSpikeTests: XCTestCase {
         try git(project, ["checkout", "-q", "main"])
         let mainDocument = try repository.load()
         let mainSource = try calculator.current(at: project)
-        try index.rebuild(from: mainDocument, canonicalRevision: mainSource)
+        let mainSnapshot = try repository.withCoordinatedSnapshot { $0 }
+        try index.rebuild(from: mainSnapshot, canonicalRevision: mainSource)
         var branchSession = Session()
         branchSession.verifiedOpen(generation: 3, indexed: true)
         XCTAssertEqual(branchSession.freshness, .knownCurrent)
@@ -192,7 +197,8 @@ final class KnownCurrentGenerationSpikeTests: XCTestCase {
         XCTAssertTrue(unobservedBranchSwitchWouldFalselyReturnCurrent)
         XCTAssertEqual(try directRowCount(index.url, name: "NextButton"), 1)
         XCTAssertThrowsError(try index.components(matching: "NextButton", consumerScopeID: scope,
-                                                  documentID: mainDocument.id, revision: mainDocument.revision)) { error in
+                                                  documentID: mainDocument.id, revision: mainDocument.revision,
+                                                  expectedSourceIdentity: mainSnapshot.identity)) { error in
             XCTAssertEqual(String(describing: error), String(describing: IndexError.stale))
         }
         branchSession.externalSignal()
@@ -202,7 +208,8 @@ final class KnownCurrentGenerationSpikeTests: XCTestCase {
         // A separate hamii repository instance honors the file lock, but that lock
         // does not notify an already-open process-local index session of the save.
         let branchSource = try calculator.current(at: project)
-        try index.rebuild(from: branchDocument, canonicalRevision: branchSource)
+        let branchSnapshot = try repository.withCoordinatedSnapshot { $0 }
+        try index.rebuild(from: branchSnapshot, canonicalRevision: branchSource)
         var peerSession = Session()
         peerSession.verifiedOpen(generation: 4, indexed: true)
         let peerRepository = CanonicalRepository(root: project)
@@ -215,7 +222,8 @@ final class KnownCurrentGenerationSpikeTests: XCTestCase {
         XCTAssertTrue(unobservedHamiiPeerSaveWouldFalselyReturnCurrent)
         XCTAssertEqual(try directRowCount(index.url, name: "BranchButton"), 1)
         XCTAssertThrowsError(try index.components(matching: "BranchButton", consumerScopeID: scope,
-                                                  documentID: branchDocument.id, revision: branchDocument.revision)) { error in
+                                                  documentID: branchDocument.id, revision: branchDocument.revision,
+                                                  expectedSourceIdentity: branchSnapshot.identity)) { error in
             XCTAssertEqual(String(describing: error), String(describing: IndexError.stale))
         }
 

@@ -1,6 +1,7 @@
 import Darwin
 import Foundation
 import MachO
+import SQLite3
 import XCTest
 import HamiiApplication
 import HamiiCore
@@ -12,9 +13,11 @@ final class ValidatedMergePublicationTests: XCTestCase {
 
     private struct FailingIndex: MergeIndexPublishing {
         let delegate = PublishedMergeIndex()
-        func validateCandidate(at root: URL, document: Document) throws { try delegate.validateCandidate(at: root, document: document) }
-        func rebuildPublished(at root: URL, document: Document) throws { throw IndexError.stale }
-        func verifyPublished(at root: URL, document: Document) throws { try delegate.verifyPublished(at: root, document: document) }
+        func validateCandidate(at root: URL, snapshot: CanonicalSnapshot) throws { try delegate.validateCandidate(at: root, snapshot: snapshot) }
+        func rebuildPublished(at root: URL, snapshot: CanonicalSnapshot) throws -> IndexGenerationDescriptor { throw IndexError.stale }
+        func verifyPublished(at root: URL, snapshot: CanonicalSnapshot) throws -> IndexGenerationDescriptor {
+            try delegate.verifyPublished(at: root, snapshot: snapshot)
+        }
     }
 
     private struct Fixture {
@@ -48,7 +51,8 @@ final class ValidatedMergePublicationTests: XCTestCase {
         _ = try service.mutate(.createPage(name: "Main"), expectedState: service.observe().statePrecondition, author: .human)
         try commit(root, "main page")
         let observed = try service.observe()
-        try PublishedMergeIndex().rebuildPublished(at: root, document: observed.document)
+        _ = try PublishedMergeIndex().rebuildPublished(at: root,
+            snapshot: repository.withCoordinatedSnapshot { $0 })
         return Fixture(root: root, main: main, oldHead: try git(root, "rev-parse", "HEAD"),
                        otherHead: otherHead, oldState: observed.statePrecondition,
                        documentID: observed.document.id, scopeID: created.scopes[0].id)
@@ -89,7 +93,8 @@ final class ValidatedMergePublicationTests: XCTestCase {
             let hits = try LocalIndex(projectRoot: f.root, documentID: f.documentID,
                                       revisionCalculator: GitCanonicalRevisionCalculator())
                 .components(matching: "Button", consumerScopeID: f.scopeID,
-                            documentID: f.documentID, revision: recovered.document.revision)
+                            documentID: f.documentID, revision: recovered.document.revision,
+                            expectedSourceIdentity: repository.withCoordinatedSnapshot { $0.identity })
             XCTAssertEqual(hits.count, 1, "\(phase)")
             XCTAssertEqual(try git(f.root, "rev-parse", "other"), f.otherHead, "\(phase)")
             XCTAssertTrue(try git(f.root, "status", "--porcelain").isEmpty, "\(phase)")
@@ -106,6 +111,52 @@ final class ValidatedMergePublicationTests: XCTestCase {
         let recovered = try ValidatedMergePublisher(root: f.root, index: PublishedMergeIndex()).recover()
         XCTAssertTrue(recovered.document.pages.contains(where: { $0.name == "Other" }))
         XCTAssertFalse(FileManager.default.fileExists(atPath: f.root.appendingPathComponent(".hamii/merge-publication.pending.json").path))
+    }
+
+    func testPublishedIndexSourceMismatchKeepsGateUntilRecoveryRebuildsFromCandidate() throws {
+        let f = try fixture()
+        defer { cleanupTestCandidates(f.root); try? FileManager.default.removeItem(at: f.root) }
+        let indexURL = LocalIndexLocation.url(projectRoot: f.root, documentID: f.documentID)
+        let corrupting = PublishedMergeIndex { step in
+            guard step == .published else { return }
+            var db: OpaquePointer?
+            XCTAssertEqual(sqlite3_open(indexURL.path, &db), SQLITE_OK)
+            defer { sqlite3_close(db) }
+            XCTAssertEqual(sqlite3_exec(db,
+                "UPDATE metadata SET value='\(String(repeating: "a", count: 64))' WHERE key='sourceCanonicalIdentity'",
+                nil, nil, nil), SQLITE_OK)
+        }
+        XCTAssertThrowsError(try ValidatedMergePublisher(root: f.root, index: corrupting)
+            .publish("other", expectedState: f.oldState))
+        XCTAssertNotEqual(try git(f.root, "rev-parse", "HEAD"), f.oldHead)
+        XCTAssertTrue(FileManager.default.fileExists(atPath:
+            f.root.appendingPathComponent(".hamii/merge-publication.pending.json").path))
+        XCTAssertThrowsError(try CanonicalRepository(root: f.root).observe())
+        let recovered = try ValidatedMergePublisher(root: f.root, index: PublishedMergeIndex()).recover()
+        let snapshot = try CanonicalRepository(root: f.root).withCoordinatedSnapshot { $0 }
+        let generation = try PublishedMergeIndex().verifyPublished(at: f.root, snapshot: snapshot)
+        XCTAssertEqual(generation.sourceCanonicalIdentity, snapshot.identity)
+        XCTAssertEqual(generation.documentRevision, recovered.document.revision)
+        XCTAssertThrowsError(try ProjectService(repository: CanonicalRepository(root: f.root))
+            .mutate(.createPage(name: "Stale"), expectedState: f.oldState, author: .human))
+    }
+
+    func testReadyRecoveryKeepsPublishedGenerationAndSnapshotBinding() throws {
+        let f = try fixture()
+        defer { cleanupTestCandidates(f.root); try? FileManager.default.removeItem(at: f.root) }
+        let publisher = ValidatedMergePublisher(root: f.root, index: PublishedMergeIndex())
+        let published = try publisher.publish("other", expectedState: f.oldState)
+        let repository = CanonicalRepository(root: f.root)
+        let snapshot = try repository.withCoordinatedSnapshot { $0 }
+        let generation = try PublishedMergeIndex().verifyPublished(at: f.root, snapshot: snapshot)
+        XCTAssertEqual(generation.sourceCanonicalIdentity, snapshot.identity)
+        XCTAssertEqual(generation.documentID, published.document.id)
+        XCTAssertEqual(generation.documentRevision, published.document.revision)
+        let recovered = try publisher.recover()
+        XCTAssertEqual(recovered.document.revision, published.document.revision)
+        let after = try PublishedMergeIndex().verifyPublished(at: f.root,
+            snapshot: repository.withCoordinatedSnapshot { $0 })
+        XCTAssertEqual(after, generation)
     }
 
     func testUnknownRefRemainsGated() throws {
@@ -288,7 +339,8 @@ final class ValidatedMergePublicationTests: XCTestCase {
             let hits = try LocalIndex(projectRoot: f.root, documentID: f.documentID,
                                       revisionCalculator: GitCanonicalRevisionCalculator())
                 .components(matching: "Button", consumerScopeID: f.scopeID,
-                            documentID: f.documentID, revision: recovered.document.revision)
+                            documentID: f.documentID, revision: recovered.document.revision,
+                            expectedSourceIdentity: CanonicalRepository(root: f.root).withCoordinatedSnapshot { $0.identity })
             XCTAssertEqual(hits.count, 1, stage)
             XCTAssertFalse(FileManager.default.fileExists(atPath: pending.path), stage)
             XCTAssertTrue(try git(f.root, "status", "--porcelain").isEmpty, stage)

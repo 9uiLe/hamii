@@ -13,19 +13,19 @@ public struct PublishedMergeIndex: MergeIndexPublishing {
     public init() { hook = nil }
     init(hook: @escaping (MergeIndexStep) -> Void) { self.hook = hook }
 
-    public func validateCandidate(at root: URL, document: Document) throws {
+    public func validateCandidate(at root: URL, snapshot: CanonicalSnapshot) throws {
         let temporary = FileManager.default.temporaryDirectory.appendingPathComponent("hamii-candidate-index-\(UUID().uuidString)", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: temporary) }
-        try build(at: root, document: document, storageRoot: temporary, isPublication: false)
+        _ = try build(at: root, snapshot: snapshot, storageRoot: temporary, isPublication: false)
     }
 
-    public func rebuildPublished(at root: URL, document: Document) throws {
-        let destination = LocalIndexLocation.url(projectRoot: root, documentID: document.id)
+    public func rebuildPublished(at root: URL, snapshot: CanonicalSnapshot) throws -> IndexGenerationDescriptor {
+        let destination = LocalIndexLocation.url(projectRoot: root, documentID: snapshot.document.id)
         try FileManager.default.createDirectory(at: destination.deletingLastPathComponent(), withIntermediateDirectories: true)
         let temporary = destination.deletingLastPathComponent().appendingPathComponent(".hamii-index-build-\(UUID().uuidString)", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: temporary) }
         hook?(.beforeBuild)
-        let generated = try build(at: root, document: document, storageRoot: temporary, isPublication: true)
+        let generated = try build(at: root, snapshot: snapshot, storageRoot: temporary, isPublication: true)
         hook?(.built)
         // SQLite's journal files belong to the previous disposable generation.
         // The source worktree gate excludes coordinated query connections here.
@@ -34,32 +34,38 @@ public struct PublishedMergeIndex: MergeIndexPublishing {
             if FileManager.default.fileExists(atPath: sidecar.path) { try FileManager.default.removeItem(at: sidecar) }
         }
         hook?(.beforePublish)
-        guard rename(generated.path, destination.path) == 0 else { throw CocoaError(.fileWriteUnknown) }
+        guard rename(generated.url.path, destination.path) == 0 else { throw CocoaError(.fileWriteUnknown) }
         hook?(.published)
-        try verifyPublished(at: root, document: document)
+        let published = try verifyPublished(at: root, snapshot: snapshot)
+        guard published == generated.generation else { throw IndexError.stale }
+        return published
     }
 
-    public func verifyPublished(at root: URL, document: Document) throws {
+    public func verifyPublished(at root: URL, snapshot: CanonicalSnapshot) throws -> IndexGenerationDescriptor {
         let calculator = GitCanonicalRevisionCalculator()
-        let index = try LocalIndex(projectRoot: root, documentID: document.id, revisionCalculator: calculator)
-        try index.assertCurrent(documentID: document.id, revision: document.revision)
+        let index = try LocalIndex(projectRoot: root, documentID: snapshot.document.id, revisionCalculator: calculator)
+        return try index.assertCurrent(documentID: snapshot.document.id, revision: snapshot.document.revision,
+                                       expectedSourceIdentity: snapshot.identity)
     }
 
-    @discardableResult
-    private func build(at root: URL, document: Document, storageRoot: URL, isPublication: Bool) throws -> URL {
+    private func build(at root: URL, snapshot: CanonicalSnapshot, storageRoot: URL,
+                       isPublication: Bool) throws -> (url: URL, generation: IndexGenerationDescriptor) {
         let calculator = GitCanonicalRevisionCalculator()
         let source = try calculator.current(at: root)
         let generated: URL
+        let generation: IndexGenerationDescriptor
         do {
-            let index = try LocalIndex(projectRoot: root, documentID: document.id,
+            let index = try LocalIndex(projectRoot: root, documentID: snapshot.document.id,
                                        revisionCalculator: calculator, storageRoot: storageRoot)
-            try index.rebuild(from: document, canonicalRevision: source, transactionHook: isPublication ? {
+            generation = try index.rebuild(from: snapshot, canonicalRevision: source, transactionHook: isPublication ? {
                 hook?(.duringTransaction)
             } : nil)
-            try index.assertCurrent(documentID: document.id, revision: document.revision)
+            let verified = try index.assertCurrent(documentID: snapshot.document.id,
+                revision: snapshot.document.revision, expectedSourceIdentity: snapshot.identity)
+            guard verified == generation else { throw IndexError.stale }
             generated = index.url
         }
         guard try calculator.current(at: root) == source else { throw IndexError.stale }
-        return generated
+        return (generated, generation)
     }
 }

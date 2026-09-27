@@ -1,6 +1,7 @@
 import Foundation
 import SQLite3
 import HamiiCore
+import HamiiFormat
 
 public enum IndexError: Error, CustomStringConvertible {
     case sqlite(String)
@@ -23,7 +24,7 @@ public struct ComponentHit: Codable, Equatable {
 }
 
 public final class LocalIndex {
-    public static let schemaVersion = 5
+    public static let schemaVersion = 6
     public let url: URL
     private let projectRoot: URL
     private let revisionCalculator: any CanonicalRevisionCalculating
@@ -52,14 +53,19 @@ public final class LocalIndex {
 
     deinit { sqlite3_close(database) }
 
-    public func rebuild(from document: Document, canonicalRevision: CanonicalRevision) throws {
-        try rebuild(from: document, canonicalRevision: canonicalRevision, transactionHook: nil)
+    @discardableResult
+    public func rebuild(from snapshot: CanonicalSnapshot, canonicalRevision: CanonicalRevision) throws -> IndexGenerationDescriptor {
+        try rebuild(from: snapshot, canonicalRevision: canonicalRevision, transactionHook: nil)
     }
 
     // Internal stop point for process-crash regression tests. The public
     // rebuild contract never exposes a partially committed transaction.
-    func rebuild(from document: Document, canonicalRevision: CanonicalRevision,
-                 transactionHook: (() -> Void)?) throws {
+    @discardableResult
+    func rebuild(from snapshot: CanonicalSnapshot, canonicalRevision: CanonicalRevision,
+                 transactionHook: (() -> Void)?) throws -> IndexGenerationDescriptor {
+        let document = snapshot.document
+        let generation = IndexGenerationDescriptor(id: .new(), sourceCanonicalIdentity: snapshot.identity,
+                                                   documentID: document.id, documentRevision: document.revision)
         try execute("BEGIN IMMEDIATE TRANSACTION")
         do {
             try execute("DELETE FROM components")
@@ -80,19 +86,30 @@ public final class LocalIndex {
             try insert("INSERT INTO metadata(key, value) VALUES ('documentID', ?)", [document.id.rawValue])
             try insert("INSERT INTO metadata(key, value) VALUES ('revision', ?)", [String(document.revision)])
             try insert("INSERT INTO metadata(key, value) VALUES ('canonicalRevision', ?)", [canonicalRevision.rawValue])
+            try insert("INSERT INTO metadata(key, value) VALUES ('indexGenerationID', ?)", [generation.id.rawValue])
+            try insert("INSERT INTO metadata(key, value) VALUES ('sourceCanonicalIdentity', ?)", [snapshot.identity.rawValue])
             try execute("COMMIT")
+            return generation
         } catch {
             try? execute("ROLLBACK")
             throw error
         }
     }
 
-    public func components(matching text: String, consumerScopeID: EntityID, documentID: EntityID, revision: Int) throws -> [ComponentHit] {
+    public func components(matching text: String, consumerScopeID: EntityID, documentID: EntityID,
+                           revision: Int, expectedSourceIdentity: CanonicalSnapshotIdentity) throws -> [ComponentHit] {
         try execute("BEGIN DEFERRED TRANSACTION")
         do {
-            guard try metadata("documentID") == documentID.rawValue,
-                  try metadata("revision") == String(revision),
+            let generation = try readGeneration()
+            guard generation.documentID == documentID,
+                  generation.documentRevision == revision,
                   let indexedRevision = try metadata("canonicalRevision") else { throw IndexError.stale }
+            if generation.sourceCanonicalIdentity != expectedSourceIdentity {
+                // Preserve a specific Git guard diagnostic for hidden flags or
+                // filters even when the exact source identity is already stale.
+                _ = try revisionCalculator.current(at: projectRoot)
+                throw IndexError.stale
+            }
             let sql = "SELECT c.id, c.name, c.owner_scope_id, c.usage_count FROM components c JOIN component_availability a ON a.component_id = c.id WHERE a.consumer_id = ? AND c.name LIKE ? ORDER BY c.name"
             let statement = try prepare(sql)
             bind(consumerScopeID.rawValue, at: 1, to: statement)
@@ -118,20 +135,35 @@ public final class LocalIndex {
         }
     }
 
-    public func assertCurrent(documentID: EntityID, revision: Int) throws {
+    @discardableResult
+    public func assertCurrent(documentID: EntityID, revision: Int,
+                              expectedSourceIdentity: CanonicalSnapshotIdentity) throws -> IndexGenerationDescriptor {
         try execute("BEGIN DEFERRED TRANSACTION")
         do {
-            guard try metadata("documentID") == documentID.rawValue,
-                  try metadata("revision") == String(revision),
+            let generation = try readGeneration()
+            guard generation.documentID == documentID,
+                  generation.documentRevision == revision,
+                  generation.sourceCanonicalIdentity == expectedSourceIdentity,
                   let indexedRevision = try metadata("canonicalRevision"),
                   try revisionCalculator.current(at: projectRoot).rawValue == indexedRevision else {
                 throw IndexError.stale
             }
             try execute("COMMIT")
+            return generation
         } catch {
             try? execute("ROLLBACK")
             throw error
         }
+    }
+
+    private func readGeneration() throws -> IndexGenerationDescriptor {
+        guard let documentID = try metadata("documentID"), !documentID.isEmpty,
+              let revisionText = try metadata("revision"), let revision = Int(revisionText), revision >= 0,
+              let idText = try metadata("indexGenerationID"), let id = IndexGenerationID(rawValue: idText),
+              let sourceText = try metadata("sourceCanonicalIdentity"),
+              let source = CanonicalSnapshotIdentity(rawValue: sourceText) else { throw IndexError.stale }
+        return IndexGenerationDescriptor(id: id, sourceCanonicalIdentity: source,
+                                         documentID: EntityID(documentID), documentRevision: revision)
     }
 
     private func metadata(_ key: String) throws -> String? {

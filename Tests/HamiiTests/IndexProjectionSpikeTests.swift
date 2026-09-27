@@ -243,7 +243,8 @@ final class IndexProjectionSpikeTests: XCTestCase {
         let storageRoot = temporary.appendingPathComponent("Indexes")
         let writer = try LocalIndex(projectRoot: root, documentID: document.id,
                                     revisionCalculator: GitCanonicalRevisionCalculator(), storageRoot: storageRoot)
-        try writer.rebuild(from: document, canonicalRevision: GitCanonicalRevisionCalculator().current(at: root))
+        let snapshot = try repository.withCoordinatedSnapshot { $0 }
+        try writer.rebuild(from: snapshot, canonicalRevision: GitCanonicalRevisionCalculator().current(at: root))
         try git(["switch", "-qc", "other"])
         let file = root.appendingPathComponent("components/component_switch.json")
         let other = try String(decoding: Data(contentsOf: file), as: UTF8.self).replacingOccurrences(of: "BaseButton", with: "XaseButton")
@@ -255,7 +256,8 @@ final class IndexProjectionSpikeTests: XCTestCase {
                                     revisionCalculator: SwitchingRevision(switchBranch: { try git(["switch", "-q", "other"]) }),
                                     storageRoot: storageRoot)
         XCTAssertThrowsError(try reader.components(matching: "Button", consumerScopeID: owner,
-                                                    documentID: document.id, revision: 1)) { error in
+                                                    documentID: document.id, revision: 1,
+                                                    expectedSourceIdentity: snapshot.identity)) { error in
             guard case IndexError.stale = error else { return XCTFail("Expected staleIndex, got \(error)") }
         }
         XCTAssertEqual(try repository.load().components.first?.name, "XaseButton")

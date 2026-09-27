@@ -268,8 +268,10 @@ final class ArchitectureTests: XCTestCase {
         XCTAssertEqual(try service.availableComponents(for: checkout.id).count, 0)
         let index = try LocalIndex(projectRoot: path, documentID: document.id, revisionCalculator: GitCanonicalRevisionCalculator(), storageRoot: path.appendingPathComponent("test-indexes"))
         let revision = try GitCanonicalRevisionCalculator().current(at: path)
-        try index.rebuild(from: document, canonicalRevision: revision)
-        XCTAssertEqual(try index.components(matching: "Outer", consumerScopeID: checkout.id, documentID: document.id, revision: 1).count, 0)
+        let snapshot = try repository.withCoordinatedSnapshot { $0 }
+        try index.rebuild(from: snapshot, canonicalRevision: revision)
+        XCTAssertEqual(try index.components(matching: "Outer", consumerScopeID: checkout.id, documentID: document.id,
+                                            revision: 1, expectedSourceIdentity: snapshot.identity).count, 0)
 
         let intent = AuthoringIntent.instantiate(screenID: screen.id, parentID: screen.root.id, definitionID: outer.id)
         for author in [Author.human, .agent] {
@@ -367,18 +369,23 @@ final class ArchitectureTests: XCTestCase {
         try initializeGit(at: path)
         let index = try LocalIndex(projectRoot: path, documentID: document.id, revisionCalculator: GitCanonicalRevisionCalculator(), storageRoot: path.appendingPathComponent("test-indexes"))
         let revision = try GitCanonicalRevisionCalculator().current(at: path)
-        try index.rebuild(from: document, canonicalRevision: revision)
-        XCTAssertEqual(try index.components(matching: "But", consumerScopeID: appID, documentID: document.id, revision: 1).count, 1)
-        XCTAssertEqual(try index.components(matching: "But", consumerScopeID: denied.id, documentID: document.id, revision: 1).count, 0)
+        let snapshot = try repository.withCoordinatedSnapshot { $0 }
+        try index.rebuild(from: snapshot, canonicalRevision: revision)
+        XCTAssertEqual(try index.components(matching: "But", consumerScopeID: appID, documentID: document.id,
+                                            revision: 1, expectedSourceIdentity: snapshot.identity).count, 1)
+        XCTAssertEqual(try index.components(matching: "But", consumerScopeID: denied.id, documentID: document.id,
+                                            revision: 1, expectedSourceIdentity: snapshot.identity).count, 0)
         try FileManager.default.removeItem(at: index.url)
         let rebuilt = try LocalIndex(projectRoot: path, documentID: document.id, revisionCalculator: GitCanonicalRevisionCalculator(), storageRoot: path.appendingPathComponent("test-indexes"))
-        try rebuilt.rebuild(from: repository.load(), canonicalRevision: revision)
-        XCTAssertEqual(try rebuilt.components(matching: "But", consumerScopeID: appID, documentID: document.id, revision: 1).count, 1)
+        try rebuilt.rebuild(from: snapshot, canonicalRevision: revision)
+        XCTAssertEqual(try rebuilt.components(matching: "But", consumerScopeID: appID, documentID: document.id,
+                                              revision: 1, expectedSourceIdentity: snapshot.identity).count, 1)
         let componentFile = path.appendingPathComponent("components/\(component.id.rawValue).json")
         var externalBytes = try Data(contentsOf: componentFile)
         externalBytes.append(0x0A)
         try externalBytes.write(to: componentFile)
-        XCTAssertThrowsError(try rebuilt.components(matching: "But", consumerScopeID: appID, documentID: document.id, revision: 1)) { error in
+        XCTAssertThrowsError(try rebuilt.components(matching: "But", consumerScopeID: appID, documentID: document.id,
+                                                     revision: 1, expectedSourceIdentity: snapshot.identity)) { error in
             guard case IndexError.stale = error else { return XCTFail("Expected stale index") }
         }
     }

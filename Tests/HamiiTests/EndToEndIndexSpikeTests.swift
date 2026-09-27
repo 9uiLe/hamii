@@ -57,12 +57,14 @@ final class EndToEndIndexSpikeTests: XCTestCase {
             XCTAssertEqual(before, stable)
             let (projection, projectionMs) = timed { IndexProjection(document: document) }
             XCTAssertEqual(projection.components.count, document.components.count)
-            let (_, rebuildMs) = try timed { try index.rebuild(from: document, canonicalRevision: stable) }
+            let snapshot = try testIndexSnapshot(document)
+            let (_, rebuildMs) = try timed { try index.rebuild(from: snapshot, canonicalRevision: stable) }
             let (published, verifyMs) = try timed { try calculator.current(at: project) }
             XCTAssertEqual(stable, published)
             let (hits, queryMs) = try timed {
                 try index.components(matching: "Button", consumerScopeID: consumer,
-                                     documentID: document.id, revision: document.revision)
+                                     documentID: document.id, revision: document.revision,
+                                     expectedSourceIdentity: snapshot.identity)
             }
             XCTAssertTrue(hits.isEmpty)
             let values = ["preRevision": preMs, "canonicalLoad": loadMs, "postRevision": postMs,

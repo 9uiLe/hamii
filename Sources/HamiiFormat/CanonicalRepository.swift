@@ -104,6 +104,14 @@ public final class CanonicalRepository: ProjectRepository {
         }
     }
 
+    public func withCoordinatedSnapshot<T>(_ operation: (CanonicalSnapshot) throws -> T) throws -> T {
+        try coordinator.withExclusive {
+            try transaction.recoverIfNeeded()
+            try coordinator.requireReady()
+            return try operation(snapshotDuringManagedGitTransition())
+        }
+    }
+
     public func withCoordinatedIdentity<T>(_ operation: (EntityID, Int) throws -> T) throws -> T {
         try coordinator.withExclusive {
             try transaction.recoverIfNeeded()
@@ -201,7 +209,7 @@ public final class CanonicalRepository: ProjectRepository {
     // The caller holds WorktreeCoordinator across the entire observation.
     // A revision cannot make multiple files coherent; the coordinated read
     // provides the snapshot boundary for hamii-managed writers.
-    func snapshotDuringManagedGitTransition(validationHook: (() throws -> Void)? = nil) throws -> (document: Document, identity: String) {
+    func snapshotDuringManagedGitTransition(validationHook: (() throws -> Void)? = nil) throws -> CanonicalSnapshot {
         try transaction.recoverIfNeeded()
         let document = try loadUnlocked(validate: true, validationHook: validationHook)
         _ = try AgentProfilesRepository(root: root).profiles()
@@ -211,7 +219,8 @@ public final class CanonicalRepository: ProjectRepository {
             appendHash(Data(relative.utf8), to: &hash)
             appendHash(try Data(contentsOf: path), to: &hash)
         }
-        return (document, hash.finalize().map { String(format: "%02x", $0) }.joined())
+        return CanonicalSnapshot(document: document,
+                                 identity: CanonicalSnapshotIdentity(rawValue: hash.finalize().map { String(format: "%02x", $0) }.joined())!)
     }
 
     private func writeDocument(_ document: Document, expected: Document?) throws {

@@ -36,11 +36,11 @@
 
 Pending 中は observe / mutation / query / preview mutation を Ready として扱わない。Recovery は、ref が expected old OID なら old state を保持して abort、candidate OID なら candidate へ roll-forward して検証と Index publication を完了、どちらでもなければ Unknown として gate を残す。Index failure では Canonical を rollback せず、Query を拒否して同一 CanonicalSnapshot から Index を再生成する。Git ref / Canonical files / SQLite の同時 atomic transaction は作らない。`WorktreeCoordinator` は lock / epoch / gate の primitive に留め、Git / validation / Index を組み合わせる publication orchestration は別責務とする。
 
-この決定は [CAS and internal stops](spikes/cas-and-internal-stops/SPIKE.md) の process crash Evidence に基づく。Pending record の停電耐久性は [Power-loss ADR](../canonical-power-loss-durability/ADR.md) の durability primitive を要する。Production `CanonicalSnapshot`・`IndexGenerationID` binding、Git subprocess 所有者確認、Index generation publication は実装と検証が必要であり、試作の値を production guarantee に昇格させない。
+この決定は [CAS and internal stops](spikes/cas-and-internal-stops/SPIKE.md) の process crash Evidence に基づく。Pending record の停電耐久性は [Power-loss ADR](../canonical-power-loss-durability/ADR.md) の durability primitive を要する。Production の `CanonicalSnapshot`・`IndexGenerationID` binding は full rebuild と merge gate に接続した。Git subprocess 所有者確認、一般の Index generation publication は別途検証が必要であり、試作の値を production guarantee に昇格させない。
 
 ## Unknowns
 
-Production は candidate retention ref、pending record、source / candidate Canonical JSON identity、別ファイル full SQLite rebuild と rename を持つ。残る検証は ownership 不明 Git lock での fail-closed recovery と明示的な manual repair boundary、candidate retention ref の orphan cleanup、明示的な `IndexGenerationID` と一般 Query の接続、large-project latency。停電耐久性は別 ADR。
+Production は candidate retention ref、pending record、source / candidate Canonical JSON identity、別ファイル full SQLite rebuild と rename を持つ。Index rows と source identity / `IndexGenerationID` を同じ SQLite transaction に記録し、公開済み Index の descriptor が build 結果と一致する場合だけ gate を解除する。残る検証は ownership 不明 Git lock での fail-closed recovery と明示的な manual repair boundary、candidate retention ref の orphan cleanup、large-project latency。停電耐久性と一般の Index 世代公開方式は別 ADR。
 
 ## Required Evidence
 

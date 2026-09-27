@@ -138,7 +138,7 @@ final class SharedGenerationCrashSpikeTests: XCTestCase {
         try persist(Record(phase: "current", generation: 0), root: root)
         let index = try LocalIndex(projectRoot: root, documentID: base.id, revisionCalculator: Calculator(trust: nil), storageRoot: indexRoot)
         try withLock(root, exclusive: true) {
-            try index.rebuild(from: repository.load(), canonicalRevision: CanonicalRevision("gen-0"))
+            _ = try index.rebuild(from: testIndexSnapshot(base), canonicalRevision: CanonicalRevision("gen-0"))
         }
         return (base, index)
     }
@@ -202,7 +202,7 @@ final class SharedGenerationCrashSpikeTests: XCTestCase {
             if stage == "generationFinalized" { pause() }
             let index = try LocalIndex(projectRoot: root, documentID: updated.id, revisionCalculator: Calculator(trust: nil),
                                        storageRoot: URL(fileURLWithPath: indexPath))
-            try index.rebuild(from: updated, canonicalRevision: CanonicalRevision("gen-1"))
+            _ = try index.rebuild(from: testIndexSnapshot(updated), canonicalRevision: CanonicalRevision("gen-1"))
             if stage == "indexPublished" { pause() }
         }
     }
@@ -219,10 +219,14 @@ final class SharedGenerationCrashSpikeTests: XCTestCase {
                                    storageRoot: URL(fileURLWithPath: indexPath))
         let before = try JSONDecoder().decode(Record.self, from: Data(contentsOf: root.appendingPathComponent(".hamii/prototype-generation.json")))
         let expectedRevision = before.phase == "current" ? 2 : 1
+        let initialSource = try XCTUnwrap(CanonicalSnapshotIdentity(rawValue:
+            XCTUnwrap(indexMetadata(index.url, key: "sourceCanonicalIdentity"))))
         let bootRejected: Bool
         do {
             _ = try withLock(root, exclusive: false) {
-                try index.components(matching: "", consumerScopeID: EntityID("scope_app"), documentID: EntityID(documentID), revision: expectedRevision)
+                try index.components(matching: "", consumerScopeID: EntityID("scope_app"),
+                                     documentID: EntityID(documentID), revision: expectedRevision,
+                                     expectedSourceIdentity: initialSource)
             }
             bootRejected = false
         } catch { bootRejected = true }
@@ -232,13 +236,15 @@ final class SharedGenerationCrashSpikeTests: XCTestCase {
             let repository = CanonicalRepository(root: root)
             let journalBeforeLoad = FileManager.default.fileExists(atPath: root.appendingPathComponent(".hamii/transaction.ready").path)
             let document = try repository.load() // This runs Canonical journal recovery first.
+            let currentSnapshot = try testIndexSnapshot(document)
             let source = try snapshot(root)
             let journalResolved = !FileManager.default.fileExists(atPath: root.appendingPathComponent(".hamii/transaction.ready").path)
             XCTAssertTrue(journalResolved)
             func queryRejected() -> Bool {
                 do {
                     _ = try index.components(matching: "", consumerScopeID: EntityID("scope_app"),
-                                             documentID: EntityID(documentID), revision: document.revision)
+                                             documentID: EntityID(documentID), revision: document.revision,
+                                             expectedSourceIdentity: currentSnapshot.identity)
                     return false
                 } catch { return true }
             }
@@ -248,7 +254,7 @@ final class SharedGenerationCrashSpikeTests: XCTestCase {
             try persist(Record(phase: "current", generation: next), root: root)
             let afterCanonicalGenerationRejected = queryRejected()
             XCTAssertTrue(afterCanonicalGenerationRejected)
-            try index.rebuild(from: document, canonicalRevision: CanonicalRevision("gen-\(next)"))
+            try index.rebuild(from: currentSnapshot, canonicalRevision: CanonicalRevision("gen-\(next)"))
             let afterIndexRowsRejected = queryRejected()
             XCTAssertTrue(afterIndexRowsRejected)
             let generationID = try publishPrototypeIndexGenerationID(index.url)
@@ -276,7 +282,8 @@ final class SharedGenerationCrashSpikeTests: XCTestCase {
         }
         let hits = try withLock(root, exclusive: false) {
             try index.components(matching: recovered.0, consumerScopeID: EntityID("scope_app"),
-                                 documentID: EntityID(documentID), revision: recovered.2)
+                                 documentID: EntityID(documentID), revision: recovered.2,
+                                 expectedSourceIdentity: testIndexSnapshot(CanonicalRepository(root: root).load()).identity)
         }
         XCTAssertEqual(hits.map(\.name), [recovered.0])
         let report: [String: Any] = ["bootRejected": bootRejected, "recoveredName": recovered.0,

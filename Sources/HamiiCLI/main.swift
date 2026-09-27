@@ -115,16 +115,18 @@ private enum CLI {
                 throw CLIError(category: "usage", message: "Merge candidate check requires --state TOKEN from inspect")
             }
             return try ManagedGit(root: path).withMergeCandidate(args[3], expectedState: ClientPrecondition(stateText)) { candidate in
-                let calculator = GitCanonicalRevisionCalculator()
-                let source = try calculator.current(at: candidate.root)
-                let index = try LocalIndex(projectRoot: candidate.root, documentID: candidate.document.id,
-                                           revisionCalculator: calculator,
-                                           storageRoot: candidate.root.deletingLastPathComponent().appendingPathComponent("indexes"))
-                try index.rebuild(from: candidate.document, canonicalRevision: source)
-                guard try calculator.current(at: candidate.root) == source else { throw IndexError.stale }
-                return Output(ok: true, mergeCheck: MergeCheck(sourceHead: candidate.sourceHead,
-                    candidateHead: candidate.candidateHead, documentID: candidate.document.id,
-                    documentRevision: candidate.document.revision, indexedCandidate: true, published: false))
+                try CanonicalRepository(root: candidate.root).withCoordinatedSnapshot { snapshot in
+                    let calculator = GitCanonicalRevisionCalculator()
+                    let source = try calculator.current(at: candidate.root)
+                    let index = try LocalIndex(projectRoot: candidate.root, documentID: snapshot.document.id,
+                                               revisionCalculator: calculator,
+                                               storageRoot: candidate.root.deletingLastPathComponent().appendingPathComponent("indexes"))
+                    _ = try index.rebuild(from: snapshot, canonicalRevision: source)
+                    guard try calculator.current(at: candidate.root) == source else { throw IndexError.stale }
+                    return Output(ok: true, mergeCheck: MergeCheck(sourceHead: candidate.sourceHead,
+                        candidateHead: candidate.candidateHead, documentID: snapshot.document.id,
+                        documentRevision: snapshot.document.revision, indexedCandidate: true, published: false))
+                }
             }
         }
         if args.count == 4 && args[0] == "git" && args[1] == "merge" && args[2] == "publish" {
@@ -144,22 +146,36 @@ private enum CLI {
             return Output(ok: valid, category: valid ? nil : "validation", diagnostics: diagnostics)
         }
         if args == ["index", "rebuild"] {
-            return try repository.withCoordinatedDocument { document in
+            return try repository.withCoordinatedSnapshot { snapshot in
                 let calculator = GitCanonicalRevisionCalculator()
                 let before = try calculator.current(at: path)
                 let stable = try calculator.current(at: path)
                 guard before == stable else { throw IndexError.stale }
-                try LocalIndex(projectRoot: path, documentID: document.id, revisionCalculator: calculator)
-                    .rebuild(from: document, canonicalRevision: stable)
+                _ = try LocalIndex(projectRoot: path, documentID: snapshot.document.id, revisionCalculator: calculator)
+                    .rebuild(from: snapshot, canonicalRevision: stable)
                 guard try calculator.current(at: path) == stable else { throw IndexError.stale }
-                return Output(ok: true, message: "Indexed revision \(document.revision)")
+                return Output(ok: true, message: "Indexed revision \(snapshot.document.revision)")
             }
         }
         if args.count == 4 && args[0] == "query" && args[1] == "components" {
-            return try repository.withCoordinatedIdentity { id, revision in
-                let hits = try LocalIndex(projectRoot: path, documentID: id, revisionCalculator: GitCanonicalRevisionCalculator())
-                    .components(matching: args[3], consumerScopeID: EntityID(args[2]), documentID: id, revision: revision)
-                return Output(ok: true, hits: hits)
+            do {
+                return try repository.withCoordinatedSnapshot { snapshot in
+                    let id = snapshot.document.id
+                    let hits = try LocalIndex(projectRoot: path, documentID: id, revisionCalculator: GitCanonicalRevisionCalculator())
+                        .components(matching: args[3], consumerScopeID: EntityID(args[2]), documentID: id,
+                                    revision: snapshot.document.revision, expectedSourceIdentity: snapshot.identity)
+                    return Output(ok: true, hits: hits)
+                }
+            } catch let error as IndexError {
+                throw error
+            } catch CanonicalError.managedGitPending {
+                throw CanonicalError.managedGitPending
+            } catch CanonicalError.transactionCorrupt(let reason) {
+                throw CanonicalError.transactionCorrupt(reason)
+            } catch {
+                // A malformed or disappearing canonical shard cannot establish
+                // a source snapshot for the published index.
+                throw IndexError.stale
             }
         }
         if args.count == 4 && args[0] == "generate" && args[1] == "swiftui" {

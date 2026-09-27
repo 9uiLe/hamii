@@ -89,7 +89,7 @@ public final class ValidatedMergePublisher {
             }
             let snapshot = try repository.snapshotDuringManagedGitTransition()
             return (try git("symbolic-ref", "--quiet", "HEAD"), try git("rev-parse", "HEAD"),
-                    snapshot.identity, snapshot.document.id.rawValue, target)
+                    snapshot.identity.rawValue, snapshot.document.id.rawValue, target)
         }
 
         let publicationID = UUID()
@@ -114,7 +114,7 @@ public final class ValidatedMergePublisher {
             try CanonicalRepository(root: candidateRoot).snapshotDuringManagedGitTransition()
         }
         guard candidate.document.id.rawValue == source.documentID else { throw MergePublicationError.candidateMismatch }
-        try index.validateCandidate(at: candidateRoot, document: candidate.document)
+        try index.validateCandidate(at: candidateRoot, snapshot: candidate)
         _ = try git("update-ref", retentionRef, candidateOID)
         retained = true
 
@@ -122,7 +122,7 @@ public final class ValidatedMergePublisher {
             expectedSourceOID: source.oid, sourceCanonicalIdentity: source.identity,
             targetOID: source.target, candidateOID: candidateOID, retentionRef: retentionRef,
             candidateWorktreePath: candidateRoot.path,
-            candidateCanonicalIdentity: candidate.identity, validatedIndexSourceIdentity: candidate.identity,
+            candidateCanonicalIdentity: candidate.identity.rawValue, validatedIndexSourceIdentity: candidate.identity.rawValue,
             documentID: source.documentID, phase: .pending)
 
         let result = try coordinator.withExclusive { () throws -> ProjectObservation in
@@ -164,7 +164,7 @@ public final class ValidatedMergePublisher {
             if current == record.expectedSourceOID {
                 try requireCleanWorktree()
                 let snapshot = try repository.snapshotDuringManagedGitTransition()
-                guard snapshot.identity == record.sourceCanonicalIdentity else { throw MergePublicationError.unknownSourceState }
+                guard snapshot.identity.rawValue == record.sourceCanonicalIdentity else { throw MergePublicationError.unknownSourceState }
                 try coordinator.finishMergePublication()
                 cleanupCandidate(record)
                 return try repository.observeDuringManagedGitTransition()
@@ -199,20 +199,25 @@ public final class ValidatedMergePublisher {
         let snapshot = try repository.snapshotDuringManagedGitTransition {
             try self.hook?(.duringCanonicalValidation)
         }
-        guard snapshot.identity == record.candidateCanonicalIdentity,
+        guard snapshot.identity.rawValue == record.candidateCanonicalIdentity,
               snapshot.document.id.rawValue == record.documentID,
-              record.validatedIndexSourceIdentity == snapshot.identity else {
+              record.validatedIndexSourceIdentity == snapshot.identity.rawValue else {
             throw MergePublicationError.candidateMismatch
         }
         record.phase = .canonicalVerified
         try save(record)
         try hook?(.canonicalVerified)
         try hook?(.beforeIndexBuild)
-        try index.rebuildPublished(at: root, document: snapshot.document)
+        let built = try index.rebuildPublished(at: root, snapshot: snapshot)
+        guard built.sourceCanonicalIdentity == snapshot.identity,
+              built.documentID == snapshot.document.id,
+              built.documentRevision == snapshot.document.revision else { throw MergePublicationError.candidateMismatch }
         try hook?(.indexBuilt)
         let afterIndex = try repository.snapshotDuringManagedGitTransition()
-        guard afterIndex.identity == record.candidateCanonicalIdentity else { throw MergePublicationError.candidateMismatch }
-        try index.verifyPublished(at: root, document: afterIndex.document)
+        guard afterIndex.identity == snapshot.identity,
+              afterIndex.identity.rawValue == record.candidateCanonicalIdentity else { throw MergePublicationError.candidateMismatch }
+        let published = try index.verifyPublished(at: root, snapshot: afterIndex)
+        guard published == built else { throw MergePublicationError.candidateMismatch }
         record.phase = .indexPublished
         try save(record)
         try hook?(.beforeGateRelease)
