@@ -2,7 +2,7 @@
 
 ## Related Decision
 
-[Incremental Index Recovery ADR](../../ADR.md) の full rebuild と incremental reindex の performance crossover。Automatic full rebuild の recovery policy は [Index Recovery Strategy ADR](../../../index-recovery-strategy/ADR.md) が扱う。
+[Incremental Index Recovery ADR](../../ADR.md) の full rebuild と incremental reindex の performance crossover。Automatic full rebuild の recovery policy は [Current Architecture](../../../../docs/final-architecture.md) に記載する。
 
 ## Hypothesis
 

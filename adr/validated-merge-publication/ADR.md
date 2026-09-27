@@ -28,7 +28,7 @@
 
 ## Current Hypothesis
 
-**Tentative implementation detail:** `IndexGenerationID` の保存形式は production 検証が必要。[Git lock ownership Spike](spikes/git-lock-ownership/SPIKE.md) は、pending record と lock path のみでは停止した hamii subprocess の lock と生存中の raw Git process の lock を区別できないことを示した。Production recovery は ownership 不明 lock を削除せず gate を維持する。Candidate commit は `refs/hamii/merge-candidates/<publication-id>` で保持する。Index generation の一般的な storage / atomic switch は [Index Recovery Strategy ADR](../index-recovery-strategy/ADR.md) で扱う。
+**Tentative implementation detail:** `IndexGenerationID` の保存形式は production 検証が必要。[Git lock ownership Spike](spikes/git-lock-ownership/SPIKE.md) は、pending record と lock path のみでは停止した hamii subprocess の lock と生存中の raw Git process の lock を区別できないことを示した。Production recovery は ownership 不明 lock を削除せず gate を維持する。Candidate commit は `refs/hamii/merge-candidates/<publication-id>` で保持する。現在の Index generation storage / publication は [Current Architecture](../../docs/final-architecture.md) に記載する。
 
 ## Decision
 
