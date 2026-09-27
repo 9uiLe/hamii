@@ -239,8 +239,10 @@ final class ProductionGenerationShadowSpikeTests: XCTestCase {
         }) ?? .unknown
     }
 
-    private func productionBoot(_ fixture: Fixture) throws -> ProductionWitness {
+    private func productionBoot(_ fixture: Fixture,
+                                duringCoordinatedVerification: (() throws -> Void)? = nil) throws -> ProductionWitness {
         try CanonicalRepository(root: fixture.root).withCoordinatedSnapshot { snapshot in
+            try duringCoordinatedVerification?()
             let stable = try CanonicalGenerationStore(root: fixture.root).requireMatchingStable(snapshot)
             let published = try index(fixture).assertCurrent(documentID: snapshot.document.id,
                 revision: snapshot.document.revision, expectedSourceIdentity: snapshot.identity)
@@ -436,6 +438,43 @@ final class ProductionGenerationShadowSpikeTests: XCTestCase {
         try WorktreeCoordinator(root: URL(fileURLWithPath: rootPath)).withExclusive {
             try Data().write(to: URL(fileURLWithPath: acquired))
         }
+    }
+
+    func testStartupRaceWriterWorker() throws {
+        let env = ProcessInfo.processInfo.environment
+        guard let rootPath = env["HAMII_WITNESS_ROOT"], let attempt = env["HAMII_WITNESS_ATTEMPT"],
+              let acquired = env["HAMII_WITNESS_ACQUIRED"], let completed = env["HAMII_WITNESS_COMPLETED"] else {
+            throw XCTSkip("Worker only")
+        }
+        let root = URL(fileURLWithPath: rootPath)
+        try Data().write(to: URL(fileURLWithPath: attempt))
+        try WorktreeCoordinator(root: root).withExclusive {
+            try Data().write(to: URL(fileURLWithPath: acquired))
+        }
+        let repository = CanonicalRepository(root: root)
+        let old = try repository.load()
+        var next = old
+        next.components[0].name = "Beta"
+        next.revision += 1
+        try repository.save(next, expected: old)
+        try Data().write(to: URL(fileURLWithPath: completed))
+    }
+
+    func testProductionStartupWitnessWorker() throws {
+        let env = ProcessInfo.processInfo.environment
+        guard let rootPath = env["HAMII_WITNESS_ROOT"], let indexRoot = env["HAMII_WITNESS_INDEX_ROOT"],
+              let documentID = env["HAMII_WITNESS_DOCUMENT_ID"], let scopeID = env["HAMII_WITNESS_SCOPE_ID"],
+              let resultPath = env["HAMII_WITNESS_RESULT"] else { throw XCTSkip("Worker only") }
+        let fixture = Fixture(root: URL(fileURLWithPath: rootPath), indexRoot: URL(fileURLWithPath: indexRoot),
+                              documentID: EntityID(documentID), scopeID: EntityID(scopeID), initialIdentity: "")
+        XCTAssertEqual(productionShadow(fixture, witness: nil), .unknown)
+        let witness = try productionBoot(fixture)
+        XCTAssertEqual(productionShadow(fixture, witness: witness), .knownCurrent)
+        let result = ["generation": witness.generation.serialized,
+                      "identity": witness.snapshotIdentity.rawValue,
+                      "indexGenerationID": witness.indexGenerationID.rawValue]
+        try JSONSerialization.data(withJSONObject: result, options: [.sortedKeys])
+            .write(to: URL(fileURLWithPath: resultPath))
     }
 
     func testSwitchWorker() throws {
@@ -1143,6 +1182,193 @@ final class ProductionGenerationShadowSpikeTests: XCTestCase {
             let snapshot = try CanonicalRepository(root: f.root).withCoordinatedSnapshot { $0 }
             stages["fullRebuild"] = distribution(try (0..<5).map { _ in
                 try milliseconds { _ = try rebuild(f, snapshot: snapshot, generation: stable.generation) }
+            })
+            report[name] = stages
+        }
+        let bytes = try JSONSerialization.data(withJSONObject: report, options: [.prettyPrinted, .sortedKeys])
+        try bytes.write(to: URL(fileURLWithPath: output))
+    }
+
+    func testP4StartupWitnessIsProcessLocalAndIndexRebuildInvalidatesIt() throws {
+        let f = try fixture()
+        defer { try? FileManager.default.removeItem(at: f.root.deletingLastPathComponent()) }
+        XCTAssertEqual(productionShadow(f, witness: nil), .unknown)
+        let initial = try productionBoot(f)
+        XCTAssertEqual(productionShadow(f, witness: initial), .knownCurrent)
+
+        let resultURL = f.root.deletingLastPathComponent().appendingPathComponent("production-boot.json")
+        let reader = try child("testProductionStartupWitnessWorker", environment: [
+            "HAMII_WITNESS_ROOT": f.root.path, "HAMII_WITNESS_INDEX_ROOT": f.indexRoot.path,
+            "HAMII_WITNESS_DOCUMENT_ID": f.documentID.rawValue,
+            "HAMII_WITNESS_SCOPE_ID": f.scopeID.rawValue, "HAMII_WITNESS_RESULT": resultURL.path])
+        reader.waitUntilExit()
+        XCTAssertEqual(reader.terminationStatus, 0)
+        let result = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: resultURL)) as? [String: String])
+        XCTAssertEqual(result["generation"], initial.generation.serialized)
+        XCTAssertEqual(result["indexGenerationID"], initial.indexGenerationID.rawValue)
+
+        let snapshot = try CanonicalRepository(root: f.root).withCoordinatedSnapshot { $0 }
+        let rebuilt = try rebuild(f, snapshot: snapshot, generation: try record(f.root).generation)
+        XCTAssertEqual(try CanonicalGenerationStore(root: f.root).readStable().generation, initial.generation)
+        XCTAssertNotEqual(rebuilt.id, initial.indexGenerationID)
+        XCTAssertEqual(productionShadow(f, witness: initial), .unknown)
+        XCTAssertEqual(oracle(f), .knownCurrent)
+        let renewed = try productionBoot(f)
+        XCTAssertEqual(renewed.generation, initial.generation)
+        XCTAssertEqual(renewed.snapshotIdentity, initial.snapshotIdentity)
+        XCTAssertEqual(renewed.indexGenerationID, rebuilt.id)
+        XCTAssertEqual(productionShadow(f, witness: renewed), .knownCurrent)
+    }
+
+    func testP4StartupWitnessMissingAndCorruptGenerationNeverAutoTrust() throws {
+        let f = try fixture()
+        defer { try? FileManager.default.removeItem(at: f.root.deletingLastPathComponent()) }
+        let old = try productionBoot(f)
+        let generationURL = f.root.appendingPathComponent(".hamii/canonical-generation.json")
+        try FileManager.default.removeItem(at: generationURL)
+        XCTAssertEqual(productionShadow(f, witness: old), .unknown)
+        // A coordinated full parse may bootstrap a new lineage, but the old
+        // Index source generation cannot authorize the new startup session.
+        XCTAssertThrowsError(try productionBoot(f))
+        let fresh = try CanonicalGenerationStore(root: f.root).readStable()
+        XCTAssertNotEqual(fresh.generation.lineage, old.generation.lineage)
+        XCTAssertEqual(fresh.snapshotIdentity, old.snapshotIdentity)
+        XCTAssertEqual(productionShadow(f, witness: old), .unknown)
+        let snapshot = try CanonicalRepository(root: f.root).withCoordinatedSnapshot { $0 }
+        _ = try rebuild(f, snapshot: snapshot, generation: try record(f.root).generation)
+        XCTAssertEqual(productionShadow(f, witness: try productionBoot(f)), .knownCurrent)
+        try Data("corrupt".utf8).write(to: generationURL)
+        XCTAssertThrowsError(try productionBoot(f))
+        XCTAssertEqual(productionShadow(f, witness: old), .unknown)
+    }
+
+    func testP4StartupWitnessRejectsIncompleteIndexBindingAndUnverifiableOracle() throws {
+        let cases: [(String, String)] = [
+            ("missing ID", "DELETE FROM metadata WHERE key='indexGenerationID'"),
+            ("bad ID", "UPDATE metadata SET value='bad' WHERE key='indexGenerationID'"),
+            ("wrong source", "UPDATE metadata SET value='0000000000000000000000000000000000000000000000000000000000000000' WHERE key='sourceCanonicalIdentity'"),
+            ("missing source generation", "DELETE FROM metadata WHERE key='sourceCanonicalGeneration'"),
+            ("empty source generation", "UPDATE metadata SET value='' WHERE key='sourceCanonicalGeneration'")
+        ]
+        for (name, sql) in cases {
+            let f = try fixture()
+            defer { try? FileManager.default.removeItem(at: f.root.deletingLastPathComponent()) }
+            let prior = try productionBoot(f)
+            var database: OpaquePointer?
+            let url = try index(f).url
+            XCTAssertEqual(sqlite3_open(url.path, &database), SQLITE_OK, name)
+            XCTAssertEqual(sqlite3_exec(database, sql, nil, nil, nil), SQLITE_OK, name)
+            sqlite3_close(database)
+            XCTAssertEqual(productionShadow(f, witness: prior), .unknown, name)
+            XCTAssertThrowsError(try productionBoot(f), name)
+        }
+
+        let f = try fixture()
+        defer { try? FileManager.default.removeItem(at: f.root.deletingLastPathComponent()) }
+        let prior = try productionBoot(f)
+        let source = try CanonicalGenerationStore(root: f.root).readStable().generation
+        for (name, value) in [("old", CanonicalGeneration(lineage: source.lineage, value: source.value - 1)),
+                              ("future", CanonicalGeneration(lineage: source.lineage, value: source.value + 1))] {
+            let url = try index(f).url
+            var database: OpaquePointer?
+            XCTAssertEqual(sqlite3_open(url.path, &database), SQLITE_OK, name)
+            let sql = "UPDATE metadata SET value='\(value.serialized)' WHERE key='sourceCanonicalGeneration'"
+            XCTAssertEqual(sqlite3_exec(database, sql, nil, nil, nil), SQLITE_OK, name)
+            sqlite3_close(database)
+            XCTAssertThrowsError(try productionBoot(f), name)
+            XCTAssertNotEqual(productionShadow(f, witness: prior), .knownCurrent, name)
+        }
+        let current = try CanonicalRepository(root: f.root).withCoordinatedSnapshot { $0 }
+        _ = try rebuild(f, snapshot: current, generation: try record(f.root).generation)
+        try git(f.root, "update-index", "--assume-unchanged", "components/component_probe.json")
+        XCTAssertThrowsError(try productionBoot(f), "Git oracle must refuse hidden canonical state")
+
+        let missing = try fixture()
+        defer { try? FileManager.default.removeItem(at: missing.root.deletingLastPathComponent()) }
+        let missingURL = try index(missing).url
+        try FileManager.default.removeItem(at: missingURL)
+        XCTAssertThrowsError(try productionBoot(missing), "Missing Index cannot issue a witness")
+    }
+
+    func testP4SlowVerificationAndCoordinatedWriterCannotInterleave() throws {
+        let f = try fixture()
+        defer { try? FileManager.default.removeItem(at: f.root.deletingLastPathComponent()) }
+        let directory = f.root.deletingLastPathComponent()
+        let attempt = directory.appendingPathComponent("witness-writer.attempt")
+        let acquired = directory.appendingPathComponent("witness-writer.acquired")
+        let completed = directory.appendingPathComponent("witness-writer.completed")
+        var worker: Process?
+        let witness = try productionBoot(f) {
+            worker = try self.child("testStartupRaceWriterWorker", environment: [
+                "HAMII_WITNESS_ROOT": f.root.path, "HAMII_WITNESS_ATTEMPT": attempt.path,
+                "HAMII_WITNESS_ACQUIRED": acquired.path, "HAMII_WITNESS_COMPLETED": completed.path])
+            try self.awaitFile(attempt, process: worker!)
+            // The worker is ready to take the same flock, but the full
+            // Snapshot / generation / SQLite / Git verification still owns it.
+            XCTAssertFalse(FileManager.default.fileExists(atPath: acquired.path))
+            XCTAssertFalse(FileManager.default.fileExists(atPath: completed.path))
+        }
+        let writer = try XCTUnwrap(worker)
+        try awaitFile(acquired, process: writer)
+        try awaitFile(completed, process: writer)
+        writer.waitUntilExit()
+        XCTAssertEqual(writer.terminationStatus, 0)
+        XCTAssertEqual(productionShadow(f, witness: witness), .stale)
+        XCTAssertEqual(oracle(f), .stale)
+        // Writer-first ordering sees the new state; its old Index cannot
+        // produce a mixed or falsely current startup witness.
+        XCTAssertThrowsError(try productionBoot(f))
+        let snapshot = try CanonicalRepository(root: f.root).withCoordinatedSnapshot { $0 }
+        _ = try rebuild(f, snapshot: snapshot, generation: try record(f.root).generation)
+        let next = try productionBoot(f)
+        XCTAssertNotEqual(next.generation, witness.generation)
+        XCTAssertEqual(next.snapshotIdentity, snapshot.identity)
+        XCTAssertEqual(productionShadow(f, witness: next), .knownCurrent)
+    }
+
+    func testMeasuredP4StartupWitnessCost() throws {
+        guard let output = ProcessInfo.processInfo.environment["HAMII_STARTUP_WITNESS_BENCHMARK_RESULT"] else {
+            throw XCTSkip("Run with HAMII_STARTUP_WITNESS_BENCHMARK_RESULT for measurements")
+        }
+        func milliseconds(_ operation: () throws -> Void) throws -> Double {
+            let begin = ProcessInfo.processInfo.systemUptime
+            try operation()
+            return (ProcessInfo.processInfo.systemUptime - begin) * 1000
+        }
+        func distribution(_ values: [Double]) -> [String: Double] {
+            let sorted = values.sorted()
+            func quantile(_ probability: Double) -> Double {
+                let index = max(0, Int(ceil(Double(sorted.count) * probability)) - 1)
+                return Double(String(format: "%.3f", sorted[index]))!
+            }
+            return ["p50": quantile(0.5), "p95": quantile(0.95)]
+        }
+        var report: [String: [String: [String: Double]]] = [:]
+        for (name, make) in [("starter", starterFixture), ("1000-components", largeFixture)] {
+            let f = try make()
+            defer { try? FileManager.default.removeItem(at: f.root.deletingLastPathComponent()) }
+            var stages: [String: [String: Double]] = [:]
+            stages["coordinatedSlowWitnessIssue"] = distribution(try (0..<10).map { _ in
+                try milliseconds { _ = try productionBoot(f) }
+            })
+            let witness = try productionBoot(f)
+            stages["warmShadowVerdict"] = distribution(try (0..<40).map { _ in
+                try milliseconds { XCTAssertEqual(productionShadow(f, witness: witness), .knownCurrent) }
+            })
+            stages["productionOracleQuery"] = distribution(try (0..<10).map { _ in
+                try milliseconds { XCTAssertEqual(oracle(f, text: name == "starter" ? "" : "Component"), .knownCurrent) }
+            })
+            stages["freshProcessStartAndWitness"] = distribution(try (0..<5).map { number in
+                try milliseconds {
+                    let resultURL = f.root.deletingLastPathComponent().appendingPathComponent("witness-bench-\(number).json")
+                    let reader = try self.child("testProductionStartupWitnessWorker", environment: [
+                        "HAMII_WITNESS_ROOT": f.root.path, "HAMII_WITNESS_INDEX_ROOT": f.indexRoot.path,
+                        "HAMII_WITNESS_DOCUMENT_ID": f.documentID.rawValue,
+                        "HAMII_WITNESS_SCOPE_ID": f.scopeID.rawValue, "HAMII_WITNESS_RESULT": resultURL.path])
+                    reader.waitUntilExit()
+                    XCTAssertEqual(reader.terminationStatus, 0)
+                    XCTAssertTrue(FileManager.default.fileExists(atPath: resultURL.path))
+                }
             })
             report[name] = stages
         }

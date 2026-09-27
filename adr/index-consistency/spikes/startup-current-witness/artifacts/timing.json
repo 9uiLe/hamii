@@ -1,0 +1,38 @@
+{
+  "1000-components": {
+    "coordinatedSlowWitnessIssue": {
+      "p50": 623.473,
+      "p95": 640.766
+    },
+    "freshProcessStartAndWitness": {
+      "p50": 613.41,
+      "p95": 666.669
+    },
+    "productionOracleQuery": {
+      "p50": 621.128,
+      "p95": 633.465
+    },
+    "warmShadowVerdict": {
+      "p50": 1.083,
+      "p95": 1.664
+    }
+  },
+  "starter": {
+    "coordinatedSlowWitnessIssue": {
+      "p50": 360.094,
+      "p95": 371.097
+    },
+    "freshProcessStartAndWitness": {
+      "p50": 476.709,
+      "p95": 483.261
+    },
+    "productionOracleQuery": {
+      "p50": 350.38,
+      "p95": 380.036
+    },
+    "warmShadowVerdict": {
+      "p50": 1.146,
+      "p95": 1.903
+    }
+  }
+}
