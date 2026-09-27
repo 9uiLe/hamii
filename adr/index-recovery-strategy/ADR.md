@@ -37,6 +37,7 @@ Background rebuild、retry、branch ごとの namespace、manual repair UX は�
 
 ## Required Evidence
 
+- [Automatic Full Rebuild](spikes/automatic-full-rebuild/SPIKE.md): coordinated Stable state に限定した test-only prototype。Missing Index、build 中の coordinated writer、2 candidate の順次 publication、放置された candidate、external edit / pending gate の拒否を確認した。1 / 1000 / 5000 component shard の各5回測定では、二段階方式の publish 時 full re-observation が lock 占有を増やした。Concurrent recovery、SIGKILL、bounded retry と failure UX は未検証であり、採否は未決定。
 - [Incremental Reindex](spikes/incremental-reindex/SPIKE.md): 実 `IndexProjection` の tested changed/affected rows は full projection と一致し、試作 SQLite generation の tested commit / rollback barrier は partial rows を見せなかった。Production incremental recovery の証明ではない。
 - [Large Project Rebuild](spikes/large-project-rebuild/SPIKE.md): tracked / mostly-untracked shard の pilot。一般的な巨大 Project の rebuild cost と incremental crossover は未確定。
 - Git history の `672a5ea` に記録した End-to-end Index Generation / Low-cost Freshness は、当時の full pipeline stage timing、Starter copy の fresh CLI p95 418.612 ms、stale detection p95 424.174 ms、manual full rebuild p95 1316.333 ms と、double byte scan / size+mtime shortcut の反例を含む。これらは現在の自動復旧性能ではない。
