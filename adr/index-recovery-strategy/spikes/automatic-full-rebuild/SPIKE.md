@@ -65,8 +65,36 @@ Production auto recovery 実装、raw external edit の自動 adoption、非協�
 
 ## Conclusion
 
-未決定。Coordinated Stable source から別 SQLite candidate を作り、source を再確認して公開する経路は tested sequential cases で成立した。現行 fixture では lock 外で build / validate する利点より publish 時の再観測 cost が大きく、二段階方式を性能上有利とは判断できない。Reader / writer contention、同時 recovery、bounded retry、SIGKILL 中断、schema obsolete / corrupted Index の分類、larger mixed workload の Evidence が残る。Production `staleIndex` 拒否と manual full rebuild を維持し、Index Recovery Strategy ADR は `Spike Required` とする。
+未決定。Coordinated Stable source から別 SQLite candidate を作り、source を再確認して公開する経路は tested cases で成立した。以下の追加 Evidence は候補の範囲を狭めるが、manual-only / automatic full / incremental の Recovery policy はまだ選ばない。Production `staleIndex` 拒否と manual full rebuild を維持し、Index Recovery Strategy ADR は `Spike Required` とする。
+
+**実 OS process の同時 recovery:** 2つの recovery worker が同じ stale `IndexGenerationID` と `S/G` を捕捉して build を終えた後、同時に publication を試みた。Test-only expected published state check により1 worker が publish、もう1 worker は新しい Bound generation を検証して reuse した。両 worker の結果は同じ `IndexGenerationID`。別 reader は `stale`、その後に完全な `Beta` rows を観測し、混在 rows は観測しなかった。これは [concurrent-20260928.json](artifacts/concurrent-20260928.json) の一つの同期 interleaving であり、任意の scheduling / power loss を証明しない。Expected state を確認しない従来の順次2-candidate試験は、不要な generation replacement を許した。
+
+**SIGKILL:** Test-only recovery worker を candidate transaction 中、candidate 完成後、publish lock 取得後、source 検証後、rename 後、Query retry 中に停止した。最初の4地点は old/stale Index のまま、後の2地点は complete new Index だった。Parent が実 SIGKILL 後に Canonical `Beta` を確認し、前半は同じ Canonical state から再構築、後半は新しい process の slow Query で `Beta` を確認した。中断時の一時 candidate cleanup や power-cut durability は含まない。[crash-matrix-20260928.json](artifacts/crash-matrix-20260928.json)。
+
+**Bounded retry と分類:** Test-only Query wrapper は stale のときだけ最大1 recovery attempt、最大1 Query retry を行う。成功ケースは Query 2 / recovery 1、build 中に writer が再変更したケースは Query 1 / recovery 1 で終了し、無限再捕捉しなかった。`ReadOnlyIndexStatus` prototype は missing / current schema / obsolete schema / corrupt SQLite を read-only open で分類し、旧 schema と corrupt DB の bytes を変更しなかった。一方、production `LocalIndex` constructor は schema mismatch 時に published file を disposable empty DB へ再生成する。自動復旧の分類はこの constructor より前に read-only で行う必要がある。Storage permission / disk full を corrupt Index と決め打ちしない。
+
+**Phase 2 reverify 比較:** Option C は lock 下で `S/G/R` と expected published Index を捕捉し、lock 外で in-memory `S` から candidate rows / metadata を生成する。Candidate build は live Git oracle を再実行しない。Publish lock 内では Ready gate、Stable `G` と `S.identity`、Git `R`、expected Index state を確認する。Full Canonical Document を再 parse しない。Coordinated save、raw external edit、raw branch switch の tested negative controls は candidate publication を拒否した。Raw writer への absolute guarantee ではない。
+
+同じ環境・fixture・各方式5回の追加測定では、次の p95 ms だった。`max lock` は1回の連続占有の最大値、`total` は Snapshot 捕捉から publication までで最初の Query を含まない。5 samples の p95 は最大観測値であり Product SLA ではない。
+
+| Components | Candidate | Phase 1 lock | Off-lock build | Phase 2 lock | Max lock | Total recovery | First cold Query |
+|---:|---|---:|---:|---:|---:|---:|---:|
+| 1 | lockHeld | 723 | 0 | 0 | 723 | 723 | 376 |
+| 1 | twoPhase full reobserve | 358 | 365 | 740 | 740 | 1455 | 380 |
+| 1 | optimizedTwoPhase G/S + R | 380 | 10 | 371 | 380 | 753 | 362 |
+| 1000 | lockHeld | 1081 | 0 | 0 | 1081 | 1081 | 638 |
+| 1000 | twoPhase full reobserve | 640 | 382 | 1016 | 1016 | 2005 | 642 |
+| 1000 | optimizedTwoPhase G/S + R | 646 | 28 | 361 | 646 | 1017 | 635 |
+| 5000 | lockHeld | 2238 | 0 | 0 | 2238 | 2238 | 1726 |
+| 5000 | twoPhase full reobserve | 1746 | 435 | 2101 | 2101 | 4281 | 1712 |
+| 5000 | optimizedTwoPhase G/S + R | 1779 | 86 | 391 | 1779 | 2237 | 1743 |
+
+各列は別々の p95 なので横方向に足して total p95 を再計算しない。Lock-held の candidate build は Phase 1 lock に含める。`twoPhase` の off-lock build には Git source validation が含まれ、`optimizedTwoPhase` は immutable candidate rows / metadata の照合だけを含む。Raw data は [benchmark-phase2-20260928.json](artifacts/benchmark-phase2-20260928.json)。
+
+単一の coordinated writer contention 実験では、candidate transaction を人工 barrier で停止し、その間に writer が `Gamma` を save した。Lock-held は writer が recovery release 前に完了できず、直前の同じ coordinator lock の wait は 568.17 ms、writer operation は 587.77 ms。二段階 B/C は writer が recovery release 前に完了し、lock wait は 0.11 / 0.11 ms、operation は 10.10 / 10.57 ms。B/C は旧 candidate を stale として拒否した。この wait は save 自身の lock acquisition ではなく **save 直前の同じ WorktreeCoordinator boundary の取得時間**であり、1回の人工停止 interleaving に限る。[writer-wait-20260928.json](artifacts/writer-wait-20260928.json)。
+
+残る判断材料は、mixed layer / Scope workload と大規模 Project の cost、obsolete / malformed metadata / corrupt SQLite の自動復旧時の production error taxonomy、permission / disk failure、並行 writer のより広い scheduling、candidate temp GC、Index publish の power-cut durability である。後者は別 ADR に委譲する。Optimized Phase 2 の Git `R` 再照合は現在の Git oracle に依存するため、その algorithm を最終仕様として固定しない。
 
 ## Artifacts
 
-[Raw benchmark samples](artifacts/benchmark-20260928.json)。Prototype は `Tests/HamiiTests/AutomaticFullRebuildSpikeTests.swift` にあり、production auto recovery は未実装。
+[Initial benchmark samples](artifacts/benchmark-20260928.json)、[Phase 2 comparison](artifacts/benchmark-phase2-20260928.json)、[Concurrent recovery](artifacts/concurrent-20260928.json)、[SIGKILL matrix](artifacts/crash-matrix-20260928.json)、[writer contention](artifacts/writer-wait-20260928.json)。Prototype は `Tests/HamiiTests/AutomaticFullRebuildSpikeTests.swift` にあり、production auto recovery は未実装。

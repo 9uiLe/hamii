@@ -1,0 +1,44 @@
+[
+  {
+    "canonical" : "Beta",
+    "phase" : "duringBuild",
+    "postKillIndex" : "old",
+    "postRecoveryQuery" : "Beta",
+    "signal" : "SIGKILL"
+  },
+  {
+    "canonical" : "Beta",
+    "phase" : "built",
+    "postKillIndex" : "old",
+    "postRecoveryQuery" : "Beta",
+    "signal" : "SIGKILL"
+  },
+  {
+    "canonical" : "Beta",
+    "phase" : "lockAcquired",
+    "postKillIndex" : "old",
+    "postRecoveryQuery" : "Beta",
+    "signal" : "SIGKILL"
+  },
+  {
+    "canonical" : "Beta",
+    "phase" : "sourceVerified",
+    "postKillIndex" : "old",
+    "postRecoveryQuery" : "Beta",
+    "signal" : "SIGKILL"
+  },
+  {
+    "canonical" : "Beta",
+    "phase" : "renamed",
+    "postKillIndex" : "new",
+    "postRecoveryQuery" : "Beta",
+    "signal" : "SIGKILL"
+  },
+  {
+    "canonical" : "Beta",
+    "phase" : "queryRetry",
+    "postKillIndex" : "new",
+    "postRecoveryQuery" : "Beta",
+    "signal" : "SIGKILL"
+  }
+]

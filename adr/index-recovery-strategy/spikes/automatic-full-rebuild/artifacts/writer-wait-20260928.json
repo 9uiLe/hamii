@@ -1,0 +1,23 @@
+[
+  {
+    "preSaveLockWaitMilliseconds" : "568.167416669894",
+    "recoveryOutcome" : "published",
+    "strategy" : "lockHeld",
+    "writerCompletedBeforeRecoveryRelease" : "false",
+    "writerOperationMilliseconds" : "587.7747083432041"
+  },
+  {
+    "preSaveLockWaitMilliseconds" : "0.11224999616388232",
+    "recoveryOutcome" : "stale",
+    "strategy" : "twoPhase",
+    "writerCompletedBeforeRecoveryRelease" : "true",
+    "writerOperationMilliseconds" : "10.098291662870906"
+  },
+  {
+    "preSaveLockWaitMilliseconds" : "0.10983333049807698",
+    "recoveryOutcome" : "stale",
+    "strategy" : "optimizedTwoPhase",
+    "writerCompletedBeforeRecoveryRelease" : "true",
+    "writerOperationMilliseconds" : "10.567624995019287"
+  }
+]
