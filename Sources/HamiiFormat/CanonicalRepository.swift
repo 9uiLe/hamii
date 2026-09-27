@@ -42,27 +42,9 @@ private struct Manifest: Codable {
 
 private struct FormatHeader: Decodable { var formatVersion: Int }
 
-// The keyed variant is a measurement candidate. Normal repository entry
-// points always use the existing comparator until its full safety gate passes.
-enum CanonicalPathSortVariant {
-    case current
-    #if DEBUG
-    case precomputedPathKeys
-    #endif
-}
-
-func sortCanonicalPaths(_ paths: [URL], variant: CanonicalPathSortVariant) -> [URL] {
-    switch variant {
-    case .current:
-        return paths.sorted(by: { $0.path < $1.path })
-    #if DEBUG
-    case .precomputedPathKeys:
-        let keyed = paths.map { (key: $0.path, url: $0) }
-        assert(Set(keyed.map(\.key)).count == keyed.count,
-               "Canonical paths must be unique before comparing sort variants")
-        return keyed.sorted(by: { $0.key < $1.key }).map(\.url)
-    #endif
-    }
+func sortCanonicalPaths(_ paths: [URL]) -> [URL] {
+    let keyed = paths.map { (key: $0.path, url: $0) }
+    return keyed.sorted(by: { $0.key < $1.key }).map(\.url)
 }
 
 public final class CanonicalRepository: ProjectRepository {
@@ -305,8 +287,7 @@ public final class CanonicalRepository: ProjectRepository {
     // A revision cannot make multiple files coherent; the coordinated read
     // provides the snapshot boundary for hamii-managed writers.
     func snapshotDuringManagedGitTransition(validationHook: (() throws -> Void)? = nil,
-                                            onObservation: CanonicalObservationRecorder? = nil,
-                                            pathSortVariant: CanonicalPathSortVariant = .current) throws -> CanonicalSnapshot {
+                                            onObservation: CanonicalObservationRecorder? = nil) throws -> CanonicalSnapshot {
         try measureCanonical(.transactionRecovery, recorder: onObservation) { try transaction.recoverIfNeeded() }
         let document = try loadUnlocked(validate: true, validationHook: validationHook,
                                         onObservation: onObservation)
@@ -315,7 +296,7 @@ public final class CanonicalRepository: ProjectRepository {
         }
         var files: [String: Data] = [:]
         let paths = try measureCanonical(.canonicalPathEnumerationAndSymlinkCheck, recorder: onObservation) {
-            try canonicalJSONPaths(onObservation: onObservation, sortVariant: pathSortVariant)
+            try canonicalJSONPaths(onObservation: onObservation)
         }
         let readStart = onObservation == nil ? 0 : ProcessInfo.processInfo.systemUptime
         var bytesRead = 0
@@ -413,11 +394,16 @@ public final class CanonicalRepository: ProjectRepository {
     }
 
     private func clientPreconditionUnlocked() throws -> ClientPrecondition {
+        try clientPreconditionForCanonicalPaths(canonicalJSONPaths())
+    }
+
+    // Hash the supplied ordered paths as the client's exact observation.
+    func clientPreconditionForCanonicalPaths(_ paths: [URL]) throws -> ClientPrecondition {
         var hash = SHA256()
         appendHash(Data("hamii-client-state-v1".utf8), to: &hash)
         appendHash(Data(root.resolvingSymlinksInPath().standardizedFileURL.path.utf8), to: &hash)
         appendHash(Data(try coordinator.clientEpoch().utf8), to: &hash)
-        for path in try canonicalJSONPaths() {
+        for path in paths {
             appendHash(Data(path.path.replacingOccurrences(of: root.path + "/", with: "").utf8), to: &hash)
             appendHash(try Data(contentsOf: path), to: &hash)
         }
@@ -425,7 +411,6 @@ public final class CanonicalRepository: ProjectRepository {
     }
 
     func canonicalJSONPaths(onObservation: CanonicalObservationRecorder? = nil,
-                            sortVariant: CanonicalPathSortVariant = .current,
                             onUnsortedPaths: (([URL]) -> Void)? = nil) throws -> [URL] {
         func mark() -> Double { onObservation == nil ? 0 : ProcessInfo.processInfo.systemUptime }
         func report(_ stage: CanonicalObservationStage, since start: Double,
@@ -472,7 +457,7 @@ public final class CanonicalRepository: ProjectRepository {
                pathCount: paths.count, folderCount: folders.count)
         onUnsortedPaths?(paths)
         let sortStart = mark()
-        let sorted = sortCanonicalPaths(paths, variant: sortVariant)
+        let sorted = sortCanonicalPaths(paths)
         report(.pathSorting, since: sortStart, pathCount: sorted.count, folderCount: folders.count)
         return sorted
     }

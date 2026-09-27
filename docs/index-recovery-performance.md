@@ -68,11 +68,11 @@ Production Query は、検証済みの初回観測から復旧 source を作れ�
 | 5000 | 5003 | 617.01 / 654.77 | 0.05 / 0.06 | 0.07 / 0.08 | 11.01 / 11.28 | 4.37 / 4.53 | 73.06 / 77.79 | 8.56 / 9.16 | 519.43 / 551.83 |
 | Mixed | 25 | 1.96 / 2.21 | 0.04 / 0.04 | 0.06 / 0.07 | 0.16 / 0.18 | 0.03 / 0.03 | 0.35 / 0.40 | 0.05 / 0.06 | 1.24 / 1.42 |
 
-5000 Component fixture は10 folders を確認し、5003 Canonical JSON paths を sort した。現コードが prefetched URL から root-based URL を再構築して metadata を再取得することは事実だが、**per-path symlink metadata lookup はこの条件の主因ではなかった**。`URL.path` を comparator 内で評価する現在の path sort が p50 **519.43 ms** と最も大きい。Directory listing は **11.01 ms**、symlink metadata は **8.56 ms**。したがって、metadata 検査を省くことや single-pass Snapshot を先に production 採用する根拠にはならない。次の調査対象は sort の内訳であり、identity、ordering、symlink rejection、coordinated writer boundary は維持する。
+5000 Component fixture は10 folders を確認し、5003 Canonical JSON paths を sort した。この測定時の URL comparator では path sort が p50 **519.43 ms** と最も大きかった。Directory listing は **11.01 ms**、symlink metadata は **8.56 ms**。現行実装では同じ `URL.path` の文字列を各 URL から一度だけ取得して同じ順序で sort する。この表は変更前の比較条件として保持する。
 
 ### Path key precomputation の test-only candidate
 
-`HAMII_CANONICAL_SORT_CANDIDATE_RESULT=<path> swift test --filter IndexQuerySessionTests/testMeasuredCanonicalPathKeyedSortCandidate` は、同じ構築済み `[URL]` を入力とし、current `paths.sorted { $0.path < $1.path }` と各 URL の **同じ `.path` String を一度だけ抽出**してから sort する候補を交互に測定した。microbenchmark は filesystem I/O を含まず、各 fixture 20 run（warmup 済み）。Snapshot は同じ `WorktreeCoordinator` lock 内で current/candidate を交互に5 runずつ取得した。各セルは **p50 / p95 ms**、p95 は各条件の最大値で Product SLA ではない。`Candidate total` は key 抽出、keyed sort、URL mapping を含む。
+Evidence commit `1943f46` では、同じ構築済み `[URL]` を入力とし、従来の `paths.sorted { $0.path < $1.path }` と各 URL の **同じ `.path` String を一度だけ抽出**してから sort する候補を交互に測定した。microbenchmark は filesystem I/O を含まず、各 fixture 20 run（warmup 済み）。Snapshot は同じ `WorktreeCoordinator` lock 内で両方式を交互に5 runずつ取得した。各セルは **p50 / p95 ms**、p95 は各条件の最大値で Product SLA ではない。`Candidate total` は key 抽出、keyed sort、URL mapping を含む。
 
 | Fixture | Current URL comparator sort | Key 抽出 | Keyed sort | Candidate total | Current Snapshot | Candidate Snapshot |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -83,4 +83,4 @@ Production Query は、検証済みの初回観測から復旧 source を作れ�
 
 5000 paths では、反復 `URL.path` 評価を避けると sort 自体は p50 **約496 ms**、Snapshot 全体は **約493 ms** 短くなった。これは test-only candidate の比較であり、production 採用や recovery Query 全体の性能保証ではない。Candidate は current と **URL sequence の各位置**および `.path` が一致し、CanonicalSnapshot identity と Document も1/1000/5000/mixed fixtureで一致した。`/var` と `/private/var` の alias は同じ identity/relative path sequence を返した。安全な ASCII ID の自然順・大小文字・記号・prefix の ordering edge cases、3種の Canonical JSON symlink、filename/ID mismatch は current と同じ結果だった。5000 fixtureで別 OS writer は candidate Snapshot 中に worktree lock を取得できず、Snapshot 完了後に取得した。Duplicate path key は test/debug assertion とし、production validation rule は追加していない。
 
-この候補は sort の局所変更だけであり、Canonical bytes の二重読込、Git oracle、generation/freshness 判定を変えない。production 採用の可否は、CI、既存 Query/recovery 回帰試験、production-shaped Phase 1 と writer wait の再測定を含めて判断する。
+この測定は sort の局所変更だけを比較し、Canonical bytes の二重読込、Git oracle、generation/freshness 判定を含む性能保証ではない。production sort の Phase 1 と writer wait は実際の recovery 経路で測定する。
