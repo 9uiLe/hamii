@@ -12,6 +12,7 @@ public enum CanonicalError: Error, CustomStringConvertible {
     case transactionConflict(String)
     case transactionCorrupt(String)
     case invalidClientEpoch
+    case managedGitPending
 
     public var description: String {
         switch self {
@@ -23,6 +24,7 @@ public enum CanonicalError: Error, CustomStringConvertible {
         case .transactionConflict(let path): return "Canonical save conflicts with an external edit: \(path)"
         case .transactionCorrupt(let detail): return "Canonical save journal is invalid: \(detail)"
         case .invalidClientEpoch: return "Client observation epoch is invalid"
+        case .managedGitPending: return "Managed Git transition is pending; run hamii git recover"
         }
     }
 }
@@ -63,6 +65,7 @@ public final class CanonicalRepository: ProjectRepository {
         let document = Document(name: name)
         try coordinator.withExclusive {
             try transaction.recoverIfNeeded()
+            try coordinator.requireReady()
             if manager.fileExists(atPath: root.appendingPathComponent("hamii.json").path) { throw CanonicalError.alreadyExists }
             try AgentProfilesRepository(root: root).createDefault()
             try coordinator.invalidateClientObservations()
@@ -74,6 +77,7 @@ public final class CanonicalRepository: ProjectRepository {
     public func load() throws -> Document {
         try coordinator.withExclusive {
             try transaction.recoverIfNeeded()
+            try coordinator.requireReady()
             return try loadUnlocked(validate: true)
         }
     }
@@ -81,6 +85,7 @@ public final class CanonicalRepository: ProjectRepository {
     public func observe() throws -> ProjectObservation {
         try coordinator.withExclusive {
             try transaction.recoverIfNeeded()
+            try coordinator.requireReady()
             let document = try loadUnlocked(validate: true)
             return ProjectObservation(document: document, statePrecondition: try clientPreconditionUnlocked())
         }
@@ -89,6 +94,7 @@ public final class CanonicalRepository: ProjectRepository {
     public func commit(_ document: Document, expected: ProjectObservation) throws -> ProjectObservation {
         try coordinator.withExclusive {
             try transaction.recoverIfNeeded()
+            try coordinator.requireReady()
             guard try clientPreconditionUnlocked() == expected.statePrecondition else { throw AuthoringError.staleState }
             let manifest = try readManifest()
             guard manifest.revision == expected.document.revision,
@@ -106,6 +112,7 @@ public final class CanonicalRepository: ProjectRepository {
     public func diagnostics() throws -> [Diagnostic] {
         try coordinator.withExclusive {
             try transaction.recoverIfNeeded()
+            try coordinator.requireReady()
             return allDiagnostics(try loadUnlocked(validate: false))
         }
     }
@@ -142,6 +149,7 @@ public final class CanonicalRepository: ProjectRepository {
     public func identityAndRevision() throws -> (EntityID, Int) {
         try coordinator.withExclusive {
             try transaction.recoverIfNeeded()
+            try coordinator.requireReady()
             let manifest = try readManifest()
             return (manifest.id, manifest.revision)
         }
@@ -150,6 +158,7 @@ public final class CanonicalRepository: ProjectRepository {
     public func save(_ document: Document, expected: Document) throws {
         try coordinator.withExclusive {
             try transaction.recoverIfNeeded()
+            try coordinator.requireReady()
             let manifest = try readManifest()
             guard manifest.revision == expected.revision else {
                 throw AuthoringError.staleRevision(expected: expected.revision, actual: manifest.revision)
@@ -160,6 +169,15 @@ public final class CanonicalRepository: ProjectRepository {
             try coordinator.invalidateClientObservations()
             try writeDocument(document, expected: expected)
         }
+    }
+
+    // Managed Git holds the same coordinator lock while it validates a
+    // candidate worktree state. The pending marker intentionally blocks all
+    // normal repository entry points until validation finishes.
+    func observeDuringManagedGitTransition() throws -> ProjectObservation {
+        try transaction.recoverIfNeeded()
+        let document = try loadUnlocked(validate: true)
+        return ProjectObservation(document: document, statePrecondition: try clientPreconditionUnlocked())
     }
 
     private func writeDocument(_ document: Document, expected: Document?) throws {

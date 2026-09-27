@@ -1,6 +1,13 @@
 import Darwin
 import Foundation
 
+struct ManagedGitTransition: Codable {
+    let sourceBranch: String
+    let sourceHead: String
+    let targetBranch: String
+    let targetHead: String
+}
+
 /// The only production owner of the cooperative worktree lock and local
 /// observation epoch. Callers hold this boundary across recovery, state
 /// changes, validation, and observation; raw Git and external editors do not.
@@ -23,6 +30,7 @@ public struct WorktreeCoordinator {
     }
 
     var epochURL: URL { root.appendingPathComponent(".hamii/client-observation-epoch") }
+    private var transitionURL: URL { root.appendingPathComponent(".hamii/managed-git-transition.json") }
 
     // These methods are called only while withExclusive holds the lock.
     func clientEpoch() throws -> String {
@@ -34,5 +42,29 @@ public struct WorktreeCoordinator {
 
     func invalidateClientObservations() throws {
         try Data((UUID().uuidString + "\n").utf8).write(to: epochURL, options: .atomic)
+    }
+
+    func requireReady() throws {
+        guard !FileManager.default.fileExists(atPath: transitionURL.path) else {
+            throw CanonicalError.managedGitPending
+        }
+    }
+
+    func pendingGitTransition() throws -> ManagedGitTransition? {
+        guard FileManager.default.fileExists(atPath: transitionURL.path) else { return nil }
+        do { return try JSONDecoder().decode(ManagedGitTransition.self, from: Data(contentsOf: transitionURL)) }
+        catch { throw CanonicalError.managedGitPending }
+    }
+
+    func beginGitTransition(_ transition: ManagedGitTransition) throws {
+        try requireReady()
+        // Invalidate clients before Git can touch Canonical files. A stopped
+        // transition remains pending until explicit recovery validates it.
+        try invalidateClientObservations()
+        try JSONEncoder().encode(transition).write(to: transitionURL, options: .atomic)
+    }
+
+    func finishGitTransition() throws {
+        try FileManager.default.removeItem(at: transitionURL)
     }
 }

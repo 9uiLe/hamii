@@ -82,6 +82,23 @@ with tempfile.TemporaryDirectory(prefix="hamii-cli-") as directory:
     subprocess.run(["git", "-C", directory, "-c", "user.name=Smoke", "-c", "user.email=smoke@example.invalid", "commit", "-qm", "baseline"], check=True, capture_output=True)
     tracked_local = subprocess.run(["git", "-C", directory, "ls-files", ".hamii"], check=True, capture_output=True, text=True)
     assert not tracked_local.stdout.strip()
+    source_branch = subprocess.run(["git", "-C", directory, "branch", "--show-current"], check=True, capture_output=True, text=True).stdout.strip()
+    subprocess.run(["git", "-C", directory, "switch", "-qc", "alternate"], check=True, capture_output=True)
+    mutate("page", "create", "Alternate")
+    subprocess.run(["git", "-C", directory, "add", "-A"], check=True, capture_output=True)
+    subprocess.run(["git", "-C", directory, "-c", "user.name=Smoke", "-c", "user.email=smoke@example.invalid", "commit", "-qm", "alternate"], check=True, capture_output=True)
+    subprocess.run(["git", "-C", directory, "switch", "-q", source_branch], check=True, capture_output=True)
+    source_state = run("inspect")["statePrecondition"]["rawValue"]
+    switched = run("git", "switch", "alternate", "--state", source_state)
+    assert switched["document"]["revision"] == 8
+    assert switched["statePrecondition"]["rawValue"] != source_state
+    stale_switch = subprocess.run(
+        [str(binary), "--project", directory, "--json", "git", "switch", source_branch, "--state", source_state],
+        capture_output=True, text=True, timeout=15,
+    )
+    assert stale_switch.returncode == 3 and json.loads(stale_switch.stdout)["category"] == "conflict"
+    back = run("git", "switch", source_branch, "--state", switched["statePrecondition"]["rawValue"])
+    state[0] = back["statePrecondition"]["rawValue"]
     assert run("index", "rebuild")["ok"]
     assert not (Path(directory) / ".hamii/index.sqlite").exists()
     assert len(run("query", "components", scope, "Button")["hits"]) == 1

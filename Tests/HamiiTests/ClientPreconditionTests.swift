@@ -2,7 +2,7 @@ import Foundation
 import XCTest
 import HamiiApplication
 import HamiiCore
-import HamiiFormat
+@testable import HamiiFormat
 
 final class ClientPreconditionTests: XCTestCase {
     func testTwoClientsShareApplicationServicePrecondition() throws {
@@ -87,6 +87,65 @@ final class ClientPreconditionTests: XCTestCase {
         XCTAssertThrowsError(try service.mutate(.createPage(name: "Old profile state"), expectedState: before.statePrecondition, author: .human)) { error in
             guard case AuthoringError.staleState = error else { return XCTFail("Wrong error: \(error)") }
         }
+    }
+
+    func testManagedSwitchInvalidatesSameRevisionClientAndRecoversPendingStops() throws {
+        struct Stopped: Error {}
+        let root = temporaryRoot()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let repository = CanonicalRepository(root: root)
+        _ = try repository.create(name: "Managed Branches")
+        try Data(".hamii/\n".utf8).write(to: root.appendingPathComponent(".gitignore"))
+        try git(root, "init", "-q")
+        try commit(root, "baseline")
+        let main = try gitOutput(root, "branch", "--show-current").trimmingCharacters(in: .whitespacesAndNewlines)
+        try git(root, "switch", "-qc", "other")
+        let otherService = ProjectService(repository: repository)
+        _ = try otherService.mutate(.createPage(name: "Other"), expectedState: otherService.observe().statePrecondition, author: .human)
+        try commit(root, "other page")
+        try git(root, "switch", "-q", main)
+        let mainService = ProjectService(repository: repository)
+        _ = try mainService.mutate(.createPage(name: "Main"), expectedState: mainService.observe().statePrecondition, author: .human)
+        try commit(root, "main page")
+
+        let old = try repository.observe()
+        let switched = try ManagedGit(root: root).switchBranch("other", expectedState: old.statePrecondition)
+        XCTAssertEqual(old.document.revision, switched.document.revision)
+        XCTAssertNotEqual(old.statePrecondition, switched.statePrecondition)
+        XCTAssertThrowsError(try mainService.mutate(.createPage(name: "Stale"), expectedState: old.statePrecondition, author: .human)) { error in
+            guard case AuthoringError.staleState = error else { return XCTFail("Wrong error: \(error)") }
+        }
+
+        for stop in [ManagedGitStep.pending, .switched, .validated] {
+            let from = try repository.observe()
+            let interrupted = ManagedGit(root: root) { step in
+                if step == stop { throw Stopped() }
+            }
+            XCTAssertThrowsError(try interrupted.switchBranch(main, expectedState: from.statePrecondition))
+            XCTAssertThrowsError(try repository.observe()) { error in
+                guard case CanonicalError.managedGitPending = error else { return XCTFail("Wrong error: \(error)") }
+            }
+            let recovered = try ManagedGit(root: root).recover()
+            XCTAssertNotEqual(from.statePrecondition, recovered.statePrecondition)
+            XCTAssertEqual(try repository.observe().statePrecondition, recovered.statePrecondition)
+            if stop != .pending {
+                XCTAssertEqual(try gitOutput(root, "branch", "--show-current").trimmingCharacters(in: .whitespacesAndNewlines), main)
+                _ = try ManagedGit(root: root).switchBranch("other", expectedState: recovered.statePrecondition)
+            }
+        }
+
+        try git(root, "switch", "-qc", "invalid")
+        let manifestURL = root.appendingPathComponent("hamii.json")
+        var manifest = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: manifestURL)) as? [String: Any])
+        manifest["formatVersion"] = 999
+        try JSONSerialization.data(withJSONObject: manifest).write(to: manifestURL)
+        try commit(root, "invalid format")
+        try git(root, "switch", "-q", "other")
+        let beforeInvalid = try repository.observe()
+        XCTAssertThrowsError(try ManagedGit(root: root).switchBranch("invalid", expectedState: beforeInvalid.statePrecondition))
+        XCTAssertEqual(try gitOutput(root, "branch", "--show-current").trimmingCharacters(in: .whitespacesAndNewlines), "other")
+        let afterInvalid = try repository.observe()
+        XCTAssertNotEqual(beforeInvalid.statePrecondition, afterInvalid.statePrecondition)
     }
 
     private func temporaryRoot() -> URL {
