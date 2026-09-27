@@ -56,3 +56,16 @@ Production Query は、検証済みの初回観測から復旧 source を作れ�
 5000 Component では path 列挙・symlink 確認の p50 が **639.02 ms**、Snapshot 全体の約半分だった。Git oracle は **362.99 ms**。Entity decode の **90.16 ms** と Document validation の **36.44 ms** は主因ではない。Entity decode 入力は **3,476,771 bytes**、identity 用の再読込は **3,477,459 bytes**。後者は manifest と Agent profiles も含む。二重読込の事実は確認したが、現条件では metadata/path 観測の費用がさらに大きい。次の最適化方式はこの計測だけで決めない。Git oracle、CanonicalSnapshot identity、symlink rejection、writer lock、fail-closed 判定は維持する。
 
 `testCanonicalObservationProfilingPreservesSnapshotAndQueryResults` はフック ON/OFF で Snapshot identity、Document、Stable generation、validation diagnostics、Git revision、recovery eligibility、`ComponentHit` 全フィールドが一致することと、Canonical manifest が変化しないことを確認した。`HAMII_CANONICAL_OBSERVATION_WRITER_TIMELINE_RESULT=<path> swift test --filter IndexQuerySessionTests/testMeasuredCanonicalObservationWriterTimeline` は5000 Component の Phase 1 中に別 OS process の writer lock probe を投入した。reader lock 取得を基点に、writer lock attempt **+70 ms**、component folder 列挙完了 **+256 ms**、entity bytes 読込完了 **+513 ms**、Canonical path/symlink 確認完了 **+1171 ms**、identity bytes 読込完了 **+1330 ms**、Snapshot 完了 **+1344 ms**、Git oracle 完了 **+1721 ms**、writer lock 取得 **+1722 ms**。writer 待機は **1651.62 ms**。これは単一の lock 競合試行であり writer latency の分布や power-loss durability を示さない。フックは lock を解放せず、production の観測・判定経路を変更しない。
+
+### Canonical path observation の内訳
+
+`HAMII_CANONICAL_PATH_PROFILE_RESULT=<path> swift test --filter IndexQuerySessionTests/testMeasuredCanonicalPathBreakdown` は同じ fixture 4種をそれぞれ5回測定する。各セルは **p50 / p95 ms**、p95 は5標本の最大値。`canonicalJSONPaths()` の実行順、取得する file metadata、sort comparator、symlink 拒否条件は変えていない。Stage callback は各処理の後に時刻と path/folder 件数を記録する。上位 `Path total` は callback overhead を含むため、内訳の単純和とは一致しない。
+
+| Fixture | Paths | Path total | Root checks | Folder existence | Directory listing | JSON filter | URL 再構築 | Symlink metadata | Path sort |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 1 | 4 | 0.50 / 0.51 | 0.06 / 0.07 | 0.10 / 0.10 | 0.14 / 0.14 | 0.01 / 0.01 | 0.07 / 0.07 | 0.02 / 0.02 | 0.06 / 0.06 |
+| 1000 | 1003 | 139.74 / 142.31 | 0.05 / 0.05 | 0.06 / 0.06 | 1.90 / 1.97 | 0.87 / 0.87 | 14.01 / 14.04 | 1.72 / 1.76 | 121.07 / 123.57 |
+| 5000 | 5003 | 617.01 / 654.77 | 0.05 / 0.06 | 0.07 / 0.08 | 11.01 / 11.28 | 4.37 / 4.53 | 73.06 / 77.79 | 8.56 / 9.16 | 519.43 / 551.83 |
+| Mixed | 25 | 1.96 / 2.21 | 0.04 / 0.04 | 0.06 / 0.07 | 0.16 / 0.18 | 0.03 / 0.03 | 0.35 / 0.40 | 0.05 / 0.06 | 1.24 / 1.42 |
+
+5000 Component fixture は10 folders を確認し、5003 Canonical JSON paths を sort した。現コードが prefetched URL から root-based URL を再構築して metadata を再取得することは事実だが、**per-path symlink metadata lookup はこの条件の主因ではなかった**。`URL.path` を comparator 内で評価する現在の path sort が p50 **519.43 ms** と最も大きい。Directory listing は **11.01 ms**、symlink metadata は **8.56 ms**。したがって、metadata 検査を省くことや single-pass Snapshot を先に production 採用する根拠にはならない。次の調査対象は sort の内訳であり、identity、ordering、symlink rejection、coordinated writer boundary は維持する。

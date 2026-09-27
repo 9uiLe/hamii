@@ -17,6 +17,13 @@ package enum CanonicalObservationStage: String, Codable {
     case canonicalPathEnumerationAndSymlinkCheck
     case identityBytesRead
     case identityHash
+    case canonicalRootFileChecks
+    case folderExistenceChecks
+    case contentsOfDirectory
+    case jsonFiltering
+    case rootBasedURLReconstruction
+    case symlinkResourceValueChecks
+    case pathSorting
 }
 
 package struct CanonicalObservationMeasurement: Codable {
@@ -24,13 +31,18 @@ package struct CanonicalObservationMeasurement: Codable {
     package let detail: String?
     package let milliseconds: Double
     package let bytes: Int?
+    package let pathCount: Int?
+    package let folderCount: Int?
 
     package init(stage: CanonicalObservationStage, detail: String? = nil,
-                 milliseconds: Double, bytes: Int? = nil) {
+                 milliseconds: Double, bytes: Int? = nil,
+                 pathCount: Int? = nil, folderCount: Int? = nil) {
         self.stage = stage
         self.detail = detail
         self.milliseconds = milliseconds
         self.bytes = bytes
+        self.pathCount = pathCount
+        self.folderCount = folderCount
     }
 }
 

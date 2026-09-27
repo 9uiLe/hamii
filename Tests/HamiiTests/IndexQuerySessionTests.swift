@@ -68,6 +68,13 @@ final class IndexQuerySessionTests: XCTestCase {
         let resultCount: Int
     }
 
+    private struct CanonicalPathProfileSample: Codable {
+        let fixture: String
+        let iteration: Int
+        let measurements: [CanonicalObservationMeasurement]
+        let snapshotIdentity: String
+    }
+
     private func fixture(componentCount: Int = 1) throws -> Fixture {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent("hamii-query-session-\(UUID().uuidString)")
         let root = directory.appendingPathComponent("Project")
@@ -91,6 +98,18 @@ final class IndexQuerySessionTests: XCTestCase {
                               documentID: next.id, scopeID: scope)
         _ = try rebuild(fixture)
         return fixture
+    }
+
+    private func addMixedSemanticContent(_ fixture: Fixture) throws {
+        let repository = CanonicalRepository(root: fixture.root)
+        let old = try repository.load()
+        var next = old
+        let commerce = EntityID("scope_commerce")
+        next.scopes.append(ArchitectureScope(id: commerce, name: "Commerce", parentID: fixture.scopeID))
+        next.screens = [Screen(id: EntityID("screen_mixed"), name: "Mixed", scopeID: commerce,
+            root: Layer(id: EntityID("screen_mixed_root"), kind: .stack, name: "Root"))]
+        next.revision += 1
+        try repository.save(next, expected: old)
     }
 
     private func git(_ root: URL, _ args: [String]) throws {
@@ -829,17 +848,7 @@ final class IndexQuerySessionTests: XCTestCase {
             let count = kind == "mixed" ? 20 : Int(kind)!
             let fixture = try fixture(componentCount: count)
             defer { try? FileManager.default.removeItem(at: fixture.directory) }
-            if kind == "mixed" {
-                let repository = CanonicalRepository(root: fixture.root)
-                let old = try repository.load()
-                var next = old
-                let commerce = EntityID("scope_commerce")
-                next.scopes.append(ArchitectureScope(id: commerce, name: "Commerce", parentID: fixture.scopeID))
-                next.screens = [Screen(id: EntityID("screen_mixed"), name: "Mixed", scopeID: commerce,
-                    root: Layer(id: EntityID("screen_mixed_root"), kind: .stack, name: "Root"))]
-                next.revision += 1
-                try repository.save(next, expected: old)
-            }
+            if kind == "mixed" { try addMixedSemanticContent(fixture) }
             let published = try index(fixture).url
             for iteration in 0..<5 {
                 try FileManager.default.removeItem(at: published)
@@ -862,6 +871,48 @@ final class IndexQuerySessionTests: XCTestCase {
                     phase1Milliseconds: phase1, totalRecoveryMilliseconds: elapsed,
                     canonical: canonical, recovery: recovery,
                     resultCount: hits.count))
+            }
+        }
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        try encoder.encode(samples).write(to: URL(fileURLWithPath: output), options: .atomic)
+    }
+
+    func testMeasuredCanonicalPathBreakdown() throws {
+        guard let output = ProcessInfo.processInfo.environment["HAMII_CANONICAL_PATH_PROFILE_RESULT"] else {
+            throw XCTSkip("Set HAMII_CANONICAL_PATH_PROFILE_RESULT for path breakdown")
+        }
+        var samples: [CanonicalPathProfileSample] = []
+        for kind in ["1", "1000", "5000", "mixed"] {
+            let count = kind == "mixed" ? 20 : Int(kind)!
+            let fixture = try fixture(componentCount: count)
+            defer { try? FileManager.default.removeItem(at: fixture.directory) }
+            if kind == "mixed" { try addMixedSemanticContent(fixture) }
+            let repository = CanonicalRepository(root: fixture.root)
+            let baseline = try repository.withStableSnapshotForDerivedRecovery { snapshot, stable in
+                (snapshot, stable)
+            }
+            for iteration in 0..<5 {
+                var measurements: [CanonicalObservationMeasurement] = []
+                let profiled = try repository.withStableSnapshotForDerivedRecovery(
+                    onObservation: { measurements.append($0) }) { snapshot, stable in
+                        (snapshot, stable)
+                    }
+                XCTAssertEqual(profiled.0.identity, baseline.0.identity)
+                XCTAssertEqual(profiled.0.document, baseline.0.document)
+                XCTAssertEqual(profiled.1, baseline.1)
+                let symlinks = try XCTUnwrap(measurements.first {
+                    $0.stage == .symlinkResourceValueChecks
+                })
+                XCTAssertEqual(symlinks.folderCount, 10)
+                XCTAssertEqual(measurements.filter { $0.stage == .folderExistenceChecks }.count, 10)
+                XCTAssertEqual(measurements.first { $0.stage == .contentsOfDirectory &&
+                    $0.detail == "components" }?.pathCount, count)
+                XCTAssertEqual(measurements.first { $0.stage == .rootBasedURLReconstruction &&
+                    $0.detail == "components" }?.pathCount, count)
+                XCTAssertNotNil(measurements.first { $0.stage == .pathSorting })
+                samples.append(CanonicalPathProfileSample(fixture: kind, iteration: iteration,
+                    measurements: measurements, snapshotIdentity: profiled.0.identity.rawValue))
             }
         }
         let encoder = JSONEncoder()

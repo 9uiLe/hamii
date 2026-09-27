@@ -291,7 +291,7 @@ public final class CanonicalRepository: ProjectRepository {
         }
         var files: [String: Data] = [:]
         let paths = try measureCanonical(.canonicalPathEnumerationAndSymlinkCheck, recorder: onObservation) {
-            try canonicalJSONPaths()
+            try canonicalJSONPaths(onObservation: onObservation)
         }
         let readStart = onObservation == nil ? 0 : ProcessInfo.processInfo.systemUptime
         var bytesRead = 0
@@ -400,25 +400,54 @@ public final class CanonicalRepository: ProjectRepository {
         return ClientPrecondition(hash.finalize().map { String(format: "%02x", $0) }.joined())
     }
 
-    private func canonicalJSONPaths() throws -> [URL] {
+    private func canonicalJSONPaths(onObservation: CanonicalObservationRecorder? = nil) throws -> [URL] {
+        func mark() -> Double { onObservation == nil ? 0 : ProcessInfo.processInfo.systemUptime }
+        func report(_ stage: CanonicalObservationStage, since start: Double,
+                    detail: String? = nil, pathCount: Int? = nil, folderCount: Int? = nil) {
+            guard let onObservation else { return }
+            onObservation(CanonicalObservationMeasurement(stage: stage, detail: detail,
+                milliseconds: (ProcessInfo.processInfo.systemUptime - start) * 1_000,
+                pathCount: pathCount, folderCount: folderCount))
+        }
+        let rootStart = mark()
         let folders = ["pages", "screens", "scopes", "components", "tokens", "assets", "interactions", "motions", "fixtures", "targets"]
         var paths = [root.appendingPathComponent("hamii.json")]
         let agentProfiles = root.appendingPathComponent("hamii-agent-profiles.json")
         if manager.fileExists(atPath: agentProfiles.path) { paths.append(agentProfiles) }
+        report(.canonicalRootFileChecks, since: rootStart, pathCount: paths.count)
         for folder in folders {
             let directory = root.appendingPathComponent(folder, isDirectory: true)
-            if manager.fileExists(atPath: directory.path) {
-                paths += try manager.contentsOfDirectory(at: directory, includingPropertiesForKeys: [.isSymbolicLinkKey])
-                    .filter { $0.pathExtension == "json" }
-                    .map { directory.appendingPathComponent($0.lastPathComponent) }
-            }
+            let existenceStart = mark()
+            let exists = manager.fileExists(atPath: directory.path)
+            report(.folderExistenceChecks, since: existenceStart, detail: folder,
+                   pathCount: exists ? 1 : 0, folderCount: 1)
+            guard exists else { continue }
+            let listingStart = mark()
+            let listed = try manager.contentsOfDirectory(at: directory,
+                includingPropertiesForKeys: [.isSymbolicLinkKey])
+            report(.contentsOfDirectory, since: listingStart, detail: folder,
+                   pathCount: listed.count, folderCount: 1)
+            let filterStart = mark()
+            let json = listed.filter { $0.pathExtension == "json" }
+            report(.jsonFiltering, since: filterStart, detail: folder,
+                   pathCount: json.count, folderCount: 1)
+            let reconstructionStart = mark()
+            paths += json.map { directory.appendingPathComponent($0.lastPathComponent) }
+            report(.rootBasedURLReconstruction, since: reconstructionStart, detail: folder,
+                   pathCount: json.count, folderCount: 1)
         }
+        let symlinkStart = mark()
         for path in paths {
             guard try path.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink != true else {
                 throw CanonicalError.invalidClientEpoch
             }
         }
-        return paths.sorted(by: { $0.path < $1.path })
+        report(.symlinkResourceValueChecks, since: symlinkStart,
+               pathCount: paths.count, folderCount: folders.count)
+        let sortStart = mark()
+        let sorted = paths.sorted(by: { $0.path < $1.path })
+        report(.pathSorting, since: sortStart, pathCount: sorted.count, folderCount: folders.count)
+        return sorted
     }
 
     private func appendHash(_ value: Data, to hash: inout SHA256) {
