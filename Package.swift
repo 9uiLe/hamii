@@ -21,7 +21,7 @@ let package = Package(
         .target(name: "HamiiCore"),
         .target(name: "HamiiApplication", dependencies: ["HamiiCore"]),
         .target(name: "HamiiFormat", dependencies: ["HamiiCore", "HamiiApplication"]),
-        .target(name: "HamiiIndex", dependencies: ["HamiiCore"], linkerSettings: [.linkedLibrary("sqlite3")]),
+        .target(name: "HamiiIndex", dependencies: ["HamiiCore", "HamiiFormat"], linkerSettings: [.linkedLibrary("sqlite3")]),
         .target(name: "HamiiGeneration", dependencies: ["HamiiCore"]),
         .target(name: "HamiiIntegration", dependencies: ["HamiiCore"]),
         .target(name: "HamiiMigrations"),

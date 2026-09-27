@@ -56,6 +56,36 @@ public struct WorktreeCoordinator {
         FileManager.default.fileExists(atPath: mergePublicationURL.path)
     }
 
+    func mergePublicationRecord() throws -> Data? {
+        guard mergePublicationPending() else { return nil }
+        return try Data(contentsOf: mergePublicationURL)
+    }
+
+    func beginMergePublication(_ record: Data) throws {
+        try requireReady()
+        try invalidateClientObservations()
+        try sync(epochURL)
+        try writeMergePublicationRecord(record)
+    }
+
+    func writeMergePublicationRecord(_ record: Data) throws {
+        try record.write(to: mergePublicationURL, options: .atomic)
+        try sync(mergePublicationURL)
+        try sync(mergePublicationURL.deletingLastPathComponent())
+    }
+
+    func finishMergePublication() throws {
+        try FileManager.default.removeItem(at: mergePublicationURL)
+        try sync(mergePublicationURL.deletingLastPathComponent())
+    }
+
+    private func sync(_ url: URL) throws {
+        let descriptor = open(url.path, O_RDONLY)
+        guard descriptor >= 0 else { throw CocoaError(.fileReadUnknown) }
+        defer { close(descriptor) }
+        guard fsync(descriptor) == 0 else { throw CocoaError(.fileWriteUnknown) }
+    }
+
     func pendingGitTransition() throws -> ManagedGitTransition? {
         guard FileManager.default.fileExists(atPath: transitionURL.path) else { return nil }
         do { return try JSONDecoder().decode(ManagedGitTransition.self, from: Data(contentsOf: transitionURL)) }

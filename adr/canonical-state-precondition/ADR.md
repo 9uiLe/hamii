@@ -30,7 +30,7 @@ Process restart 後は journal recovery と coordinated observation の再確立
 
 ## Unknowns
 
-残る implementation work は hamii-managed merge による epoch 更新、validated merge の公開時に client を再同期させる境界、Undo / Redo base の結合、process crash / power loss 後の epoch durability、token 計算 cost の測定である。Managed `git switch` は開始時に epoch を更新し、pending 中は通常の Canonical observation を拒否する。Raw external writer の無通知 A → B → A は正式保証外であり、watcher 等を positive proof にしない。Managed Git / validated merge の実装は External Git Write ADR、Index generation は Index ADR、停電耐久性は Power-loss ADR が扱う。
+残る implementation work は Undo / Redo base の結合、power loss 後の epoch durability、token 計算 cost の測定である。Managed `git switch` と validated merge publication は Canonical state 変更前に epoch を更新し、pending 中は通常の Canonical observation を拒否する。Publication または recovery 後は新たな Canonical observation から token を発行し、旧 token を拒否する。Raw external writer の無通知 A → B → A は正式保証外であり、watcher 等を positive proof にしない。Managed Git / validated merge の残る検証は External Git Write ADR、Index generation は Index ADR、停電耐久性は Power-loss ADR が扱う。
 
 ## Required Evidence
 

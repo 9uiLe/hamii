@@ -139,7 +139,7 @@ public final class CanonicalRepository: ProjectRepository {
         }
     }
 
-    private func loadUnlocked(validate: Bool) throws -> Document {
+    private func loadUnlocked(validate: Bool, validationHook: (() throws -> Void)? = nil) throws -> Document {
         let manifest = try readManifest()
         guard manifest.formatVersion == 1, manifest.versions.document == 1, manifest.versions.authoringHarness == 1 else {
             throw CanonicalError.unsupportedFormat(manifest.formatVersion)
@@ -162,6 +162,7 @@ public final class CanonicalRepository: ProjectRepository {
         document.fixtures = try readAll("fixtures")
         document.targets = try readAll("targets")
         if validate {
+            try validationHook?()
             let diagnostics = allDiagnostics(document)
             if diagnostics.contains(where: { $0.severity == .error }) { throw CanonicalError.invalid(diagnostics) }
         }
@@ -195,6 +196,22 @@ public final class CanonicalRepository: ProjectRepository {
         try transaction.recoverIfNeeded()
         let document = try loadUnlocked(validate: true)
         return ProjectObservation(document: document, statePrecondition: try clientPreconditionUnlocked())
+    }
+
+    // The caller holds WorktreeCoordinator across the entire observation.
+    // A revision cannot make multiple files coherent; the coordinated read
+    // provides the snapshot boundary for hamii-managed writers.
+    func snapshotDuringManagedGitTransition(validationHook: (() throws -> Void)? = nil) throws -> (document: Document, identity: String) {
+        try transaction.recoverIfNeeded()
+        let document = try loadUnlocked(validate: true, validationHook: validationHook)
+        _ = try AgentProfilesRepository(root: root).profiles()
+        var hash = SHA256()
+        for path in try canonicalJSONPaths() {
+            let relative = path.path.replacingOccurrences(of: root.path + "/", with: "")
+            appendHash(Data(relative.utf8), to: &hash)
+            appendHash(try Data(contentsOf: path), to: &hash)
+        }
+        return (document, hash.finalize().map { String(format: "%02x", $0) }.joined())
     }
 
     private func writeDocument(_ document: Document, expected: Document?) throws {
@@ -236,14 +253,17 @@ public final class CanonicalRepository: ProjectRepository {
 
     private func clientPreconditionUnlocked() throws -> ClientPrecondition {
         var hash = SHA256()
-        func append(_ value: Data) {
-            var length = UInt64(value.count).bigEndian
-            withUnsafeBytes(of: &length) { hash.update(data: $0) }
-            hash.update(data: value)
+        appendHash(Data("hamii-client-state-v1".utf8), to: &hash)
+        appendHash(Data(root.resolvingSymlinksInPath().standardizedFileURL.path.utf8), to: &hash)
+        appendHash(Data(try coordinator.clientEpoch().utf8), to: &hash)
+        for path in try canonicalJSONPaths() {
+            appendHash(Data(path.path.replacingOccurrences(of: root.path + "/", with: "").utf8), to: &hash)
+            appendHash(try Data(contentsOf: path), to: &hash)
         }
-        append(Data("hamii-client-state-v1".utf8))
-        append(Data(root.resolvingSymlinksInPath().standardizedFileURL.path.utf8))
-        append(Data(try coordinator.clientEpoch().utf8))
+        return ClientPrecondition(hash.finalize().map { String(format: "%02x", $0) }.joined())
+    }
+
+    private func canonicalJSONPaths() throws -> [URL] {
         let folders = ["pages", "screens", "scopes", "components", "tokens", "assets", "interactions", "motions", "fixtures", "targets"]
         var paths = [root.appendingPathComponent("hamii.json")]
         let agentProfiles = root.appendingPathComponent("hamii-agent-profiles.json")
@@ -255,14 +275,18 @@ public final class CanonicalRepository: ProjectRepository {
                     .filter { $0.pathExtension == "json" }
             }
         }
-        for path in paths.sorted(by: { $0.path < $1.path }) {
+        for path in paths {
             guard try path.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink != true else {
                 throw CanonicalError.invalidClientEpoch
             }
-            append(Data(path.path.replacingOccurrences(of: root.path + "/", with: "").utf8))
-            append(try Data(contentsOf: path))
         }
-        return ClientPrecondition(hash.finalize().map { String(format: "%02x", $0) }.joined())
+        return paths.sorted(by: { $0.path < $1.path })
+    }
+
+    private func appendHash(_ value: Data, to hash: inout SHA256) {
+        var length = UInt64(value.count).bigEndian
+        withUnsafeBytes(of: &length) { hash.update(data: $0) }
+        hash.update(data: value)
     }
 
     private func read<T: Decodable>(_ url: URL) throws -> T {

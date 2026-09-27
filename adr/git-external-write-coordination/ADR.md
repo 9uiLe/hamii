@@ -20,7 +20,7 @@ External-change detection は正式な writer model の外で起きた変更に�
 
 ## Current Hypothesis
 
-**実装進捗:** `WorktreeCoordinator` が Canonical save / read と managed `git switch` の lock・client observation epoch を共有する。Switch は開始時に旧 client token を失効し、pending marker の間は通常の Canonical access を拒否する。`git recover` は既知 HEAD、clean worktree、valid Canonical state を検証できたときのみ gate を解除する。Index generation publication や validated merge transaction は未実装である。merge candidate は別の一時 worktree で検証し、成功した Index generation と一緒に publish する実装が必要。
+**実装進捗:** `WorktreeCoordinator` が Canonical save / read、managed `git switch`、validated merge publication の lock・client observation epoch・pending gate を共有する。`ValidatedMergePublisher` は immutable candidate を retention ref で保持し、source ref CAS、Canonical verification、full LocalIndex rebuild の後に gate を解除する。`git recover` は既知 old/candidate ref から復旧し、unknown ref は拒否する。Production の一般 Index generation protocol と power-loss durability は別 ADR で検証する。
 
 **Confirmed:** 現行 lock は hamii 同士だけが尊重する。journal は旧新 bytes のみを保持する。**Measured:** load 後・save 前の同一 revision 外部編集は旧 API で上書きされた。期待 Document の bytes 照合を保存境界へ追加した後、同じ逐次条件では conflict として中断し外部 bytes を保持した。**Measured in a minimal APFS model:** content check と atomic replace の間の非協調 edit は上書きされ、旧新 journal から復旧不能だった。これは production の全 interleaving を測った結果ではない。現行実装に非協調同時書込の lossless 保証はない。
 
@@ -36,7 +36,7 @@ External-change detection は正式な writer model の外で起きた変更に�
 
 ## Unknowns
 
-残る実装は managed Git switch の production generation / Index 連携、検証済み merge candidate と Index generation の atomic publish、partial Git state の修復 UX、worktree identity と移動の扱い。`git merge check` は一時 worktree 内の semantic validation と一時 Index rebuild を行い、公開しない。Publication の具体的停止復旧方式は [Validated merge publication ADR](../validated-merge-publication/ADR.md) の一つの独立した判断境界とする。Client / Preview token の選択は別 ADR。Power loss は [Power-loss ADR](../canonical-power-loss-durability/ADR.md)。
+残る実装・検証は managed Git switch の production generation / Index 連携、partial Git state の修復 UX、worktree identity と移動、publication の Git subprocess lock ownership と power-loss durability。`git merge check` は一時 worktree 内の semantic validation と一時 Index rebuild を行い、公開しない。Publication の停止復旧と残課題は [Validated merge publication ADR](../validated-merge-publication/ADR.md) が扱う。Client / Preview token の選択は別 ADR。Power loss は [Power-loss ADR](../canonical-power-loss-durability/ADR.md)。
 
 ## Required Evidence
 

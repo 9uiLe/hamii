@@ -184,6 +184,12 @@ public final class ManagedGit {
     }
 
     private func git(at worktree: URL, _ arguments: [String]) throws -> String {
+        try GitCommand.run(at: worktree, arguments)
+    }
+}
+
+enum GitCommand {
+    static func run(at worktree: URL, _ arguments: [String]) throws -> String {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/git")
         process.arguments = ["-C", worktree.path] + arguments

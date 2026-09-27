@@ -53,6 +53,13 @@ public final class LocalIndex {
     deinit { sqlite3_close(database) }
 
     public func rebuild(from document: Document, canonicalRevision: CanonicalRevision) throws {
+        try rebuild(from: document, canonicalRevision: canonicalRevision, transactionHook: nil)
+    }
+
+    // Internal stop point for process-crash regression tests. The public
+    // rebuild contract never exposes a partially committed transaction.
+    func rebuild(from document: Document, canonicalRevision: CanonicalRevision,
+                 transactionHook: (() -> Void)?) throws {
         try execute("BEGIN IMMEDIATE TRANSACTION")
         do {
             try execute("DELETE FROM components")
@@ -63,6 +70,7 @@ public final class LocalIndex {
             for row in projection.scopeClosure {
                 try insert("INSERT INTO scope_closure(consumer_id, ancestor_id) VALUES (?, ?)", [row.consumer.rawValue, row.ancestor.rawValue])
             }
+            transactionHook?()
             for row in projection.components {
                 try insert("INSERT INTO components(id, name, owner_scope_id, usage_count) VALUES (?, ?, ?, ?)", [row.id.rawValue, row.name, row.ownerScopeID.rawValue, String(row.usageCount)])
             }
@@ -104,6 +112,22 @@ public final class LocalIndex {
             guard try revisionCalculator.current(at: projectRoot).rawValue == indexedRevision else { throw IndexError.stale }
             try execute("COMMIT")
             return hits
+        } catch {
+            try? execute("ROLLBACK")
+            throw error
+        }
+    }
+
+    public func assertCurrent(documentID: EntityID, revision: Int) throws {
+        try execute("BEGIN DEFERRED TRANSACTION")
+        do {
+            guard try metadata("documentID") == documentID.rawValue,
+                  try metadata("revision") == String(revision),
+                  let indexedRevision = try metadata("canonicalRevision"),
+                  try revisionCalculator.current(at: projectRoot).rawValue == indexedRevision else {
+                throw IndexError.stale
+            }
+            try execute("COMMIT")
         } catch {
             try? execute("ROLLBACK")
             throw error

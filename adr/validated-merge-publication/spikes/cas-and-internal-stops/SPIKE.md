@@ -51,7 +51,7 @@ Old / candidate 以外の ref から自動 Ready、半 materialized Canonical �
 
 ## Conclusion
 
-CAS + pending gate + candidate roll-forward は検証した process crash ordering では有力。Production Snapshot / generation binding、durable pending、Index publication、recovery が未検証のため方式は未決定。ADR は `Spike Required`。
+CAS + pending gate + candidate roll-forward は検証した process crash ordering で有力な方式となった。この Spike 実施時点では production Snapshot / generation binding、durable pending、Index publication、recovery が未検証で、ADR は `Spike Required` だった。その後、[ADR の Decision](../../ADR.md#decision) がこの方式を採用し、現在の status は `Implementation Required`。Spike の測定範囲と production 実装の保証は区別する。
 
 ## Artifacts
 

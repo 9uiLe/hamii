@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Exercise isolated merge validation without publishing into the source worktree."""
+"""Exercise isolated merge validation and coordinated candidate publication."""
 import json
 from pathlib import Path
 import subprocess
@@ -69,6 +69,15 @@ with tempfile.TemporaryDirectory(prefix="hamii-merge-check-") as directory:
     assert checked["sourceHead"] == before_head and checked["candidateHead"] != before_head
     assert git(root, "rev-parse", "HEAD") == before_head
     assert hamii(root, "inspect")[1]["statePrecondition"] == before["statePrecondition"]
+    published = hamii(root, "git", "merge", "publish", "other", "--state", before["statePrecondition"]["rawValue"])[1]
+    assert published["ok"] and git(root, "rev-parse", "HEAD") != before_head
+    assert not git(root, "status", "--porcelain")
+    assert sum(line.startswith("worktree ") for line in git(root, "worktree", "list", "--porcelain").splitlines()) == 1
+    assert hamii(root, "validate")[1]["ok"]
+    assert hamii(root, "query", "components", before["document"]["scopes"][0]["id"]["rawValue"], "Shared")[1]["ok"]
+    stale_code, stale = hamii(root, "page", "create", "Stale", "--state", before["statePrecondition"]["rawValue"], check=False)
+    assert stale_code != 0 and stale["category"] == "conflict"
+    assert hamii(root, "git", "recover")[1]["statePrecondition"] == published["statePrecondition"]
 
     invalid = Path(directory) / "invalid"
     invalid.mkdir()
@@ -85,8 +94,12 @@ with tempfile.TemporaryDirectory(prefix="hamii-merge-check-") as directory:
     code, rejected = hamii(invalid, "git", "merge", "check", "other", "--state", state, check=False)
     assert code != 0 and rejected["category"] == "storage" and "component.missing" in rejected["message"]
     assert git(invalid, "rev-parse", "HEAD") == before_head
+    code, rejected = hamii(invalid, "git", "merge", "publish", "other", "--state", state, check=False)
+    assert code != 0 and "component.missing" in rejected["message"]
+    assert git(invalid, "rev-parse", "HEAD") == before_head
+    assert not (invalid / ".hamii/merge-publication.pending.json").exists()
     assert hamii(invalid, "validate")[1]["ok"]
     git(invalid, "switch", "-q", "other")
     assert hamii(invalid, "validate")[1]["ok"]
 
-print("Isolated merge candidate validation valid")
+print("Merge candidate validation and publication valid")

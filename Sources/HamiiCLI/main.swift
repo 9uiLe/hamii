@@ -55,7 +55,7 @@ private enum CLI {
     static let version = "0.1.0"
     static let skillTexts: [String: String] = [
         "bootstrap": "hamii \(version)\nUse hamii skills list and hamii skills get NAME. Load only the relevant live skill. Global options: --project PATH --json. Create a Git-backed project with hamii init NAME --project PATH --json; inspect it with hamii inspect --project PATH --json. Do not guess commands or edit canonical files directly. Supply the statePrecondition from inspect as --state TOKEN for every mutation.",
-        "authoring": "hamii \(version)\nGlobal options: --project PATH --profile NAME --json. Inspect: hamii inspect. Mutations require --state TOKEN from inspect or the previous mutation. Commands: page create NAME; scope create PARENT_ID NAME; screen create SCOPE_ID NAME; target add PLATFORM FRAMEWORK; surface add PAGE_ID SCREEN_ID TARGET_ID DEVICE RUNTIME BUILD_ENVIRONMENT; surface target SURFACE_ID TARGET_ID; capability set TARGET_ID KEY SUPPORT; layer add SCREEN_ID PARENT_ID KIND NAME TEXT; layer text SCREEN_ID LAYER_ID TEXT. Managed git switch BRANCH requires a clean worktree and --state TOKEN; git recover validates an interrupted switch. git merge check BRANCH --state TOKEN creates and validates an isolated merge candidate and does not publish it. Use - for no text. Read the tokens, components or assets skill when needed. All mutations use the same Authoring Harness validation as GUI.",
+        "authoring": "hamii \(version)\nGlobal options: --project PATH --profile NAME --json. Inspect: hamii inspect. Mutations require --state TOKEN from inspect or the previous mutation. Commands: page create NAME; scope create PARENT_ID NAME; screen create SCOPE_ID NAME; target add PLATFORM FRAMEWORK; surface add PAGE_ID SCREEN_ID TARGET_ID DEVICE RUNTIME BUILD_ENVIRONMENT; surface target SURFACE_ID TARGET_ID; capability set TARGET_ID KEY SUPPORT; layer add SCREEN_ID PARENT_ID KIND NAME TEXT; layer text SCREEN_ID LAYER_ID TEXT. Managed git switch BRANCH requires a clean worktree and --state TOKEN; git recover validates an interrupted switch or merge publication. git merge check BRANCH --state TOKEN validates an isolated candidate without publishing. git merge publish BRANCH --state TOKEN validates and publishes a candidate through the coordinated pending gate. Use - for no text. Read the tokens, components or assets skill when needed. All mutations use the same Authoring Harness validation as GUI.",
         "tokens": "hamii \(version)\ntoken create OWNER_SCOPE_ID NAME KIND LITERAL --state TOKEN creates a primitive token; token alias OWNER_SCOPE_ID NAME KIND TARGET_TOKEN_ID --state TOKEN creates a semantic alias. KIND is color|typography|spacing|radius|border|shadow|opacity|motion. Spacing literals are nonnegative finite numbers. layer token SCREEN_ID LAYER_ID spacing|padding TOKEN_ID|- --state TOKEN sets or clears a layout token. ArchitectureScope ownership and token references are validated before save.",
         "components": "hamii \(version)\ncomponent list CONSUMER_SCOPE_ID; component create OWNER_SCOPE_ID NAME --state TOKEN; component instantiate SCREEN_ID PARENT_LAYER_ID DEFINITION_ID --state TOKEN; component promote DEFINITION_ID ANCESTOR_SCOPE_ID --state TOKEN. Promotion requires an Agent profile with explicit mayPromoteScope permission. Definition tree is referenced by instances; scope and availability are enforced by the mutation service.",
         "validation": "hamii \(version)\nvalidate --project PATH --json returns diagnostics with rule, severity, entityID and message. index rebuild recreates the local index outside the repository from canonical files. query components CONSUMER_SCOPE_ID TERM uses the index and rejects stale Canonical revisions with staleIndex; run index rebuild after external edits. If canonical Git files are marked assume-unchanged or skip-worktree or use Git filters, clear those settings before rebuilding. migrate plan --json preflights a format without changing it. Unsupported persisted formats require an isolated migration edge.",
@@ -99,7 +99,8 @@ private enum CLI {
             return Output(ok: true, document: observed.document, statePrecondition: observed.statePrecondition)
         }
         if args == ["git", "recover"] {
-            let observed = try ManagedGit(root: path).recover()
+            let publisher = ValidatedMergePublisher(root: path, index: PublishedMergeIndex())
+            let observed = try publisher.hasPendingPublication ? publisher.recover() : ManagedGit(root: path).recover()
             return Output(ok: true, document: observed.document, statePrecondition: observed.statePrecondition)
         }
         if args.count == 3 && args[0] == "git" && args[1] == "switch" {
@@ -125,6 +126,15 @@ private enum CLI {
                     candidateHead: candidate.candidateHead, documentID: candidate.document.id,
                     documentRevision: candidate.document.revision, indexedCandidate: true, published: false))
             }
+        }
+        if args.count == 4 && args[0] == "git" && args[1] == "merge" && args[2] == "publish" {
+            guard let stateText, !stateText.isEmpty else {
+                throw CLIError(category: "usage", message: "Merge publication requires --state TOKEN from inspect")
+            }
+            let observed = try ValidatedMergePublisher(root: path, index: PublishedMergeIndex())
+                .publish(args[3], expectedState: ClientPrecondition(stateText))
+            return Output(ok: true, message: "Published validated merge candidate", document: observed.document,
+                          statePrecondition: observed.statePrecondition)
         }
         if verb == "validate" {
             var diagnostics = try repository.diagnostics()
@@ -224,7 +234,7 @@ private enum CLI {
         return Output(ok: true, mutation: result)
     }
 
-    static let usage = "hamii [--project PATH] [--profile NAME] [--json] <version|init NAME|inspect|validate|git switch BRANCH|git recover|git merge check BRANCH|preview plan SURFACE_ID|migrate plan|skills list|get NAME|index rebuild|query components SCOPE_ID TERM|generate swiftui SCREEN_ID TARGET_ID|integration contract SCREEN_ID|page create NAME|scope create PARENT_ID NAME|screen create SCOPE_ID NAME|target add PLATFORM FRAMEWORK|surface add PAGE_ID SCREEN_ID TARGET_ID DEVICE RUNTIME BUILD_ENVIRONMENT|surface target SURFACE_ID TARGET_ID|capability set TARGET_ID KEY SUPPORT|asset import SCOPE_ID NAME MEDIA_TYPE SOURCE_PATH --storage git|layer add SCREEN_ID PARENT_ID KIND NAME TEXT|layer text SCREEN_ID LAYER_ID TEXT|layer token SCREEN_ID LAYER_ID spacing|padding TOKEN_ID|-|token create SCOPE_ID NAME KIND VALUE|token alias SCOPE_ID NAME KIND TOKEN_ID|layer image SCREEN_ID PARENT_ID ASSET_ID NAME|component create SCOPE_ID NAME|component list SCOPE_ID|component instantiate SCREEN_ID PARENT_ID DEFINITION_ID|component promote DEFINITION_ID ANCESTOR_SCOPE_ID> [--state TOKEN]"
+    static let usage = "hamii [--project PATH] [--profile NAME] [--json] <version|init NAME|inspect|validate|git switch BRANCH|git recover|git merge check BRANCH|git merge publish BRANCH|preview plan SURFACE_ID|migrate plan|skills list|get NAME|index rebuild|query components SCOPE_ID TERM|generate swiftui SCREEN_ID TARGET_ID|integration contract SCREEN_ID|page create NAME|scope create PARENT_ID NAME|screen create SCOPE_ID NAME|target add PLATFORM FRAMEWORK|surface add PAGE_ID SCREEN_ID TARGET_ID DEVICE RUNTIME BUILD_ENVIRONMENT|surface target SURFACE_ID TARGET_ID|capability set TARGET_ID KEY SUPPORT|asset import SCOPE_ID NAME MEDIA_TYPE SOURCE_PATH --storage git|layer add SCREEN_ID PARENT_ID KIND NAME TEXT|layer text SCREEN_ID LAYER_ID TEXT|layer token SCREEN_ID LAYER_ID spacing|padding TOKEN_ID|-|token create SCOPE_ID NAME KIND VALUE|token alias SCOPE_ID NAME KIND TOKEN_ID|layer image SCREEN_ID PARENT_ID ASSET_ID NAME|component create SCOPE_ID NAME|component list SCOPE_ID|component instantiate SCREEN_ID PARENT_ID DEFINITION_ID|component promote DEFINITION_ID ANCESTOR_SCOPE_ID> [--state TOKEN]"
 
     static func takeOption(_ name: String, from args: inout [String]) -> String? {
         guard let index = args.firstIndex(of: name), args.indices.contains(index + 1) else { return nil }
@@ -307,6 +317,7 @@ do {
         else { category = "storage"; code = 7 }
     case ManagedGitError.dirtyWorktree, ManagedGitError.changedDuringTransition: category = "conflict"; code = 3
     case is ManagedGitError: category = "git"; code = 7
+    case is MergePublicationError: category = "transitionPending"; code = 7
     case IndexError.stale: category = "staleIndex"; code = 8
     case IndexError.unverifiableSource: category = "staleIndex"; code = 8
     case is IndexError: category = "index"; code = 7

@@ -2,7 +2,7 @@
 
 ## Context
 
-`hamii git merge check` は一時 worktree で Git merge、Canonical semantic validation、一時 Index rebuild を行い、source worktree を変更しない。Product Contract は、検証済み candidate と同じ CanonicalSnapshot に由来する Index generation だけを利用可能な Project として publish することを要求する。Git の ref・worktree 更新、Canonical files、Repository 外の Index、client token は単一の filesystem transaction ではない。現行 `WorktreeCoordinator` は lock と pending gate を持つが、merge publication の crash ordering は未検証である。
+`hamii git merge check` は一時 worktree で Git merge、Canonical semantic validation、一時 Index rebuild を行い、source worktree を変更しない。`ValidatedMergePublisher` は candidate commit を固定し、source ref CAS、Canonical verification、full Index rebuild、gate release を orchestration する。Product Contract は、検証済み candidate と同じ CanonicalSnapshot に由来する Index だけを利用可能な Project として publish することを要求する。Git の ref・worktree 更新、Canonical files、Repository 外の Index、client token は単一の filesystem transaction ではない。
 
 ## Decision to Make
 
@@ -28,7 +28,7 @@
 
 ## Current Hypothesis
 
-**Tentative implementation detail:** `IndexGenerationID` の保存形式、候補 commit の保持用 ref、Git が停止時に残す lock file の所有者確認方法は production 実装で定める。Index generation の一般的な storage / atomic switch は [Index consistency ADR](../index-consistency/ADR.md) で扱う。
+**Tentative implementation detail:** `IndexGenerationID` の保存形式、Git が停止時に残す lock file の所有者確認方法は production 検証が必要。Candidate commit は `refs/hamii/merge-candidates/<publication-id>` で保持する。Index generation の一般的な storage / atomic switch は [Index consistency ADR](../index-consistency/ADR.md) で扱う。
 
 ## Decision
 
@@ -40,12 +40,13 @@ Pending 中は observe / mutation / query / preview mutation を Ready として
 
 ## Unknowns
 
-Production candidate commit の保持、Index generation の atomic publication、Git subprocess / lock file の安全な所有者確認、candidate cleanup、large-project latency、source と candidate の CanonicalSnapshot identity の結合。停電耐久性は別 ADR。
+Production は candidate retention ref、pending record、source / candidate Canonical JSON identity、別ファイル full SQLite rebuild と rename を持つ。残る検証は Git subprocess / lock file の安全な所有者確認、candidate retention ref の orphan cleanup、明示的な `IndexGenerationID` と一般 Query の接続、large-project latency。停電耐久性は別 ADR。
 
 ## Required Evidence
 
 - [Publication stop matrix](spikes/publication-stop-matrix/SPIKE.md): 実 Git worktree と SQLite Index の in-place fast-forward 試作で、4 つの phase 間 SIGKILL 後に gate・recovery・query・client token を検証した。Git / SQLite 更新処理中の停止と production generation binding、代替方式との比較は未完了。
 - [CAS and internal stops](spikes/cas-and-internal-stops/SPIKE.md): 実 Git ref CAS の transaction hook 内、Git materialization 内、試作用 Canonical verification / SQLite transaction、Index file replace / gate clear の直前・直後を SIGKILL で検証した。Old / candidate / unknown ref の fail-closed 分類と Index 欠損後の candidate 側 recovery を確認した。Production Snapshot / generation / durability は未検証。
+- `ValidatedMergePublicationTests` は production `ValidatedMergePublisher` と実 Git / SQLite を使用し、19 停止地点で別 OS process の writer を SIGKILL する。Reader の lock 競合、pending 中の observe / query / mutation 拒否、old / candidate の recovery、旧 client token 拒否、Index freshness、再 recovery の冪等性を回帰検証する。Git reference-transaction hook、smudge filter、SQLite transaction 内の停止を含む。これは process crash の Evidence であり、power-loss durability や一般の IndexGenerationID protocol の証明ではない。
 - 現行の [semantic merge result](../git-external-write-coordination/spikes/concurrent-worktree-merge/SPIKE.md) と `scripts/smoke-merge-candidate.py` は candidate validation の Evidence。Publication 成功の Evidence ではない。
 
 ## Decision Criteria
