@@ -41,3 +41,18 @@ Phase 1 lock は coherent CanonicalSnapshot の parse、Stable generation、Git 
 Production Query は、検証済みの初回観測から復旧 source を作れる場合に handoff を使用する。比較試験では Query Snapshot 2回 + Recovery Phase 1 Snapshot 1回が Query Snapshot 1回になり、Git oracle 3回が2回、lock 取得6回が4回になった。公開後の retry は process-local proof から既存 fast path を開始し、**別の lock を再取得して** Stable generation と公開 Index descriptor を確認してから同じ lock 下で rows を読む。Candidate build 中の coordinated writer、公開後から retry 前の writer、Index generation 置換を注入した回帰テストは、古い rows の拒否または新世代の slow 再検証に収束した。Missing / stale Bound / obsolete / malformed / corrupt の `ComponentHit` 全フィールドは baseline と一致した。External edit、ExplicitlyUnbound、Git hidden flag、pending gate は handoff 対象外だった。
 
 別 OS writer が5000 Component の候補初回 slow observation に競合した3標本の待機時間は p50 **1632.31 ms**、p95 **1694.47 ms**。Handoff は一回の recovered Query の重複観測を減らすが、残る一回の Snapshot parse による連続 lock 時間は短縮しない。`Max measured lock` は test hook 間の時間であり、lock 解放の数命令分を含まない。値は local debug fixture の mechanism comparison に限り、Product SLA ではない。
+
+## Canonical observation stage profile
+
+`HAMII_CANONICAL_OBSERVATION_PROFILE_RESULT=<path> swift test --filter IndexQuerySessionTests/testMeasuredCanonicalObservationStages` で、1 / 1000 / 5000 Component と mixed semantic fixture を各5回計測した。同じ arm64 macOS 27.0 / Swift 6.4 debug 環境で、missing Index の `IndexRecoveryService.recoverOnce()` を使用。Fixture 作成は計測外、`Total recovery` は Phase 2 と別 SQLite candidate build を含み、Query 開始と再試行は含まない。各セルは **p50 / p95 ms**、p95 は5標本の最大値であり Product SLA ではない。計測フックは operation 完了時に単調時計を読む。`Phase 1` と `Snapshot` は内側の stage を包含するため、列を合算しない。
+
+| Fixture | Phase 1 | Snapshot | Canonical path 列挙・symlink 確認 | Entity folder 列挙 | Entity bytes 読込 | Entity decode | Identity bytes 再読込 | Git oracle | Total recovery |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 1 | 364.57 / 377.34 | 2.47 / 2.92 | 0.65 / 0.86 | 0.44 / 0.50 | 0.11 / 0.14 | 0.09 / 0.10 | 0.27 / 0.35 | 361.23 / 373.00 | 726.03 / 752.17 |
+| 1000 | 619.65 / 633.60 | 280.68 / 289.70 | 140.84 / 150.69 | 49.65 / 50.88 | 24.24 / 26.20 | 17.88 / 18.82 | 30.03 / 32.08 | 340.84 / 347.66 | 988.66 / 1000.02 |
+| 5000 | 1650.05 / 1685.43 | 1287.71 / 1321.87 | 639.02 / 653.22 | 166.09 / 171.96 | 134.81 / 140.64 | 90.16 / 90.86 | 160.35 / 189.58 | 362.99 / 371.74 | 2083.58 / 2119.78 |
+| Mixed | 333.14 / 343.50 | 4.86 / 4.92 | 1.93 / 1.96 | 0.48 / 0.50 | 0.56 / 0.57 | 0.41 / 0.42 | 0.73 / 0.73 | 327.74 / 337.02 | 663.19 / 688.66 |
+
+5000 Component では path 列挙・symlink 確認の p50 が **639.02 ms**、Snapshot 全体の約半分だった。Git oracle は **362.99 ms**。Entity decode の **90.16 ms** と Document validation の **36.44 ms** は主因ではない。Entity decode 入力は **3,476,771 bytes**、identity 用の再読込は **3,477,459 bytes**。後者は manifest と Agent profiles も含む。二重読込の事実は確認したが、現条件では metadata/path 観測の費用がさらに大きい。次の最適化方式はこの計測だけで決めない。Git oracle、CanonicalSnapshot identity、symlink rejection、writer lock、fail-closed 判定は維持する。
+
+`testCanonicalObservationProfilingPreservesSnapshotAndQueryResults` はフック ON/OFF で Snapshot identity、Document、Stable generation、validation diagnostics、Git revision、recovery eligibility、`ComponentHit` 全フィールドが一致することと、Canonical manifest が変化しないことを確認した。`HAMII_CANONICAL_OBSERVATION_WRITER_TIMELINE_RESULT=<path> swift test --filter IndexQuerySessionTests/testMeasuredCanonicalObservationWriterTimeline` は5000 Component の Phase 1 中に別 OS process の writer lock probe を投入した。reader lock 取得を基点に、writer lock attempt **+70 ms**、component folder 列挙完了 **+256 ms**、entity bytes 読込完了 **+513 ms**、Canonical path/symlink 確認完了 **+1171 ms**、identity bytes 読込完了 **+1330 ms**、Snapshot 完了 **+1344 ms**、Git oracle 完了 **+1721 ms**、writer lock 取得 **+1722 ms**。writer 待機は **1651.62 ms**。これは単一の lock 競合試行であり writer latency の分布や power-loss durability を示さない。フックは lock を解放せず、production の観測・判定経路を変更しない。

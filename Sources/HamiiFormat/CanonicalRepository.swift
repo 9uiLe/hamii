@@ -125,14 +125,23 @@ public final class CanonicalRepository: ProjectRepository {
     /// deliberately never bootstraps or reconciles the generation record.
     package func withStableSnapshotForDerivedRecovery<T>(
         onLockAcquired: (() throws -> Void)? = nil,
+        onObservation: ((CanonicalObservationMeasurement) -> Void)? = nil,
         _ operation: (CanonicalSnapshot, StableCanonicalGeneration) throws -> T
     ) throws -> T {
         try coordinator.withExclusive {
             try onLockAcquired?()
-            try transaction.recoverIfNeeded()
-            try coordinator.requireReady()
-            let stable = try generations.readStable()
-            let snapshot = try snapshotDuringManagedGitTransition()
+            try measureCanonical(.transactionRecovery, recorder: onObservation) {
+                try transaction.recoverIfNeeded()
+            }
+            try measureCanonical(.readyGate, recorder: onObservation) {
+                try coordinator.requireReady()
+            }
+            let stable = try measureCanonical(.stableGenerationRead, recorder: onObservation) {
+                try generations.readStable()
+            }
+            let snapshot = try measureCanonical(.snapshotAcquisition, recorder: onObservation) {
+                try snapshotDuringManagedGitTransition(onObservation: onObservation)
+            }
             guard stable.snapshotIdentity == snapshot.identity else {
                 throw CanonicalGenerationError.unknownState
             }
@@ -208,8 +217,9 @@ public final class CanonicalRepository: ProjectRepository {
         }
     }
 
-    private func loadUnlocked(validate: Bool, validationHook: (() throws -> Void)? = nil) throws -> Document {
-        let manifest = try readManifest()
+    private func loadUnlocked(validate: Bool, validationHook: (() throws -> Void)? = nil,
+                              onObservation: CanonicalObservationRecorder? = nil) throws -> Document {
+        let manifest = try measureCanonical(.manifestRead, recorder: onObservation) { try readManifest() }
         guard manifest.formatVersion == 1, manifest.versions.document == 1, manifest.versions.authoringHarness == 1 else {
             throw CanonicalError.unsupportedFormat(manifest.formatVersion)
         }
@@ -220,19 +230,19 @@ public final class CanonicalRepository: ProjectRepository {
         document.authoringHarness = manifest.authoringHarness
         document.capabilityDeclarations = manifest.capabilityDeclarations
         document.tokenTemplate = manifest.tokenTemplate
-        document.pages = try readAll("pages")
-        document.screens = try readAll("screens")
-        document.scopes = try readAll("scopes")
-        document.components = try readAll("components")
-        document.tokens = try readAll("tokens")
-        document.assets = try readAll("assets")
-        document.interactions = try readAll("interactions")
-        document.motions = try readAll("motions")
-        document.fixtures = try readAll("fixtures")
-        document.targets = try readAll("targets")
+        document.pages = try readAll("pages", onObservation: onObservation)
+        document.screens = try readAll("screens", onObservation: onObservation)
+        document.scopes = try readAll("scopes", onObservation: onObservation)
+        document.components = try readAll("components", onObservation: onObservation)
+        document.tokens = try readAll("tokens", onObservation: onObservation)
+        document.assets = try readAll("assets", onObservation: onObservation)
+        document.interactions = try readAll("interactions", onObservation: onObservation)
+        document.motions = try readAll("motions", onObservation: onObservation)
+        document.fixtures = try readAll("fixtures", onObservation: onObservation)
+        document.targets = try readAll("targets", onObservation: onObservation)
         if validate {
             try validationHook?()
-            let diagnostics = allDiagnostics(document)
+            let diagnostics = allDiagnostics(document, onObservation: onObservation)
             if diagnostics.contains(where: { $0.severity == .error }) { throw CanonicalError.invalid(diagnostics) }
         }
         return document
@@ -271,16 +281,33 @@ public final class CanonicalRepository: ProjectRepository {
     // The caller holds WorktreeCoordinator across the entire observation.
     // A revision cannot make multiple files coherent; the coordinated read
     // provides the snapshot boundary for hamii-managed writers.
-    func snapshotDuringManagedGitTransition(validationHook: (() throws -> Void)? = nil) throws -> CanonicalSnapshot {
-        try transaction.recoverIfNeeded()
-        let document = try loadUnlocked(validate: true, validationHook: validationHook)
-        _ = try AgentProfilesRepository(root: root).profiles()
-        var files: [String: Data] = [:]
-        for path in try canonicalJSONPaths() {
-            let relative = path.path.replacingOccurrences(of: root.path + "/", with: "")
-            files[relative] = try Data(contentsOf: path)
+    func snapshotDuringManagedGitTransition(validationHook: (() throws -> Void)? = nil,
+                                            onObservation: CanonicalObservationRecorder? = nil) throws -> CanonicalSnapshot {
+        try measureCanonical(.transactionRecovery, recorder: onObservation) { try transaction.recoverIfNeeded() }
+        let document = try loadUnlocked(validate: true, validationHook: validationHook,
+                                        onObservation: onObservation)
+        _ = try measureCanonical(.agentProfilesReadValidation, recorder: onObservation) {
+            try AgentProfilesRepository(root: root).profiles()
         }
-        return CanonicalSnapshot(document: document, identity: hashIdentity(files))
+        var files: [String: Data] = [:]
+        let paths = try measureCanonical(.canonicalPathEnumerationAndSymlinkCheck, recorder: onObservation) {
+            try canonicalJSONPaths()
+        }
+        let readStart = onObservation == nil ? 0 : ProcessInfo.processInfo.systemUptime
+        var bytesRead = 0
+        for path in paths {
+            let relative = path.path.replacingOccurrences(of: root.path + "/", with: "")
+            let data = try Data(contentsOf: path)
+            files[relative] = data
+            if onObservation != nil { bytesRead += data.count }
+        }
+        if let onObservation {
+            onObservation(CanonicalObservationMeasurement(stage: .identityBytesRead,
+                milliseconds: (ProcessInfo.processInfo.systemUptime - readStart) * 1_000,
+                bytes: bytesRead))
+        }
+        let identity = measureCanonical(.identityHash, recorder: onObservation) { hashIdentity(files) }
+        return CanonicalSnapshot(document: document, identity: identity)
     }
 
     private func writeDocument(_ document: Document, expected: Document?) throws {
@@ -342,13 +369,21 @@ public final class CanonicalRepository: ProjectRepository {
         return files
     }
 
-    private func allDiagnostics(_ document: Document) -> [Diagnostic] {
-        var diagnostics = DocumentValidator.validate(document)
+    private func allDiagnostics(_ document: Document,
+                                onObservation: CanonicalObservationRecorder? = nil) -> [Diagnostic] {
+        var diagnostics = measureCanonical(.documentValidation, recorder: onObservation) {
+            DocumentValidator.validate(document)
+        }
+        let start = onObservation == nil ? 0 : ProcessInfo.processInfo.systemUptime
         let blobs = CanonicalBlobStore(root: root)
         for asset in document.assets {
             if case .repository = asset.source, !blobs.verify(asset) {
                 diagnostics.append(Diagnostic("asset.integrity", "Repository asset blob is missing or has a different SHA-256", entityID: asset.id))
             }
+        }
+        if let onObservation {
+            onObservation(CanonicalObservationMeasurement(stage: .assetIntegrityValidation,
+                milliseconds: (ProcessInfo.processInfo.systemUptime - start) * 1_000))
         }
         return diagnostics
     }
@@ -403,19 +438,49 @@ public final class CanonicalRepository: ProjectRepository {
         return try read(url)
     }
 
-    private func readAll<T: Decodable & Identifiable>(_ folder: String) throws -> [T] where T.ID == EntityID {
+    private func readAll<T: Decodable & Identifiable>(_ folder: String,
+        onObservation: CanonicalObservationRecorder? = nil) throws -> [T] where T.ID == EntityID {
         let directory = root.appendingPathComponent(folder, isDirectory: true)
-        guard manager.fileExists(atPath: directory.path) else { return [] }
-        return try manager.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
+        let enumerationStart = onObservation == nil ? 0 : ProcessInfo.processInfo.systemUptime
+        let paths: [URL]
+        if manager.fileExists(atPath: directory.path) {
+            paths = try manager.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
             .filter { $0.pathExtension == "json" }
             .sorted { $0.lastPathComponent < $1.lastPathComponent }
-            .map { url in
-                let value: T = try read(url)
-                guard url.deletingPathExtension().lastPathComponent == value.id.rawValue else {
-                    throw CanonicalError.filenameMismatch(url.lastPathComponent)
-                }
-                return value
+        } else {
+            paths = []
+        }
+        if let onObservation {
+            onObservation(CanonicalObservationMeasurement(stage: .directoryEnumeration, detail: folder,
+                milliseconds: (ProcessInfo.processInfo.systemUptime - enumerationStart) * 1_000))
+        }
+        var readMilliseconds = 0.0
+        var decodeMilliseconds = 0.0
+        var bytesRead = 0
+        let values: [T] = try paths.map { url in
+            let readStart = onObservation == nil ? 0 : ProcessInfo.processInfo.systemUptime
+            let data = try Data(contentsOf: url)
+            if onObservation != nil {
+                readMilliseconds += (ProcessInfo.processInfo.systemUptime - readStart) * 1_000
+                bytesRead += data.count
             }
+            let decodeStart = onObservation == nil ? 0 : ProcessInfo.processInfo.systemUptime
+            let value = try JSONDecoder().decode(T.self, from: data)
+            if onObservation != nil {
+                decodeMilliseconds += (ProcessInfo.processInfo.systemUptime - decodeStart) * 1_000
+            }
+            guard url.deletingPathExtension().lastPathComponent == value.id.rawValue else {
+                throw CanonicalError.filenameMismatch(url.lastPathComponent)
+            }
+            return value
+        }
+        if let onObservation {
+            onObservation(CanonicalObservationMeasurement(stage: .entityBytesRead, detail: folder,
+                milliseconds: readMilliseconds, bytes: bytesRead))
+            onObservation(CanonicalObservationMeasurement(stage: .entityDecode, detail: folder,
+                milliseconds: decodeMilliseconds))
+        }
+        return values
     }
 
     private func encode<T: Encodable>(_ value: T) throws -> Data {

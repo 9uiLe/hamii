@@ -17,6 +17,19 @@ enum IndexRecoveryStep: Hashable {
     case phase2Complete
 }
 
+enum RecoveryObservationStage: String, Codable {
+    case phase1LockWait
+    case phase1LockHeld
+    case gitOracle
+    case publishedIndexProbe
+    case eligibilityClassification
+}
+
+struct RecoveryObservationMeasurement: Codable {
+    let stage: RecoveryObservationStage
+    let milliseconds: Double
+}
+
 enum RecoveryEligibility: Equatable {
     case alreadyCurrent
     case autoRecoverable(String)
@@ -79,14 +92,20 @@ final class IndexRecoveryService {
     private let calculator: any CanonicalRevisionCalculating
     private let probe = PublishedIndexProbe()
     private let hook: ((IndexRecoveryStep) throws -> Void)?
+    private let onCanonicalObservation: ((CanonicalObservationMeasurement) -> Void)?
+    private let onRecoveryObservation: ((RecoveryObservationMeasurement) -> Void)?
 
     init(projectRoot: URL, revisionCalculator: any CanonicalRevisionCalculating,
-         storageRoot: URL?, hook: ((IndexRecoveryStep) throws -> Void)? = nil) {
+         storageRoot: URL?, hook: ((IndexRecoveryStep) throws -> Void)? = nil,
+         onCanonicalObservation: ((CanonicalObservationMeasurement) -> Void)? = nil,
+         onRecoveryObservation: ((RecoveryObservationMeasurement) -> Void)? = nil) {
         root = projectRoot.standardizedFileURL
         self.storageRoot = storageRoot
         repository = CanonicalRepository(root: root)
         calculator = revisionCalculator
         self.hook = hook
+        self.onCanonicalObservation = onCanonicalObservation
+        self.onRecoveryObservation = onRecoveryObservation
     }
 
     func recoverOnce() throws -> IndexRecoveryOutcome {
@@ -118,9 +137,25 @@ final class IndexRecoveryService {
     }
 
     private func captureEligibleSource() throws -> RecoverySourceSeed? {
-        try repository.withStableSnapshotForDerivedRecovery(
-            onLockAcquired: { try self.hook?(.phase1LockAcquired) }
+        let attemptStarted = onRecoveryObservation == nil ? 0 : ProcessInfo.processInfo.systemUptime
+        var acquiredAt = 0.0
+        return try repository.withStableSnapshotForDerivedRecovery(
+            onLockAcquired: {
+                if let onRecoveryObservation = self.onRecoveryObservation {
+                    acquiredAt = ProcessInfo.processInfo.systemUptime
+                    onRecoveryObservation(RecoveryObservationMeasurement(stage: .phase1LockWait,
+                        milliseconds: (acquiredAt - attemptStarted) * 1_000))
+                }
+                try self.hook?(.phase1LockAcquired)
+            },
+            onObservation: onCanonicalObservation
         ) { snapshot, stable in
+            defer {
+                if let onRecoveryObservation = self.onRecoveryObservation {
+                    onRecoveryObservation(RecoveryObservationMeasurement(stage: .phase1LockHeld,
+                        milliseconds: (ProcessInfo.processInfo.systemUptime - acquiredAt) * 1_000))
+                }
+            }
             if let seed = try seedFromObserved(snapshot: snapshot, stable: stable) {
                 try hook?(.phase1Complete)
                 return seed
@@ -134,14 +169,28 @@ final class IndexRecoveryService {
     func seedFromObserved(snapshot: CanonicalSnapshot,
                           stable: StableCanonicalGeneration) throws -> RecoverySourceSeed? {
         guard stable.snapshotIdentity == snapshot.identity else { return nil }
-        let revision = try calculator.current(at: root)
-        let published = try probe.inspect(at: destination(for: snapshot.document.id))
-        guard case .autoRecoverable = eligibility(published, snapshot: snapshot,
-                                                  stable: stable, revision: revision) else {
+        let revision = try measured(.gitOracle) { try calculator.current(at: root) }
+        let published = try measured(.publishedIndexProbe) {
+            try probe.inspect(at: destination(for: snapshot.document.id))
+        }
+        let classification = measured(.eligibilityClassification) {
+            eligibility(published, snapshot: snapshot, stable: stable, revision: revision)
+        }
+        guard case .autoRecoverable = classification else {
             return nil
         }
         return RecoverySourceSeed(snapshot: snapshot, stable: stable, revision: revision,
                                   expected: published.state)
+    }
+
+    private func measured<T>(_ stage: RecoveryObservationStage, _ operation: () throws -> T) rethrows -> T {
+        guard let onRecoveryObservation else { return try operation() }
+        let started = ProcessInfo.processInfo.systemUptime
+        defer {
+            onRecoveryObservation(RecoveryObservationMeasurement(stage: stage,
+                milliseconds: (ProcessInfo.processInfo.systemUptime - started) * 1_000))
+        }
+        return try operation()
     }
 
     func eligibility(_ published: PublishedIndexObservation, snapshot: CanonicalSnapshot,

@@ -58,6 +58,16 @@ final class IndexQuerySessionTests: XCTestCase {
         let lockAcquisitionCount: Int
     }
 
+    private struct CanonicalObservationProfileSample: Codable {
+        let fixture: String
+        let iteration: Int
+        let phase1Milliseconds: Double
+        let totalRecoveryMilliseconds: Double
+        let canonical: [CanonicalObservationMeasurement]
+        let recovery: [RecoveryObservationMeasurement]
+        let resultCount: Int
+    }
+
     private func fixture(componentCount: Int = 1) throws -> Fixture {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent("hamii-query-session-\(UUID().uuidString)")
         let root = directory.appendingPathComponent("Project")
@@ -749,6 +759,116 @@ final class IndexQuerySessionTests: XCTestCase {
         try encoder.encode(samples).write(to: URL(fileURLWithPath: output), options: .atomic)
     }
 
+    func testCanonicalObservationProfilingPreservesSnapshotAndQueryResults() throws {
+        let fixture = try fixture()
+        defer { try? FileManager.default.removeItem(at: fixture.directory) }
+        let repository = CanonicalRepository(root: fixture.root)
+        let canonicalBefore = try Data(contentsOf: fixture.root.appendingPathComponent("hamii.json"))
+        let diagnosticsBefore = try repository.diagnostics()
+        let revisionBefore = try GitCanonicalRevisionCalculator().current(at: fixture.root)
+        let ordinary = try repository.withStableSnapshotForDerivedRecovery { snapshot, stable in
+            (snapshot, stable)
+        }
+        var measurements: [CanonicalObservationMeasurement] = []
+        let profiled = try repository.withStableSnapshotForDerivedRecovery(
+            onObservation: { measurements.append($0) }) { snapshot, stable in
+                (snapshot, stable)
+            }
+        XCTAssertEqual(profiled.0.identity, ordinary.0.identity)
+        XCTAssertEqual(profiled.0.document, ordinary.0.document)
+        XCTAssertEqual(profiled.1, ordinary.1)
+        XCTAssertEqual(try repository.diagnostics(), diagnosticsBefore)
+        XCTAssertEqual(try GitCanonicalRevisionCalculator().current(at: fixture.root), revisionBefore)
+        XCTAssertEqual(try Data(contentsOf: fixture.root.appendingPathComponent("hamii.json")),
+                       canonicalBefore)
+        let stages = Set(measurements.map(\.stage))
+        let requiredStages: [CanonicalObservationStage] = [
+            .transactionRecovery, .readyGate, .stableGenerationRead, .snapshotAcquisition,
+            .manifestRead, .directoryEnumeration, .entityBytesRead, .entityDecode,
+            .documentValidation, .assetIntegrityValidation, .agentProfilesReadValidation,
+            .canonicalPathEnumerationAndSymlinkCheck, .identityBytesRead, .identityHash
+        ]
+        for stage in requiredStages {
+            XCTAssertTrue(stages.contains(stage), "Missing profile stage \(stage)")
+        }
+        XCTAssertEqual(measurements.filter { $0.stage == .directoryEnumeration }.count, 10)
+        XCTAssertEqual(measurements.filter { $0.stage == .entityBytesRead }.count, 10)
+        XCTAssertEqual(measurements.filter { $0.stage == .entityDecode }.count, 10)
+        XCTAssertGreaterThan(measurements.first { $0.stage == .identityBytesRead }?.bytes ?? 0, 0)
+        let revision = try GitCanonicalRevisionCalculator().current(at: fixture.root)
+        let sourceIndex = try index(fixture)
+        let recovery = IndexRecoveryService(projectRoot: fixture.root,
+            revisionCalculator: GitCanonicalRevisionCalculator(), storageRoot: fixture.indexRoot)
+        let eligibilityBefore = recovery.eligibility(
+            try PublishedIndexProbe().inspect(at: sourceIndex.url), snapshot: ordinary.0,
+            stable: ordinary.1, revision: revision)
+        let eligibilityAfter = recovery.eligibility(
+            try PublishedIndexProbe().inspect(at: sourceIndex.url), snapshot: profiled.0,
+            stable: profiled.1, revision: revision)
+        XCTAssertEqual(eligibilityBefore, eligibilityAfter)
+        try FileManager.default.removeItem(at: sourceIndex.url)
+        guard case .published = try recovery.recoverOnce() else { return XCTFail("Expected plain recovery") }
+        let plainHits = try query(session(fixture), fixture).hits
+        try FileManager.default.removeItem(at: sourceIndex.url)
+        let profiledRecovery = IndexRecoveryService(projectRoot: fixture.root,
+            revisionCalculator: GitCanonicalRevisionCalculator(), storageRoot: fixture.indexRoot,
+            onCanonicalObservation: { measurements.append($0) })
+        guard case .published = try profiledRecovery.recoverOnce() else {
+            return XCTFail("Expected profiled recovery")
+        }
+        XCTAssertEqual(try query(session(fixture), fixture).hits, plainHits)
+        XCTAssertEqual(plainHits, try oracle(fixture, matching: ""))
+    }
+
+    func testMeasuredCanonicalObservationStages() throws {
+        guard let output = ProcessInfo.processInfo.environment["HAMII_CANONICAL_OBSERVATION_PROFILE_RESULT"] else {
+            throw XCTSkip("Set HAMII_CANONICAL_OBSERVATION_PROFILE_RESULT for stage profiling")
+        }
+        var samples: [CanonicalObservationProfileSample] = []
+        for kind in ["1", "1000", "5000", "mixed"] {
+            let count = kind == "mixed" ? 20 : Int(kind)!
+            let fixture = try fixture(componentCount: count)
+            defer { try? FileManager.default.removeItem(at: fixture.directory) }
+            if kind == "mixed" {
+                let repository = CanonicalRepository(root: fixture.root)
+                let old = try repository.load()
+                var next = old
+                let commerce = EntityID("scope_commerce")
+                next.scopes.append(ArchitectureScope(id: commerce, name: "Commerce", parentID: fixture.scopeID))
+                next.screens = [Screen(id: EntityID("screen_mixed"), name: "Mixed", scopeID: commerce,
+                    root: Layer(id: EntityID("screen_mixed_root"), kind: .stack, name: "Root"))]
+                next.revision += 1
+                try repository.save(next, expected: old)
+            }
+            let published = try index(fixture).url
+            for iteration in 0..<5 {
+                try FileManager.default.removeItem(at: published)
+                var canonical: [CanonicalObservationMeasurement] = []
+                var recovery: [RecoveryObservationMeasurement] = []
+                let service = IndexRecoveryService(projectRoot: fixture.root,
+                    revisionCalculator: GitCanonicalRevisionCalculator(), storageRoot: fixture.indexRoot,
+                    onCanonicalObservation: { canonical.append($0) },
+                    onRecoveryObservation: { recovery.append($0) })
+                let start = ProcessInfo.processInfo.systemUptime
+                guard case .published = try service.recoverOnce() else {
+                    return XCTFail("Expected profiled publication")
+                }
+                let elapsed = (ProcessInfo.processInfo.systemUptime - start) * 1_000
+                let hits = try query(session(fixture), fixture).hits
+                XCTAssertEqual(hits.count, count)
+                let phase1 = recovery.filter { $0.stage == .phase1LockWait || $0.stage == .phase1LockHeld }
+                    .reduce(0) { $0 + $1.milliseconds }
+                samples.append(CanonicalObservationProfileSample(fixture: kind, iteration: iteration,
+                    phase1Milliseconds: phase1, totalRecoveryMilliseconds: elapsed,
+                    canonical: canonical, recovery: recovery,
+                    resultCount: hits.count))
+            }
+        }
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        try encoder.encode(samples).write(to: URL(fileURLWithPath: output), options: .atomic)
+    }
+
     func testBoundColdWarmSaveAndRebuildPaths() throws {
         let fixture = try fixture()
         defer { try? FileManager.default.removeItem(at: fixture.directory) }
@@ -1307,12 +1427,73 @@ final class IndexQuerySessionTests: XCTestCase {
               let result = env["HAMII_LOCK_PROBE_RESULT"] else {
             throw XCTSkip("Recovery lock probe worker only")
         }
+        let attemptedAt = ProcessInfo.processInfo.systemUptime
         try Data().write(to: URL(fileURLWithPath: attempt))
         let started = ProcessInfo.processInfo.systemUptime
-        try WorktreeCoordinator(root: URL(fileURLWithPath: project)).withExclusive {}
-        let waited = (ProcessInfo.processInfo.systemUptime - started) * 1_000
-        try JSONEncoder().encode(["writerLockWaitMS": waited])
+        var acquiredAt = started
+        try WorktreeCoordinator(root: URL(fileURLWithPath: project)).withExclusive {
+            acquiredAt = ProcessInfo.processInfo.systemUptime
+        }
+        let completedAt = ProcessInfo.processInfo.systemUptime
+        let waited = (acquiredAt - started) * 1_000
+        try JSONEncoder().encode(["writerLockWaitMS": waited, "attemptedAt": attemptedAt,
+                                  "acquiredAt": acquiredAt, "completedAt": completedAt])
             .write(to: URL(fileURLWithPath: result), options: .atomic)
+    }
+
+    func testMeasuredCanonicalObservationWriterTimeline() throws {
+        guard let output = ProcessInfo.processInfo.environment["HAMII_CANONICAL_OBSERVATION_WRITER_TIMELINE_RESULT"] else {
+            throw XCTSkip("Set HAMII_CANONICAL_OBSERVATION_WRITER_TIMELINE_RESULT for timeline")
+        }
+        let fixture = try fixture(componentCount: 5_000)
+        defer { try? FileManager.default.removeItem(at: fixture.directory) }
+        try FileManager.default.removeItem(at: index(fixture).url)
+        let attempt = fixture.directory.appendingPathComponent("profile-writer-attempt")
+        let result = fixture.directory.appendingPathComponent("profile-writer-result.json")
+        var worker: Process?
+        defer {
+            if let worker, worker.isRunning {
+                kill(worker.processIdentifier, SIGKILL)
+                worker.waitUntilExit()
+            }
+        }
+        var timeline: [String: Double] = [:]
+        let service = IndexRecoveryService(projectRoot: fixture.root,
+            revisionCalculator: GitCanonicalRevisionCalculator(), storageRoot: fixture.indexRoot,
+            hook: { step in
+                timeline["recovery.\(step)"] = ProcessInfo.processInfo.systemUptime
+                if step == .phase1LockAcquired {
+                    worker = try self.child("testRecoveryLockProbeWorker", environment: [
+                        "HAMII_LOCK_PROBE_PROJECT": fixture.root.path,
+                        "HAMII_LOCK_PROBE_ATTEMPT": attempt.path,
+                        "HAMII_LOCK_PROBE_RESULT": result.path
+                    ])
+                    try self.awaitFile(attempt, process: worker!)
+                }
+            }, onCanonicalObservation: { measurement in
+                timeline["canonical.\(measurement.stage.rawValue).\(measurement.detail ?? "all")"] =
+                    ProcessInfo.processInfo.systemUptime
+            }, onRecoveryObservation: { measurement in
+                timeline["phase1.\(measurement.stage.rawValue)"] = ProcessInfo.processInfo.systemUptime
+            })
+        guard case .published = try service.recoverOnce() else { return XCTFail("Expected publication") }
+        let child = try XCTUnwrap(worker)
+        try awaitFile(result, process: child)
+        child.waitUntilExit()
+        XCTAssertEqual(child.terminationStatus, 0)
+        let childTimes = try JSONDecoder().decode([String: Double].self, from: Data(contentsOf: result))
+        timeline.merge(childTimes) { _, new in new }
+        XCTAssertLessThan(try XCTUnwrap(timeline["recovery.phase1LockAcquired"]),
+                          try XCTUnwrap(timeline["attemptedAt"]))
+        XCTAssertLessThan(try XCTUnwrap(timeline["attemptedAt"]),
+                          try XCTUnwrap(timeline["canonical.snapshotAcquisition.all"]))
+        XCTAssertLessThan(try XCTUnwrap(timeline["phase1.phase1LockHeld"]),
+                          try XCTUnwrap(timeline["acquiredAt"]))
+        XCTAssertLessThanOrEqual(try XCTUnwrap(timeline["acquiredAt"]),
+                                 try XCTUnwrap(timeline["completedAt"]))
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        try encoder.encode(timeline).write(to: URL(fileURLWithPath: output), options: .atomic)
     }
 
     func testProductionCandidateBuildLeavesCoordinatedWriterAvailable() throws {
