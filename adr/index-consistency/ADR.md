@@ -55,11 +55,12 @@ Stale / missing Index を自動で再構築するか、manual full rebuild を�
 
 ## Unknowns
 
-残る内容は implementation / validation work である。Production Query session、witness scope、atomic rename 後の stale SQLite handle 回帰、実 Query の cold / warm cost、multiple worktree isolation は実装と検証が進んだ。Reader-reader / reader-writer contention latency、GUI lifetime と複数 Document の運用境界は未検証。CanonicalRevision の具体的計算 algorithm を architecture requirement として固定しない。非協調 writer の許可境界は External Git Write ADR、power-cut durability は Canonical Power Loss ADR が所有する。
+残る内容は implementation validation と CI acceptance である。Production Query session、witness scope、atomic rename 後の stale SQLite handle 回帰、実 Query の cold / warm cost、複数 project/session の隔離、close / reopen、reader-reader / reader-writer contention を検証した。現 Editor はまだ Index-backed Component 一覧を持たず、`IndexQuerySession` を consumer として使わない。Editor の将来の Index-backed search は project-open lifetime に session を保持する。CanonicalRevision の具体的計算 algorithm を architecture requirement として固定しない。非協調 writer の許可境界は External Git Write ADR、power-cut durability は Canonical Power Loss ADR が所有する。
 
 ## Required Evidence
 
-- [Production Query session performance](artifacts/production-query-session-performance.md): 同一 process の Bound warm Query は 1/1000/5000 Components で p95 2.038 / 2.766 / 5.371 ms、cold slow は p95 385.189 / 643.113 / 1682.507 ms。Starter の one-shot CLI p95 は 378.192 ms。条件の異なる値を混同しない。Production regression は stale SQLite handle、別 OS process save/rebuild race、metadata rejection、Unbound slow-only を検査する。
+- [Production Query session performance](../../docs/index-query-performance.md): 同一 process の Bound warm Query は 1/1000/5000 Components で p95 2.038 / 2.766 / 5.371 ms、cold slow は p95 385.189 / 643.113 / 1682.507 ms。Starter の one-shot CLI p95 は 378.192 ms。条件の異なる値を混同しない。Production regression は stale SQLite handle、別 OS process save/rebuild race、metadata rejection、Unbound slow-only を検査する。
+- [Production contention and lifecycle](../../docs/index-query-performance.md): 別 OS process の 1/2/4 reader Query と lock wait、writer が reader の後ろで待つ交錯と reader が writer の後ろで待つ交錯、人工 5 ms hold を伴う継続 reader 負荷下の writer 待ちを測った。有限の測定では starvation を観測しなかった。Project close/reopen は新 session の cold verification を要求し、2つの project の witness は交差しない。
 - [Explicitly Unbound Index の Slow Query](spikes/explicit-unbound-query/SPIKE.md): 既存 CLI contract は外部編集後の stale → 明示的 rebuild → Git-oracle slow Query を許可する。Bound generation を slow Query に一律要求した未コミット候補はこの contract を壊した。意図的 unbound と metadata 欠損・破損の区別が必要。
 - [Fast Query Read Boundary](spikes/fast-query-read-boundary/SPIKE.md): test-only candidate は実 SQLite `ComponentHit` rows と production oracle の全 field を照合した。別 OS process の save / rebuild は verdict 後の row read 完了まで lock を取得できず、旧 witness はその後に失効した。Missing / corrupt / mismatched metadata は rows を返さない。Production Query は変更していない。
 - [Startup Current Witness](spikes/startup-current-witness/SPIKE.md): 一つの coordinated slow observation で Snapshot / Stable generation / Index descriptor / Git oracle を検証した後だけ process-local witness を発行した。Restart、Index rebuild、別 OS process writer、metadata failure と test-only warm cost を確認した。
@@ -74,7 +75,7 @@ Recovery の Evidence は [Index Recovery Strategy ADR](../index-recovery-strate
 
 ## Decision Criteria
 
-P4 Verify `36323844003` と P5 Verify `36325567176` は成功した。Startup positive witness、coordinated writer / Index rebuild の失効、fast verdict から SQLite row read 完了までの同一 lock、missing / corrupt / pending での拒否は、P4 Evidence `8bd8381` と P5 Evidence `067934e` の tested conditions で成立した。明示的 rebuild 後の unbound slow Query contract と一律 Bound 要求の regression は Evidence `b402e35` に記録した。Production `IndexQuerySession` は stale SQLite handle、Bound / ExplicitlyUnbound / Invalid、複数 worktree、cold / warm cost を regression / benchmark で検証した。複数 Document、reader contention と GUI lifetime の評価を終えるまで ADR を削除しない。
+P4 Verify `36323844003` と P5 Verify `36325567176` は成功した。Startup positive witness、coordinated writer / Index rebuild の失効、fast verdict から SQLite row read 完了までの同一 lock、missing / corrupt / pending での拒否は、P4 Evidence `8bd8381` と P5 Evidence `067934e` の tested conditions で成立した。明示的 rebuild 後の unbound slow Query contract と一律 Bound 要求の regression は Evidence `b402e35` に記録した。Production `IndexQuerySession` は stale SQLite handle、Bound / ExplicitlyUnbound / Invalid、複数 worktree、cold / warm cost、close / reopen、reader contention を regression / benchmark で検証した。最終 `scripts/check.sh` と Verify、Current Docs の整合を確認してから ADR 削除を判断する。
 
 ## Status
 

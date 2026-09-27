@@ -26,17 +26,19 @@ public final class IndexQuerySession {
     private let repository: CanonicalRepository
     private let generations: CanonicalGenerationStore
     private let afterFastVerdict: (() -> Void)?
+    private let onReadBoundaryAcquired: ((Double) -> Void)?
     private var witness: VerifiedCurrentWitness?
 
     public convenience init(projectRoot: URL) {
         self.init(projectRoot: projectRoot, revisionCalculator: GitCanonicalRevisionCalculator(),
-                  storageRoot: nil, afterFastVerdict: nil)
+                  storageRoot: nil, afterFastVerdict: nil, onReadBoundaryAcquired: nil)
     }
 
     // A barrier for production-path race regressions. It is never invoked
     // outside the coordinated read boundary.
     init(projectRoot: URL, revisionCalculator: any CanonicalRevisionCalculating,
-         storageRoot: URL? = nil, afterFastVerdict: (() -> Void)?) {
+         storageRoot: URL? = nil, afterFastVerdict: (() -> Void)?,
+         onReadBoundaryAcquired: ((Double) -> Void)? = nil) {
         root = projectRoot.standardizedFileURL
         self.storageRoot = storageRoot
         self.revisionCalculator = revisionCalculator
@@ -44,6 +46,7 @@ public final class IndexQuerySession {
         repository = CanonicalRepository(root: root)
         generations = CanonicalGenerationStore(root: root)
         self.afterFastVerdict = afterFastVerdict
+        self.onReadBoundaryAcquired = onReadBoundaryAcquired
     }
 
     public func components(matching text: String, consumerScopeID: EntityID) throws -> [ComponentHit] {
@@ -54,7 +57,11 @@ public final class IndexQuerySession {
     // implementation detail part of the public automation contract.
     func componentsWithVerification(matching text: String, consumerScopeID: EntityID)
         throws -> (hits: [ComponentHit], path: QueryVerificationPath) {
+        let lockAttempt = onReadBoundaryAcquired.map { _ in ProcessInfo.processInfo.systemUptime }
         let fast = try coordinator.withReadyExclusive { () -> FastResult in
+            if let lockAttempt {
+                onReadBoundaryAcquired?((ProcessInfo.processInfo.systemUptime - lockAttempt) * 1_000)
+            }
             guard let witness else { return .unknown }
             let stable: StableCanonicalGeneration
             do { stable = try generations.readStable() }

@@ -15,6 +15,11 @@ final class IndexQuerySessionTests: XCTestCase {
         var directory: URL { root.deletingLastPathComponent() }
     }
 
+    private struct ContentionSamples: Codable {
+        let queryMilliseconds: [Double]
+        let lockWaitMilliseconds: [Double]
+    }
+
     private func fixture(componentCount: Int = 1) throws -> Fixture {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent("hamii-query-session-\(UUID().uuidString)")
         let root = directory.appendingPathComponent("Project")
@@ -256,10 +261,36 @@ final class IndexQuerySessionTests: XCTestCase {
         let secondSession = session(second)
         XCTAssertEqual(try query(firstSession, first).path, .slowBound)
         XCTAssertEqual(try query(secondSession, second).path, .slowBound)
+        XCTAssertEqual(try query(firstSession, first).path, .fast)
+        XCTAssertEqual(try query(secondSession, second).path, .fast)
+        XCTAssertEqual(try query(firstSession, first).path, .fast)
         try saveComponent(first, as: "Beta")
         XCTAssertThrowsError(try query(firstSession, first))
         XCTAssertEqual(try query(secondSession, second).path, .fast)
         XCTAssertEqual(try query(secondSession, second).hits, try oracle(second, matching: ""))
+        _ = try rebuild(first)
+        XCTAssertEqual(try query(firstSession, first).path, .slowBound)
+        XCTAssertEqual(try query(secondSession, second).path, .fast)
+        XCTAssertEqual(try query(firstSession, first).path, .fast)
+    }
+
+    func testLongLivedSessionIsDiscardedOnCloseAndColdAfterReopen() throws {
+        let fixture = try fixture()
+        defer { try? FileManager.default.removeItem(at: fixture.directory) }
+        var opened: IndexQuerySession? = session(fixture)
+        XCTAssertEqual(try query(XCTUnwrap(opened), fixture).path, .slowBound)
+        XCTAssertEqual(try query(XCTUnwrap(opened), fixture).path, .fast)
+        try saveComponent(fixture, as: "Beta")
+        XCTAssertThrowsError(try query(XCTUnwrap(opened), fixture))
+        _ = try rebuild(fixture)
+        XCTAssertEqual(try query(XCTUnwrap(opened), fixture).path, .slowBound)
+        XCTAssertEqual(try query(XCTUnwrap(opened), fixture).path, .fast)
+        weak let closed = opened
+        opened = nil
+        XCTAssertNil(closed, "Closing a project must not retain its witness")
+        let reopened = session(fixture)
+        XCTAssertEqual(try query(reopened, fixture).path, .slowBound)
+        XCTAssertEqual(try query(reopened, fixture).path, .fast)
     }
 
     func testMeasuredProductionQuerySessionCost() throws {
@@ -310,6 +341,283 @@ final class IndexQuerySessionTests: XCTestCase {
         }
         let data = try JSONSerialization.data(withJSONObject: report, options: [.prettyPrinted, .sortedKeys])
         try data.write(to: URL(fileURLWithPath: output))
+    }
+
+    func testContentionReaderWorker() throws {
+        let env = ProcessInfo.processInfo.environment
+        guard let root = env["HAMII_CONTENTION_ROOT"], let indexRoot = env["HAMII_CONTENTION_INDEX_ROOT"],
+              let documentID = env["HAMII_CONTENTION_DOCUMENT_ID"], let scopeID = env["HAMII_CONTENTION_SCOPE_ID"],
+              let ready = env["HAMII_CONTENTION_READY"], let start = env["HAMII_CONTENTION_START"],
+              let output = env["HAMII_CONTENTION_OUTPUT"], let countText = env["HAMII_CONTENTION_COUNT"],
+              let count = Int(countText) else { throw XCTSkip("Contention worker only") }
+        let fixture = Fixture(root: URL(fileURLWithPath: root), indexRoot: URL(fileURLWithPath: indexRoot),
+                              documentID: EntityID(documentID), scopeID: EntityID(scopeID))
+        var lockWait: [Double] = []
+        let hold = Double(env["HAMII_CONTENTION_HOLD_MS"] ?? "0") ?? 0
+        let reader = IndexQuerySession(projectRoot: fixture.root,
+            revisionCalculator: GitCanonicalRevisionCalculator(), storageRoot: fixture.indexRoot,
+            afterFastVerdict: hold > 0 ? { Thread.sleep(forTimeInterval: hold / 1_000) } : nil,
+            onReadBoundaryAcquired: { lockWait.append($0) })
+        XCTAssertEqual(try query(reader, fixture).path, .slowBound)
+        lockWait.removeAll()
+        try Data().write(to: URL(fileURLWithPath: ready))
+        let deadline = Date().addingTimeInterval(30)
+        while !FileManager.default.fileExists(atPath: start) && Date() < deadline {
+            Thread.sleep(forTimeInterval: 0.005)
+        }
+        XCTAssertTrue(FileManager.default.fileExists(atPath: start))
+        var elapsed: [Double] = []
+        for _ in 0..<count {
+            let began = ProcessInfo.processInfo.systemUptime
+            XCTAssertEqual(try query(reader, fixture).path, .fast)
+            elapsed.append((ProcessInfo.processInfo.systemUptime - began) * 1_000)
+        }
+        let samples = ContentionSamples(queryMilliseconds: elapsed, lockWaitMilliseconds: lockWait)
+        try JSONEncoder().encode(samples).write(to: URL(fileURLWithPath: output))
+    }
+
+    func testMeasuredProductionReaderContention() throws {
+        guard let output = ProcessInfo.processInfo.environment["HAMII_INDEX_CONTENTION_BENCHMARK_RESULT"] else {
+            throw XCTSkip("Set HAMII_INDEX_CONTENTION_BENCHMARK_RESULT to measure")
+        }
+        let fixture = try fixture(componentCount: 1_000)
+        defer { try? FileManager.default.removeItem(at: fixture.directory) }
+        func percentile(_ values: [Double]) -> [String: Double] {
+            let sorted = values.sorted()
+            func rounded(_ rank: Double) -> Double {
+                let value = sorted[max(0, Int(ceil(Double(sorted.count) * rank)) - 1)]
+                return (value * 1_000).rounded() / 1_000
+            }
+            return ["p50": rounded(0.5), "p95": rounded(0.95)]
+        }
+        var report: [String: [String: [String: Double]]] = [:]
+        for readers in [1, 2, 4] {
+            let start = fixture.directory.appendingPathComponent("readers-\(readers).start")
+            var workers: [(Process, URL, URL)] = []
+            for number in 0..<readers {
+                let ready = fixture.directory.appendingPathComponent("readers-\(readers)-\(number).ready")
+                let result = fixture.directory.appendingPathComponent("readers-\(readers)-\(number).json")
+                let worker = try child("testContentionReaderWorker", environment: [
+                    "HAMII_CONTENTION_ROOT": fixture.root.path,
+                    "HAMII_CONTENTION_INDEX_ROOT": fixture.indexRoot.path,
+                    "HAMII_CONTENTION_DOCUMENT_ID": fixture.documentID.rawValue,
+                    "HAMII_CONTENTION_SCOPE_ID": fixture.scopeID.rawValue,
+                    "HAMII_CONTENTION_READY": ready.path,
+                    "HAMII_CONTENTION_START": start.path,
+                    "HAMII_CONTENTION_OUTPUT": result.path,
+                    "HAMII_CONTENTION_COUNT": "40"
+                ])
+                workers.append((worker, ready, result))
+            }
+            defer {
+                for (worker, _, _) in workers where worker.isRunning {
+                    kill(worker.processIdentifier, SIGKILL)
+                    worker.waitUntilExit()
+                }
+            }
+            for (worker, ready, _) in workers { try awaitFile(ready, process: worker) }
+            try Data().write(to: start)
+            var queries: [Double] = []
+            var waits: [Double] = []
+            for (worker, _, result) in workers {
+                try awaitFile(result, process: worker)
+                worker.waitUntilExit()
+                XCTAssertEqual(worker.terminationStatus, 0)
+                let sample = try JSONDecoder().decode(ContentionSamples.self, from: Data(contentsOf: result))
+                XCTAssertEqual(sample.queryMilliseconds.count, 40)
+                XCTAssertEqual(sample.lockWaitMilliseconds.count, 40)
+                queries += sample.queryMilliseconds
+                waits += sample.lockWaitMilliseconds
+            }
+            report["\(readers)-readers"] = ["queryMilliseconds": percentile(queries),
+                                            "lockWaitMilliseconds": percentile(waits)]
+        }
+        let data = try JSONSerialization.data(withJSONObject: report, options: [.prettyPrinted, .sortedKeys])
+        try data.write(to: URL(fileURLWithPath: output))
+    }
+
+    func testContentionWriterWorker() throws {
+        let env = ProcessInfo.processInfo.environment
+        guard let root = env["HAMII_CONTENTION_ROOT"], let attempt = env["HAMII_CONTENTION_ATTEMPT"],
+              let acquired = env["HAMII_CONTENTION_ACQUIRED"], let release = env["HAMII_CONTENTION_RELEASE"],
+              let output = env["HAMII_CONTENTION_OUTPUT"] else { throw XCTSkip("Contention writer only") }
+        try Data().write(to: URL(fileURLWithPath: attempt))
+        let began = ProcessInfo.processInfo.systemUptime
+        try WorktreeCoordinator(root: URL(fileURLWithPath: root)).withExclusive {
+            let wait = (ProcessInfo.processInfo.systemUptime - began) * 1_000
+            try Data().write(to: URL(fileURLWithPath: acquired))
+            let deadline = Date().addingTimeInterval(30)
+            while !FileManager.default.fileExists(atPath: release) && Date() < deadline {
+                Thread.sleep(forTimeInterval: 0.005)
+            }
+            XCTAssertTrue(FileManager.default.fileExists(atPath: release))
+            try JSONEncoder().encode(["lockWaitMilliseconds": wait]).write(to: URL(fileURLWithPath: output))
+        }
+    }
+
+    func testMeasuredWriterAndReaderWaiting() throws {
+        guard let output = ProcessInfo.processInfo.environment["HAMII_INDEX_WRITER_CONTENTION_BENCHMARK_RESULT"] else {
+            throw XCTSkip("Set HAMII_INDEX_WRITER_CONTENTION_BENCHMARK_RESULT to measure")
+        }
+        let fixture = try fixture(componentCount: 1_000)
+        defer { try? FileManager.default.removeItem(at: fixture.directory) }
+        func workerEnvironment(attempt: URL, acquired: URL, release: URL, result: URL) -> [String: String] {
+            ["HAMII_CONTENTION_ROOT": fixture.root.path,
+             "HAMII_CONTENTION_ATTEMPT": attempt.path,
+             "HAMII_CONTENTION_ACQUIRED": acquired.path,
+             "HAMII_CONTENTION_RELEASE": release.path,
+             "HAMII_CONTENTION_OUTPUT": result.path]
+        }
+        // A warm reader holds the same production boundary while a writer
+        // requests it. The pause is a deterministic contention stimulus.
+        let firstAttempt = fixture.directory.appendingPathComponent("writer-behind-reader.attempt")
+        let firstAcquired = fixture.directory.appendingPathComponent("writer-behind-reader.acquired")
+        let firstRelease = fixture.directory.appendingPathComponent("writer-behind-reader.release")
+        let firstResult = fixture.directory.appendingPathComponent("writer-behind-reader.json")
+        var waitingWriter: Process?
+        let reader = session(fixture) {
+            waitingWriter = try? self.child("testContentionWriterWorker", environment:
+                workerEnvironment(attempt: firstAttempt, acquired: firstAcquired,
+                                  release: firstRelease, result: firstResult))
+            guard let waitingWriter else { return XCTFail("Writer did not start") }
+            do { try self.awaitFile(firstAttempt, process: waitingWriter) }
+            catch { return }
+            Thread.sleep(forTimeInterval: 0.12)
+            XCTAssertFalse(FileManager.default.fileExists(atPath: firstAcquired.path))
+        }
+        XCTAssertEqual(try query(reader, fixture).path, .slowBound)
+        XCTAssertEqual(try query(reader, fixture).path, .fast)
+        let firstWriter = try XCTUnwrap(waitingWriter)
+        defer { if firstWriter.isRunning { kill(firstWriter.processIdentifier, SIGKILL); firstWriter.waitUntilExit() } }
+        try awaitFile(firstAcquired, process: firstWriter)
+        try Data().write(to: firstRelease)
+        try awaitFile(firstResult, process: firstWriter)
+        firstWriter.waitUntilExit()
+        XCTAssertEqual(firstWriter.terminationStatus, 0)
+        let writerBehindReader = try JSONDecoder().decode([String: Double].self, from: Data(contentsOf: firstResult))
+
+        // The next reader is warm before the writer takes the lock. It must
+        // finish only after the writer releases the same boundary.
+        let readerReady = fixture.directory.appendingPathComponent("reader-behind-writer.ready")
+        let readerStart = fixture.directory.appendingPathComponent("reader-behind-writer.start")
+        let readerResult = fixture.directory.appendingPathComponent("reader-behind-writer.json")
+        let blockedReader = try child("testContentionReaderWorker", environment: [
+            "HAMII_CONTENTION_ROOT": fixture.root.path,
+            "HAMII_CONTENTION_INDEX_ROOT": fixture.indexRoot.path,
+            "HAMII_CONTENTION_DOCUMENT_ID": fixture.documentID.rawValue,
+            "HAMII_CONTENTION_SCOPE_ID": fixture.scopeID.rawValue,
+            "HAMII_CONTENTION_READY": readerReady.path,
+            "HAMII_CONTENTION_START": readerStart.path,
+            "HAMII_CONTENTION_OUTPUT": readerResult.path,
+            "HAMII_CONTENTION_COUNT": "1"
+        ])
+        defer { if blockedReader.isRunning { kill(blockedReader.processIdentifier, SIGKILL); blockedReader.waitUntilExit() } }
+        try awaitFile(readerReady, process: blockedReader)
+        let secondAttempt = fixture.directory.appendingPathComponent("writer-ahead-of-reader.attempt")
+        let secondAcquired = fixture.directory.appendingPathComponent("writer-ahead-of-reader.acquired")
+        let secondRelease = fixture.directory.appendingPathComponent("writer-ahead-of-reader.release")
+        let secondResult = fixture.directory.appendingPathComponent("writer-ahead-of-reader.json")
+        let aheadWriter = try child("testContentionWriterWorker", environment:
+            workerEnvironment(attempt: secondAttempt, acquired: secondAcquired,
+                              release: secondRelease, result: secondResult))
+        defer { if aheadWriter.isRunning { kill(aheadWriter.processIdentifier, SIGKILL); aheadWriter.waitUntilExit() } }
+        try awaitFile(secondAcquired, process: aheadWriter)
+        try Data().write(to: readerStart)
+        Thread.sleep(forTimeInterval: 0.12)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: readerResult.path))
+        try Data().write(to: secondRelease)
+        try awaitFile(readerResult, process: blockedReader)
+        blockedReader.waitUntilExit()
+        XCTAssertEqual(blockedReader.terminationStatus, 0)
+        try awaitFile(secondResult, process: aheadWriter)
+        aheadWriter.waitUntilExit()
+        XCTAssertEqual(aheadWriter.terminationStatus, 0)
+        let readerBehindWriter = try JSONDecoder().decode(ContentionSamples.self, from: Data(contentsOf: readerResult))
+        XCTAssertEqual(readerBehindWriter.queryMilliseconds.count, 1)
+        XCTAssertEqual(readerBehindWriter.lockWaitMilliseconds.count, 1)
+
+        let report: [String: Double] = [
+            "writerWaitBehindHeldReaderMilliseconds": try XCTUnwrap(writerBehindReader["lockWaitMilliseconds"]),
+            "readerWaitBehindHeldWriterMilliseconds": readerBehindWriter.lockWaitMilliseconds[0],
+            "readerQueryBehindHeldWriterMilliseconds": readerBehindWriter.queryMilliseconds[0]
+        ]
+        try JSONEncoder().encode(report).write(to: URL(fileURLWithPath: output))
+    }
+
+    func testMeasuredWriterUnderRepeatedWarmReaders() throws {
+        guard let output = ProcessInfo.processInfo.environment["HAMII_INDEX_REPEATED_READER_BENCHMARK_RESULT"] else {
+            throw XCTSkip("Set HAMII_INDEX_REPEATED_READER_BENCHMARK_RESULT to measure")
+        }
+        let fixture = try fixture(componentCount: 1_000)
+        defer { try? FileManager.default.removeItem(at: fixture.directory) }
+        let start = fixture.directory.appendingPathComponent("repeated-readers.start")
+        var readers: [(Process, URL, URL)] = []
+        for number in 0..<4 {
+            let ready = fixture.directory.appendingPathComponent("repeated-reader-\(number).ready")
+            let result = fixture.directory.appendingPathComponent("repeated-reader-\(number).json")
+            let worker = try child("testContentionReaderWorker", environment: [
+                "HAMII_CONTENTION_ROOT": fixture.root.path,
+                "HAMII_CONTENTION_INDEX_ROOT": fixture.indexRoot.path,
+                "HAMII_CONTENTION_DOCUMENT_ID": fixture.documentID.rawValue,
+                "HAMII_CONTENTION_SCOPE_ID": fixture.scopeID.rawValue,
+                "HAMII_CONTENTION_READY": ready.path,
+                "HAMII_CONTENTION_START": start.path,
+                "HAMII_CONTENTION_OUTPUT": result.path,
+                "HAMII_CONTENTION_COUNT": "200",
+                "HAMII_CONTENTION_HOLD_MS": "5"
+            ])
+            readers.append((worker, ready, result))
+        }
+        defer {
+            for (worker, _, _) in readers where worker.isRunning {
+                kill(worker.processIdentifier, SIGKILL)
+                worker.waitUntilExit()
+            }
+        }
+        for (worker, ready, _) in readers { try awaitFile(ready, process: worker) }
+        try Data().write(to: start)
+        Thread.sleep(forTimeInterval: 0.02)
+        var writerWaits: [Double] = []
+        for number in 0..<10 {
+            let attempt = fixture.directory.appendingPathComponent("repeated-writer-\(number).attempt")
+            let acquired = fixture.directory.appendingPathComponent("repeated-writer-\(number).acquired")
+            let release = fixture.directory.appendingPathComponent("repeated-writer-\(number).release")
+            let result = fixture.directory.appendingPathComponent("repeated-writer-\(number).json")
+            try Data().write(to: release)
+            let worker = try child("testContentionWriterWorker", environment: [
+                "HAMII_CONTENTION_ROOT": fixture.root.path,
+                "HAMII_CONTENTION_ATTEMPT": attempt.path,
+                "HAMII_CONTENTION_ACQUIRED": acquired.path,
+                "HAMII_CONTENTION_RELEASE": release.path,
+                "HAMII_CONTENTION_OUTPUT": result.path
+            ])
+            try awaitFile(result, process: worker)
+            worker.waitUntilExit()
+            XCTAssertEqual(worker.terminationStatus, 0)
+            let sample = try JSONDecoder().decode([String: Double].self, from: Data(contentsOf: result))
+            writerWaits.append(try XCTUnwrap(sample["lockWaitMilliseconds"]))
+        }
+        var queryTimes: [Double] = []
+        var readerWaits: [Double] = []
+        for (worker, _, result) in readers {
+            try awaitFile(result, process: worker)
+            worker.waitUntilExit()
+            XCTAssertEqual(worker.terminationStatus, 0)
+            let sample = try JSONDecoder().decode(ContentionSamples.self, from: Data(contentsOf: result))
+            XCTAssertEqual(sample.queryMilliseconds.count, 200)
+            queryTimes += sample.queryMilliseconds
+            readerWaits += sample.lockWaitMilliseconds
+        }
+        func percentile(_ values: [Double], _ fraction: Double) -> Double {
+            let sorted = values.sorted()
+            return sorted[max(0, Int(ceil(Double(sorted.count) * fraction)) - 1)]
+        }
+        let report: [String: [String: Double]] = [
+            "readerQueryMilliseconds": ["p50": percentile(queryTimes, 0.5), "p95": percentile(queryTimes, 0.95)],
+            "readerLockWaitMilliseconds": ["p50": percentile(readerWaits, 0.5), "p95": percentile(readerWaits, 0.95)],
+            "writerLockWaitMilliseconds": ["p50": percentile(writerWaits, 0.5), "p95": percentile(writerWaits, 0.95)]
+        ]
+        try JSONEncoder().encode(report).write(to: URL(fileURLWithPath: output))
     }
 
     private func child(_ method: String, environment: [String: String]) throws -> Process {
