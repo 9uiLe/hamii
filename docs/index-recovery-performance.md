@@ -14,3 +14,7 @@
 Phase 1 lock は coherent CanonicalSnapshot の parse、Stable generation、Git oracle、公開 Index の read-only 分類を含む。Off-lock は immutable Snapshot からの full `IndexProjection`、別 SQLite file への書き込みと検証を含む。Phase 2 lock は Stable generation、Git oracle、expected published state の再検証と atomic replace を含む。Recovery service total は最初の Query 失敗判定と再 Query を含まない。
 
 別 OS process の writer lock probe は、5000 Component の Phase 1 開始時に単一試行で **1640.62 ms**、1000 Component の candidate SQLite transaction 中に単一試行で **0.109 ms** 待った。後者は off-lock build の人工 barrier であり、通常の writer latency 分布ではない。測定条件では Phase 1 の Canonical 観測が主な連続 lock 時間を占める。実 Product の大規模 project、任意の非協調 writer、停電耐久性はこの測定からは評価できない。
+
+## Recovered Query の観測回数
+
+`IndexQuerySessionTests.testRecoveredQueryObservationBaselineCounts` は、1 Component fixture の missing Index と coordinated save 後の stale Bound Index を別々に実行した。両条件とも1回の recovered Query で、Query の full CanonicalSnapshot 取得2回、Recovery Phase 1 の取得1回、Git revision 計算3回、worktree lock 取得6回、slow Query 2回、Query retry 1回だった。Retry は full Snapshot と Git oracle を再実行しており、fast rows read は0回だった。この実測回数は観測引き継ぎ候補を比較する baseline であり、観測回数の削減を安全性の代替証明にはしない。

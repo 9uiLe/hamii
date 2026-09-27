@@ -7,6 +7,16 @@ import HamiiCore
 @testable import HamiiIndex
 
 final class IndexQuerySessionTests: XCTestCase {
+    private final class CountingRevisionCalculator: CanonicalRevisionCalculating {
+        private let wrapped = GitCanonicalRevisionCalculator()
+        private(set) var calls = 0
+
+        func current(at root: URL) throws -> CanonicalRevision {
+            calls += 1
+            return try wrapped.current(at: root)
+        }
+    }
+
     private struct Fixture {
         let root: URL
         let indexRoot: URL
@@ -267,6 +277,36 @@ final class IndexQuerySessionTests: XCTestCase {
             }
             XCTAssertThrowsError(try query(session(fixture), fixture), condition)
             XCTAssertFalse(FileManager.default.fileExists(atPath: published.path), condition)
+        }
+    }
+
+    func testRecoveredQueryObservationBaselineCounts() throws {
+        for condition in ["missing", "staleBound"] {
+            let fixture = try fixture()
+            defer { try? FileManager.default.removeItem(at: fixture.directory) }
+            if condition == "missing" {
+                try FileManager.default.removeItem(at: index(fixture).url)
+            } else {
+                try saveComponent(fixture, as: "Beta")
+            }
+            let calculator = CountingRevisionCalculator()
+            var querySteps: [QueryObservationStep] = []
+            var recoverySteps: [IndexRecoveryStep] = []
+            let querySession = IndexQuerySession(projectRoot: fixture.root,
+                revisionCalculator: calculator, storageRoot: fixture.indexRoot,
+                afterFastVerdict: nil,
+                onRecoveryStep: { recoverySteps.append($0) },
+                onObservationStep: { querySteps.append($0) })
+            XCTAssertEqual(try query(querySession, fixture).hits.count, 1, condition)
+            XCTAssertEqual(querySteps.filter { $0 == .slowSnapshotAcquired }.count, 2, condition)
+            XCTAssertEqual(querySteps.filter { $0 == .slowLockAcquired }.count, 2, condition)
+            XCTAssertEqual(querySteps.filter { $0 == .fastLockAcquired }.count, 2, condition)
+            XCTAssertEqual(querySteps.filter { $0 == .slowRowsRead }.count, 1, condition)
+            XCTAssertEqual(querySteps.filter { $0 == .fastRowsRead }.count, 0, condition)
+            XCTAssertEqual(querySteps.filter { $0 == .retryStarted }.count, 1, condition)
+            XCTAssertEqual(recoverySteps.filter { $0 == .phase1LockAcquired }.count, 1, condition)
+            XCTAssertEqual(recoverySteps.filter { $0 == .phase2LockAcquired }.count, 1, condition)
+            XCTAssertEqual(calculator.calls, 3, condition)
         }
     }
 

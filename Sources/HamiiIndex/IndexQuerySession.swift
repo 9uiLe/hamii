@@ -16,6 +16,15 @@ private struct VerifiedCurrentWitness {
 
 enum QueryVerificationPath: Equatable { case slowBound, slowUnbound, fast }
 
+enum QueryObservationStep: Hashable {
+    case fastLockAcquired
+    case slowLockAcquired
+    case slowSnapshotAcquired
+    case slowRowsRead
+    case fastRowsRead
+    case retryStarted
+}
+
 /// A long-lived Query session. Freshness and SQLite rows are read while one
 /// WorktreeCoordinator lock is held. A CLI invocation is a new, cold session.
 public final class IndexQuerySession {
@@ -30,6 +39,7 @@ public final class IndexQuerySession {
     private let onReadBoundaryAcquired: ((Double) -> Void)?
     private let automaticRecoveryEnabled: Bool
     private let onBeforeRecoveryRetry: (() throws -> Void)?
+    private let onObservationStep: ((QueryObservationStep) -> Void)?
     private var witness: VerifiedCurrentWitness?
 
     public convenience init(projectRoot: URL) {
@@ -44,7 +54,8 @@ public final class IndexQuerySession {
          onReadBoundaryAcquired: ((Double) -> Void)? = nil,
          automaticRecoveryEnabled: Bool = true,
          onRecoveryStep: ((IndexRecoveryStep) throws -> Void)? = nil,
-         onBeforeRecoveryRetry: (() throws -> Void)? = nil) {
+         onBeforeRecoveryRetry: (() throws -> Void)? = nil,
+         onObservationStep: ((QueryObservationStep) -> Void)? = nil) {
         root = projectRoot.standardizedFileURL
         self.storageRoot = storageRoot
         self.revisionCalculator = revisionCalculator
@@ -57,6 +68,7 @@ public final class IndexQuerySession {
         self.onReadBoundaryAcquired = onReadBoundaryAcquired
         self.automaticRecoveryEnabled = automaticRecoveryEnabled
         self.onBeforeRecoveryRetry = onBeforeRecoveryRetry
+        self.onObservationStep = onObservationStep
     }
 
     public func components(matching text: String, consumerScopeID: EntityID) throws -> [ComponentHit] {
@@ -76,6 +88,7 @@ public final class IndexQuerySession {
             case .published, .reused:
                 witness = nil
                 try onBeforeRecoveryRetry?()
+                onObservationStep?(.retryStarted)
                 // One recovery and exactly one retry. This direct call cannot
                 // recursively reset the recovery budget.
                 return try queryAttempt(matching: text, consumerScopeID: consumerScopeID)
@@ -89,6 +102,7 @@ public final class IndexQuerySession {
         throws -> (hits: [ComponentHit], path: QueryVerificationPath) {
         let lockAttempt = onReadBoundaryAcquired.map { _ in ProcessInfo.processInfo.systemUptime }
         let fast = try coordinator.withReadyExclusive { () -> FastResult in
+            onObservationStep?(.fastLockAcquired)
             if let lockAttempt {
                 onReadBoundaryAcquired?((ProcessInfo.processInfo.systemUptime - lockAttempt) * 1_000)
             }
@@ -126,6 +140,7 @@ public final class IndexQuerySession {
             afterFastVerdict?()
             let hits = try index.components(matching: text, consumerScopeID: consumerScopeID,
                                             verifiedGeneration: published)
+            onObservationStep?(.fastRowsRead)
             return .rows(hits)
         }
         switch fast {
@@ -137,7 +152,10 @@ public final class IndexQuerySession {
 
     private func slowComponents(matching text: String, consumerScopeID: EntityID)
         throws -> (hits: [ComponentHit], path: QueryVerificationPath) {
-        try repository.withStableRecordSnapshotForQuery { snapshot, stable in
+        try repository.withStableRecordSnapshotForQuery(
+            onLockAcquired: { self.onObservationStep?(.slowLockAcquired) }
+        ) { snapshot, stable in
+            onObservationStep?(.slowSnapshotAcquired)
             let index = try makeIndex(documentID: snapshot.document.id)
             let published = try index.publishedGeneration()
             guard published.documentID == snapshot.document.id,
@@ -163,6 +181,7 @@ public final class IndexQuerySession {
                                             documentID: snapshot.document.id,
                                             revision: snapshot.document.revision,
                                             expectedSourceIdentity: snapshot.identity)
+            onObservationStep?(.slowRowsRead)
             guard try index.publishedGeneration() == published else { throw IndexError.stale }
             if let boundGeneration {
                 witness = VerifiedCurrentWitness(

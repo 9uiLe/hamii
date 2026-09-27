@@ -144,9 +144,11 @@ public final class CanonicalRepository: ProjectRepository {
     /// explicit rebuild. It requires an existing stable record, but only a
     /// Bound Index requires that record to match the observed Snapshot.
     package func withStableRecordSnapshotForQuery<T>(
+        onLockAcquired: (() throws -> Void)? = nil,
         _ operation: (CanonicalSnapshot, StableCanonicalGeneration) throws -> T
     ) throws -> T {
         try coordinator.withExclusive {
+            try onLockAcquired?()
             try transaction.recoverIfNeeded()
             try coordinator.requireReady()
             let stable = try generations.readStable()
