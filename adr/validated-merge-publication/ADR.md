@@ -13,29 +13,39 @@
 - `1 worktree = 1 coordinated writer domain` と同じ `WorktreeCoordinator` を使う。
 - ClientPrecondition は Canonical state 変更前に失効する。DocumentRevision、CanonicalStateIdentity、WorktreeGeneration、IndexGeneration を同一概念と仮定しない。
 - Candidate の Git merge exit 0 は publish authorization ではない。Canonical semantic validation と source binding が必要。
-- Index は Repository 外の derived data であり、source CanonicalSnapshot と結び付いた generation だけを公開する。中間 Index と future Index を検索に見せない。
+- Index は Repository 外の derived data であり、source CanonicalSnapshot と結び付いた generation だけを公開する。中間 Index と future Index を検索に見せない。Canonical publication 後に Index が失敗しても Canonical を rollback せず、Query を拒否して再生成する。
+- Git ref / working tree / Repository 外 SQLite の同時 atomic commit を要求しない。Durable pending state、immutable validated candidate、fail-closed gate、idempotent recovery を組み合わせる。
+- `WorktreeCoordinator` は lock、epoch、pending gate の primitive に留め、Git・semantic validation・Index publication の orchestration を持たせない。
 - 失敗時に有効な source / target branch の history と Canonical data を失わない。Pending / unknown state は fail closed。
 - Raw Git 等の非協調 writer は正式保証外。Power-loss durability の判定は [Power-loss ADR](../canonical-power-loss-durability/ADR.md) と重複させない。
 
 ## Options
 
-1. Pending gate と worktree lock の下で source branch を candidate commit へ進め、同じ Snapshot から Index generation を作成・公開し、復旧後に gate を解除する。
-2. Candidate commit への ref 更新と worktree materialization を別 journal で追跡し、失敗時に既知状態へ rollback / roll forward する。
-3. Immutable worktree / generation を作り、利用可能な Project を指す pointer を切り替える。
+1. Validated candidate commit を保持し、pending gate の下で source ref を expected OID から candidate OID へ CAS 更新する。ref 更新を Canonical publication の commit point とし、worktree materialization、Canonical verification、Index generation publication を経て Ready にする。
+2. Source ref とは別の immutable project pointer を commit point とし、検証済み candidate と派生 Index generation を指す pointer を切り替える。
 
 各方式の Git state、Canonical files、Index publication、client resync の停止地点を実測する。Options は採用判断ではない。
 
 ## Current Hypothesis
 
-**Tentative:** `WorktreeCoordinator` の pending gate が source の通常操作を遮断する間に、candidate の identity、Git HEAD、CanonicalSnapshot、Index source を検証し、再起動時は一つの既知 generation へ復旧する。In-place publish と immutable pointer のいずれが安全かは未決定。現行の `git merge check` は candidate validation までで公開しない。
+**Tentative implementation detail:** `IndexGenerationID` の保存形式、候補 commit の保持用 ref、Git が停止時に残す lock file の所有者確認方法は production 実装で定める。Index generation の一般的な storage / atomic switch は [Index consistency ADR](../index-consistency/ADR.md) で扱う。
+
+## Decision
+
+検証済み candidate commit を publication source とし、source worktree で merge を再実行しない。Candidate は source / target commit OID、candidate OID、CanonicalSnapshot identity、検証済み Index source identity と共に保持する。Source worktree lock 下で source ref が expected OID と一致することを確認し、ClientPrecondition を先に失効させ、同じ gate として認識される pending publication record を記録する。Git ref の expected old OID → candidate OID の CAS を **Canonical publication commit point** とする。Ref CAS 後は candidate commit から working tree を materialize し、公開済み Canonical bytes が candidate identity と一致することを検証する。Index はその Canonical identity に結び付いた generation を別途 build / validate / publish し、最後に gate を解除する。
+
+Pending 中は observe / mutation / query / preview mutation を Ready として扱わない。Recovery は、ref が expected old OID なら old state を保持して abort、candidate OID なら candidate へ roll-forward して検証と Index publication を完了、どちらでもなければ Unknown として gate を残す。Index failure では Canonical を rollback せず、Query を拒否して同一 CanonicalSnapshot から Index を再生成する。Git ref / Canonical files / SQLite の同時 atomic transaction は作らない。`WorktreeCoordinator` は lock / epoch / gate の primitive に留め、Git / validation / Index を組み合わせる publication orchestration は別責務とする。
+
+この決定は [CAS and internal stops](spikes/cas-and-internal-stops/SPIKE.md) の process crash Evidence に基づく。Pending record の停電耐久性は [Power-loss ADR](../canonical-power-loss-durability/ADR.md) の durability primitive を要する。Production `CanonicalSnapshot`・`IndexGenerationID` binding、Git subprocess 所有者確認、Index generation publication は実装と検証が必要であり、試作の値を production guarantee に昇格させない。
 
 ## Unknowns
 
-Git ref と worktree 更新の停止後状態、candidate commit の保持、Index generation の atomic publication、crash 時の旧新どちらを選ぶか、candidate cleanup、concurrent query の serialization、source と candidate の CanonicalSnapshot identity の結合。停電耐久性は別 ADR。
+Production candidate commit の保持、Index generation の atomic publication、Git subprocess / lock file の安全な所有者確認、candidate cleanup、large-project latency、source と candidate の CanonicalSnapshot identity の結合。停電耐久性は別 ADR。
 
 ## Required Evidence
 
 - [Publication stop matrix](spikes/publication-stop-matrix/SPIKE.md): 実 Git worktree と SQLite Index の in-place fast-forward 試作で、4 つの phase 間 SIGKILL 後に gate・recovery・query・client token を検証した。Git / SQLite 更新処理中の停止と production generation binding、代替方式との比較は未完了。
+- [CAS and internal stops](spikes/cas-and-internal-stops/SPIKE.md): 実 Git ref CAS の transaction hook 内、Git materialization 内、試作用 Canonical verification / SQLite transaction、Index file replace / gate clear の直前・直後を SIGKILL で検証した。Old / candidate / unknown ref の fail-closed 分類と Index 欠損後の candidate 側 recovery を確認した。Production Snapshot / generation / durability は未検証。
 - 現行の [semantic merge result](../git-external-write-coordination/spikes/concurrent-worktree-merge/SPIKE.md) と `scripts/smoke-merge-candidate.py` は candidate validation の Evidence。Publication 成功の Evidence ではない。
 
 ## Decision Criteria
@@ -44,4 +54,4 @@ Git ref と worktree 更新の停止後状態、candidate commit の保持、Ind
 
 ## Status
 
-Spike Required
+Implementation Required
