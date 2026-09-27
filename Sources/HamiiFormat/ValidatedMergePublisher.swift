@@ -1,3 +1,4 @@
+import Darwin
 import Foundation
 import HamiiApplication
 import HamiiCore
@@ -7,6 +8,7 @@ public enum MergePublicationError: Error, CustomStringConvertible {
     case unknownSourceState
     case candidateUnavailable
     case candidateMismatch
+    case gitLockOwnershipUnknown(String)
 
     public var description: String {
         switch self {
@@ -14,6 +16,8 @@ public enum MergePublicationError: Error, CustomStringConvertible {
         case .unknownSourceState: return "Source ref is neither the expected old nor validated candidate OID"
         case .candidateUnavailable: return "Validated candidate commit is not retained"
         case .candidateMismatch: return "Materialized Canonical data differs from the validated candidate"
+        case .gitLockOwnershipUnknown(let path):
+            return "Git lock ownership is unknown at \(path); publication remains pending until the owner is verified and the lock is removed"
         }
     }
 }
@@ -152,12 +156,12 @@ public final class ValidatedMergePublisher {
             guard try git("symbolic-ref", "--quiet", "HEAD") == record.sourceRef else {
                 throw MergePublicationError.unknownSourceState
             }
+            try requireGitLocksAbsent(record)
             // Recovery itself is a coordinated transition. No old client token
             // may become valid again even if the content returns to old bytes.
             try coordinator.invalidateClientObservations()
             let current = try git("rev-parse", "HEAD")
             if current == record.expectedSourceOID {
-                try removeInterruptedGitLock("\(record.sourceRef).lock")
                 try requireCleanWorktree()
                 let snapshot = try repository.snapshotDuringManagedGitTransition()
                 guard snapshot.identity == record.sourceCanonicalIdentity else { throw MergePublicationError.unknownSourceState }
@@ -184,13 +188,6 @@ public final class ValidatedMergePublisher {
             record.phase = .refPublished
             try save(record)
             try hook?(.afterRefCAS)
-        }
-        // The worktree lock is free only after a process dies. Under the
-        // coordinated-writer contract, a leftover Git lock then belongs to
-        // that interrupted operation. Raw Git writers remain outside it.
-        if recovering {
-            try removeInterruptedGitLock("index.lock")
-            try removeInterruptedGitLock("\(record.sourceRef).lock")
         }
         try hook?(.beforeMaterialization)
         _ = try git("read-tree", "--reset", "-u", record.candidateOID)
@@ -250,10 +247,16 @@ public final class ValidatedMergePublisher {
         _ = try? git("update-ref", "-d", record.retentionRef, record.candidateOID)
     }
 
-    private func removeInterruptedGitLock(_ path: String) throws {
-        let result = try git("rev-parse", "--git-path", path)
-        let url = result.hasPrefix("/") ? URL(fileURLWithPath: result) : root.appendingPathComponent(result)
-        if FileManager.default.fileExists(atPath: url.path) { try FileManager.default.removeItem(at: url) }
+    private func requireGitLocksAbsent(_ record: MergePublicationRecord) throws {
+        // A pending hamii record does not identify a Git lock's owner. A live
+        // raw Git process may have created either path after hamii stopped.
+        for path in ["index.lock", "\(record.sourceRef).lock"] {
+            let result = try git("rev-parse", "--git-path", path)
+            let url = result.hasPrefix("/") ? URL(fileURLWithPath: result) : root.appendingPathComponent(result)
+            var info = stat()
+            if lstat(url.path, &info) == 0 { throw MergePublicationError.gitLockOwnershipUnknown(url.path) }
+            guard errno == ENOENT else { throw CocoaError(.fileReadUnknown) }
+        }
     }
 
     private func requireWorktreeRoot() throws {

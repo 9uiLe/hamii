@@ -36,7 +36,7 @@ External-change detection は正式な writer model の外で起きた変更に�
 
 ## Unknowns
 
-残る実装・検証は managed Git switch の production generation / Index 連携、partial Git state の修復 UX、worktree identity と移動、publication の ownership 不明 Git lock での fail-closed recovery と power-loss durability。`git merge check` は一時 worktree 内の semantic validation と一時 Index rebuild を行い、公開しない。Publication の停止復旧と残課題は [Validated merge publication ADR](../validated-merge-publication/ADR.md) が扱う。Client / Preview token の選択は別 ADR。Power loss は [Power-loss ADR](../canonical-power-loss-durability/ADR.md)。
+残る実装・検証は managed Git switch の production generation / Index 連携、partial Git state の修復 UX、worktree identity と移動、publication の power-loss durability。Ownership 不明 Git lock の自動削除は行わず gate を保持する。`git merge check` は一時 worktree 内の semantic validation と一時 Index rebuild を行い、公開しない。Publication の停止復旧と残課題は [Validated merge publication ADR](../validated-merge-publication/ADR.md) が扱う。Client / Preview token の選択は別 ADR。Power loss は [Power-loss ADR](../canonical-power-loss-durability/ADR.md)。
 
 ## Required Evidence
 
@@ -46,7 +46,7 @@ External-change detection は正式な writer model の外で起きた変更に�
 - [Concurrent worktree merge](spikes/concurrent-worktree-merge/SPIKE.md): 非競合 Page と同一 Text property の merge に加え、Git text merge 成功後の `component.missing`、merge 前後で同じ revision でも Canonical identity が異なるケース、旧 Index の `staleIndex` 拒否、旧 revision mutation の受理を確認。Production merge gate と client session invalidation は未実装。
 - [Managed Git operation](spikes/managed-git-operation/SPIKE.md): raw `git switch` は `.hamii/write.lock` を無視する。試験用 wrapper では reader と switch を同じ lock で囲み generation を進めた。Production adapter は未実装。
 - [Shared generation process-stop matrix](../index-consistency/spikes/shared-worktree-generation/SPIKE.md): 試験用 coordinated boundary で別 OS process の writer / reader の flock attempt/acquire を確認し、4地点で writer を SIGKILL。Product Contract はこの保証境界を採用するが、production generation protocol の成立証明にはならない。
-- [Git lock ownership](../validated-merge-publication/spikes/git-lock-ownership/SPIKE.md): 生存中の raw Git subprocess が、hamii recovery が削除していた ref lock と index lock を取得できる。External writer を Product Contract に含める Evidence ではなく、hamii が ownership 不明 lock を破壊しないための defense-in-depth の入力である。
+- [Git lock ownership](../validated-merge-publication/spikes/git-lock-ownership/SPIKE.md): 生存中の raw Git subprocess が、hamii recovery が削除していた ref lock と index lock を取得できる。Production は lock 存在時に pending gate を保持し、自動回復を拒否する。External writer を Product Contract に含める Evidence ではなく、hamii が ownership 不明 lock を破壊しないための defense-in-depth である。
 - Managed switch implementation tests: 同一 revision の branch switch 後に旧 client token を拒否する。pending・switched・validated の注入停止で通常の Canonical observation を拒否し、既知 HEAD と valid Canonical state の recovery 後に再開する。Unsupported Canonical format の target は source branch へ戻し、旧 token は失効したままにする。注入停止は SIGKILL / power loss の再検証ではない。
 - Isolated merge candidate CLI smoke: 非競合 merge を一時 worktree で Canonical validation・一時 Index rebuild まで通し、source HEAD と client token を変更しない。Git text merge 成功後の `component.missing` を拒否し、両側の valid branch を保持する。Candidate publication は未実装。
 

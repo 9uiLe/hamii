@@ -28,7 +28,7 @@
 
 ## Current Hypothesis
 
-**Tentative implementation detail:** `IndexGenerationID` の保存形式は production 検証が必要。[Git lock ownership Spike](spikes/git-lock-ownership/SPIKE.md) は、pending record と lock path のみでは停止した hamii subprocess の lock と生存中の raw Git process の lock を区別できないことを示した。Ownership を証明できない lock は削除せず gate を維持する。Candidate commit は `refs/hamii/merge-candidates/<publication-id>` で保持する。Index generation の一般的な storage / atomic switch は [Index consistency ADR](../index-consistency/ADR.md) で扱う。
+**Tentative implementation detail:** `IndexGenerationID` の保存形式は production 検証が必要。[Git lock ownership Spike](spikes/git-lock-ownership/SPIKE.md) は、pending record と lock path のみでは停止した hamii subprocess の lock と生存中の raw Git process の lock を区別できないことを示した。Production recovery は ownership 不明 lock を削除せず gate を維持する。Candidate commit は `refs/hamii/merge-candidates/<publication-id>` で保持する。Index generation の一般的な storage / atomic switch は [Index consistency ADR](../index-consistency/ADR.md) で扱う。
 
 ## Decision
 
@@ -46,7 +46,7 @@ Production は candidate retention ref、pending record、source / candidate Can
 
 - [Publication stop matrix](spikes/publication-stop-matrix/SPIKE.md): 実 Git worktree と SQLite Index の in-place fast-forward 試作で、4 つの phase 間 SIGKILL 後に gate・recovery・query・client token を検証した。Git / SQLite 更新処理中の停止と production generation binding、代替方式との比較は未完了。
 - [CAS and internal stops](spikes/cas-and-internal-stops/SPIKE.md): 実 Git ref CAS の transaction hook 内、Git materialization 内、試作用 Canonical verification / SQLite transaction、Index file replace / gate clear の直前・直後を SIGKILL で検証した。Old / candidate / unknown ref の fail-closed 分類と Index 欠損後の candidate 側 recovery を確認した。Production Snapshot / generation / durability は未検証。
-- [Git lock ownership](spikes/git-lock-ownership/SPIKE.md): 生存中の外部 Git が同じ ref / index lock path を保持できる。Pending record と lock file の存在だけで interrupted hamii subprocess の所有物と断定できない。Production の live-lock regression と fail-closed recovery は未実装。
+- [Git lock ownership](spikes/git-lock-ownership/SPIKE.md): 生存中の外部 Git が同じ ref / index lock path を保持できる。Pending record と lock file の存在だけで interrupted hamii subprocess の所有物と断定できない。Production は両 lock の存在時に回復を拒否し gate を保持する。Live raw Git process を使う2件と、SIGKILL 後に test が死んだ process を確認して明示的に lock を除去する回帰試験を追加した。Operator 向け partial Git state 修復 UX は継続課題。
 - `ValidatedMergePublicationTests` は production `ValidatedMergePublisher` と実 Git / SQLite を使用し、19 停止地点で別 OS process の writer を SIGKILL する。Reader の lock 競合、pending 中の observe / query / mutation 拒否、old / candidate の recovery、旧 client token 拒否、Index freshness、再 recovery の冪等性を回帰検証する。Git reference-transaction hook、smudge filter、SQLite transaction 内の停止を含む。これは process crash の Evidence であり、power-loss durability や一般の IndexGenerationID protocol の証明ではない。
 - 現行の [semantic merge result](../git-external-write-coordination/spikes/concurrent-worktree-merge/SPIKE.md) と `scripts/smoke-merge-candidate.py` は candidate validation の Evidence。Publication 成功の Evidence ではない。
 

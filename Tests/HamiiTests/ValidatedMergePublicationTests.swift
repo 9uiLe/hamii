@@ -123,6 +123,74 @@ final class ValidatedMergePublicationTests: XCTestCase {
         XCTAssertThrowsError(try CanonicalRepository(root: f.root).observe())
     }
 
+    func testRecoveryPreservesLiveExternalRefLock() throws {
+        let f = try fixture()
+        defer { cleanupTestCandidates(f.root); try? FileManager.default.removeItem(at: f.root) }
+        let publisher = ValidatedMergePublisher(root: f.root, index: PublishedMergeIndex()) { step in
+            if step == .pending { throw Stopped() }
+        }
+        XCTAssertThrowsError(try publisher.publish("other", expectedState: f.oldState))
+        try configureRefCASStop(f.root, main: f.main, stage: "refCASPrepared")
+        let lock = f.root.appendingPathComponent(".git/refs/heads/\(f.main).lock")
+        let marker = f.root.appendingPathComponent(".hamii/test-writer-paused")
+        let external = try gitProcess(f.root, ["update-ref", "refs/heads/\(f.main)", f.otherHead, f.oldHead])
+        defer { stopProcessTree(external) }
+        try awaitFile(marker, process: external)
+        XCTAssertTrue(external.isRunning)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: lock.path))
+        XCTAssertThrowsError(try ValidatedMergePublisher(root: f.root, index: PublishedMergeIndex()).recover()) { error in
+            guard case MergePublicationError.gitLockOwnershipUnknown = error else { return XCTFail("Wrong error: \(error)") }
+        }
+        XCTAssertTrue(external.isRunning)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: lock.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: f.root.appendingPathComponent(".hamii/merge-publication.pending.json").path))
+        XCTAssertThrowsError(try CanonicalRepository(root: f.root).observe())
+        stopProcessTree(external)
+        try FileManager.default.removeItem(at: lock)
+        try git(f.root, "config", "--unset", "core.hooksPath")
+        let recovered = try ValidatedMergePublisher(root: f.root, index: PublishedMergeIndex()).recover()
+        XCTAssertEqual(try git(f.root, "rev-parse", "HEAD"), f.oldHead)
+        XCTAssertNotEqual(recovered.statePrecondition, f.oldState)
+    }
+
+    func testRecoveryPreservesLiveExternalIndexLock() throws {
+        let f = try fixture()
+        defer { cleanupTestCandidates(f.root); try? FileManager.default.removeItem(at: f.root) }
+        let publisher = ValidatedMergePublisher(root: f.root, index: PublishedMergeIndex()) { step in
+            if step == .afterRefCAS { throw Stopped() }
+        }
+        XCTAssertThrowsError(try publisher.publish("other", expectedState: f.oldState))
+        let marker = f.root.appendingPathComponent(".hamii/test-external-index-paused")
+        let script = f.root.appendingPathComponent(".hamii/pause-clean.sh")
+        try Data("#!/bin/sh\n: > '\(marker.path)'\nwhile :; do sleep 1; done\n".utf8).write(to: script)
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: script.path)
+        try git(f.root, "config", "filter.hamii-pause.clean", script.path)
+        try Data("probe.txt filter=hamii-pause\n".utf8)
+            .write(to: f.root.appendingPathComponent(".git/info/attributes"))
+        let probe = f.root.appendingPathComponent("probe.txt")
+        try Data("probe\n".utf8).write(to: probe)
+        let lock = f.root.appendingPathComponent(".git/index.lock")
+        let external = try gitProcess(f.root, ["add", "probe.txt"])
+        defer { stopProcessTree(external) }
+        try awaitFile(marker, process: external)
+        XCTAssertTrue(external.isRunning)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: lock.path))
+        XCTAssertThrowsError(try ValidatedMergePublisher(root: f.root, index: PublishedMergeIndex()).recover()) { error in
+            guard case MergePublicationError.gitLockOwnershipUnknown = error else { return XCTFail("Wrong error: \(error)") }
+        }
+        XCTAssertTrue(external.isRunning)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: lock.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: f.root.appendingPathComponent(".hamii/merge-publication.pending.json").path))
+        XCTAssertThrowsError(try CanonicalRepository(root: f.root).observe())
+        stopProcessTree(external)
+        try FileManager.default.removeItem(at: lock)
+        try FileManager.default.removeItem(at: probe)
+        try git(f.root, "config", "--unset", "filter.hamii-pause.clean")
+        let recovered = try ValidatedMergePublisher(root: f.root, index: PublishedMergeIndex()).recover()
+        XCTAssertTrue(recovered.document.pages.contains(where: { $0.name == "Other" }))
+        XCTAssertNotEqual(recovered.statePrecondition, f.oldState)
+    }
+
     /// Every checkpoint runs in a separate OS process. The parent observes
     /// lock contention before SIGKILL, then opens a new publisher for recovery.
     func testSIGKILLPublicationAndIdempotentRestartRecovery() throws {
@@ -196,6 +264,22 @@ final class ValidatedMergePublicationTests: XCTestCase {
                 try git(f.root, "config", "--unset", "core.hooksPath")
             }
             let reopened = ValidatedMergePublisher(root: f.root, index: PublishedMergeIndex())
+            if stage == "materializationInternal" || stage == "refCASPrepared" {
+                let lock = stage == "materializationInternal"
+                    ? f.root.appendingPathComponent(".git/index.lock")
+                    : f.root.appendingPathComponent(".git/refs/heads/\(f.main).lock")
+                XCTAssertTrue(FileManager.default.fileExists(atPath: lock.path), stage)
+                XCTAssertThrowsError(try reopened.recover(), stage) { error in
+                    guard case MergePublicationError.gitLockOwnershipUnknown = error else {
+                        return XCTFail("Wrong lock error: \(error)")
+                    }
+                }
+                XCTAssertTrue(FileManager.default.fileExists(atPath: pending.path), stage)
+                XCTAssertTrue(FileManager.default.fileExists(atPath: lock.path), stage)
+                // The test has observed and killed the entire writer process
+                // tree, so it can perform explicit manual lock removal.
+                try FileManager.default.removeItem(at: lock)
+            }
             let recovered = try reopened.recover()
             XCTAssertEqual(try reopened.recover().statePrecondition, recovered.statePrecondition, stage)
             XCTAssertNotEqual(recovered.statePrecondition, f.oldState, stage)
@@ -360,6 +444,24 @@ final class ValidatedMergePublicationTests: XCTestCase {
         process.standardError = process.standardOutput
         try process.run()
         return process
+    }
+
+    private func gitProcess(_ root: URL, _ args: [String]) throws -> Process {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/git")
+        process.arguments = ["-C", root.path] + args
+        process.standardOutput = Pipe()
+        process.standardError = process.standardOutput
+        try process.run()
+        return process
+    }
+
+    private func stopProcessTree(_ process: Process) {
+        guard process.isRunning else { return }
+        let descendants = (try? processDescendants(of: process.processIdentifier)) ?? []
+        _ = kill(process.processIdentifier, SIGKILL)
+        for identifier in descendants { _ = kill(identifier, SIGKILL) }
+        process.waitUntilExit()
     }
 
     private func toolOutput(_ executable: String, _ arguments: [String]) throws -> String {
