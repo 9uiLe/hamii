@@ -19,13 +19,16 @@ public struct IndexGenerationID: Hashable {
 public struct IndexGenerationDescriptor: Equatable {
     public let id: IndexGenerationID
     public let sourceCanonicalIdentity: CanonicalSnapshotIdentity
+    public let sourceCanonicalGeneration: CanonicalGeneration?
     public let documentID: EntityID
     public let documentRevision: Int
 
     public init(id: IndexGenerationID, sourceCanonicalIdentity: CanonicalSnapshotIdentity,
-                documentID: EntityID, documentRevision: Int) {
+                documentID: EntityID, documentRevision: Int,
+                sourceCanonicalGeneration: CanonicalGeneration? = nil) {
         self.id = id
         self.sourceCanonicalIdentity = sourceCanonicalIdentity
+        self.sourceCanonicalGeneration = sourceCanonicalGeneration
         self.documentID = documentID
         self.documentRevision = documentRevision
     }

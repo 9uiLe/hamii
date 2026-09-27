@@ -47,17 +47,20 @@ public final class CanonicalRepository: ProjectRepository {
     private let manager = FileManager.default
     private let transaction: CanonicalTransaction
     private let coordinator: WorktreeCoordinator
+    private let generations: CanonicalGenerationStore
 
     public init(root: URL) {
         self.root = root.standardizedFileURL
         transaction = CanonicalTransaction(root: self.root)
         coordinator = WorktreeCoordinator(root: self.root)
+        generations = CanonicalGenerationStore(root: self.root)
     }
 
     init(root: URL, transactionHook: @escaping (TransactionStep) throws -> Void) {
         self.root = root.standardizedFileURL
         transaction = CanonicalTransaction(root: self.root, hook: transactionHook)
         coordinator = WorktreeCoordinator(root: self.root)
+        generations = CanonicalGenerationStore(root: self.root)
     }
 
     public func create(name: String) throws -> Document {
@@ -70,6 +73,7 @@ public final class CanonicalRepository: ProjectRepository {
             try AgentProfilesRepository(root: root).createDefault()
             try coordinator.invalidateClientObservations()
             try writeDocument(document, expected: nil)
+            _ = try generations.bootstrapVerified(snapshotDuringManagedGitTransition())
         }
         return document
     }
@@ -78,6 +82,7 @@ public final class CanonicalRepository: ProjectRepository {
         try coordinator.withExclusive {
             try transaction.recoverIfNeeded()
             try coordinator.requireReady()
+            try recoverGenerationIfNeeded()
             return try loadUnlocked(validate: true)
         }
     }
@@ -90,6 +95,7 @@ public final class CanonicalRepository: ProjectRepository {
         try coordinator.withExclusive {
             try transaction.recoverIfNeeded()
             try coordinator.requireReady()
+            try recoverGenerationIfNeeded()
             let document = try loadUnlocked(validate: true)
             let observed = ProjectObservation(document: document, statePrecondition: try clientPreconditionUnlocked())
             return try operation(observed)
@@ -100,6 +106,7 @@ public final class CanonicalRepository: ProjectRepository {
         try coordinator.withExclusive {
             try transaction.recoverIfNeeded()
             try coordinator.requireReady()
+            try recoverGenerationIfNeeded()
             return try operation(loadUnlocked(validate: true))
         }
     }
@@ -108,6 +115,7 @@ public final class CanonicalRepository: ProjectRepository {
         try coordinator.withExclusive {
             try transaction.recoverIfNeeded()
             try coordinator.requireReady()
+            try recoverGenerationIfNeeded()
             return try operation(snapshotDuringManagedGitTransition())
         }
     }
@@ -116,6 +124,7 @@ public final class CanonicalRepository: ProjectRepository {
         try coordinator.withExclusive {
             try transaction.recoverIfNeeded()
             try coordinator.requireReady()
+            try recoverGenerationIfNeeded()
             let manifest = try readManifest()
             return try operation(manifest.id, manifest.revision)
         }
@@ -125,6 +134,7 @@ public final class CanonicalRepository: ProjectRepository {
         try coordinator.withExclusive {
             try transaction.recoverIfNeeded()
             try coordinator.requireReady()
+            try recoverGenerationIfNeeded()
             guard try clientPreconditionUnlocked() == expected.statePrecondition else { throw AuthoringError.staleState }
             let manifest = try readManifest()
             guard manifest.revision == expected.document.revision,
@@ -143,6 +153,7 @@ public final class CanonicalRepository: ProjectRepository {
         try coordinator.withExclusive {
             try transaction.recoverIfNeeded()
             try coordinator.requireReady()
+            try recoverGenerationIfNeeded()
             return allDiagnostics(try loadUnlocked(validate: false))
         }
     }
@@ -185,6 +196,7 @@ public final class CanonicalRepository: ProjectRepository {
         try coordinator.withExclusive {
             try transaction.recoverIfNeeded()
             try coordinator.requireReady()
+            try recoverGenerationIfNeeded()
             let manifest = try readManifest()
             guard manifest.revision == expected.revision else {
                 throw AuthoringError.staleRevision(expected: expected.revision, actual: manifest.revision)
@@ -213,14 +225,12 @@ public final class CanonicalRepository: ProjectRepository {
         try transaction.recoverIfNeeded()
         let document = try loadUnlocked(validate: true, validationHook: validationHook)
         _ = try AgentProfilesRepository(root: root).profiles()
-        var hash = SHA256()
+        var files: [String: Data] = [:]
         for path in try canonicalJSONPaths() {
             let relative = path.path.replacingOccurrences(of: root.path + "/", with: "")
-            appendHash(Data(relative.utf8), to: &hash)
-            appendHash(try Data(contentsOf: path), to: &hash)
+            files[relative] = try Data(contentsOf: path)
         }
-        return CanonicalSnapshot(document: document,
-                                 identity: CanonicalSnapshotIdentity(rawValue: hash.finalize().map { String(format: "%02x", $0) }.joined())!)
+        return CanonicalSnapshot(document: document, identity: hashIdentity(files))
     }
 
     private func writeDocument(_ document: Document, expected: Document?) throws {
@@ -229,7 +239,40 @@ public final class CanonicalRepository: ProjectRepository {
         try manager.createDirectory(at: root, withIntermediateDirectories: true)
         let files = try encodedFiles(document)
         let oldFiles = try expected.map(encodedFiles) ?? [:]
+        try transaction.preflight(expectedOldFiles: oldFiles)
+        let operationID: UUID?
+        if expected != nil {
+            let old = try generations.requireMatchingStable(snapshotDuringManagedGitTransition())
+            var proposed = files
+            proposed["hamii-agent-profiles.json"] = try Data(contentsOf: root.appendingPathComponent("hamii-agent-profiles.json"))
+            operationID = try generations.beginPending(old: old, expectedNewIdentity: hashIdentity(proposed))
+        } else {
+            operationID = nil
+        }
         try transaction.commit(newFiles: files, expectedOldFiles: oldFiles, oldRevision: expected?.revision, newRevision: document.revision)
+        if let operationID {
+            _ = try generations.reconcile(snapshotDuringManagedGitTransition(), expectedOperationID: operationID)
+        }
+    }
+
+    private func recoverGenerationIfNeeded() throws {
+        do {
+            _ = try generations.readStable()
+        } catch CanonicalGenerationError.missing {
+            // A verified coordinated snapshot is the only bootstrap source.
+            _ = try generations.bootstrapVerified(snapshotDuringManagedGitTransition())
+        } catch CanonicalGenerationError.pending {
+            _ = try generations.reconcile(snapshotDuringManagedGitTransition())
+        }
+    }
+
+    private func hashIdentity(_ files: [String: Data]) -> CanonicalSnapshotIdentity {
+        var hash = SHA256()
+        for path in files.keys.sorted() {
+            appendHash(Data(path.utf8), to: &hash)
+            appendHash(files[path]!, to: &hash)
+        }
+        return CanonicalSnapshotIdentity(rawValue: hash.finalize().map { String(format: "%02x", $0) }.joined())!
     }
 
     private func encodedFiles(_ document: Document) throws -> [String: Data] {

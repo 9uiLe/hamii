@@ -52,12 +52,14 @@ public struct PublishedMergeIndex: MergeIndexPublishing {
                        isPublication: Bool) throws -> (url: URL, generation: IndexGenerationDescriptor) {
         let calculator = GitCanonicalRevisionCalculator()
         let source = try calculator.current(at: root)
+        let sourceGeneration = try? CanonicalGenerationStore(root: root).requireMatchingStable(snapshot).generation
         let generated: URL
         let generation: IndexGenerationDescriptor
         do {
             let index = try LocalIndex(projectRoot: root, documentID: snapshot.document.id,
                                        revisionCalculator: calculator, storageRoot: storageRoot)
-            generation = try index.rebuild(from: snapshot, canonicalRevision: source, transactionHook: isPublication ? {
+            generation = try index.rebuild(from: snapshot, canonicalRevision: source,
+                                           sourceCanonicalGeneration: sourceGeneration, transactionHook: isPublication ? {
                 hook?(.duringTransaction)
             } : nil)
             let verified = try index.assertCurrent(documentID: snapshot.document.id,

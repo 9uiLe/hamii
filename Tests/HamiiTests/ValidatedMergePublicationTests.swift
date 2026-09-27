@@ -43,11 +43,12 @@ final class ValidatedMergePublicationTests: XCTestCase {
                                expectedState: service.observe().statePrecondition, author: .human)
         try commit(root, "base")
         let main = try git(root, "branch", "--show-current")
-        try git(root, "switch", "-qc", "other")
+        try git(root, "branch", "other")
+        _ = try ManagedGit(root: root).switchBranch("other", expectedState: repository.observe().statePrecondition)
         _ = try service.mutate(.createPage(name: "Other"), expectedState: service.observe().statePrecondition, author: .human)
         try commit(root, "other page")
         let otherHead = try git(root, "rev-parse", "HEAD")
-        try git(root, "switch", "-q", main)
+        _ = try ManagedGit(root: root).switchBranch(main, expectedState: repository.observe().statePrecondition)
         _ = try service.mutate(.createPage(name: "Main"), expectedState: service.observe().statePrecondition, author: .human)
         try commit(root, "main page")
         let observed = try service.observe()
@@ -262,7 +263,7 @@ final class ValidatedMergePublicationTests: XCTestCase {
             let result = f.root.appendingPathComponent(".hamii/test-reader-result")
             let environment = ["HAMII_PUBLICATION_ROOT": f.root.path,
                                "HAMII_PUBLICATION_STAGE": stage,
-                               "HAMII_PUBLICATION_STATE": f.oldState.rawValue]
+                               "HAMII_PUBLICATION_STATE": try CanonicalRepository(root: f.root).observe().statePrecondition.rawValue]
             let writer = try child("testPublicationWriterWorker", environment: environment)
             defer {
                 if writer.isRunning {
@@ -370,11 +371,11 @@ final class ValidatedMergePublicationTests: XCTestCase {
         try Data(body.utf8).write(to: script)
         try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: script.path)
         try git(root, "config", "filter.hamii-pause.smudge", script.path)
-        try git(root, "switch", "-q", "other")
+        _ = try ManagedGit(root: root).switchBranch("other", expectedState: CanonicalRepository(root: root).observe().statePrecondition)
         try Data("probe.txt filter=hamii-pause\n".utf8).write(to: root.appendingPathComponent(".gitattributes"))
         try Data("materialization probe\n".utf8).write(to: root.appendingPathComponent("probe.txt"))
         try commit(root, "materialization probe")
-        try git(root, "switch", "-q", main)
+        _ = try ManagedGit(root: root).switchBranch(main, expectedState: CanonicalRepository(root: root).observe().statePrecondition)
     }
 
     private func configureRefCASStop(_ root: URL, main: String, stage: String) throws {

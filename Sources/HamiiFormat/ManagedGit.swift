@@ -36,12 +36,14 @@ public final class ManagedGit {
     public let root: URL
     private let coordinator: WorktreeCoordinator
     private let repository: CanonicalRepository
+    private let generations: CanonicalGenerationStore
     private let hook: ((ManagedGitStep) throws -> Void)?
 
     public init(root: URL) {
         self.root = root.standardizedFileURL
         coordinator = WorktreeCoordinator(root: self.root)
         repository = CanonicalRepository(root: self.root)
+        generations = CanonicalGenerationStore(root: self.root)
         hook = nil
     }
 
@@ -49,6 +51,7 @@ public final class ManagedGit {
         self.root = root.standardizedFileURL
         coordinator = WorktreeCoordinator(root: self.root)
         repository = CanonicalRepository(root: self.root)
+        generations = CanonicalGenerationStore(root: self.root)
         self.hook = hook
     }
 
@@ -66,6 +69,9 @@ public final class ManagedGit {
                 throw ManagedGitError.invalidBranch(targetBranch)
             }
             let transition = ManagedGitTransition(sourceBranch: sourceBranch, sourceHead: try head(), targetBranch: targetBranch, targetHead: targetHead)
+            let oldSnapshot = try repository.snapshotDuringManagedGitTransition()
+            let oldGeneration = try stableGeneration(for: oldSnapshot)
+            _ = try generations.beginPending(old: oldGeneration, expectedNewIdentity: nil)
             try coordinator.beginGitTransition(transition)
             try hook?(.pending)
             do {
@@ -74,7 +80,9 @@ public final class ManagedGit {
                 guard try branch() == targetBranch, try head() == targetHead else { throw ManagedGitError.changedDuringTransition }
                 try requireCleanWorktree()
                 let result = try repository.observeDuringManagedGitTransition()
+                let newSnapshot = try repository.snapshotDuringManagedGitTransition()
                 try hook?(.validated)
+                _ = try generations.finalizeVerifiedTransition(newSnapshot)
                 try coordinator.finishGitTransition()
                 return result
             } catch let error as CanonicalError {
@@ -86,6 +94,7 @@ public final class ManagedGit {
                    (try? git("switch", "--no-guess", sourceBranch)) != nil,
                    (try? branch()) == sourceBranch, (try? head()) == transition.sourceHead,
                    (try? repository.observeDuringManagedGitTransition()) != nil {
+                    _ = try generations.reconcile(repository.snapshotDuringManagedGitTransition())
                     try coordinator.finishGitTransition()
                 }
                 throw error
@@ -98,6 +107,8 @@ public final class ManagedGit {
             try requireWorktreeRoot()
             guard !coordinator.mergePublicationPending() else { throw CanonicalError.managedGitPending }
             guard let pending = try coordinator.pendingGitTransition() else {
+                let snapshot = try repository.snapshotDuringManagedGitTransition()
+                _ = try stableGeneration(for: snapshot)
                 return try repository.observeDuringManagedGitTransition()
             }
             try requireCleanWorktree()
@@ -109,6 +120,12 @@ public final class ManagedGit {
             }
             do {
                 let result = try repository.observeDuringManagedGitTransition()
+                let snapshot = try repository.snapshotDuringManagedGitTransition()
+                if currentBranch == pending.targetBranch {
+                    _ = try generations.finalizeVerifiedTransition(snapshot)
+                } else {
+                    _ = try generations.reconcile(snapshot)
+                }
                 try coordinator.finishGitTransition()
                 return result
             } catch let error as CanonicalError {
@@ -118,6 +135,7 @@ public final class ManagedGit {
                       (try? head()) == pending.sourceHead else { throw error }
                 try requireCleanWorktree()
                 let restored = try repository.observeDuringManagedGitTransition()
+                _ = try generations.reconcile(repository.snapshotDuringManagedGitTransition())
                 try coordinator.finishGitTransition()
                 return restored
             }
@@ -164,6 +182,11 @@ public final class ManagedGit {
         guard URL(fileURLWithPath: actual).resolvingSymlinksInPath().standardizedFileURL == root.resolvingSymlinksInPath().standardizedFileURL else {
             throw ManagedGitError.invalidWorktree
         }
+    }
+
+    private func stableGeneration(for snapshot: CanonicalSnapshot) throws -> StableCanonicalGeneration {
+        do { return try generations.requireMatchingStable(snapshot) }
+        catch CanonicalGenerationError.missing { return try generations.bootstrapVerified(snapshot) }
     }
 
     private func requireCleanWorktree() throws {

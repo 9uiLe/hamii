@@ -55,6 +55,7 @@ public final class ValidatedMergePublisher {
     public let root: URL
     private let coordinator: WorktreeCoordinator
     private let repository: CanonicalRepository
+    private let generations: CanonicalGenerationStore
     private let index: any MergeIndexPublishing
     private let hook: ((MergePublicationStep) throws -> Void)?
 
@@ -62,6 +63,7 @@ public final class ValidatedMergePublisher {
         self.root = root.standardizedFileURL
         coordinator = WorktreeCoordinator(root: self.root)
         repository = CanonicalRepository(root: self.root)
+        generations = CanonicalGenerationStore(root: self.root)
         self.index = index
         hook = nil
     }
@@ -70,6 +72,7 @@ public final class ValidatedMergePublisher {
         self.root = root.standardizedFileURL
         coordinator = WorktreeCoordinator(root: self.root)
         repository = CanonicalRepository(root: self.root)
+        generations = CanonicalGenerationStore(root: self.root)
         self.index = index
         self.hook = hook
     }
@@ -135,6 +138,11 @@ public final class ValidatedMergePublisher {
                 throw ManagedGitError.changedDuringTransition
             }
             try requireCleanWorktree()
+            let oldSnapshot = try repository.snapshotDuringManagedGitTransition()
+            let oldGeneration: StableCanonicalGeneration
+            do { oldGeneration = try generations.requireMatchingStable(oldSnapshot) }
+            catch CanonicalGenerationError.missing { oldGeneration = try generations.bootstrapVerified(oldSnapshot) }
+            _ = try generations.beginPending(old: oldGeneration, expectedNewIdentity: candidate.identity)
             try coordinator.beginMergePublication(try JSONEncoder().encode(initial))
             pending = true
             try hook?(.pending)
@@ -165,6 +173,7 @@ public final class ValidatedMergePublisher {
                 try requireCleanWorktree()
                 let snapshot = try repository.snapshotDuringManagedGitTransition()
                 guard snapshot.identity.rawValue == record.sourceCanonicalIdentity else { throw MergePublicationError.unknownSourceState }
+                _ = try generations.reconcile(snapshot)
                 try coordinator.finishMergePublication()
                 cleanupCandidate(record)
                 return try repository.observeDuringManagedGitTransition()
@@ -207,9 +216,11 @@ public final class ValidatedMergePublisher {
         record.phase = .canonicalVerified
         try save(record)
         try hook?(.canonicalVerified)
+        _ = try generations.finalizeVerifiedTransition(snapshot)
         try hook?(.beforeIndexBuild)
         let built = try index.rebuildPublished(at: root, snapshot: snapshot)
         guard built.sourceCanonicalIdentity == snapshot.identity,
+              built.sourceCanonicalGeneration == (try generations.requireMatchingStable(snapshot)).generation,
               built.documentID == snapshot.document.id,
               built.documentRevision == snapshot.document.revision else { throw MergePublicationError.candidateMismatch }
         try hook?(.indexBuilt)

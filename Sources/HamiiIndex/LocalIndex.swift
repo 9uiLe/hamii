@@ -24,7 +24,7 @@ public struct ComponentHit: Codable, Equatable {
 }
 
 public final class LocalIndex {
-    public static let schemaVersion = 6
+    public static let schemaVersion = 7
     public let url: URL
     private let projectRoot: URL
     private let revisionCalculator: any CanonicalRevisionCalculating
@@ -54,18 +54,22 @@ public final class LocalIndex {
     deinit { sqlite3_close(database) }
 
     @discardableResult
-    public func rebuild(from snapshot: CanonicalSnapshot, canonicalRevision: CanonicalRevision) throws -> IndexGenerationDescriptor {
-        try rebuild(from: snapshot, canonicalRevision: canonicalRevision, transactionHook: nil)
+    public func rebuild(from snapshot: CanonicalSnapshot, canonicalRevision: CanonicalRevision,
+                        sourceCanonicalGeneration: CanonicalGeneration? = nil) throws -> IndexGenerationDescriptor {
+        try rebuild(from: snapshot, canonicalRevision: canonicalRevision,
+                    sourceCanonicalGeneration: sourceCanonicalGeneration, transactionHook: nil)
     }
 
     // Internal stop point for process-crash regression tests. The public
     // rebuild contract never exposes a partially committed transaction.
     @discardableResult
     func rebuild(from snapshot: CanonicalSnapshot, canonicalRevision: CanonicalRevision,
+                 sourceCanonicalGeneration: CanonicalGeneration? = nil,
                  transactionHook: (() -> Void)?) throws -> IndexGenerationDescriptor {
         let document = snapshot.document
         let generation = IndexGenerationDescriptor(id: .new(), sourceCanonicalIdentity: snapshot.identity,
-                                                   documentID: document.id, documentRevision: document.revision)
+                                                   documentID: document.id, documentRevision: document.revision,
+                                                   sourceCanonicalGeneration: sourceCanonicalGeneration)
         try execute("BEGIN IMMEDIATE TRANSACTION")
         do {
             try execute("DELETE FROM components")
@@ -88,6 +92,8 @@ public final class LocalIndex {
             try insert("INSERT INTO metadata(key, value) VALUES ('canonicalRevision', ?)", [canonicalRevision.rawValue])
             try insert("INSERT INTO metadata(key, value) VALUES ('indexGenerationID', ?)", [generation.id.rawValue])
             try insert("INSERT INTO metadata(key, value) VALUES ('sourceCanonicalIdentity', ?)", [snapshot.identity.rawValue])
+            try insert("INSERT INTO metadata(key, value) VALUES ('sourceCanonicalGeneration', ?)",
+                       [sourceCanonicalGeneration?.serialized ?? ""])
             try execute("COMMIT")
             return generation
         } catch {
@@ -162,8 +168,17 @@ public final class LocalIndex {
               let idText = try metadata("indexGenerationID"), let id = IndexGenerationID(rawValue: idText),
               let sourceText = try metadata("sourceCanonicalIdentity"),
               let source = CanonicalSnapshotIdentity(rawValue: sourceText) else { throw IndexError.stale }
+        guard let generationText = try metadata("sourceCanonicalGeneration") else { throw IndexError.stale }
+        let sourceGeneration: CanonicalGeneration?
+        if generationText.isEmpty {
+            sourceGeneration = nil
+        } else {
+            guard let parsed = CanonicalGeneration(serialized: generationText) else { throw IndexError.stale }
+            sourceGeneration = parsed
+        }
         return IndexGenerationDescriptor(id: id, sourceCanonicalIdentity: source,
-                                         documentID: EntityID(documentID), documentRevision: revision)
+                                         documentID: EntityID(documentID), documentRevision: revision,
+                                         sourceCanonicalGeneration: sourceGeneration)
     }
 
     private func metadata(_ key: String) throws -> String? {

@@ -151,8 +151,9 @@ private enum CLI {
                 let before = try calculator.current(at: path)
                 let stable = try calculator.current(at: path)
                 guard before == stable else { throw IndexError.stale }
+                let sourceGeneration = try CanonicalGenerationStore(root: path).requireMatchingStable(snapshot).generation
                 _ = try LocalIndex(projectRoot: path, documentID: snapshot.document.id, revisionCalculator: calculator)
-                    .rebuild(from: snapshot, canonicalRevision: stable)
+                    .rebuild(from: snapshot, canonicalRevision: stable, sourceCanonicalGeneration: sourceGeneration)
                 guard try calculator.current(at: path) == stable else { throw IndexError.stale }
                 return Output(ok: true, message: "Indexed revision \(snapshot.document.revision)")
             }
@@ -334,6 +335,7 @@ do {
     case ManagedGitError.dirtyWorktree, ManagedGitError.changedDuringTransition: category = "conflict"; code = 3
     case is ManagedGitError: category = "git"; code = 7
     case is MergePublicationError: category = "transitionPending"; code = 7
+    case is CanonicalGenerationError: category = "transitionPending"; code = 7
     case IndexError.stale: category = "staleIndex"; code = 8
     case IndexError.unverifiableSource: category = "staleIndex"; code = 8
     case is IndexError: category = "index"; code = 7

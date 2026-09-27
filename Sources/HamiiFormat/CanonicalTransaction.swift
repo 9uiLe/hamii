@@ -34,14 +34,19 @@ final class CanonicalTransaction {
         self.hook = hook
     }
 
-    func commit(newFiles: [String: Data], expectedOldFiles: [String: Data], oldRevision: Int?, newRevision: Int) throws {
-        try recoverIfNeeded()
-        let oldFiles = try currentFiles()
-        if oldFiles != expectedOldFiles {
-            let mismatched = Set(oldFiles.keys).union(expectedOldFiles.keys)
-                .filter { oldFiles[$0] != expectedOldFiles[$0] }.sorted()
+    func preflight(expectedOldFiles: [String: Data]) throws {
+        let actual = try currentFiles()
+        guard actual == expectedOldFiles else {
+            let mismatched = Set(actual.keys).union(expectedOldFiles.keys)
+                .filter { actual[$0] != expectedOldFiles[$0] }.sorted()
             throw CanonicalError.transactionConflict(mismatched.first ?? "hamii.json")
         }
+    }
+
+    func commit(newFiles: [String: Data], expectedOldFiles: [String: Data], oldRevision: Int?, newRevision: Int) throws {
+        try recoverIfNeeded()
+        try preflight(expectedOldFiles: expectedOldFiles)
+        let oldFiles = expectedOldFiles
         let paths = Set(oldFiles.keys).union(newFiles.keys).filter { oldFiles[$0] != newFiles[$0] }.sorted()
         guard paths.contains("hamii.json") else { throw CanonicalError.transactionCorrupt("Manifest revision did not change") }
         let local = root.appendingPathComponent(".hamii", isDirectory: true)
