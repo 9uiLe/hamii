@@ -30,10 +30,46 @@ public final class LocalIndex {
     private let revisionCalculator: any CanonicalRevisionCalculating
     private var database: OpaquePointer?
 
-    public init(projectRoot: URL, documentID: EntityID, revisionCalculator: any CanonicalRevisionCalculating, storageRoot: URL? = nil) throws {
+    public convenience init(projectRoot: URL, documentID: EntityID, revisionCalculator: any CanonicalRevisionCalculating, storageRoot: URL? = nil) throws {
+        try self.init(projectRoot: projectRoot, documentID: documentID, revisionCalculator: revisionCalculator,
+                      storageRoot: storageRoot, existingOnly: false)
+    }
+
+    /// Query opens never create or replace the published database. In
+    /// particular an obsolete schema remains available for read-only recovery
+    /// classification until a new generation is published.
+    static func openExisting(projectRoot: URL, documentID: EntityID,
+                             revisionCalculator: any CanonicalRevisionCalculating,
+                             storageRoot: URL? = nil) throws -> LocalIndex {
+        try LocalIndex(projectRoot: projectRoot, documentID: documentID,
+                       revisionCalculator: revisionCalculator, storageRoot: storageRoot,
+                       existingOnly: true)
+    }
+
+    private init(projectRoot: URL, documentID: EntityID,
+                 revisionCalculator: any CanonicalRevisionCalculating,
+                 storageRoot: URL?, existingOnly: Bool) throws {
         self.projectRoot = projectRoot.standardizedFileURL
         self.revisionCalculator = revisionCalculator
         url = LocalIndexLocation.url(projectRoot: projectRoot, documentID: documentID, storageRoot: storageRoot)
+        if existingOnly {
+            guard FileManager.default.fileExists(atPath: url.path) else { throw IndexError.stale }
+            let result = sqlite3_open_v2(url.path, &database, SQLITE_OPEN_READONLY, nil)
+            guard result == SQLITE_OK else {
+                sqlite3_close(database)
+                database = nil
+                throw IndexError.sqlite("Could not read published index: SQLite code \(result)")
+            }
+            do {
+                guard try currentSchemaVersion() == Self.schemaVersion else { throw IndexError.stale }
+                _ = sqlite3_busy_timeout(database, 5_000)
+            } catch {
+                sqlite3_close(database)
+                database = nil
+                throw error
+            }
+            return
+        }
         try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         if sqlite3_open(url.path, &database) != SQLITE_OK { throw IndexError.sqlite("Could not open index") }
         if try currentSchemaVersion() != Self.schemaVersion {

@@ -112,6 +112,37 @@ final class CanonicalGenerationIntegrationTests: XCTestCase {
         XCTAssertThrowsError(try CanonicalRepository(root: root).observe())
     }
 
+    func testDerivedRecoveryCaptureDoesNotBootstrapOrReconcileGeneration() throws {
+        let root = temporaryRoot()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let repository = CanonicalRepository(root: root)
+        _ = try repository.create(name: "Strict capture")
+        let record = root.appendingPathComponent(".hamii/canonical-generation.json")
+        let original = try Data(contentsOf: record)
+        let captured = try repository.withStableSnapshotForDerivedRecovery { snapshot, stable in
+            XCTAssertEqual(snapshot.identity, stable.snapshotIdentity)
+            return stable
+        }
+        XCTAssertEqual(try repository.withStableGenerationForDerivedRecovery { $0 }, captured)
+
+        try FileManager.default.removeItem(at: record)
+        XCTAssertThrowsError(try repository.withStableSnapshotForDerivedRecovery { _, _ in () }) { error in
+            guard case CanonicalGenerationError.missing = error else { return XCTFail("Wrong state: \(error)") }
+        }
+        XCTAssertFalse(FileManager.default.fileExists(atPath: record.path))
+
+        try original.write(to: record)
+        _ = try WorktreeCoordinator(root: root).withExclusive {
+            try CanonicalGenerationStore(root: root).beginPending(old: captured,
+                expectedNewIdentity: nil)
+        }
+        let pending = try Data(contentsOf: record)
+        XCTAssertThrowsError(try repository.withStableSnapshotForDerivedRecovery { _, _ in () }) { error in
+            guard case CanonicalGenerationError.pending = error else { return XCTFail("Wrong state: \(error)") }
+        }
+        XCTAssertEqual(try Data(contentsOf: record), pending)
+    }
+
     func testGenerationStoreUsesSameRecordForVarPathAliases() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("hamii-generation-alias-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: root) }

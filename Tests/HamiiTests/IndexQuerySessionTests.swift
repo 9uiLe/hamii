@@ -120,6 +120,25 @@ final class IndexQuerySessionTests: XCTestCase {
         try repository.save(next, expected: old)
     }
 
+    func testQueryOpenNeverCreatesOrReplacesPublishedIndex() throws {
+        let fixture = try fixture()
+        defer { try? FileManager.default.removeItem(at: fixture.directory) }
+        let published = LocalIndexLocation.url(projectRoot: fixture.root,
+            documentID: fixture.documentID, storageRoot: fixture.indexRoot)
+        try FileManager.default.removeItem(at: published)
+        XCTAssertThrowsError(try query(session(fixture), fixture))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: published.path))
+
+        _ = try rebuild(fixture)
+        var database: OpaquePointer?
+        XCTAssertEqual(sqlite3_open(published.path, &database), SQLITE_OK)
+        XCTAssertEqual(sqlite3_exec(database, "PRAGMA user_version = 7", nil, nil, nil), SQLITE_OK)
+        sqlite3_close(database)
+        let before = try Data(contentsOf: published)
+        XCTAssertThrowsError(try query(session(fixture), fixture))
+        XCTAssertEqual(try Data(contentsOf: published), before)
+    }
+
     func testBoundColdWarmSaveAndRebuildPaths() throws {
         let fixture = try fixture()
         defer { try? FileManager.default.removeItem(at: fixture.directory) }

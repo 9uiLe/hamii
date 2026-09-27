@@ -150,8 +150,8 @@ public final class IndexQuerySession {
     }
 
     private func makeIndex(documentID: EntityID) throws -> LocalIndex {
-        try LocalIndex(projectRoot: root, documentID: documentID,
-                       revisionCalculator: revisionCalculator, storageRoot: storageRoot)
+        try LocalIndex.openExisting(projectRoot: root, documentID: documentID,
+                                    revisionCalculator: revisionCalculator, storageRoot: storageRoot)
     }
 
     private enum FastResult {

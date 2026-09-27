@@ -120,6 +120,36 @@ public final class CanonicalRepository: ProjectRepository {
         }
     }
 
+    /// A derived Index may recover only from an already stable coordinated
+    /// generation. This path may recover the Canonical transaction journal, but
+    /// deliberately never bootstraps or reconciles the generation record.
+    package func withStableSnapshotForDerivedRecovery<T>(
+        _ operation: (CanonicalSnapshot, StableCanonicalGeneration) throws -> T
+    ) throws -> T {
+        try coordinator.withExclusive {
+            try transaction.recoverIfNeeded()
+            try coordinator.requireReady()
+            let stable = try generations.readStable()
+            let snapshot = try snapshotDuringManagedGitTransition()
+            guard stable.snapshotIdentity == snapshot.identity else {
+                throw CanonicalGenerationError.unknownState
+            }
+            return try operation(snapshot, stable)
+        }
+    }
+
+    /// Phase 2 of an Index recovery uses the durable stable generation and a
+    /// Git oracle without parsing the full Canonical document a second time.
+    package func withStableGenerationForDerivedRecovery<T>(
+        _ operation: (StableCanonicalGeneration) throws -> T
+    ) throws -> T {
+        try coordinator.withExclusive {
+            try transaction.recoverIfNeeded()
+            try coordinator.requireReady()
+            return try operation(generations.readStable())
+        }
+    }
+
     public func withCoordinatedIdentity<T>(_ operation: (EntityID, Int) throws -> T) throws -> T {
         try coordinator.withExclusive {
             try transaction.recoverIfNeeded()
