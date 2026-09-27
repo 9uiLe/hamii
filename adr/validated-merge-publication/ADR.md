@@ -28,7 +28,7 @@
 
 ## Current Hypothesis
 
-**Tentative implementation detail:** `IndexGenerationID` の保存形式、Git が停止時に残す lock file の所有者確認方法は production 検証が必要。Candidate commit は `refs/hamii/merge-candidates/<publication-id>` で保持する。Index generation の一般的な storage / atomic switch は [Index consistency ADR](../index-consistency/ADR.md) で扱う。
+**Tentative implementation detail:** `IndexGenerationID` の保存形式は production 検証が必要。[Git lock ownership Spike](spikes/git-lock-ownership/SPIKE.md) は、pending record と lock path のみでは停止した hamii subprocess の lock と生存中の raw Git process の lock を区別できないことを示した。Ownership を証明できない lock は削除せず gate を維持する。Candidate commit は `refs/hamii/merge-candidates/<publication-id>` で保持する。Index generation の一般的な storage / atomic switch は [Index consistency ADR](../index-consistency/ADR.md) で扱う。
 
 ## Decision
 
@@ -40,12 +40,13 @@ Pending 中は observe / mutation / query / preview mutation を Ready として
 
 ## Unknowns
 
-Production は candidate retention ref、pending record、source / candidate Canonical JSON identity、別ファイル full SQLite rebuild と rename を持つ。残る検証は Git subprocess / lock file の安全な所有者確認、candidate retention ref の orphan cleanup、明示的な `IndexGenerationID` と一般 Query の接続、large-project latency。停電耐久性は別 ADR。
+Production は candidate retention ref、pending record、source / candidate Canonical JSON identity、別ファイル full SQLite rebuild と rename を持つ。残る検証は ownership 不明 Git lock での fail-closed recovery と明示的な manual repair boundary、candidate retention ref の orphan cleanup、明示的な `IndexGenerationID` と一般 Query の接続、large-project latency。停電耐久性は別 ADR。
 
 ## Required Evidence
 
 - [Publication stop matrix](spikes/publication-stop-matrix/SPIKE.md): 実 Git worktree と SQLite Index の in-place fast-forward 試作で、4 つの phase 間 SIGKILL 後に gate・recovery・query・client token を検証した。Git / SQLite 更新処理中の停止と production generation binding、代替方式との比較は未完了。
 - [CAS and internal stops](spikes/cas-and-internal-stops/SPIKE.md): 実 Git ref CAS の transaction hook 内、Git materialization 内、試作用 Canonical verification / SQLite transaction、Index file replace / gate clear の直前・直後を SIGKILL で検証した。Old / candidate / unknown ref の fail-closed 分類と Index 欠損後の candidate 側 recovery を確認した。Production Snapshot / generation / durability は未検証。
+- [Git lock ownership](spikes/git-lock-ownership/SPIKE.md): 生存中の外部 Git が同じ ref / index lock path を保持できる。Pending record と lock file の存在だけで interrupted hamii subprocess の所有物と断定できない。Production の live-lock regression と fail-closed recovery は未実装。
 - `ValidatedMergePublicationTests` は production `ValidatedMergePublisher` と実 Git / SQLite を使用し、19 停止地点で別 OS process の writer を SIGKILL する。Reader の lock 競合、pending 中の observe / query / mutation 拒否、old / candidate の recovery、旧 client token 拒否、Index freshness、再 recovery の冪等性を回帰検証する。Git reference-transaction hook、smudge filter、SQLite transaction 内の停止を含む。これは process crash の Evidence であり、power-loss durability や一般の IndexGenerationID protocol の証明ではない。
 - 現行の [semantic merge result](../git-external-write-coordination/spikes/concurrent-worktree-merge/SPIKE.md) と `scripts/smoke-merge-candidate.py` は candidate validation の Evidence。Publication 成功の Evidence ではない。
 
