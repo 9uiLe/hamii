@@ -36,7 +36,7 @@ External-change detection は正式な writer model の外で起きた変更に�
 
 ## Unknowns
 
-残る実装は managed Git switch の production generation / Index 連携、検証済み merge candidate と Index generation の atomic publish、partial Git state の修復 UX、worktree identity と移動の扱い。`git merge check` は一時 worktree 内の semantic validation と一時 Index rebuild を行い、公開しない。Client / Preview token の選択は別 ADR。Power loss は [Power-loss ADR](../canonical-power-loss-durability/ADR.md)。
+残る実装は managed Git switch の production generation / Index 連携、検証済み merge candidate と Index generation の atomic publish、partial Git state の修復 UX、worktree identity と移動の扱い。`git merge check` は一時 worktree 内の semantic validation と一時 Index rebuild を行い、公開しない。Publication の具体的停止復旧方式は [Validated merge publication ADR](../validated-merge-publication/ADR.md) の一つの独立した判断境界とする。Client / Preview token の選択は別 ADR。Power loss は [Power-loss ADR](../canonical-power-loss-durability/ADR.md)。
 
 ## Required Evidence
 
