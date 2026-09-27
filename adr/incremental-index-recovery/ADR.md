@@ -2,7 +2,7 @@
 
 ## Context
 
-一般 Query の復旧 baseline は、検証済みの coordinated CanonicalSnapshot から Index generation 全体を再構築し、完成した generation だけを公開する方式として [Index Recovery Strategy ADR](../index-recovery-strategy/ADR.md) で判断する。Local SQLite は Canonical Data から再生成可能な Derived Data であり、stale rows は返さない。Full rebuild の correctness contract を維持しながら、大規模 Project / 小さな変更集合で再投影コストを削減できるかは独立した最適化 Decision である。
+一般 Query の復旧 baseline は、検証済みの coordinated CanonicalSnapshot から Index generation 全体を再構築し、完成した generation だけを公開する方式である。[Current Architecture](../../docs/final-architecture.md) がその保証を説明する。Local SQLite は Canonical Data から再生成可能な Derived Data であり、stale rows は返さない。Full rebuild の correctness contract を維持しながら、大規模 Project / 小さな変更集合で再投影コストを削減できるかは独立した最適化 Decision である。
 
 ## Decision to Make
 
@@ -33,6 +33,7 @@ Production changed-entity detection、reverse dependency store、deletion / scop
 
 - [Incremental Reindex](spikes/incremental-reindex/SPIKE.md): 実 `IndexProjection` の5変更で affected row set と full oracle が一致し、試作 SQLite generation の tested commit / rollback barrier は partial rows を見せなかった。Production targeted projector は未検証。
 - [Large Project Rebuild](spikes/large-project-rebuild/SPIKE.md): tracked / mostly-untracked shard の pilot。実 workload 分布、dependency density、memory、incremental crossover は未測定。
+- [Production full recovery performance](../../docs/index-recovery-performance.md): 1 / 1000 / 5000 Component、各3 run の full recovery を測定。5000 Component の recovered Query p95 は missing 5051.98 ms / stale Bound 5006.30 ms、Phase 1 lock p95 は最大 1683.95 ms。Off-lock build p95 は最大 86.70 ms。この fixture と環境に限定し、incremental path の便益や Product SLA はまだ示さない。
 - Production に近い Snapshot → changed entity → reverse closure → targeted projection → generation publish → Query を、削除・追加・scope parent change と失敗時 rollback を含めて測る。
 
 ## Decision Criteria

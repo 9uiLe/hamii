@@ -80,6 +80,8 @@ with tempfile.TemporaryDirectory(prefix="hamii-cli-") as directory:
     component_id = component_result["mutation"]["patches"][0]["entityID"]["rawValue"]
     subprocess.run(["git", "-C", directory, "add", "-A"], check=True, capture_output=True)
     subprocess.run(["git", "-C", directory, "-c", "user.name=Smoke", "-c", "user.email=smoke@example.invalid", "commit", "-qm", "baseline"], check=True, capture_output=True)
+    # A missing disposable Index is rebuilt during a coordinated Query.
+    assert len(run("query", "components", scope, "Button")["hits"]) == 1
     tracked_local = subprocess.run(["git", "-C", directory, "ls-files", ".hamii"], check=True, capture_output=True, text=True)
     assert not tracked_local.stdout.strip()
     source_branch = subprocess.run(["git", "-C", directory, "branch", "--show-current"], check=True, capture_output=True, text=True).stdout.strip()
@@ -100,6 +102,9 @@ with tempfile.TemporaryDirectory(prefix="hamii-cli-") as directory:
     assert stale_switch.returncode == 3 and json.loads(stale_switch.stdout)["category"] == "conflict"
     back = run("git", "switch", source_branch, "--state", switched["statePrecondition"]["rawValue"])
     state[0] = back["statePrecondition"]["rawValue"]
+    # Managed branch transitions leave the prior Bound Index stale; Query
+    # recovers from the newly verified coordinated Canonical generation.
+    assert len(run("query", "components", scope, "Button")["hits"]) == 1
     assert run("index", "rebuild")["ok"]
     assert not (Path(directory) / ".hamii/index.sqlite").exists()
     assert len(run("query", "components", scope, "Button")["hits"]) == 1

@@ -400,7 +400,8 @@ final class AutomaticFullRebuildSpikeTests: XCTestCase {
 
     private func session(_ fixture: Fixture) -> IndexQuerySession {
         IndexQuerySession(projectRoot: fixture.root, revisionCalculator: calculator,
-                          storageRoot: fixture.indexRoot, afterFastVerdict: nil)
+                          storageRoot: fixture.indexRoot, afterFastVerdict: nil,
+                          automaticRecoveryEnabled: false)
     }
 
     private func saveComponent(_ fixture: Fixture, as name: String) throws {

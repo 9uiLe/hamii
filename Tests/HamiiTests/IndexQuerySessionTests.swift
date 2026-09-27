@@ -20,6 +20,18 @@ final class IndexQuerySessionTests: XCTestCase {
         let lockWaitMilliseconds: [Double]
     }
 
+    private struct RecoveryBenchmarkSample: Codable {
+        let components: Int
+        let condition: String
+        let phase1LockMS: Double
+        let offLockBuildAndValidationMS: Double
+        let phase2LockMS: Double
+        let maxContiguousLockMS: Double
+        let totalRecoveryMS: Double
+        let firstQueryMS: Double
+        let recoveredQueryMS: Double
+    }
+
     private func fixture(componentCount: Int = 1) throws -> Fixture {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent("hamii-query-session-\(UUID().uuidString)")
         let root = directory.appendingPathComponent("Project")
@@ -126,7 +138,9 @@ final class IndexQuerySessionTests: XCTestCase {
         let published = LocalIndexLocation.url(projectRoot: fixture.root,
             documentID: fixture.documentID, storageRoot: fixture.indexRoot)
         try FileManager.default.removeItem(at: published)
-        XCTAssertThrowsError(try query(session(fixture), fixture))
+        XCTAssertThrowsError(try LocalIndex.openExisting(projectRoot: fixture.root,
+            documentID: fixture.documentID, revisionCalculator: GitCanonicalRevisionCalculator(),
+            storageRoot: fixture.indexRoot))
         XCTAssertFalse(FileManager.default.fileExists(atPath: published.path))
 
         _ = try rebuild(fixture)
@@ -135,8 +149,278 @@ final class IndexQuerySessionTests: XCTestCase {
         XCTAssertEqual(sqlite3_exec(database, "PRAGMA user_version = 7", nil, nil, nil), SQLITE_OK)
         sqlite3_close(database)
         let before = try Data(contentsOf: published)
-        XCTAssertThrowsError(try query(session(fixture), fixture))
+        XCTAssertThrowsError(try LocalIndex.openExisting(projectRoot: fixture.root,
+            documentID: fixture.documentID, revisionCalculator: GitCanonicalRevisionCalculator(),
+            storageRoot: fixture.indexRoot))
         XCTAssertEqual(try Data(contentsOf: published), before)
+    }
+
+    func testMissingObsoleteAndCorruptIndexesRecoverToCompleteBoundGeneration() throws {
+        for damage in ["missing", "obsolete", "corrupt", "incomplete"] {
+            let fixture = try fixture()
+            defer { try? FileManager.default.removeItem(at: fixture.directory) }
+            let published = LocalIndexLocation.url(projectRoot: fixture.root,
+                documentID: fixture.documentID, storageRoot: fixture.indexRoot)
+            switch damage {
+            case "missing": try FileManager.default.removeItem(at: published)
+            case "obsolete":
+                var database: OpaquePointer?
+                XCTAssertEqual(sqlite3_open(published.path, &database), SQLITE_OK)
+                XCTAssertEqual(sqlite3_exec(database, "PRAGMA user_version = 7", nil, nil, nil), SQLITE_OK)
+                sqlite3_close(database)
+            case "incomplete":
+                var database: OpaquePointer?
+                XCTAssertEqual(sqlite3_open(published.path, &database), SQLITE_OK)
+                XCTAssertEqual(sqlite3_exec(database, "DROP TABLE components", nil, nil, nil), SQLITE_OK)
+                sqlite3_close(database)
+            default: try Data("not a SQLite database".utf8).write(to: published)
+            }
+            let querySession = session(fixture)
+            let recovered = try query(querySession, fixture)
+            XCTAssertEqual(recovered.path, .slowBound, damage)
+            XCTAssertEqual(recovered.hits.map(\.name), ["Alpha"], damage)
+            XCTAssertEqual(try query(querySession, fixture).path, .fast, damage)
+            let stable = try CanonicalGenerationStore(root: fixture.root).readStable()
+            XCTAssertEqual(try index(fixture).publishedGeneration().sourceGenerationBinding,
+                           .bound(stable.generation), damage)
+        }
+    }
+
+    func testPublishedIndexClassificationDoesNotChangeInvalidDatabaseBytes() throws {
+        for damage in ["obsolete", "malformed", "corrupt"] {
+            let fixture = try fixture()
+            defer { try? FileManager.default.removeItem(at: fixture.directory) }
+            let published = try index(fixture).url
+            if damage == "corrupt" {
+                try Data("invalid SQLite".utf8).write(to: published)
+            } else {
+                var database: OpaquePointer?
+                XCTAssertEqual(sqlite3_open(published.path, &database), SQLITE_OK)
+                let sql = damage == "obsolete" ? "PRAGMA user_version = 7"
+                    : "DELETE FROM metadata WHERE key='sourceGenerationBinding'"
+                XCTAssertEqual(sqlite3_exec(database, sql, nil, nil, nil), SQLITE_OK)
+                sqlite3_close(database)
+            }
+            let before = try Data(contentsOf: published)
+            let assessment = try PublishedIndexProbe().inspect(at: published).assessment
+            switch (damage, assessment) {
+            case ("obsolete", .obsolete), ("malformed", .malformed), ("corrupt", .corrupt): break
+            default: XCTFail("Wrong read-only classification for \(damage)")
+            }
+            XCTAssertEqual(try Data(contentsOf: published), before, damage)
+        }
+    }
+
+    func testRecoveryCandidateIsDiscardedWhenWriterChangesSourceDuringBuild() throws {
+        let fixture = try fixture()
+        defer { try? FileManager.default.removeItem(at: fixture.directory) }
+        try saveComponent(fixture, as: "BeforeBuild")
+        let published = try index(fixture).url
+        let oldBytes = try Data(contentsOf: published)
+        let service = IndexRecoveryService(projectRoot: fixture.root,
+            revisionCalculator: GitCanonicalRevisionCalculator(), storageRoot: fixture.indexRoot) { step in
+            if case .candidateBuilt = step { try self.saveComponent(fixture, as: "Beta") }
+        }
+        XCTAssertThrowsError(try service.recoverOnce()) { error in
+            guard case IndexError.stale = error else { return XCTFail("Wrong error: \(error)") }
+        }
+        XCTAssertEqual(try Data(contentsOf: published), oldBytes)
+        XCTAssertEqual(try query(session(fixture), fixture).hits.map(\.name), ["Beta"])
+    }
+
+    func testExternalEditAndMissingGenerationDoNotStartAutomaticRecovery() throws {
+        let external = try fixture()
+        defer { try? FileManager.default.removeItem(at: external.directory) }
+        let externalIndex = try index(external).url
+        let original = try Data(contentsOf: externalIndex)
+        try changeComponent(external, from: "Alpha", to: "External")
+        XCTAssertThrowsError(try query(session(external), external))
+        XCTAssertEqual(try Data(contentsOf: externalIndex), original)
+        let manual = try rebuild(external)
+        XCTAssertEqual(manual.sourceGenerationBinding, .explicitlyUnbound)
+        XCTAssertEqual(try query(session(external), external).path, .slowUnbound)
+
+        let missing = try fixture()
+        defer { try? FileManager.default.removeItem(at: missing.directory) }
+        let missingIndex = try index(missing).url
+        let generation = missing.root.appendingPathComponent(".hamii/canonical-generation.json")
+        try FileManager.default.removeItem(at: missingIndex)
+        try FileManager.default.removeItem(at: generation)
+        XCTAssertThrowsError(try query(session(missing), missing))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: missingIndex.path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: generation.path))
+    }
+
+    func testStoragePathFailureIsNotClassifiedAsDisposableIndexCorruption() throws {
+        let fixture = try fixture()
+        defer { try? FileManager.default.removeItem(at: fixture.directory) }
+        let destination = try index(fixture).url
+        try FileManager.default.removeItem(at: destination)
+        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: false)
+        XCTAssertThrowsError(try query(session(fixture), fixture)) { error in
+            guard case IndexError.sqlite = error else { return XCTFail("Wrong error: \(error)") }
+        }
+        var isDirectory: ObjCBool = false
+        XCTAssertTrue(FileManager.default.fileExists(atPath: destination.path, isDirectory: &isDirectory))
+        XCTAssertTrue(isDirectory.boolValue)
+    }
+
+    func testProductionRecoveryFailureInjectionLeavesOldPublishedBytesUntouched() throws {
+        for failure in ["candidateCreated", "candidateWriting", "beforePublish"] {
+            let fixture = try fixture()
+            defer { try? FileManager.default.removeItem(at: fixture.directory) }
+            try saveComponent(fixture, as: "Beta")
+            let destination = try index(fixture).url
+            let before = try Data(contentsOf: destination)
+            let service = IndexRecoveryService(projectRoot: fixture.root,
+                revisionCalculator: GitCanonicalRevisionCalculator(), storageRoot: fixture.indexRoot) { step in
+                if String(describing: step) == failure { throw CocoaError(.fileWriteUnknown) }
+            }
+            XCTAssertThrowsError(try service.recoverOnce(), failure)
+            XCTAssertEqual(try Data(contentsOf: destination), before, failure)
+            let published = try LocalIndex.openExisting(projectRoot: fixture.root,
+                documentID: fixture.documentID, revisionCalculator: GitCanonicalRevisionCalculator(),
+                storageRoot: fixture.indexRoot).publishedGeneration()
+            XCTAssertEqual(published.documentRevision, 1, failure)
+            XCTAssertEqual(try query(session(fixture), fixture).hits.map(\.name), ["Beta"], failure)
+        }
+    }
+
+    func testProductionQueryRecoveryAndRetryAreEachBoundedToOne() throws {
+        let fixture = try fixture()
+        defer { try? FileManager.default.removeItem(at: fixture.directory) }
+        try saveComponent(fixture, as: "Beta")
+        var sourceCaptures = 0
+        var publications = 0
+        var retries = 0
+        let querySession = IndexQuerySession(projectRoot: fixture.root,
+            revisionCalculator: GitCanonicalRevisionCalculator(), storageRoot: fixture.indexRoot,
+            afterFastVerdict: nil, onRecoveryStep: { step in
+                if case .sourceCaptured = step { sourceCaptures += 1 }
+                if case .published = step { publications += 1 }
+            }, onBeforeRecoveryRetry: {
+                retries += 1
+                try self.saveComponent(fixture, as: "Gamma")
+            })
+        XCTAssertThrowsError(try query(querySession, fixture)) { error in
+            guard case IndexError.stale = error else { return XCTFail("Wrong error: \(error)") }
+        }
+        XCTAssertEqual(sourceCaptures, 1)
+        XCTAssertEqual(publications, 1)
+        XCTAssertEqual(retries, 1)
+        XCTAssertEqual(try query(session(fixture), fixture).hits.map(\.name), ["Gamma"])
+    }
+
+    func testProductionRecoveryMatchesManualProjectionForMixedScopeFixture() throws {
+        let fixture = try fixture()
+        defer { try? FileManager.default.removeItem(at: fixture.directory) }
+        let repository = CanonicalRepository(root: fixture.root)
+        let old = try repository.load()
+        var document = old
+        let app = fixture.scopeID
+        let commerce = EntityID("scope_commerce")
+        let checkout = EntityID("scope_checkout")
+        let account = EntityID("scope_account")
+        document.scopes += [
+            ArchitectureScope(id: commerce, name: "Commerce", parentID: app),
+            ArchitectureScope(id: checkout, name: "Checkout", parentID: commerce),
+            ArchitectureScope(id: account, name: "Account", parentID: app)
+        ]
+        var shared = document.components[0]
+        shared.availability = AvailabilityPolicy(denyScopeIDs: [account])
+        let commerceOnly = ComponentDefinition(id: EntityID("component_commerce"),
+            name: "CommerceOnly", ownerScopeID: commerce,
+            root: Layer(id: EntityID("layer_commerce"), kind: .stack, name: "Commerce"))
+        document.components = [shared, commerceOnly]
+        document.screens = [Screen(id: EntityID("screen_checkout"), name: "Checkout", scopeID: checkout,
+            root: Layer(id: EntityID("screen_root"), kind: .stack, name: "Root", children: [
+                Layer(id: EntityID("instance_shared"), kind: .componentInstance, name: "Shared",
+                    component: ComponentInstance(definitionID: shared.id)),
+                Layer(id: EntityID("instance_commerce"), kind: .componentInstance, name: "Commerce",
+                    component: ComponentInstance(definitionID: commerceOnly.id))
+            ]))]
+        document.revision += 1
+        try repository.save(document, expected: old)
+        let manualRoot = fixture.directory.appendingPathComponent("ManualIndex")
+        let manual = try LocalIndex(projectRoot: fixture.root, documentID: fixture.documentID,
+            revisionCalculator: GitCanonicalRevisionCalculator(), storageRoot: manualRoot)
+        let manualGeneration = try repository.withStableSnapshotForDerivedRecovery { snapshot, stable in
+            try manual.rebuild(from: snapshot,
+                canonicalRevision: GitCanonicalRevisionCalculator().current(at: fixture.root),
+                sourceGenerationBinding: .bound(stable.generation))
+        }
+        let session = session(fixture)
+        XCTAssertEqual(try query(session, fixture).path, .slowBound)
+        let published = try LocalIndex.openExisting(projectRoot: fixture.root,
+            documentID: fixture.documentID, revisionCalculator: GitCanonicalRevisionCalculator(),
+            storageRoot: fixture.indexRoot)
+        let generation = try published.publishedGeneration()
+        for scope in [app, commerce, checkout, account] {
+            XCTAssertEqual(try published.components(matching: "", consumerScopeID: scope,
+                verifiedGeneration: generation),
+                try manual.components(matching: "", consumerScopeID: scope,
+                    verifiedGeneration: manualGeneration))
+        }
+        XCTAssertEqual(try session.components(matching: "", consumerScopeID: checkout).count, 2)
+        XCTAssertTrue(try session.components(matching: "", consumerScopeID: account).isEmpty)
+    }
+
+    func testMeasuredProductionFullRecoveryCost() throws {
+        guard let output = ProcessInfo.processInfo.environment["HAMII_PRODUCTION_RECOVERY_BENCHMARK_RESULT"] else {
+            throw XCTSkip("Set HAMII_PRODUCTION_RECOVERY_BENCHMARK_RESULT for production recovery measurements")
+        }
+        var samples: [RecoveryBenchmarkSample] = []
+        func milliseconds(_ start: Double, _ end: Double) -> Double { (end - start) * 1_000 }
+        for count in [1, 1_000, 5_000] {
+            for condition in ["missing", "staleBound"] {
+                for _ in 0..<3 {
+                    let fixture = try fixture(componentCount: count)
+                    defer { try? FileManager.default.removeItem(at: fixture.directory) }
+                    if condition == "missing" {
+                        try FileManager.default.removeItem(at: index(fixture).url)
+                    } else {
+                        try saveComponent(fixture, as: "Beta")
+                    }
+                    var marks: [IndexRecoveryStep: Double] = [:]
+                    let service = IndexRecoveryService(projectRoot: fixture.root,
+                        revisionCalculator: GitCanonicalRevisionCalculator(), storageRoot: fixture.indexRoot) { step in
+                        marks[step] = ProcessInfo.processInfo.systemUptime
+                    }
+                    let started = ProcessInfo.processInfo.systemUptime
+                    guard case .published = try service.recoverOnce() else {
+                        return XCTFail("Expected one published production recovery")
+                    }
+                    let finished = ProcessInfo.processInfo.systemUptime
+                    let queryStarted = ProcessInfo.processInfo.systemUptime
+                    let hits = try query(session(fixture), fixture).hits
+                    let queried = ProcessInfo.processInfo.systemUptime
+                    XCTAssertEqual(hits.count, count)
+                    if condition == "missing" {
+                        try FileManager.default.removeItem(at: index(fixture).url)
+                    } else {
+                        try saveComponent(fixture, as: "Gamma")
+                    }
+                    let recoveredQueryStarted = ProcessInfo.processInfo.systemUptime
+                    XCTAssertEqual(try query(session(fixture), fixture).hits.count, count)
+                    let recoveredQueryFinished = ProcessInfo.processInfo.systemUptime
+                    let phase1 = milliseconds(try XCTUnwrap(marks[.phase1LockAcquired]),
+                                              try XCTUnwrap(marks[.phase1Complete]))
+                    let build = milliseconds(try XCTUnwrap(marks[.sourceCaptured]),
+                                             try XCTUnwrap(marks[.candidateValidated]))
+                    let phase2 = milliseconds(try XCTUnwrap(marks[.phase2LockAcquired]),
+                                              try XCTUnwrap(marks[.phase2Complete]))
+                    samples.append(RecoveryBenchmarkSample(components: count, condition: condition,
+                        phase1LockMS: phase1, offLockBuildAndValidationMS: build,
+                        phase2LockMS: phase2, maxContiguousLockMS: max(phase1, phase2),
+                        totalRecoveryMS: milliseconds(started, finished),
+                        firstQueryMS: milliseconds(queryStarted, queried),
+                        recoveredQueryMS: milliseconds(recoveredQueryStarted, recoveredQueryFinished)))
+                }
+            }
+        }
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        try encoder.encode(samples).write(to: URL(fileURLWithPath: output), options: .atomic)
     }
 
     func testBoundColdWarmSaveAndRebuildPaths() throws {
@@ -149,8 +433,6 @@ final class IndexQuerySessionTests: XCTestCase {
         XCTAssertEqual(try query(querySession, fixture).path, .fast)
 
         try saveComponent(fixture, as: "Beta")
-        XCTAssertThrowsError(try query(querySession, fixture))
-        _ = try rebuild(fixture)
         let renewed = try query(querySession, fixture)
         XCTAssertEqual(renewed.path, .slowBound)
         XCTAssertEqual(renewed.hits, try oracle(fixture, matching: ""))
@@ -195,7 +477,7 @@ final class IndexQuerySessionTests: XCTestCase {
         XCTAssertEqual(try query(querySession, fixture).path, .fast)
     }
 
-    func testMissingAndCorruptBindingNeverReturnRows() throws {
+    func testMalformedBindingIsReplacedBeforeRowsAreReturned() throws {
         for sql in [
             "DELETE FROM metadata WHERE key='sourceGenerationBinding'",
             "UPDATE metadata SET value='' WHERE key='sourceGenerationBinding'",
@@ -211,8 +493,9 @@ final class IndexQuerySessionTests: XCTestCase {
             XCTAssertEqual(sqlite3_open(try index(fixture).url.path, &database), SQLITE_OK)
             XCTAssertEqual(sqlite3_exec(database, sql, nil, nil, nil), SQLITE_OK)
             sqlite3_close(database)
-            XCTAssertThrowsError(try query(querySession, fixture), sql)
-            XCTAssertThrowsError(try query(session(fixture), fixture), sql)
+            XCTAssertEqual(try query(querySession, fixture).path, .slowBound, sql)
+            XCTAssertEqual(try query(querySession, fixture).path, .fast, sql)
+            XCTAssertEqual(try query(session(fixture), fixture).path, .slowBound, sql)
         }
     }
 
@@ -284,7 +567,7 @@ final class IndexQuerySessionTests: XCTestCase {
         XCTAssertEqual(try query(secondSession, second).path, .fast)
         XCTAssertEqual(try query(firstSession, first).path, .fast)
         try saveComponent(first, as: "Beta")
-        XCTAssertThrowsError(try query(firstSession, first))
+        XCTAssertEqual(try query(firstSession, first).path, .slowBound)
         XCTAssertEqual(try query(secondSession, second).path, .fast)
         XCTAssertEqual(try query(secondSession, second).hits, try oracle(second, matching: ""))
         _ = try rebuild(first)
@@ -300,7 +583,7 @@ final class IndexQuerySessionTests: XCTestCase {
         XCTAssertEqual(try query(XCTUnwrap(opened), fixture).path, .slowBound)
         XCTAssertEqual(try query(XCTUnwrap(opened), fixture).path, .fast)
         try saveComponent(fixture, as: "Beta")
-        XCTAssertThrowsError(try query(XCTUnwrap(opened), fixture))
+        XCTAssertEqual(try query(XCTUnwrap(opened), fixture).path, .slowBound)
         _ = try rebuild(fixture)
         XCTAssertEqual(try query(XCTUnwrap(opened), fixture).path, .slowBound)
         XCTAssertEqual(try query(XCTUnwrap(opened), fixture).path, .fast)
@@ -659,6 +942,217 @@ final class IndexQuerySessionTests: XCTestCase {
         return process
     }
 
+    func testProductionRecoveryWorker() throws {
+        let env = ProcessInfo.processInfo.environment
+        guard let project = env["HAMII_RECOVERY_PROJECT"],
+              let indexes = env["HAMII_RECOVERY_INDEXES"],
+              let ready = env["HAMII_RECOVERY_READY"],
+              let release = env["HAMII_RECOVERY_RELEASE"],
+              let result = env["HAMII_RECOVERY_RESULT"] else {
+            throw XCTSkip("Production recovery worker only")
+        }
+        let service = IndexRecoveryService(projectRoot: URL(fileURLWithPath: project),
+            revisionCalculator: GitCanonicalRevisionCalculator(),
+            storageRoot: URL(fileURLWithPath: indexes)) { step in
+            guard case .candidateBuilt = step else { return }
+            try Data().write(to: URL(fileURLWithPath: ready))
+            let deadline = Date().addingTimeInterval(20)
+            while !FileManager.default.fileExists(atPath: release) && Date() < deadline {
+                Thread.sleep(forTimeInterval: 0.01)
+            }
+            guard FileManager.default.fileExists(atPath: release) else { throw CocoaError(.fileReadUnknown) }
+        }
+        let outcome = try service.recoverOnce()
+        let label: String
+        let id: IndexGenerationID
+        switch outcome {
+        case .published(let value): label = "published"; id = value
+        case .reused(let value): label = "reused"; id = value
+        case .notEligible: throw IndexError.stale
+        }
+        try JSONEncoder().encode(["outcome": label, "id": id.rawValue])
+            .write(to: URL(fileURLWithPath: result), options: .atomic)
+    }
+
+    func testRecoveryLockProbeWorker() throws {
+        let env = ProcessInfo.processInfo.environment
+        guard let project = env["HAMII_LOCK_PROBE_PROJECT"],
+              let attempt = env["HAMII_LOCK_PROBE_ATTEMPT"],
+              let result = env["HAMII_LOCK_PROBE_RESULT"] else {
+            throw XCTSkip("Recovery lock probe worker only")
+        }
+        try Data().write(to: URL(fileURLWithPath: attempt))
+        let started = ProcessInfo.processInfo.systemUptime
+        try WorktreeCoordinator(root: URL(fileURLWithPath: project)).withExclusive {}
+        let waited = (ProcessInfo.processInfo.systemUptime - started) * 1_000
+        try JSONEncoder().encode(["writerLockWaitMS": waited])
+            .write(to: URL(fileURLWithPath: result), options: .atomic)
+    }
+
+    func testProductionCandidateBuildLeavesCoordinatedWriterAvailable() throws {
+        let fixture = try fixture(componentCount: 1_000)
+        defer { try? FileManager.default.removeItem(at: fixture.directory) }
+        try saveComponent(fixture, as: "Beta")
+        let attempt = fixture.directory.appendingPathComponent("writer-attempt")
+        let result = fixture.directory.appendingPathComponent("writer-result.json")
+        var worker: Process?
+        defer {
+            if let worker, worker.isRunning {
+                kill(worker.processIdentifier, SIGKILL)
+                worker.waitUntilExit()
+            }
+        }
+        let service = IndexRecoveryService(projectRoot: fixture.root,
+            revisionCalculator: GitCanonicalRevisionCalculator(), storageRoot: fixture.indexRoot) { step in
+            guard case .candidateWriting = step else { return }
+            worker = try self.child("testRecoveryLockProbeWorker", environment: [
+                "HAMII_LOCK_PROBE_PROJECT": fixture.root.path,
+                "HAMII_LOCK_PROBE_ATTEMPT": attempt.path,
+                "HAMII_LOCK_PROBE_RESULT": result.path
+            ])
+            try self.awaitFile(attempt, process: worker!)
+            try self.awaitFile(result, process: worker!)
+        }
+        guard case .published = try service.recoverOnce() else { return XCTFail("Expected publication") }
+        let child = try XCTUnwrap(worker)
+        child.waitUntilExit()
+        XCTAssertEqual(child.terminationStatus, 0)
+        let measurement = try JSONDecoder().decode([String: Double].self, from: Data(contentsOf: result))
+        XCTAssertNotNil(measurement["writerLockWaitMS"])
+        XCTAssertEqual(try query(session(fixture), fixture).hits.count, 1_000)
+        if let output = ProcessInfo.processInfo.environment["HAMII_PRODUCTION_RECOVERY_WRITER_WAIT_RESULT"] {
+            try Data(contentsOf: result).write(to: URL(fileURLWithPath: output), options: .atomic)
+        }
+    }
+
+    func testMeasuredProductionPhase1WriterWait() throws {
+        guard let output = ProcessInfo.processInfo.environment["HAMII_PRODUCTION_PHASE1_WRITER_WAIT_RESULT"] else {
+            throw XCTSkip("Set HAMII_PRODUCTION_PHASE1_WRITER_WAIT_RESULT for contention measurement")
+        }
+        let fixture = try fixture(componentCount: 5_000)
+        defer { try? FileManager.default.removeItem(at: fixture.directory) }
+        try saveComponent(fixture, as: "Beta")
+        let attempt = fixture.directory.appendingPathComponent("phase1-writer-attempt")
+        let result = fixture.directory.appendingPathComponent("phase1-writer-result.json")
+        var worker: Process?
+        defer {
+            if let worker, worker.isRunning {
+                kill(worker.processIdentifier, SIGKILL)
+                worker.waitUntilExit()
+            }
+        }
+        let service = IndexRecoveryService(projectRoot: fixture.root,
+            revisionCalculator: GitCanonicalRevisionCalculator(), storageRoot: fixture.indexRoot) { step in
+            guard case .phase1LockAcquired = step else { return }
+            worker = try self.child("testRecoveryLockProbeWorker", environment: [
+                "HAMII_LOCK_PROBE_PROJECT": fixture.root.path,
+                "HAMII_LOCK_PROBE_ATTEMPT": attempt.path,
+                "HAMII_LOCK_PROBE_RESULT": result.path
+            ])
+            try self.awaitFile(attempt, process: worker!)
+        }
+        guard case .published = try service.recoverOnce() else { return XCTFail("Expected publication") }
+        let child = try XCTUnwrap(worker)
+        try awaitFile(result, process: child)
+        child.waitUntilExit()
+        XCTAssertEqual(child.terminationStatus, 0)
+        try Data(contentsOf: result).write(to: URL(fileURLWithPath: output), options: .atomic)
+    }
+
+    func testTwoOSProcessRecoveriesPublishOnceAndReuseOneGeneration() throws {
+        let fixture = try fixture()
+        defer { try? FileManager.default.removeItem(at: fixture.directory) }
+        try saveComponent(fixture, as: "Beta")
+        let before = try index(fixture).publishedGeneration()
+        let release = fixture.directory.appendingPathComponent("recovery-release")
+        var workers: [Process] = []
+        var results: [URL] = []
+        defer {
+            for worker in workers where worker.isRunning {
+                kill(worker.processIdentifier, SIGKILL)
+                worker.waitUntilExit()
+            }
+        }
+        for number in 0..<2 {
+            let ready = fixture.directory.appendingPathComponent("recovery-ready-\(number)")
+            let result = fixture.directory.appendingPathComponent("recovery-result-\(number).json")
+            let worker = try child("testProductionRecoveryWorker", environment: [
+                "HAMII_RECOVERY_PROJECT": fixture.root.path,
+                "HAMII_RECOVERY_INDEXES": fixture.indexRoot.path,
+                "HAMII_RECOVERY_READY": ready.path,
+                "HAMII_RECOVERY_RELEASE": release.path,
+                "HAMII_RECOVERY_RESULT": result.path
+            ])
+            workers.append(worker)
+            results.append(result)
+            try awaitFile(ready, process: worker)
+        }
+        XCTAssertEqual(try LocalIndex.openExisting(projectRoot: fixture.root,
+            documentID: fixture.documentID, revisionCalculator: GitCanonicalRevisionCalculator(),
+            storageRoot: fixture.indexRoot).publishedGeneration().id, before.id)
+        try Data().write(to: release)
+        for (worker, result) in zip(workers, results) {
+            try awaitFile(result, process: worker)
+            worker.waitUntilExit()
+            XCTAssertEqual(worker.terminationStatus, 0)
+        }
+        let outcomes = try results.map { try JSONDecoder().decode([String: String].self,
+            from: Data(contentsOf: $0)) }
+        XCTAssertEqual(Set(outcomes.compactMap { $0["outcome"] }), ["published", "reused"])
+        XCTAssertEqual(Set(outcomes.compactMap { $0["id"] }).count, 1)
+        XCTAssertEqual(try index(fixture).publishedGeneration().id.rawValue, outcomes[0]["id"])
+        let reader = session(fixture)
+        XCTAssertEqual(try query(reader, fixture).hits.map(\.name), ["Beta"])
+        XCTAssertEqual(try query(reader, fixture).path, .fast)
+    }
+
+    func testProductionRecoveryCrashWorker() throws {
+        let env = ProcessInfo.processInfo.environment
+        guard let project = env["HAMII_CRASH_PROJECT"],
+              let indexes = env["HAMII_CRASH_INDEXES"],
+              let stopped = env["HAMII_CRASH_STOPPED"],
+              let selected = env["HAMII_CRASH_PHASE"] else {
+            throw XCTSkip("Production recovery crash worker only")
+        }
+        let service = IndexRecoveryService(projectRoot: URL(fileURLWithPath: project),
+            revisionCalculator: GitCanonicalRevisionCalculator(),
+            storageRoot: URL(fileURLWithPath: indexes)) { step in
+            let phase = String(describing: step)
+            guard phase == selected else { return }
+            try Data(phase.utf8).write(to: URL(fileURLWithPath: stopped), options: .atomic)
+            while true { Thread.sleep(forTimeInterval: 0.1) }
+        }
+        _ = try service.recoverOnce()
+    }
+
+    func testProductionSIGKILLRecoveryKeepsOldOrCompleteNewGeneration() throws {
+        for phase in ["sourceCaptured", "candidateCreated", "candidateWriting",
+                      "candidateBuilt", "beforePublish", "published"] {
+            let fixture = try fixture()
+            defer { try? FileManager.default.removeItem(at: fixture.directory) }
+            try saveComponent(fixture, as: "Beta")
+            let old = try index(fixture).publishedGeneration().id
+            let stopped = fixture.directory.appendingPathComponent("stopped-\(phase)")
+            let worker = try child("testProductionRecoveryCrashWorker", environment: [
+                "HAMII_CRASH_PROJECT": fixture.root.path,
+                "HAMII_CRASH_INDEXES": fixture.indexRoot.path,
+                "HAMII_CRASH_STOPPED": stopped.path,
+                "HAMII_CRASH_PHASE": phase
+            ])
+            try awaitFile(stopped, process: worker)
+            XCTAssertTrue(worker.isRunning)
+            kill(worker.processIdentifier, SIGKILL)
+            worker.waitUntilExit()
+            XCTAssertEqual(worker.terminationReason, .uncaughtSignal)
+            XCTAssertEqual(worker.terminationStatus, SIGKILL)
+            let beforeRestart = try index(fixture).publishedGeneration().id
+            if phase == "published" { XCTAssertNotEqual(beforeRestart, old) }
+            else { XCTAssertEqual(beforeRestart, old) }
+            XCTAssertEqual(try query(session(fixture), fixture).hits.map(\.name), ["Beta"])
+            XCTAssertNotEqual(try index(fixture).publishedGeneration().id, old)
+        }
+    }
+
     private func awaitFile(_ url: URL, process: Process) throws {
         let deadline = Date().addingTimeInterval(15)
         while !FileManager.default.fileExists(atPath: url.path) && process.isRunning && Date() < deadline {
@@ -666,7 +1160,9 @@ final class IndexQuerySessionTests: XCTestCase {
         }
         guard FileManager.default.fileExists(atPath: url.path) else {
             if process.isRunning { kill(process.processIdentifier, SIGKILL); process.waitUntilExit() }
-            XCTFail("Missing worker barrier \(url.lastPathComponent)")
+            let output = (process.standardOutput as? Pipe)?
+                .fileHandleForReading.readDataToEndOfFile() ?? Data()
+            XCTFail("Missing worker barrier \(url.lastPathComponent): \(String(decoding: output, as: UTF8.self))")
             throw CocoaError(.fileReadUnknown)
         }
     }
@@ -746,7 +1242,7 @@ final class IndexQuerySessionTests: XCTestCase {
         process.waitUntilExit()
         XCTAssertEqual(process.terminationStatus, 0)
         if kind == "save" {
-            XCTAssertThrowsError(try query(querySession, fixture))
+            XCTAssertEqual(try query(querySession, fixture).path, .slowBound)
         } else {
             XCTAssertEqual(try query(querySession, fixture).path, .slowBound)
             XCTAssertEqual(try query(querySession, fixture).path, .fast)

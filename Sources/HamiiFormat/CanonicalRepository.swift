@@ -124,9 +124,11 @@ public final class CanonicalRepository: ProjectRepository {
     /// generation. This path may recover the Canonical transaction journal, but
     /// deliberately never bootstraps or reconciles the generation record.
     package func withStableSnapshotForDerivedRecovery<T>(
+        onLockAcquired: (() throws -> Void)? = nil,
         _ operation: (CanonicalSnapshot, StableCanonicalGeneration) throws -> T
     ) throws -> T {
         try coordinator.withExclusive {
+            try onLockAcquired?()
             try transaction.recoverIfNeeded()
             try coordinator.requireReady()
             let stable = try generations.readStable()
@@ -138,12 +140,28 @@ public final class CanonicalRepository: ProjectRepository {
         }
     }
 
+    /// Query may read an explicitly unbound Index after an external edit and
+    /// explicit rebuild. It requires an existing stable record, but only a
+    /// Bound Index requires that record to match the observed Snapshot.
+    package func withStableRecordSnapshotForQuery<T>(
+        _ operation: (CanonicalSnapshot, StableCanonicalGeneration) throws -> T
+    ) throws -> T {
+        try coordinator.withExclusive {
+            try transaction.recoverIfNeeded()
+            try coordinator.requireReady()
+            let stable = try generations.readStable()
+            return try operation(snapshotDuringManagedGitTransition(), stable)
+        }
+    }
+
     /// Phase 2 of an Index recovery uses the durable stable generation and a
     /// Git oracle without parsing the full Canonical document a second time.
     package func withStableGenerationForDerivedRecovery<T>(
+        onLockAcquired: (() throws -> Void)? = nil,
         _ operation: (StableCanonicalGeneration) throws -> T
     ) throws -> T {
         try coordinator.withExclusive {
+            try onLockAcquired?()
             try transaction.recoverIfNeeded()
             try coordinator.requireReady()
             return try operation(generations.readStable())

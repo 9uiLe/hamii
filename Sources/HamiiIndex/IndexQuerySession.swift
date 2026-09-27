@@ -25,8 +25,11 @@ public final class IndexQuerySession {
     private let coordinator: WorktreeCoordinator
     private let repository: CanonicalRepository
     private let generations: CanonicalGenerationStore
+    private let recovery: IndexRecoveryService
     private let afterFastVerdict: (() -> Void)?
     private let onReadBoundaryAcquired: ((Double) -> Void)?
+    private let automaticRecoveryEnabled: Bool
+    private let onBeforeRecoveryRetry: (() throws -> Void)?
     private var witness: VerifiedCurrentWitness?
 
     public convenience init(projectRoot: URL) {
@@ -38,15 +41,22 @@ public final class IndexQuerySession {
     // outside the coordinated read boundary.
     init(projectRoot: URL, revisionCalculator: any CanonicalRevisionCalculating,
          storageRoot: URL? = nil, afterFastVerdict: (() -> Void)?,
-         onReadBoundaryAcquired: ((Double) -> Void)? = nil) {
+         onReadBoundaryAcquired: ((Double) -> Void)? = nil,
+         automaticRecoveryEnabled: Bool = true,
+         onRecoveryStep: ((IndexRecoveryStep) throws -> Void)? = nil,
+         onBeforeRecoveryRetry: (() throws -> Void)? = nil) {
         root = projectRoot.standardizedFileURL
         self.storageRoot = storageRoot
         self.revisionCalculator = revisionCalculator
         coordinator = WorktreeCoordinator(root: root)
         repository = CanonicalRepository(root: root)
         generations = CanonicalGenerationStore(root: root)
+        recovery = IndexRecoveryService(projectRoot: root, revisionCalculator: revisionCalculator,
+                                        storageRoot: storageRoot, hook: onRecoveryStep)
         self.afterFastVerdict = afterFastVerdict
         self.onReadBoundaryAcquired = onReadBoundaryAcquired
+        self.automaticRecoveryEnabled = automaticRecoveryEnabled
+        self.onBeforeRecoveryRetry = onBeforeRecoveryRetry
     }
 
     public func components(matching text: String, consumerScopeID: EntityID) throws -> [ComponentHit] {
@@ -56,6 +66,26 @@ public final class IndexQuerySession {
     // Tests distinguish the real slow and fast paths without making a query
     // implementation detail part of the public automation contract.
     func componentsWithVerification(matching text: String, consumerScopeID: EntityID)
+        throws -> (hits: [ComponentHit], path: QueryVerificationPath) {
+        do {
+            return try queryAttempt(matching: text, consumerScopeID: consumerScopeID)
+        } catch let failure as IndexError {
+            guard automaticRecoveryEnabled else { throw failure }
+            if case .unverifiableSource = failure { throw failure }
+            switch try recovery.recoverOnce() {
+            case .published, .reused:
+                witness = nil
+                try onBeforeRecoveryRetry?()
+                // One recovery and exactly one retry. This direct call cannot
+                // recursively reset the recovery budget.
+                return try queryAttempt(matching: text, consumerScopeID: consumerScopeID)
+            case .notEligible:
+                throw failure
+            }
+        }
+    }
+
+    private func queryAttempt(matching text: String, consumerScopeID: EntityID)
         throws -> (hits: [ComponentHit], path: QueryVerificationPath) {
         let lockAttempt = onReadBoundaryAcquired.map { _ in ProcessInfo.processInfo.systemUptime }
         let fast = try coordinator.withReadyExclusive { () -> FastResult in
@@ -107,7 +137,7 @@ public final class IndexQuerySession {
 
     private func slowComponents(matching text: String, consumerScopeID: EntityID)
         throws -> (hits: [ComponentHit], path: QueryVerificationPath) {
-        try repository.withCoordinatedSnapshot { snapshot in
+        try repository.withStableRecordSnapshotForQuery { snapshot, stable in
             let index = try makeIndex(documentID: snapshot.document.id)
             let published = try index.publishedGeneration()
             guard published.documentID == snapshot.document.id,
@@ -122,8 +152,8 @@ public final class IndexQuerySession {
             let boundGeneration: CanonicalGeneration?
             switch published.sourceGenerationBinding {
             case .bound(let source):
-                let stable = try generations.requireMatchingStable(snapshot)
-                guard source == stable.generation else { throw IndexError.stale }
+                guard stable.snapshotIdentity == snapshot.identity,
+                      source == stable.generation else { throw IndexError.stale }
                 boundGeneration = source
             case .explicitlyUnbound:
                 boundGeneration = nil

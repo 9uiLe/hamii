@@ -33,11 +33,12 @@ Background rebuild、retry、manual repair UX は各 option の運用条件と�
 
 ## Unknowns
 
-Production eligibility classifier と error category、storage failure / candidate cleanup UX、同時 Git mutation 時の retry message、導入後の end-to-end recovery performance。250 ms の CLI Query 値は比較基準であり Product SLA ではない。Incremental projector と large-project crossover は [別 ADR](../incremental-index-recovery/ADR.md) に記録する。
+Production implementation の Verify CI と最終横断検証。Storage failure は Index error として fail closed にし、retry は1回に制限した。Production end-to-end recovery performance は [測定文書](../../docs/index-recovery-performance.md) にある。250 ms の CLI Query 値は比較基準であり Product SLA ではない。Incremental projector と large-project crossover は [別 ADR](../incremental-index-recovery/ADR.md) に記録する。
 
 ## Required Evidence
 
-- [Recovery Eligibility](spikes/recovery-eligibility/SPIKE.md): read-only SQLite classification、Canonical / Git / storage blocker、3地点の test-only failure injection、mixed semantic fixture を検証した。Focused 3 tests と全体 141 tests は失敗 0。Production classifier は未実装。
+- [Production recovery validation](spikes/production-recovery-validation/SPIKE.md): read-only published open、strict source capture、2 OS process の publish/reuse、6地点の SIGKILL、derived-only recovery と fail-closed exclusions、1 / 1000 / 5000 Component の production timing を検証した。Verify CI の完了を確認するまで Status は Implementation Required とする。
+- [Recovery Eligibility](spikes/recovery-eligibility/SPIKE.md): read-only SQLite classification、Canonical / Git / storage blocker、3地点の test-only failure injection、mixed semantic fixture を検証した。Focused 3 tests と全体 141 tests は失敗 0。Spike 実施時点では Production classifier は未実装だった。
 - [Automatic Full Rebuild](spikes/automatic-full-rebuild/SPIKE.md): coordinated Stable state に限定した test-only prototype。別 OS process の concurrent recovery は expected published Index check により1件 publish / 1件 reuse し、reader は stale または完全な新 rows だけを観測した。6地点の SIGKILL は old / new known generation に収束。Test-only bounded retry、read-only obsolete / corrupt SQLite 分類、1 / 1000 / 5000 component shard の lock-held / full-reobserve / optimized Phase 2 比較、単一 writer contention を記録した。この Spike 時点では Production recovery の採否は未決定だった。
 - Git history の `672a5ea` に記録した End-to-end Index Generation / Low-cost Freshness は、当時の full pipeline stage timing、Starter copy の fresh CLI p95 418.612 ms、stale detection p95 424.174 ms、manual full rebuild p95 1316.333 ms と、double byte scan / size+mtime shortcut の反例を含む。これらは現在の自動復旧性能ではない。
 - Git history の `41f92fe` は 1k/10k/50k Layer pilot、`b595bce` は branch switch と Git flags / filter の反例を含む。当時は Rebuild 中の同時変更への production recovery policy が未検証だった。
@@ -51,7 +52,7 @@ Verify CI [36334624567](https://github.com/9uiLe/hamii/actions/runs/36334624567)
 
 ## Decision
 
-2026-09-28: **検証可能な coordinated Canonical state の derived-only Index failure には automatic full rebuild を recovery baseline とする。** 現行 production は実装完了まで `staleIndex` を返し、明示的 `hamii index rebuild` を利用する。
+2026-09-28: **検証可能な coordinated Canonical state の derived-only Index failure には automatic full rebuild を recovery baseline とする。** Production `IndexRecoveryService` がこの境界を実装し、対象外の状態では `staleIndex` または storage / pending error を返す。明示的 `hamii index rebuild` は残る。
 
 Auto eligibility は、Ready gate、Stable `CanonicalGeneration`、coherent `CanonicalSnapshot`、`generation.snapshotIdentity == snapshot.identity`、検証可能な Git oracle が揃うことを前提とする。そのうえで missing Index、obsolete disposable schema、malformed Index descriptor / metadata、corrupt SQLite、旧 `Bound(G)` source generation または検証済み Canonical state と異なる bound source identity だけを Derived Index failure として自動対象にする。Published SQLite は分類前に read-only で調べ、`LocalIndex.init` の destructive schema recreation を classifier に使わない。
 

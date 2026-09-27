@@ -38,6 +38,7 @@ Status: 検証中。各 Spike は fixture、対象 OS/SDK/Xcode、実行 command
 - [External change detection](../adr/git-external-write-coordination/spikes/external-change-detection/SPIKE.md)
 - [Concurrent worktree merge](../adr/git-external-write-coordination/spikes/concurrent-worktree-merge/SPIKE.md)
 - [Automatic full index rebuild](../adr/index-recovery-strategy/spikes/automatic-full-rebuild/SPIKE.md)
+- [Production full Index recovery validation](../adr/index-recovery-strategy/spikes/production-recovery-validation/SPIKE.md)
 - [Incremental reindex](../adr/incremental-index-recovery/spikes/incremental-reindex/SPIKE.md)
 - [Automatic Index Recovery eligibility](../adr/index-recovery-strategy/spikes/recovery-eligibility/SPIKE.md)
 - [Large project index rebuild](../adr/incremental-index-recovery/spikes/large-project-rebuild/SPIKE.md)
