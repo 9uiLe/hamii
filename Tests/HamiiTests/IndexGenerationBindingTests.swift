@@ -6,6 +6,16 @@ import HamiiCore
 @testable import HamiiIndex
 
 final class IndexGenerationBindingTests: XCTestCase {
+    func testSourceGenerationBindingDistinguishesBoundUnboundAndInvalid() {
+        let generation = CanonicalGeneration(lineage: UUID(), value: 42)
+        XCTAssertEqual(IndexSourceGenerationBinding(serialized: "bound:\(generation.serialized)"), .bound(generation))
+        XCTAssertEqual(IndexSourceGenerationBinding(serialized: "unbound"), .explicitlyUnbound)
+        XCTAssertNil(IndexSourceGenerationBinding(serialized: ""))
+        XCTAssertNil(IndexSourceGenerationBinding(serialized: "unknown"))
+        XCTAssertNil(IndexSourceGenerationBinding(serialized: "bound:broken"))
+        XCTAssertNil(IndexSourceGenerationBinding(serialized: generation.serialized))
+    }
+
     private struct FixedRevision: CanonicalRevisionCalculating {
         func current(at root: URL) throws -> CanonicalRevision { CanonicalRevision("fixed-source") }
     }
@@ -83,10 +93,13 @@ final class IndexGenerationBindingTests: XCTestCase {
             try execute("UPDATE metadata SET value='broken' WHERE key='sourceCanonicalIdentity'", at: index.url)
             expectStale()
             try index.rebuild(from: snapshot, canonicalRevision: source)
-            try execute("DELETE FROM metadata WHERE key='sourceCanonicalGeneration'", at: index.url)
+            try execute("DELETE FROM metadata WHERE key='sourceGenerationBinding'", at: index.url)
             expectStale()
             try index.rebuild(from: snapshot, canonicalRevision: source)
-            try execute("UPDATE metadata SET value='not-a-generation' WHERE key='sourceCanonicalGeneration'", at: index.url)
+            try execute("UPDATE metadata SET value='not-a-generation' WHERE key='sourceGenerationBinding'", at: index.url)
+            expectStale()
+            try index.rebuild(from: snapshot, canonicalRevision: source)
+            try execute("UPDATE metadata SET value='' WHERE key='sourceGenerationBinding'", at: index.url)
             expectStale()
             try index.rebuild(from: snapshot, canonicalRevision: source)
             let wrong = CanonicalSnapshotIdentity(rawValue: String(repeating: "a", count: 64))!
@@ -115,7 +128,7 @@ final class IndexGenerationBindingTests: XCTestCase {
             try execute("CREATE TRIGGER reject_source BEFORE INSERT ON metadata WHEN NEW.key='sourceCanonicalIdentity' BEGIN SELECT RAISE(ABORT, 'injected'); END", at: index.url)
             XCTAssertThrowsError(try index.rebuild(from: snapshot, canonicalRevision: source))
             try execute("DROP TRIGGER reject_source", at: index.url)
-            try execute("CREATE TRIGGER reject_generation BEFORE INSERT ON metadata WHEN NEW.key='sourceCanonicalGeneration' BEGIN SELECT RAISE(ABORT, 'injected'); END", at: index.url)
+            try execute("CREATE TRIGGER reject_generation BEFORE INSERT ON metadata WHEN NEW.key='sourceGenerationBinding' BEGIN SELECT RAISE(ABORT, 'injected'); END", at: index.url)
             XCTAssertThrowsError(try index.rebuild(from: snapshot, canonicalRevision: source))
             XCTAssertEqual(try index.assertCurrent(documentID: snapshot.document.id,
                 revision: snapshot.document.revision, expectedSourceIdentity: snapshot.identity), first)
@@ -137,7 +150,7 @@ final class IndexGenerationBindingTests: XCTestCase {
             try index.rebuild(from: snapshot, canonicalRevision: CanonicalRevision("fixed-source"))
             url = index.url
         }
-        try execute("PRAGMA user_version = 5", at: url)
+        try execute("PRAGMA user_version = 7", at: url)
         let reopened = try LocalIndex(projectRoot: root, documentID: document.id,
             revisionCalculator: FixedRevision(), storageRoot: storage)
         XCTAssertThrowsError(try reopened.assertCurrent(documentID: document.id,

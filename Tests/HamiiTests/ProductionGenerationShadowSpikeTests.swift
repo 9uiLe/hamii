@@ -173,7 +173,7 @@ final class ProductionGenerationShadowSpikeTests: XCTestCase {
         let local = try index(fixture)
         let productionSource = try? CanonicalGenerationStore(root: fixture.root).requireMatchingStable(snapshot).generation
         let descriptor = try local.rebuild(from: snapshot, canonicalRevision: source,
-                                           sourceCanonicalGeneration: productionSource)
+                                           sourceGenerationBinding: productionSource.map(IndexSourceGenerationBinding.bound) ?? .explicitlyUnbound)
         try putShadowSource(generation, into: local.url)
         return descriptor
     }
@@ -246,7 +246,7 @@ final class ProductionGenerationShadowSpikeTests: XCTestCase {
             let stable = try CanonicalGenerationStore(root: fixture.root).requireMatchingStable(snapshot)
             let published = try index(fixture).assertCurrent(documentID: snapshot.document.id,
                 revision: snapshot.document.revision, expectedSourceIdentity: snapshot.identity)
-            guard published.sourceCanonicalGeneration == stable.generation else { throw IndexError.stale }
+            guard published.sourceGenerationBinding == .bound(stable.generation) else { throw IndexError.stale }
             return ProductionWitness(generation: stable.generation, snapshotIdentity: snapshot.identity,
                                      indexGenerationID: published.id)
         }
@@ -262,10 +262,10 @@ final class ProductionGenerationShadowSpikeTests: XCTestCase {
             guard stable.generation.value >= witness.generation.value else { return .unknown }
             guard stable.generation == witness.generation else { return .stale }
             guard stable.snapshotIdentity == witness.snapshotIdentity else { return .unknown }
-            let published = try index(fixture).shadowPublishedGeneration()
+            let published = try index(fixture).publishedGeneration()
             guard published.id == witness.indexGenerationID,
                   published.sourceCanonicalIdentity == witness.snapshotIdentity else { return .unknown }
-            guard let source = published.sourceCanonicalGeneration,
+            guard case .bound(let source) = published.sourceGenerationBinding,
                   source.lineage == stable.generation.lineage else { return .unknown }
             if source.value < stable.generation.value { return .stale }
             if source.value > stable.generation.value { return .unknown }
@@ -711,7 +711,7 @@ final class ProductionGenerationShadowSpikeTests: XCTestCase {
         var db: OpaquePointer?
         XCTAssertEqual(sqlite3_open(local.url.path, &db), SQLITE_OK)
         defer { sqlite3_close(db) }
-        XCTAssertEqual(sqlite3_exec(db, "DELETE FROM metadata WHERE key='sourceCanonicalGeneration'", nil, nil, nil), SQLITE_OK)
+        XCTAssertEqual(sqlite3_exec(db, "DELETE FROM metadata WHERE key='sourceGenerationBinding'", nil, nil, nil), SQLITE_OK)
         XCTAssertEqual(productionShadow(f, witness: first), .unknown)
         XCTAssertEqual(oracle(f), .stale)
         let snapshot = try CanonicalRepository(root: f.root).withCoordinatedSnapshot { $0 }
@@ -721,7 +721,7 @@ final class ProductionGenerationShadowSpikeTests: XCTestCase {
         let generation = try CanonicalGenerationStore(root: f.root).readStable().generation
         let future = CanonicalGeneration(lineage: generation.lineage, value: generation.value + 1).serialized
         XCTAssertEqual(sqlite3_exec(db,
-            "UPDATE metadata SET value='\(future)' WHERE key='sourceCanonicalGeneration'", nil, nil, nil), SQLITE_OK)
+            "UPDATE metadata SET value='bound:\(future)' WHERE key='sourceGenerationBinding'", nil, nil, nil), SQLITE_OK)
         XCTAssertEqual(productionShadow(f, witness: second), .unknown)
         // The current production oracle still relies on Snapshot/Git identity,
         // and does not promote this shadow generation to a Query proof.
@@ -1247,8 +1247,8 @@ final class ProductionGenerationShadowSpikeTests: XCTestCase {
             ("missing ID", "DELETE FROM metadata WHERE key='indexGenerationID'"),
             ("bad ID", "UPDATE metadata SET value='bad' WHERE key='indexGenerationID'"),
             ("wrong source", "UPDATE metadata SET value='0000000000000000000000000000000000000000000000000000000000000000' WHERE key='sourceCanonicalIdentity'"),
-            ("missing source generation", "DELETE FROM metadata WHERE key='sourceCanonicalGeneration'"),
-            ("empty source generation", "UPDATE metadata SET value='' WHERE key='sourceCanonicalGeneration'")
+            ("missing source generation", "DELETE FROM metadata WHERE key='sourceGenerationBinding'"),
+            ("empty source generation", "UPDATE metadata SET value='' WHERE key='sourceGenerationBinding'")
         ]
         for (name, sql) in cases {
             let f = try fixture()
@@ -1272,7 +1272,7 @@ final class ProductionGenerationShadowSpikeTests: XCTestCase {
             let url = try index(f).url
             var database: OpaquePointer?
             XCTAssertEqual(sqlite3_open(url.path, &database), SQLITE_OK, name)
-            let sql = "UPDATE metadata SET value='\(value.serialized)' WHERE key='sourceCanonicalGeneration'"
+            let sql = "UPDATE metadata SET value='bound:\(value.serialized)' WHERE key='sourceGenerationBinding'"
             XCTAssertEqual(sqlite3_exec(database, sql, nil, nil, nil), SQLITE_OK, name)
             sqlite3_close(database)
             XCTAssertThrowsError(try productionBoot(f), name)
@@ -1404,7 +1404,7 @@ final class ProductionGenerationShadowSpikeTests: XCTestCase {
             let local = try index(f)
             let calculator = GitCanonicalRevisionCalculator()
             _ = try local.rebuild(from: snapshot, canonicalRevision: calculator.current(at: f.root),
-                                  sourceCanonicalGeneration: source)
+                                  sourceGenerationBinding: .bound(source))
             let candidateWitness = try productionBoot(f)
             var stages: [String: [String: Double]] = [:]
             stages["coordinatedGenerationRead"] = distribution(try (0..<40).map { _ in
@@ -1430,14 +1430,14 @@ final class ProductionGenerationShadowSpikeTests: XCTestCase {
                         let stable = try store.requireMatchingStable(current)
                         let indexed = try local.assertCurrent(documentID: current.document.id,
                             revision: current.document.revision, expectedSourceIdentity: current.identity)
-                        XCTAssertEqual(indexed.sourceCanonicalGeneration, stable.generation)
+                        XCTAssertEqual(indexed.sourceGenerationBinding, .bound(stable.generation))
                     }
                 }
             })
             stages["fullRebuildFromPreacquiredSnapshot"] = distribution(try (0..<5).map { _ in
                 try milliseconds {
                     _ = try local.rebuild(from: snapshot, canonicalRevision: calculator.current(at: f.root),
-                                          sourceCanonicalGeneration: source)
+                                          sourceGenerationBinding: .bound(source))
                 }
             })
             report[name] = stages

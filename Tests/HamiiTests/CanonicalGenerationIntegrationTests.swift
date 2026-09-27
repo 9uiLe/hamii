@@ -47,12 +47,12 @@ final class CanonicalGenerationIntegrationTests: XCTestCase {
                                    revisionCalculator: FixedRevision(), storageRoot: storage)
         let snapshot = try repository.withCoordinatedSnapshot { $0 }
         let firstIndex = try index.rebuild(from: snapshot, canonicalRevision: CanonicalRevision("fixture"),
-                                           sourceCanonicalGeneration: second.generation)
+                                           sourceGenerationBinding: .bound(second.generation))
         let secondIndex = try index.rebuild(from: snapshot, canonicalRevision: CanonicalRevision("fixture"),
-                                            sourceCanonicalGeneration: second.generation)
+                                            sourceGenerationBinding: .bound(second.generation))
         XCTAssertNotEqual(firstIndex.id, secondIndex.id)
-        XCTAssertEqual(firstIndex.sourceCanonicalGeneration, second.generation)
-        XCTAssertEqual(secondIndex.sourceCanonicalGeneration, second.generation)
+        XCTAssertEqual(firstIndex.sourceGenerationBinding, .bound(second.generation))
+        XCTAssertEqual(secondIndex.sourceGenerationBinding, .bound(second.generation))
         XCTAssertEqual(try store.readStable(), second)
         XCTAssertEqual(try index.assertCurrent(documentID: created.id, revision: snapshot.document.revision,
                                                expectedSourceIdentity: snapshot.identity), secondIndex)

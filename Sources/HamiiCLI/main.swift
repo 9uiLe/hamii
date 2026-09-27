@@ -153,27 +153,23 @@ private enum CLI {
                 guard before == stable else { throw IndexError.stale }
                 // An external edit can be indexed by the existing slow oracle,
                 // but it cannot inherit a coordinated-generation proof.
-                let sourceGeneration: CanonicalGeneration?
+                let sourceBinding: IndexSourceGenerationBinding
                 do {
-                    sourceGeneration = try CanonicalGenerationStore(root: path).requireMatchingStable(snapshot).generation
+                    sourceBinding = .bound(try CanonicalGenerationStore(root: path).requireMatchingStable(snapshot).generation)
                 } catch CanonicalGenerationError.unknownState {
-                    sourceGeneration = nil
+                    sourceBinding = .explicitlyUnbound
                 }
                 _ = try LocalIndex(projectRoot: path, documentID: snapshot.document.id, revisionCalculator: calculator)
-                    .rebuild(from: snapshot, canonicalRevision: stable, sourceCanonicalGeneration: sourceGeneration)
+                    .rebuild(from: snapshot, canonicalRevision: stable, sourceGenerationBinding: sourceBinding)
                 guard try calculator.current(at: path) == stable else { throw IndexError.stale }
                 return Output(ok: true, message: "Indexed revision \(snapshot.document.revision)")
             }
         }
         if args.count == 4 && args[0] == "query" && args[1] == "components" {
             do {
-                return try repository.withCoordinatedSnapshot { snapshot in
-                    let id = snapshot.document.id
-                    let hits = try LocalIndex(projectRoot: path, documentID: id, revisionCalculator: GitCanonicalRevisionCalculator())
-                        .components(matching: args[3], consumerScopeID: EntityID(args[2]), documentID: id,
-                                    revision: snapshot.document.revision, expectedSourceIdentity: snapshot.identity)
-                    return Output(ok: true, hits: hits)
-                }
+                let hits = try IndexQuerySession(projectRoot: path)
+                    .components(matching: args[3], consumerScopeID: EntityID(args[2]))
+                return Output(ok: true, hits: hits)
             } catch let error as IndexError {
                 throw error
             } catch CanonicalError.managedGitPending {

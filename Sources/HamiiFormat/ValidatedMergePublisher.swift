@@ -220,7 +220,7 @@ public final class ValidatedMergePublisher {
         try hook?(.beforeIndexBuild)
         let built = try index.rebuildPublished(at: root, snapshot: snapshot)
         guard built.sourceCanonicalIdentity == snapshot.identity,
-              built.sourceCanonicalGeneration == (try generations.requireMatchingStable(snapshot)).generation,
+              built.sourceGenerationBinding == .bound(try generations.requireMatchingStable(snapshot).generation),
               built.documentID == snapshot.document.id,
               built.documentRevision == snapshot.document.revision else { throw MergePublicationError.candidateMismatch }
         try hook?(.indexBuilt)

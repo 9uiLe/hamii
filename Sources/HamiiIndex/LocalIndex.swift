@@ -24,7 +24,7 @@ public struct ComponentHit: Codable, Equatable {
 }
 
 public final class LocalIndex {
-    public static let schemaVersion = 7
+    public static let schemaVersion = 8
     public let url: URL
     private let projectRoot: URL
     private let revisionCalculator: any CanonicalRevisionCalculating
@@ -55,21 +55,21 @@ public final class LocalIndex {
 
     @discardableResult
     public func rebuild(from snapshot: CanonicalSnapshot, canonicalRevision: CanonicalRevision,
-                        sourceCanonicalGeneration: CanonicalGeneration? = nil) throws -> IndexGenerationDescriptor {
+                        sourceGenerationBinding: IndexSourceGenerationBinding = .explicitlyUnbound) throws -> IndexGenerationDescriptor {
         try rebuild(from: snapshot, canonicalRevision: canonicalRevision,
-                    sourceCanonicalGeneration: sourceCanonicalGeneration, transactionHook: nil)
+                    sourceGenerationBinding: sourceGenerationBinding, transactionHook: nil)
     }
 
     // Internal stop point for process-crash regression tests. The public
     // rebuild contract never exposes a partially committed transaction.
     @discardableResult
     func rebuild(from snapshot: CanonicalSnapshot, canonicalRevision: CanonicalRevision,
-                 sourceCanonicalGeneration: CanonicalGeneration? = nil,
+                 sourceGenerationBinding: IndexSourceGenerationBinding = .explicitlyUnbound,
                  transactionHook: (() -> Void)?) throws -> IndexGenerationDescriptor {
         let document = snapshot.document
         let generation = IndexGenerationDescriptor(id: .new(), sourceCanonicalIdentity: snapshot.identity,
                                                    documentID: document.id, documentRevision: document.revision,
-                                                   sourceCanonicalGeneration: sourceCanonicalGeneration)
+                                                   sourceGenerationBinding: sourceGenerationBinding)
         try execute("BEGIN IMMEDIATE TRANSACTION")
         do {
             try execute("DELETE FROM components")
@@ -92,8 +92,8 @@ public final class LocalIndex {
             try insert("INSERT INTO metadata(key, value) VALUES ('canonicalRevision', ?)", [canonicalRevision.rawValue])
             try insert("INSERT INTO metadata(key, value) VALUES ('indexGenerationID', ?)", [generation.id.rawValue])
             try insert("INSERT INTO metadata(key, value) VALUES ('sourceCanonicalIdentity', ?)", [snapshot.identity.rawValue])
-            try insert("INSERT INTO metadata(key, value) VALUES ('sourceCanonicalGeneration', ?)",
-                       [sourceCanonicalGeneration?.serialized ?? ""])
+            try insert("INSERT INTO metadata(key, value) VALUES ('sourceGenerationBinding', ?)",
+                       [sourceGenerationBinding.serialized])
             try execute("COMMIT")
             return generation
         } catch {
@@ -116,22 +116,7 @@ public final class LocalIndex {
                 _ = try revisionCalculator.current(at: projectRoot)
                 throw IndexError.stale
             }
-            let sql = "SELECT c.id, c.name, c.owner_scope_id, c.usage_count FROM components c JOIN component_availability a ON a.component_id = c.id WHERE a.consumer_id = ? AND c.name LIKE ? ORDER BY c.name"
-            let statement = try prepare(sql)
-            bind(consumerScopeID.rawValue, at: 1, to: statement)
-            bind("%\(text)%", at: 2, to: statement)
-            var hits: [ComponentHit] = []
-            var step = sqlite3_step(statement)
-            while step == SQLITE_ROW {
-                hits.append(ComponentHit(id: EntityID(column(statement, 0)), name: column(statement, 1), ownerScopeID: EntityID(column(statement, 2)), usageCount: Int(sqlite3_column_int(statement, 3))))
-                step = sqlite3_step(statement)
-            }
-            if step != SQLITE_DONE {
-                let message = String(cString: sqlite3_errmsg(database))
-                sqlite3_finalize(statement)
-                throw IndexError.sqlite(message)
-            }
-            sqlite3_finalize(statement)
+            let hits = try readComponentRows(matching: text, consumerScopeID: consumerScopeID)
             guard try revisionCalculator.current(at: projectRoot).rawValue == indexedRevision else { throw IndexError.stale }
             try execute("COMMIT")
             return hits
@@ -168,22 +153,17 @@ public final class LocalIndex {
               let idText = try metadata("indexGenerationID"), let id = IndexGenerationID(rawValue: idText),
               let sourceText = try metadata("sourceCanonicalIdentity"),
               let source = CanonicalSnapshotIdentity(rawValue: sourceText) else { throw IndexError.stale }
-        guard let generationText = try metadata("sourceCanonicalGeneration") else { throw IndexError.stale }
-        let sourceGeneration: CanonicalGeneration?
-        if generationText.isEmpty {
-            sourceGeneration = nil
-        } else {
-            guard let parsed = CanonicalGeneration(serialized: generationText) else { throw IndexError.stale }
-            sourceGeneration = parsed
-        }
+        guard let bindingText = try metadata("sourceGenerationBinding"),
+              let binding = IndexSourceGenerationBinding(serialized: bindingText) else { throw IndexError.stale }
         return IndexGenerationDescriptor(id: id, sourceCanonicalIdentity: source,
                                          documentID: EntityID(documentID), documentRevision: revision,
-                                         sourceCanonicalGeneration: sourceGeneration)
+                                         sourceGenerationBinding: binding)
     }
 
-    // Internal evidence probe. This reads one SQLite generation atomically but
-    // performs no Canonical freshness check and must not authorize a Query.
-    func shadowPublishedGeneration() throws -> IndexGenerationDescriptor {
+    // A descriptor read is not a Canonical freshness proof by itself.
+    // IndexQuerySession combines it with coordinated generation evidence or
+    // the slow Git oracle before returning rows.
+    func publishedGeneration() throws -> IndexGenerationDescriptor {
         try execute("BEGIN DEFERRED TRANSACTION")
         do {
             let result = try readGeneration()
@@ -193,6 +173,45 @@ public final class LocalIndex {
             try? execute("ROLLBACK")
             throw error
         }
+    }
+
+    /// Query rows from the exact SQLite generation already proven current by
+    /// an IndexQuerySession. The caller holds WorktreeCoordinator through this
+    /// transaction; this method does not independently prove Canonical state.
+    func components(matching text: String, consumerScopeID: EntityID,
+                    verifiedGeneration: IndexGenerationDescriptor) throws -> [ComponentHit] {
+        try execute("BEGIN DEFERRED TRANSACTION")
+        do {
+            guard try readGeneration() == verifiedGeneration else { throw IndexError.stale }
+            let hits = try readComponentRows(matching: text, consumerScopeID: consumerScopeID)
+            try execute("COMMIT")
+            return hits
+        } catch {
+            try? execute("ROLLBACK")
+            throw error
+        }
+    }
+
+    private func readComponentRows(matching text: String, consumerScopeID: EntityID) throws -> [ComponentHit] {
+        let sql = "SELECT c.id, c.name, c.owner_scope_id, c.usage_count FROM components c JOIN component_availability a ON a.component_id = c.id WHERE a.consumer_id = ? AND c.name LIKE ? ORDER BY c.name"
+        let statement = try prepare(sql)
+        bind(consumerScopeID.rawValue, at: 1, to: statement)
+        bind("%\(text)%", at: 2, to: statement)
+        var hits: [ComponentHit] = []
+        var step = sqlite3_step(statement)
+        while step == SQLITE_ROW {
+            hits.append(ComponentHit(id: EntityID(column(statement, 0)), name: column(statement, 1),
+                                     ownerScopeID: EntityID(column(statement, 2)),
+                                     usageCount: Int(sqlite3_column_int(statement, 3))))
+            step = sqlite3_step(statement)
+        }
+        if step != SQLITE_DONE {
+            let message = String(cString: sqlite3_errmsg(database))
+            sqlite3_finalize(statement)
+            throw IndexError.sqlite(message)
+        }
+        sqlite3_finalize(statement)
+        return hits
     }
 
     private func metadata(_ key: String) throws -> String? {

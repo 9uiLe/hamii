@@ -3,8 +3,9 @@ import HamiiCore
 
 /// One complete published materialized view. Its ID identifies the build;
 /// sourceCanonicalIdentity identifies the contents used to derive its rows;
-/// sourceCanonicalGeneration records the coordinated writer transition when
-/// one is available. Neither field alone authorizes a production Query.
+/// Source binding records whether the build belongs to a coordinated writer
+/// generation. An explicitly unbound build remains eligible for slow Git
+/// verification, never for a generation-based witness.
 public struct IndexGenerationID: Hashable {
     public let rawValue: String
 
@@ -18,19 +19,42 @@ public struct IndexGenerationID: Hashable {
     }
 }
 
+public enum IndexSourceGenerationBinding: Equatable {
+    case bound(CanonicalGeneration)
+    case explicitlyUnbound
+
+    public var serialized: String {
+        switch self {
+        case .bound(let generation): return "bound:\(generation.serialized)"
+        case .explicitlyUnbound: return "unbound"
+        }
+    }
+
+    public init?(serialized: String) {
+        if serialized == "unbound" {
+            self = .explicitlyUnbound
+        } else if serialized.hasPrefix("bound:"),
+                  let generation = CanonicalGeneration(serialized: String(serialized.dropFirst(6))) {
+            self = .bound(generation)
+        } else {
+            return nil
+        }
+    }
+}
+
 public struct IndexGenerationDescriptor: Equatable {
     public let id: IndexGenerationID
     public let sourceCanonicalIdentity: CanonicalSnapshotIdentity
-    public let sourceCanonicalGeneration: CanonicalGeneration?
+    public let sourceGenerationBinding: IndexSourceGenerationBinding
     public let documentID: EntityID
     public let documentRevision: Int
 
     public init(id: IndexGenerationID, sourceCanonicalIdentity: CanonicalSnapshotIdentity,
                 documentID: EntityID, documentRevision: Int,
-                sourceCanonicalGeneration: CanonicalGeneration? = nil) {
+                sourceGenerationBinding: IndexSourceGenerationBinding) {
         self.id = id
         self.sourceCanonicalIdentity = sourceCanonicalIdentity
-        self.sourceCanonicalGeneration = sourceCanonicalGeneration
+        self.sourceGenerationBinding = sourceGenerationBinding
         self.documentID = documentID
         self.documentRevision = documentRevision
     }

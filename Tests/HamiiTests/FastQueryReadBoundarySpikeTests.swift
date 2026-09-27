@@ -69,7 +69,7 @@ final class FastQueryReadBoundarySpikeTests: XCTestCase {
             let source = try CanonicalGenerationStore(root: fixture.root).requireMatchingStable(snapshot).generation
             let revision = try GitCanonicalRevisionCalculator().current(at: fixture.root)
             _ = try index(fixture).rebuild(from: snapshot, canonicalRevision: revision,
-                                          sourceCanonicalGeneration: source)
+                                          sourceGenerationBinding: .bound(source))
         }
     }
 
@@ -78,7 +78,7 @@ final class FastQueryReadBoundarySpikeTests: XCTestCase {
             let stable = try CanonicalGenerationStore(root: fixture.root).requireMatchingStable(snapshot)
             let published = try index(fixture).assertCurrent(documentID: snapshot.document.id,
                 revision: snapshot.document.revision, expectedSourceIdentity: snapshot.identity)
-            guard published.sourceCanonicalGeneration == stable.generation else { throw IndexError.stale }
+            guard published.sourceGenerationBinding == .bound(stable.generation) else { throw IndexError.stale }
             return Witness(generation: stable.generation, identity: snapshot.identity, indexID: published.id)
         }
     }
@@ -99,10 +99,10 @@ final class FastQueryReadBoundarySpikeTests: XCTestCase {
             let stable = try CanonicalGenerationStore(root: fixture.root).readStable()
             guard stable.generation == witness.generation,
                   stable.snapshotIdentity == witness.identity else { throw IndexError.stale }
-            let published = try index(fixture).shadowPublishedGeneration()
+            let published = try index(fixture).publishedGeneration()
             guard published.id == witness.indexID,
                   published.sourceCanonicalIdentity == witness.identity,
-                  published.sourceCanonicalGeneration == witness.generation,
+                  published.sourceGenerationBinding == .bound(witness.generation),
                   published.documentID == fixture.documentID else { throw IndexError.stale }
             try afterVerdict?()
             // The same worktree lock still protects this actual SQLite row
@@ -261,7 +261,7 @@ final class FastQueryReadBoundarySpikeTests: XCTestCase {
             ("missing ID", "DELETE FROM metadata WHERE key='indexGenerationID'"),
             ("corrupt ID", "UPDATE metadata SET value='bad' WHERE key='indexGenerationID'"),
             ("source identity", "UPDATE metadata SET value='0000000000000000000000000000000000000000000000000000000000000000' WHERE key='sourceCanonicalIdentity'"),
-            ("source generation", "UPDATE metadata SET value='' WHERE key='sourceCanonicalGeneration'")
+            ("source generation", "UPDATE metadata SET value='' WHERE key='sourceGenerationBinding'")
         ] {
             let fixture = try fixture()
             defer { try? FileManager.default.removeItem(at: fixture.root.deletingLastPathComponent()) }
@@ -299,7 +299,7 @@ final class FastQueryReadBoundarySpikeTests: XCTestCase {
         ] {
             var db: OpaquePointer?
             XCTAssertEqual(sqlite3_open(try index(generationFixture).url.path, &db), SQLITE_OK, name)
-            let sql = "UPDATE metadata SET value='\(value.serialized)' WHERE key='sourceCanonicalGeneration'"
+            let sql = "UPDATE metadata SET value='bound:\(value.serialized)' WHERE key='sourceGenerationBinding'"
             XCTAssertEqual(sqlite3_exec(db, sql, nil, nil, nil), SQLITE_OK, name)
             sqlite3_close(db)
             XCTAssertThrowsError(try candidateRows(generationFixture, witness: generationWitness), name)

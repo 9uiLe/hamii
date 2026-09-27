@@ -29,6 +29,15 @@ public struct WorktreeCoordinator {
         return try operation()
     }
 
+    /// Read a Ready worktree while holding the same boundary as managed
+    /// writers. The pending gate cannot change before the callback completes.
+    public func withReadyExclusive<T>(_ operation: () throws -> T) throws -> T {
+        try withExclusive {
+            try requireReady()
+            return try operation()
+        }
+    }
+
     var epochURL: URL { root.appendingPathComponent(".hamii/client-observation-epoch") }
     private var transitionURL: URL { root.appendingPathComponent(".hamii/managed-git-transition.json") }
     var mergePublicationURL: URL { root.appendingPathComponent(".hamii/merge-publication.pending.json") }
