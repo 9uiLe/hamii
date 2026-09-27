@@ -75,6 +75,18 @@ final class IndexQuerySessionTests: XCTestCase {
         let snapshotIdentity: String
     }
 
+    private struct CanonicalSortCandidateSample: Codable {
+        let fixture: String
+        let iteration: Int
+        let baselineSortMS: Double
+        let pathKeyExtractionMS: Double
+        let keyedSortMS: Double
+        let urlMappingMS: Double
+        let candidateTotalMS: Double
+        let baselineSnapshotMS: Double?
+        let candidateSnapshotMS: Double?
+    }
+
     private func fixture(componentCount: Int = 1) throws -> Fixture {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent("hamii-query-session-\(UUID().uuidString)")
         let root = directory.appendingPathComponent("Project")
@@ -918,6 +930,245 @@ final class IndexQuerySessionTests: XCTestCase {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         try encoder.encode(samples).write(to: URL(fileURLWithPath: output), options: .atomic)
+    }
+
+    func testCanonicalPathKeyedSortPreservesOrderAndSnapshot() throws {
+        let names = ["component_1.json", "component_10.json", "component_2.json",
+                     "A.json", "a.json", "a-b.json", "a_b.json",
+                     "prefix.json", "prefix-long.json"]
+        let synthetic = names.map { URL(fileURLWithPath: "/tmp/hamii-sort-order/components/\($0)") }
+        XCTAssertEqual(Set(synthetic.map(\.path)).count, synthetic.count)
+        let expected = sortCanonicalPaths(synthetic, variant: .current)
+        let keyed = sortCanonicalPaths(synthetic, variant: .precomputedPathKeys)
+        XCTAssertEqual(keyed, expected)
+        XCTAssertEqual(keyed.map(\.path), expected.map(\.path))
+
+        for kind in ["1", "1000", "5000", "mixed"] {
+            let fixture = try fixture(componentCount: kind == "mixed" ? 20 : Int(kind)!)
+            defer { try? FileManager.default.removeItem(at: fixture.directory) }
+            if kind == "mixed" { try addMixedSemanticContent(fixture) }
+            let repository = CanonicalRepository(root: fixture.root)
+            try repository.withStableSnapshotForDerivedRecovery { baseline, stable in
+                let baselinePaths = try repository.canonicalJSONPaths()
+                let candidatePaths = try repository.canonicalJSONPaths(sortVariant: .precomputedPathKeys)
+                XCTAssertEqual(candidatePaths.count, baselinePaths.count)
+                XCTAssertEqual(candidatePaths, baselinePaths)
+                XCTAssertEqual(candidatePaths.map(\.path), baselinePaths.map(\.path))
+                XCTAssertEqual(Set(candidatePaths.map(\.path)).count, candidatePaths.count)
+                let candidate = try repository.snapshotDuringManagedGitTransition(
+                    pathSortVariant: .precomputedPathKeys)
+                XCTAssertEqual(candidate.document, baseline.document)
+                XCTAssertEqual(candidate.identity, baseline.identity)
+                XCTAssertEqual(candidate.identity, stable.snapshotIdentity)
+            }
+            XCTAssertEqual(try repository.diagnostics(), [])
+        }
+
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("hamii-sort-alias-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: root) }
+        _ = try CanonicalRepository(root: root).create(name: "Sort alias")
+        let alternatePath: String
+        if root.path.hasPrefix("/var/") {
+            alternatePath = "/private" + root.path
+        } else if root.path.hasPrefix("/private/var/") {
+            alternatePath = String(root.path.dropFirst("/private".count))
+        } else {
+            throw XCTSkip("No /var and /private/var alias on this host")
+        }
+        func identities(at path: URL) throws -> (CanonicalSnapshotIdentity, [String]) {
+            let repository = CanonicalRepository(root: path)
+            return try repository.withStableSnapshotForDerivedRecovery { baseline, _ in
+                let candidate = try repository.snapshotDuringManagedGitTransition(
+                    pathSortVariant: .precomputedPathKeys)
+                let currentPaths = try repository.canonicalJSONPaths()
+                let keyedPaths = try repository.canonicalJSONPaths(sortVariant: .precomputedPathKeys)
+                XCTAssertEqual(keyedPaths, currentPaths)
+                XCTAssertEqual(candidate.identity, baseline.identity)
+                let prefix = repository.root.path + "/"
+                return (candidate.identity, keyedPaths.map {
+                    $0.path.replacingOccurrences(of: prefix, with: "")
+                })
+            }
+        }
+        let direct = try identities(at: root)
+        let alias = try identities(at: URL(fileURLWithPath: alternatePath))
+        XCTAssertEqual(direct.0, alias.0)
+        XCTAssertEqual(direct.1, alias.1)
+    }
+
+    func testCanonicalPathKeyedSortPreservesSymlinkAndFilenameRejections() throws {
+        for relativePath in ["hamii.json", "components/component_alpha.json",
+                             "hamii-agent-profiles.json"] {
+            let fixture = try fixture()
+            defer { try? FileManager.default.removeItem(at: fixture.directory) }
+            let file = fixture.root.appendingPathComponent(relativePath)
+            let copy = fixture.directory.appendingPathComponent("symlink-target.json")
+            try Data(contentsOf: file).write(to: copy)
+            try FileManager.default.removeItem(at: file)
+            try FileManager.default.createSymbolicLink(at: file, withDestinationURL: copy)
+            let repository = CanonicalRepository(root: fixture.root)
+            try WorktreeCoordinator(root: fixture.root).withExclusive {
+                func failure(_ variant: CanonicalPathSortVariant) -> String {
+                    do {
+                        _ = try repository.snapshotDuringManagedGitTransition(pathSortVariant: variant)
+                        XCTFail("Expected symlink rejection for \(relativePath)")
+                        return "accepted"
+                    } catch {
+                        return String(describing: error)
+                    }
+                }
+                XCTAssertEqual(failure(.current), failure(.precomputedPathKeys))
+            }
+        }
+
+        let fixture = try fixture()
+        defer { try? FileManager.default.removeItem(at: fixture.directory) }
+        let file = fixture.root.appendingPathComponent("components/component_alpha.json")
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
+        object["id"] = ["rawValue": "component_other"]
+        try JSONSerialization.data(withJSONObject: object).write(to: file)
+        let repository = CanonicalRepository(root: fixture.root)
+        try WorktreeCoordinator(root: fixture.root).withExclusive {
+            for variant in [CanonicalPathSortVariant.current, .precomputedPathKeys] {
+                XCTAssertThrowsError(try repository.snapshotDuringManagedGitTransition(
+                    pathSortVariant: variant)) { error in
+                    guard case CanonicalError.filenameMismatch = error else {
+                        return XCTFail("Wrong error: \(error)")
+                    }
+                }
+            }
+        }
+    }
+
+    func testMeasuredCanonicalPathKeyedSortCandidate() throws {
+        guard let output = ProcessInfo.processInfo.environment["HAMII_CANONICAL_SORT_CANDIDATE_RESULT"] else {
+            throw XCTSkip("Set HAMII_CANONICAL_SORT_CANDIDATE_RESULT for paired sort measurements")
+        }
+        var samples: [CanonicalSortCandidateSample] = []
+        func milliseconds(_ start: Double, _ end: Double) -> Double { (end - start) * 1_000 }
+        for kind in ["1", "1000", "5000", "mixed"] {
+            let fixture = try fixture(componentCount: kind == "mixed" ? 20 : Int(kind)!)
+            defer { try? FileManager.default.removeItem(at: fixture.directory) }
+            if kind == "mixed" { try addMixedSemanticContent(fixture) }
+            let repository = CanonicalRepository(root: fixture.root)
+            var input: [URL] = []
+            try repository.withStableSnapshotForDerivedRecovery { _, _ in
+                _ = try repository.canonicalJSONPaths(onUnsortedPaths: { input = $0 })
+            }
+            XCTAssertEqual(Set(input.map(\.path)).count, input.count)
+            _ = sortCanonicalPaths(input, variant: .current)
+            _ = sortCanonicalPaths(input, variant: .precomputedPathKeys)
+
+            for iteration in 0..<20 {
+                var baselineMS = 0.0
+                var extractionMS = 0.0
+                var keyedSortMS = 0.0
+                var mappingMS = 0.0
+                var totalMS = 0.0
+                var baseline: [URL] = []
+                var candidate: [URL] = []
+                func runBaseline() {
+                    let start = ProcessInfo.processInfo.systemUptime
+                    baseline = sortCanonicalPaths(input, variant: .current)
+                    baselineMS = milliseconds(start, ProcessInfo.processInfo.systemUptime)
+                }
+                func runCandidate() {
+                    let started = ProcessInfo.processInfo.systemUptime
+                    let keyed = input.map { (key: $0.path, url: $0) }
+                    let extracted = ProcessInfo.processInfo.systemUptime
+                    let sorted = keyed.sorted { $0.key < $1.key }
+                    let sortedAt = ProcessInfo.processInfo.systemUptime
+                    candidate = sorted.map(\.url)
+                    let completed = ProcessInfo.processInfo.systemUptime
+                    extractionMS = milliseconds(started, extracted)
+                    keyedSortMS = milliseconds(extracted, sortedAt)
+                    mappingMS = milliseconds(sortedAt, completed)
+                    totalMS = milliseconds(started, completed)
+                }
+                if iteration.isMultiple(of: 2) {
+                    runBaseline(); runCandidate()
+                } else {
+                    runCandidate(); runBaseline()
+                }
+                XCTAssertEqual(candidate, baseline)
+                XCTAssertEqual(candidate.map(\.path), baseline.map(\.path))
+                var baselineSnapshotMS: Double?
+                var candidateSnapshotMS: Double?
+                if iteration < 5 {
+                    try WorktreeCoordinator(root: fixture.root).withExclusive {
+                        var legacy: CanonicalSnapshot?
+                        var keyed: CanonicalSnapshot?
+                        func runLegacySnapshot() throws {
+                            let start = ProcessInfo.processInfo.systemUptime
+                            legacy = try repository.snapshotDuringManagedGitTransition()
+                            baselineSnapshotMS = milliseconds(start, ProcessInfo.processInfo.systemUptime)
+                        }
+                        func runKeyedSnapshot() throws {
+                            let start = ProcessInfo.processInfo.systemUptime
+                            keyed = try repository.snapshotDuringManagedGitTransition(
+                                pathSortVariant: .precomputedPathKeys)
+                            candidateSnapshotMS = milliseconds(start, ProcessInfo.processInfo.systemUptime)
+                        }
+                        if iteration.isMultiple(of: 2) {
+                            try runLegacySnapshot(); try runKeyedSnapshot()
+                        } else {
+                            try runKeyedSnapshot(); try runLegacySnapshot()
+                        }
+                        XCTAssertEqual(legacy?.document, keyed?.document)
+                        XCTAssertEqual(legacy?.identity, keyed?.identity)
+                        XCTAssertEqual(try repository.canonicalJSONPaths(),
+                                       try repository.canonicalJSONPaths(sortVariant: .precomputedPathKeys))
+                    }
+                }
+                samples.append(CanonicalSortCandidateSample(fixture: kind, iteration: iteration,
+                    baselineSortMS: baselineMS, pathKeyExtractionMS: extractionMS,
+                    keyedSortMS: keyedSortMS, urlMappingMS: mappingMS,
+                    candidateTotalMS: totalMS, baselineSnapshotMS: baselineSnapshotMS,
+                    candidateSnapshotMS: candidateSnapshotMS))
+            }
+        }
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        try encoder.encode(samples).write(to: URL(fileURLWithPath: output), options: .atomic)
+    }
+
+    func testCandidatePathSortKeepsCoordinatedWriterBehindSnapshot() throws {
+        let fixture = try fixture(componentCount: 5_000)
+        defer { try? FileManager.default.removeItem(at: fixture.directory) }
+        let attempt = fixture.directory.appendingPathComponent("candidate-sort-writer-attempt")
+        let result = fixture.directory.appendingPathComponent("candidate-sort-writer-result.json")
+        var worker: Process?
+        defer {
+            if let worker, worker.isRunning {
+                kill(worker.processIdentifier, SIGKILL)
+                worker.waitUntilExit()
+            }
+        }
+        let repository = CanonicalRepository(root: fixture.root)
+        var snapshotComplete = 0.0
+        try WorktreeCoordinator(root: fixture.root).withExclusive {
+            worker = try child("testRecoveryLockProbeWorker", environment: [
+                "HAMII_LOCK_PROBE_PROJECT": fixture.root.path,
+                "HAMII_LOCK_PROBE_ATTEMPT": attempt.path,
+                "HAMII_LOCK_PROBE_RESULT": result.path
+            ])
+            try awaitFile(attempt, process: worker!)
+            let baseline = try repository.snapshotDuringManagedGitTransition()
+            let candidate = try repository.snapshotDuringManagedGitTransition(
+                pathSortVariant: .precomputedPathKeys)
+            XCTAssertEqual(candidate.document, baseline.document)
+            XCTAssertEqual(candidate.identity, baseline.identity)
+            snapshotComplete = ProcessInfo.processInfo.systemUptime
+            XCTAssertFalse(FileManager.default.fileExists(atPath: result.path))
+        }
+        let child = try XCTUnwrap(worker)
+        try awaitFile(result, process: child)
+        child.waitUntilExit()
+        XCTAssertEqual(child.terminationStatus, 0)
+        let observed = try JSONDecoder().decode([String: Double].self, from: Data(contentsOf: result))
+        XCTAssertLessThan(try XCTUnwrap(observed["attemptedAt"]), snapshotComplete)
+        XCTAssertLessThan(snapshotComplete, try XCTUnwrap(observed["acquiredAt"]))
     }
 
     func testBoundColdWarmSaveAndRebuildPaths() throws {

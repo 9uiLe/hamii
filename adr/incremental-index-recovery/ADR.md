@@ -35,6 +35,7 @@ Production changed-entity detection、reverse dependency store、deletion / scop
 - [Large Project Rebuild](spikes/large-project-rebuild/SPIKE.md): tracked / mostly-untracked shard の pilot。実 workload 分布、dependency density、memory、incremental crossover は未測定。
 - [Production full recovery performance](../../docs/index-recovery-performance.md): 1 / 1000 / 5000 Component、各3 run の full recovery を測定。5000 Component の recovered Query p95 は missing 5051.98 ms / stale Bound 5006.30 ms、Phase 1 lock p95 は最大 1683.95 ms。Off-lock build p95 は最大 86.70 ms。この fixture と環境に限定し、incremental path の便益や Product SLA はまだ示さない。
 - [Canonical observation stage / path breakdown](../../docs/index-recovery-performance.md): 5000 Component、各5 run の profile では Canonical path 列挙・symlink 確認 p50 617.01 ms のうち path sort p50 519.43 ms、URL 再構築 73.06 ms、directory listing 11.01 ms、symlink metadata 8.56 ms。Current source acquisition cost が projection/build より大きい条件の Evidence であり、incremental recovery の適用条件はまだ決めない。
+- [Path key precomputation candidate](../../docs/index-recovery-performance.md): test-only の paired 20 run では 5000 paths の sort p50 が current 521.47 ms / keyed candidate 25.29 ms、5 run の Snapshot p50 が 1225.57 ms / 732.21 ms。URL sequence と Snapshot identity は tested fixtures で一致したが、production adoption と recovery Query 全体の再測定は未実施。Incremental projector の適用判断には転用しない。
 - Production に近い Snapshot → changed entity → reverse closure → targeted projection → generation publish → Query を、削除・追加・scope parent change と失敗時 rollback を含めて測る。
 
 ## Decision Criteria
