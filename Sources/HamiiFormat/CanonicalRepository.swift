@@ -1,5 +1,4 @@
 import Foundation
-import Darwin
 import CryptoKit
 import HamiiCore
 import HamiiApplication
@@ -45,39 +44,42 @@ public final class CanonicalRepository: ProjectRepository {
     public let root: URL
     private let manager = FileManager.default
     private let transaction: CanonicalTransaction
+    private let coordinator: WorktreeCoordinator
 
     public init(root: URL) {
         self.root = root.standardizedFileURL
         transaction = CanonicalTransaction(root: self.root)
+        coordinator = WorktreeCoordinator(root: self.root)
     }
 
     init(root: URL, transactionHook: @escaping (TransactionStep) throws -> Void) {
         self.root = root.standardizedFileURL
         transaction = CanonicalTransaction(root: self.root, hook: transactionHook)
+        coordinator = WorktreeCoordinator(root: self.root)
     }
 
     public func create(name: String) throws -> Document {
         try manager.createDirectory(at: root, withIntermediateDirectories: true)
         let document = Document(name: name)
-        try withLock(exclusive: true) {
+        try coordinator.withExclusive {
             try transaction.recoverIfNeeded()
             if manager.fileExists(atPath: root.appendingPathComponent("hamii.json").path) { throw CanonicalError.alreadyExists }
             try AgentProfilesRepository(root: root).createDefault()
-            try rotateClientEpoch()
+            try coordinator.invalidateClientObservations()
             try writeDocument(document, expected: nil)
         }
         return document
     }
 
     public func load() throws -> Document {
-        try withLock(exclusive: true) {
+        try coordinator.withExclusive {
             try transaction.recoverIfNeeded()
             return try loadUnlocked(validate: true)
         }
     }
 
     public func observe() throws -> ProjectObservation {
-        try withLock(exclusive: true) {
+        try coordinator.withExclusive {
             try transaction.recoverIfNeeded()
             let document = try loadUnlocked(validate: true)
             return ProjectObservation(document: document, statePrecondition: try clientPreconditionUnlocked())
@@ -85,7 +87,7 @@ public final class CanonicalRepository: ProjectRepository {
     }
 
     public func commit(_ document: Document, expected: ProjectObservation) throws -> ProjectObservation {
-        try withLock(exclusive: true) {
+        try coordinator.withExclusive {
             try transaction.recoverIfNeeded()
             guard try clientPreconditionUnlocked() == expected.statePrecondition else { throw AuthoringError.staleState }
             let manifest = try readManifest()
@@ -95,14 +97,14 @@ public final class CanonicalRepository: ProjectRepository {
             }
             // Advance before touching Canonical shards. A stopped save may
             // invalidate a token unnecessarily, but cannot resurrect it.
-            try rotateClientEpoch()
+            try coordinator.invalidateClientObservations()
             try writeDocument(document, expected: expected.document)
             return ProjectObservation(document: document, statePrecondition: try clientPreconditionUnlocked())
         }
     }
 
     public func diagnostics() throws -> [Diagnostic] {
-        try withLock(exclusive: true) {
+        try coordinator.withExclusive {
             try transaction.recoverIfNeeded()
             return allDiagnostics(try loadUnlocked(validate: false))
         }
@@ -138,7 +140,7 @@ public final class CanonicalRepository: ProjectRepository {
     }
 
     public func identityAndRevision() throws -> (EntityID, Int) {
-        try withLock(exclusive: true) {
+        try coordinator.withExclusive {
             try transaction.recoverIfNeeded()
             let manifest = try readManifest()
             return (manifest.id, manifest.revision)
@@ -146,7 +148,7 @@ public final class CanonicalRepository: ProjectRepository {
     }
 
     public func save(_ document: Document, expected: Document) throws {
-        try withLock(exclusive: true) {
+        try coordinator.withExclusive {
             try transaction.recoverIfNeeded()
             let manifest = try readManifest()
             guard manifest.revision == expected.revision else {
@@ -155,7 +157,7 @@ public final class CanonicalRepository: ProjectRepository {
             guard document.revision == expected.revision + 1 else {
                 throw AuthoringError.staleRevision(expected: expected.revision + 1, actual: document.revision)
             }
-            try rotateClientEpoch()
+            try coordinator.invalidateClientObservations()
             try writeDocument(document, expected: expected)
         }
     }
@@ -197,33 +199,6 @@ public final class CanonicalRepository: ProjectRepository {
         return diagnostics
     }
 
-    private func withLock<T>(exclusive: Bool, _ operation: () throws -> T) throws -> T {
-        let local = root.appendingPathComponent(".hamii", isDirectory: true)
-        try manager.createDirectory(at: local, withIntermediateDirectories: true)
-        let descriptor = open(local.appendingPathComponent("write.lock").path, O_CREAT | O_RDWR, 0o600)
-        guard descriptor >= 0 else { throw CocoaError(.fileWriteUnknown) }
-        defer { close(descriptor) }
-        guard flock(descriptor, exclusive ? LOCK_EX : LOCK_SH) == 0 else { throw CocoaError(.fileReadUnknown) }
-        defer { flock(descriptor, LOCK_UN) }
-        return try operation()
-    }
-
-    private var clientEpochURL: URL {
-        root.appendingPathComponent(".hamii/client-observation-epoch")
-    }
-
-    private func clientEpochUnlocked() throws -> String {
-        if !manager.fileExists(atPath: clientEpochURL.path) { try rotateClientEpoch() }
-        let value = try String(contentsOf: clientEpochURL, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines)
-        guard UUID(uuidString: value) != nil else { throw CanonicalError.invalidClientEpoch }
-        return value
-    }
-
-    private func rotateClientEpoch() throws {
-        let value = UUID().uuidString + "\n"
-        try Data(value.utf8).write(to: clientEpochURL, options: .atomic)
-    }
-
     private func clientPreconditionUnlocked() throws -> ClientPrecondition {
         var hash = SHA256()
         func append(_ value: Data) {
@@ -233,7 +208,7 @@ public final class CanonicalRepository: ProjectRepository {
         }
         append(Data("hamii-client-state-v1".utf8))
         append(Data(root.resolvingSymlinksInPath().standardizedFileURL.path.utf8))
-        append(Data(try clientEpochUnlocked().utf8))
+        append(Data(try coordinator.clientEpoch().utf8))
         let folders = ["pages", "screens", "scopes", "components", "tokens", "assets", "interactions", "motions", "fixtures", "targets"]
         var paths = [root.appendingPathComponent("hamii.json")]
         let agentProfiles = root.appendingPathComponent("hamii-agent-profiles.json")

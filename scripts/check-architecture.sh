@@ -28,4 +28,9 @@ if rg -n 'adr/' Sources; then
   exit 1
 fi
 
+if rg -n 'flock\(|write\.lock|client-observation-epoch' Sources -g '*.swift' -g '!WorktreeCoordinator.swift'; then
+  echo 'Worktree lock and observation epoch must be owned by WorktreeCoordinator' >&2
+  exit 1
+fi
+
 echo 'Architecture dependencies valid'
