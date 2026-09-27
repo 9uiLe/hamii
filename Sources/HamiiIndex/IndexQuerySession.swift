@@ -20,6 +20,7 @@ enum QueryObservationStep: Hashable {
     case fastLockAcquired
     case slowLockAcquired
     case slowSnapshotAcquired
+    case slowAttemptFailed
     case slowRowsRead
     case fastRowsRead
     case retryStarted
@@ -28,6 +29,10 @@ enum QueryObservationStep: Hashable {
 /// A long-lived Query session. Freshness and SQLite rows are read while one
 /// WorktreeCoordinator lock is held. A CLI invocation is a new, cold session.
 public final class IndexQuerySession {
+    private final class RecoverySeedBox {
+        var seed: RecoverySourceSeed?
+    }
+
     private let root: URL
     private let storageRoot: URL?
     private let revisionCalculator: any CanonicalRevisionCalculating
@@ -40,6 +45,7 @@ public final class IndexQuerySession {
     private let automaticRecoveryEnabled: Bool
     private let onBeforeRecoveryRetry: (() throws -> Void)?
     private let onObservationStep: ((QueryObservationStep) -> Void)?
+    private let observationHandoffEnabled: Bool
     private var witness: VerifiedCurrentWitness?
 
     public convenience init(projectRoot: URL) {
@@ -55,7 +61,8 @@ public final class IndexQuerySession {
          automaticRecoveryEnabled: Bool = true,
          onRecoveryStep: ((IndexRecoveryStep) throws -> Void)? = nil,
          onBeforeRecoveryRetry: (() throws -> Void)? = nil,
-         onObservationStep: ((QueryObservationStep) -> Void)? = nil) {
+         onObservationStep: ((QueryObservationStep) -> Void)? = nil,
+         observationHandoffEnabled: Bool = false) {
         root = projectRoot.standardizedFileURL
         self.storageRoot = storageRoot
         self.revisionCalculator = revisionCalculator
@@ -69,6 +76,7 @@ public final class IndexQuerySession {
         self.automaticRecoveryEnabled = automaticRecoveryEnabled
         self.onBeforeRecoveryRetry = onBeforeRecoveryRetry
         self.onObservationStep = onObservationStep
+        self.observationHandoffEnabled = observationHandoffEnabled
     }
 
     public func components(matching text: String, consumerScopeID: EntityID) throws -> [ComponentHit] {
@@ -79,26 +87,39 @@ public final class IndexQuerySession {
     // implementation detail part of the public automation contract.
     func componentsWithVerification(matching text: String, consumerScopeID: EntityID)
         throws -> (hits: [ComponentHit], path: QueryVerificationPath) {
+        let seedBox = RecoverySeedBox()
         do {
-            return try queryAttempt(matching: text, consumerScopeID: consumerScopeID)
+            return try queryAttempt(matching: text, consumerScopeID: consumerScopeID,
+                                    seedBox: seedBox)
         } catch let failure as IndexError {
             guard automaticRecoveryEnabled else { throw failure }
             if case .unverifiableSource = failure { throw failure }
-            switch try recovery.recoverOnce() {
+            let result = try recovery.recoverOnce(using: seedBox.seed)
+            switch result.outcome {
             case .published, .reused:
-                witness = nil
+                if observationHandoffEnabled, let proof = result.proof {
+                    witness = VerifiedCurrentWitness(worktreePath: proof.worktreePath,
+                        documentID: proof.documentID, indexPath: proof.indexPath,
+                        canonicalGeneration: proof.canonicalGeneration,
+                        snapshotIdentity: proof.snapshotIdentity,
+                        indexGenerationID: proof.indexGenerationID)
+                } else {
+                    witness = nil
+                }
                 try onBeforeRecoveryRetry?()
                 onObservationStep?(.retryStarted)
                 // One recovery and exactly one retry. This direct call cannot
                 // recursively reset the recovery budget.
-                return try queryAttempt(matching: text, consumerScopeID: consumerScopeID)
+                return try queryAttempt(matching: text, consumerScopeID: consumerScopeID,
+                                        seedBox: RecoverySeedBox())
             case .notEligible:
                 throw failure
             }
         }
     }
 
-    private func queryAttempt(matching text: String, consumerScopeID: EntityID)
+    private func queryAttempt(matching text: String, consumerScopeID: EntityID,
+                              seedBox: RecoverySeedBox)
         throws -> (hits: [ComponentHit], path: QueryVerificationPath) {
         let lockAttempt = onReadBoundaryAcquired.map { _ in ProcessInfo.processInfo.systemUptime }
         let fast = try coordinator.withReadyExclusive { () -> FastResult in
@@ -146,16 +167,19 @@ public final class IndexQuerySession {
         switch fast {
         case .rows(let hits): return (hits, .fast)
         case .stale: throw IndexError.stale
-        case .unknown: return try slowComponents(matching: text, consumerScopeID: consumerScopeID)
+        case .unknown: return try slowComponents(matching: text, consumerScopeID: consumerScopeID,
+                                                 seedBox: seedBox)
         }
     }
 
-    private func slowComponents(matching text: String, consumerScopeID: EntityID)
+    private func slowComponents(matching text: String, consumerScopeID: EntityID,
+                                seedBox: RecoverySeedBox)
         throws -> (hits: [ComponentHit], path: QueryVerificationPath) {
         try repository.withStableRecordSnapshotForQuery(
             onLockAcquired: { self.onObservationStep?(.slowLockAcquired) }
         ) { snapshot, stable in
             onObservationStep?(.slowSnapshotAcquired)
+            do {
             let index = try makeIndex(documentID: snapshot.document.id)
             let published = try index.publishedGeneration()
             guard published.documentID == snapshot.document.id,
@@ -195,6 +219,13 @@ public final class IndexQuerySession {
             }
             witness = nil
             return (hits, .slowUnbound)
+            } catch let failure as IndexError {
+                if observationHandoffEnabled {
+                    seedBox.seed = try? recovery.seedFromObserved(snapshot: snapshot, stable: stable)
+                }
+                onObservationStep?(.slowAttemptFailed)
+                throw failure
+            }
         }
     }
 

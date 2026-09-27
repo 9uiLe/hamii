@@ -42,6 +42,22 @@ final class IndexQuerySessionTests: XCTestCase {
         let recoveredQueryMS: Double
     }
 
+    private struct ObservationHandoffBenchmarkSample: Codable {
+        let components: Int
+        let condition: String
+        let mode: String
+        let recoveredQueryMS: Double
+        let initialObservationMS: Double
+        let offLockBuildMS: Double
+        let phase2LockMS: Double
+        let retryVerificationMS: Double
+        let maxMeasuredLockMS: Double
+        let querySnapshotCount: Int
+        let recoveryPhase1Count: Int
+        let gitOracleCount: Int
+        let lockAcquisitionCount: Int
+    }
+
     private func fixture(componentCount: Int = 1) throws -> Fixture {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent("hamii-query-session-\(UUID().uuidString)")
         let root = directory.appendingPathComponent("Project")
@@ -310,6 +326,182 @@ final class IndexQuerySessionTests: XCTestCase {
         }
     }
 
+    func testObservationHandoffCandidateReducesVerifiedObservationCounts() throws {
+        for condition in ["missing", "staleBound"] {
+            let fixture = try fixture()
+            defer { try? FileManager.default.removeItem(at: fixture.directory) }
+            if condition == "missing" {
+                try FileManager.default.removeItem(at: index(fixture).url)
+            } else {
+                try saveComponent(fixture, as: "Beta")
+            }
+            let calculator = CountingRevisionCalculator()
+            var querySteps: [QueryObservationStep] = []
+            var recoverySteps: [IndexRecoveryStep] = []
+            let querySession = IndexQuerySession(projectRoot: fixture.root,
+                revisionCalculator: calculator, storageRoot: fixture.indexRoot,
+                afterFastVerdict: nil,
+                onRecoveryStep: { recoverySteps.append($0) },
+                onObservationStep: { querySteps.append($0) },
+                observationHandoffEnabled: true)
+            XCTAssertEqual(try query(querySession, fixture).hits.count, 1, condition)
+            XCTAssertEqual(querySteps.filter { $0 == .slowSnapshotAcquired }.count, 1, condition)
+            XCTAssertEqual(querySteps.filter { $0 == .slowLockAcquired }.count, 1, condition)
+            XCTAssertEqual(querySteps.filter { $0 == .fastLockAcquired }.count, 2, condition)
+            XCTAssertEqual(querySteps.filter { $0 == .slowRowsRead }.count, 0, condition)
+            XCTAssertEqual(querySteps.filter { $0 == .fastRowsRead }.count, 1, condition)
+            XCTAssertEqual(querySteps.filter { $0 == .retryStarted }.count, 1, condition)
+            XCTAssertEqual(recoverySteps.filter { $0 == .phase1LockAcquired }.count, 0, condition)
+            XCTAssertEqual(recoverySteps.filter { $0 == .phase2LockAcquired }.count, 1, condition)
+            XCTAssertEqual(calculator.calls, 2, condition)
+        }
+    }
+
+    func testObservationHandoffCandidateMatchesProductionRowsForRecoverableDamage() throws {
+        for condition in ["missing", "staleBound", "obsolete", "malformed", "corrupt"] {
+            let fixture = try fixture(componentCount: 3)
+            defer { try? FileManager.default.removeItem(at: fixture.directory) }
+            let published = try index(fixture).url
+            switch condition {
+            case "missing": try FileManager.default.removeItem(at: published)
+            case "staleBound": try saveComponent(fixture, as: "Beta")
+            case "corrupt": try Data("invalid SQLite".utf8).write(to: published)
+            default:
+                var database: OpaquePointer?
+                XCTAssertEqual(sqlite3_open(published.path, &database), SQLITE_OK)
+                let sql = condition == "obsolete" ? "PRAGMA user_version = 7"
+                    : "DELETE FROM metadata WHERE key='sourceGenerationBinding'"
+                XCTAssertEqual(sqlite3_exec(database, sql, nil, nil, nil), SQLITE_OK)
+                sqlite3_close(database)
+            }
+            let damagedBytes = condition == "missing" ? nil : try Data(contentsOf: published)
+            let baseline = try query(session(fixture), fixture).hits
+            if let damagedBytes {
+                try damagedBytes.write(to: published, options: .atomic)
+            } else {
+                try FileManager.default.removeItem(at: published)
+            }
+            let candidate = IndexQuerySession(projectRoot: fixture.root,
+                revisionCalculator: GitCanonicalRevisionCalculator(),
+                storageRoot: fixture.indexRoot, afterFastVerdict: nil,
+                observationHandoffEnabled: true)
+            let result = try query(candidate, fixture)
+            XCTAssertEqual(result.hits, baseline, condition)
+            XCTAssertEqual(result.path, .fast, condition)
+        }
+    }
+
+    func testObservationHandoffCandidateRejectsWriterDuringBuild() throws {
+        let fixture = try fixture()
+        defer { try? FileManager.default.removeItem(at: fixture.directory) }
+        try saveComponent(fixture, as: "BeforeBuild")
+        let published = try index(fixture).url
+        let oldBytes = try Data(contentsOf: published)
+        var recoverySteps: [IndexRecoveryStep] = []
+        let candidate = IndexQuerySession(projectRoot: fixture.root,
+            revisionCalculator: GitCanonicalRevisionCalculator(),
+            storageRoot: fixture.indexRoot, afterFastVerdict: nil,
+            onRecoveryStep: { step in
+                recoverySteps.append(step)
+                if step == .candidateBuilt { try self.saveComponent(fixture, as: "AfterBuild") }
+            }, observationHandoffEnabled: true)
+        XCTAssertThrowsError(try query(candidate, fixture)) { error in
+            guard case IndexError.stale = error else { return XCTFail("Wrong error: \(error)") }
+        }
+        XCTAssertEqual(try Data(contentsOf: published), oldBytes)
+        XCTAssertEqual(recoverySteps.filter { $0 == .sourceCaptured }.count, 1)
+        XCTAssertEqual(recoverySteps.filter { $0 == .phase1LockAcquired }.count, 0)
+        XCTAssertEqual(recoverySteps.filter { $0 == .phase2LockAcquired }.count, 1)
+    }
+
+    func testObservationHandoffCandidateRejectsWriterBeforeFastRetryWithoutSecondRecovery() throws {
+        let fixture = try fixture()
+        defer { try? FileManager.default.removeItem(at: fixture.directory) }
+        try FileManager.default.removeItem(at: index(fixture).url)
+        var recoverySteps: [IndexRecoveryStep] = []
+        let candidate = IndexQuerySession(projectRoot: fixture.root,
+            revisionCalculator: GitCanonicalRevisionCalculator(),
+            storageRoot: fixture.indexRoot, afterFastVerdict: nil,
+            onRecoveryStep: { recoverySteps.append($0) },
+            onBeforeRecoveryRetry: { try self.saveComponent(fixture, as: "AfterPublish") },
+            observationHandoffEnabled: true)
+        XCTAssertThrowsError(try query(candidate, fixture)) { error in
+            guard case IndexError.stale = error else { return XCTFail("Wrong error: \(error)") }
+        }
+        XCTAssertEqual(recoverySteps.filter { $0 == .sourceCaptured }.count, 1)
+        XCTAssertEqual(recoverySteps.filter { $0 == .published }.count, 1)
+        XCTAssertEqual(recoverySteps.filter { $0 == .phase1LockAcquired }.count, 0)
+        XCTAssertEqual(try CanonicalRepository(root: fixture.root).load().components[0].name,
+                       "AfterPublish")
+    }
+
+    func testObservationHandoffCandidateVerifiesReplacementGenerationWithoutSecondRecovery() throws {
+        let fixture = try fixture()
+        defer { try? FileManager.default.removeItem(at: fixture.directory) }
+        try FileManager.default.removeItem(at: index(fixture).url)
+        var recoverySteps: [IndexRecoveryStep] = []
+        var querySteps: [QueryObservationStep] = []
+        let candidate = IndexQuerySession(projectRoot: fixture.root,
+            revisionCalculator: GitCanonicalRevisionCalculator(),
+            storageRoot: fixture.indexRoot, afterFastVerdict: nil,
+            onRecoveryStep: { recoverySteps.append($0) },
+            onBeforeRecoveryRetry: { _ = try self.rebuild(fixture) },
+            onObservationStep: { querySteps.append($0) },
+            observationHandoffEnabled: true)
+        let result = try query(candidate, fixture)
+        XCTAssertEqual(result.hits.map(\.name), ["Alpha"])
+        XCTAssertEqual(result.path, .slowBound)
+        XCTAssertEqual(recoverySteps.filter { $0 == .sourceCaptured }.count, 1)
+        XCTAssertEqual(querySteps.filter { $0 == .retryStarted }.count, 1)
+        XCTAssertEqual(querySteps.filter { $0 == .slowRowsRead }.count, 1)
+    }
+
+    func testObservationHandoffCandidateExcludesExternalUnboundAndBlockedSources() throws {
+        let external = try fixture()
+        defer { try? FileManager.default.removeItem(at: external.directory) }
+        try changeComponent(external, from: "Alpha", to: "External")
+        var externalSteps: [IndexRecoveryStep] = []
+        let externalSession = IndexQuerySession(projectRoot: external.root,
+            revisionCalculator: GitCanonicalRevisionCalculator(),
+            storageRoot: external.indexRoot, afterFastVerdict: nil,
+            onRecoveryStep: { externalSteps.append($0) },
+            observationHandoffEnabled: true)
+        XCTAssertThrowsError(try query(externalSession, external))
+        XCTAssertFalse(externalSteps.contains(.sourceCaptured))
+        _ = try rebuild(external)
+        XCTAssertEqual(try query(externalSession, external).path, .slowUnbound)
+        XCTAssertFalse(externalSteps.contains(.sourceCaptured))
+
+        let hidden = try fixture()
+        defer { try? FileManager.default.removeItem(at: hidden.directory) }
+        let hiddenIndex = try index(hidden).url
+        try FileManager.default.removeItem(at: hiddenIndex)
+        try git(hidden.root, ["update-index", "--assume-unchanged",
+                              "components/component_alpha.json"])
+        var hiddenSteps: [IndexRecoveryStep] = []
+        let hiddenSession = IndexQuerySession(projectRoot: hidden.root,
+            revisionCalculator: GitCanonicalRevisionCalculator(),
+            storageRoot: hidden.indexRoot, afterFastVerdict: nil,
+            onRecoveryStep: { hiddenSteps.append($0) },
+            observationHandoffEnabled: true)
+        XCTAssertThrowsError(try query(hiddenSession, hidden))
+        XCTAssertFalse(hiddenSteps.contains(.sourceCaptured))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: hiddenIndex.path))
+
+        let pending = try fixture()
+        defer { try? FileManager.default.removeItem(at: pending.directory) }
+        let gate = pending.root.appendingPathComponent(".hamii/merge-publication.pending.json")
+        try Data("{}".utf8).write(to: gate)
+        var pendingSteps: [IndexRecoveryStep] = []
+        let pendingSession = IndexQuerySession(projectRoot: pending.root,
+            revisionCalculator: GitCanonicalRevisionCalculator(),
+            storageRoot: pending.indexRoot, afterFastVerdict: nil,
+            onRecoveryStep: { pendingSteps.append($0) },
+            observationHandoffEnabled: true)
+        XCTAssertThrowsError(try query(pendingSession, pending))
+        XCTAssertTrue(pendingSteps.isEmpty)
+    }
+
     func testStoragePathFailureIsNotClassifiedAsDisposableIndexCorruption() throws {
         let fixture = try fixture()
         defer { try? FileManager.default.removeItem(at: fixture.directory) }
@@ -474,6 +666,80 @@ final class IndexQuerySessionTests: XCTestCase {
                         totalRecoveryMS: milliseconds(started, finished),
                         firstQueryMS: milliseconds(queryStarted, queried),
                         recoveredQueryMS: milliseconds(recoveredQueryStarted, recoveredQueryFinished)))
+                }
+            }
+        }
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        try encoder.encode(samples).write(to: URL(fileURLWithPath: output), options: .atomic)
+    }
+
+    func testMeasuredObservationHandoffCandidate() throws {
+        guard let output = ProcessInfo.processInfo.environment["HAMII_OBSERVATION_HANDOFF_BENCHMARK_RESULT"] else {
+            throw XCTSkip("Set HAMII_OBSERVATION_HANDOFF_BENCHMARK_RESULT for handoff mechanism measurements")
+        }
+        var samples: [ObservationHandoffBenchmarkSample] = []
+        func milliseconds(_ start: Double, _ end: Double) -> Double { (end - start) * 1_000 }
+        for count in [1, 1_000, 5_000] {
+            for condition in ["missing", "staleBound"] {
+                for mode in ["baseline", "handoff"] {
+                    for _ in 0..<3 {
+                        let fixture = try fixture(componentCount: count)
+                        defer { try? FileManager.default.removeItem(at: fixture.directory) }
+                        if condition == "missing" {
+                            try FileManager.default.removeItem(at: index(fixture).url)
+                        } else {
+                            try saveComponent(fixture, as: "Beta")
+                        }
+                        let calculator = CountingRevisionCalculator()
+                        var queryMarks: [(QueryObservationStep, Double)] = []
+                        var recoveryMarks: [(IndexRecoveryStep, Double)] = []
+                        let querySession = IndexQuerySession(projectRoot: fixture.root,
+                            revisionCalculator: calculator, storageRoot: fixture.indexRoot,
+                            afterFastVerdict: nil,
+                            onRecoveryStep: { recoveryMarks.append(($0, ProcessInfo.processInfo.systemUptime)) },
+                            onObservationStep: { queryMarks.append(($0, ProcessInfo.processInfo.systemUptime)) },
+                            observationHandoffEnabled: mode == "handoff")
+                        let started = ProcessInfo.processInfo.systemUptime
+                        XCTAssertEqual(try query(querySession, fixture).hits.count, count)
+                        let finished = ProcessInfo.processInfo.systemUptime
+                        func queryTime(_ step: QueryObservationStep, occurrence: Int = 0) throws -> Double {
+                            let times = queryMarks.filter { $0.0 == step }.map(\.1)
+                            guard times.indices.contains(occurrence) else { throw IndexError.stale }
+                            return times[occurrence]
+                        }
+                        func recoveryTime(_ step: IndexRecoveryStep) throws -> Double {
+                            try XCTUnwrap(recoveryMarks.first { $0.0 == step }?.1)
+                        }
+                        var lockTimes = [milliseconds(try queryTime(.slowLockAcquired),
+                                                      try queryTime(.slowAttemptFailed)),
+                                         milliseconds(try recoveryTime(.phase2LockAcquired),
+                                                      try recoveryTime(.phase2Complete))]
+                        if mode == "baseline" {
+                            lockTimes.append(milliseconds(try recoveryTime(.phase1LockAcquired),
+                                                          try recoveryTime(.phase1Complete)))
+                            lockTimes.append(milliseconds(try queryTime(.slowLockAcquired, occurrence: 1),
+                                                          try queryTime(.slowRowsRead)))
+                        } else {
+                            lockTimes.append(milliseconds(try queryTime(.fastLockAcquired, occurrence: 1),
+                                                          try queryTime(.fastRowsRead)))
+                        }
+                        samples.append(ObservationHandoffBenchmarkSample(components: count,
+                            condition: condition, mode: mode,
+                            recoveredQueryMS: milliseconds(started, finished),
+                            initialObservationMS: milliseconds(started, try recoveryTime(.sourceCaptured)),
+                            offLockBuildMS: milliseconds(try recoveryTime(.sourceCaptured),
+                                                         try recoveryTime(.candidateValidated)),
+                            phase2LockMS: milliseconds(try recoveryTime(.phase2LockAcquired),
+                                                       try recoveryTime(.phase2Complete)),
+                            retryVerificationMS: milliseconds(try queryTime(.retryStarted), finished),
+                            maxMeasuredLockMS: try XCTUnwrap(lockTimes.max()),
+                            querySnapshotCount: queryMarks.filter { $0.0 == .slowSnapshotAcquired }.count,
+                            recoveryPhase1Count: recoveryMarks.filter { $0.0 == .phase1LockAcquired }.count,
+                            gitOracleCount: calculator.calls,
+                            lockAcquisitionCount: queryMarks.filter { $0.0 == .fastLockAcquired || $0.0 == .slowLockAcquired }.count +
+                                recoveryMarks.filter { $0.0 == .phase1LockAcquired || $0.0 == .phase2LockAcquired }.count))
+                    }
                 }
             }
         }
@@ -1116,6 +1382,55 @@ final class IndexQuerySessionTests: XCTestCase {
         child.waitUntilExit()
         XCTAssertEqual(child.terminationStatus, 0)
         try Data(contentsOf: result).write(to: URL(fileURLWithPath: output), options: .atomic)
+    }
+
+    func testMeasuredHandoffInitialObservationWriterWait() throws {
+        guard let output = ProcessInfo.processInfo.environment["HAMII_HANDOFF_WRITER_WAIT_RESULT"] else {
+            throw XCTSkip("Set HAMII_HANDOFF_WRITER_WAIT_RESULT for handoff contention measurement")
+        }
+        var waits: [Double] = []
+        for _ in 0..<3 {
+            let fixture = try fixture(componentCount: 5_000)
+            defer { try? FileManager.default.removeItem(at: fixture.directory) }
+            try FileManager.default.removeItem(at: index(fixture).url)
+            let attempt = fixture.directory.appendingPathComponent("handoff-writer-attempt")
+            let result = fixture.directory.appendingPathComponent("handoff-writer-result.json")
+            var worker: Process?
+            var setupError: Error?
+            defer {
+                if let worker, worker.isRunning {
+                    kill(worker.processIdentifier, SIGKILL)
+                    worker.waitUntilExit()
+                }
+            }
+            let candidate = IndexQuerySession(projectRoot: fixture.root,
+                revisionCalculator: GitCanonicalRevisionCalculator(),
+                storageRoot: fixture.indexRoot, afterFastVerdict: nil,
+                onObservationStep: { step in
+                    guard step == .slowLockAcquired else { return }
+                    do {
+                        let child = try self.child("testRecoveryLockProbeWorker", environment: [
+                            "HAMII_LOCK_PROBE_PROJECT": fixture.root.path,
+                            "HAMII_LOCK_PROBE_ATTEMPT": attempt.path,
+                            "HAMII_LOCK_PROBE_RESULT": result.path
+                        ])
+                        worker = child
+                        try self.awaitFile(attempt, process: child)
+                    } catch { setupError = error }
+                }, observationHandoffEnabled: true)
+            XCTAssertEqual(try query(candidate, fixture).hits.count, 5_000)
+            if let setupError { throw setupError }
+            let child = try XCTUnwrap(worker)
+            try awaitFile(result, process: child)
+            child.waitUntilExit()
+            XCTAssertEqual(child.terminationStatus, 0)
+            let measurement = try JSONDecoder().decode([String: Double].self,
+                from: Data(contentsOf: result))
+            waits.append(try XCTUnwrap(measurement["writerLockWaitMS"]))
+        }
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted]
+        try encoder.encode(waits).write(to: URL(fileURLWithPath: output), options: .atomic)
     }
 
     func testTwoOSProcessRecoveriesPublishOnceAndReuseOneGeneration() throws {

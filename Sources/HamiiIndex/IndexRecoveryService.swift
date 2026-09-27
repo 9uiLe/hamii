@@ -30,17 +30,43 @@ enum IndexRecoveryOutcome: Equatable {
     case notEligible
 }
 
+/// A source captured inside the coordinated Query boundary. It authorizes
+/// candidate construction only; Phase 2 must still prove the source current.
+struct RecoverySourceSeed {
+    let snapshot: CanonicalSnapshot
+    let stable: StableCanonicalGeneration
+    let revision: CanonicalRevision
+    let expected: PublishedIndexState
+
+    fileprivate init(snapshot: CanonicalSnapshot, stable: StableCanonicalGeneration,
+                     revision: CanonicalRevision, expected: PublishedIndexState) {
+        self.snapshot = snapshot
+        self.stable = stable
+        self.revision = revision
+        self.expected = expected
+    }
+}
+
+/// A process-local witness candidate, never permission to read rows without
+/// reacquiring the worktree boundary and rechecking the published descriptor.
+struct RecoveredIndexProof {
+    let worktreePath: String
+    let documentID: EntityID
+    let indexPath: String
+    let canonicalGeneration: CanonicalGeneration
+    let snapshotIdentity: CanonicalSnapshotIdentity
+    let indexGenerationID: IndexGenerationID
+}
+
+struct IndexRecoveryResult {
+    let outcome: IndexRecoveryOutcome
+    let proof: RecoveredIndexProof?
+}
+
 /// Bounded full rebuild from one strict coordinated source observation. The
 /// Canonical generation is never created or repaired here. The caller owns
 /// one Query retry after a published or reused complete generation.
 final class IndexRecoveryService {
-    private struct Source {
-        let snapshot: CanonicalSnapshot
-        let stable: StableCanonicalGeneration
-        let revision: CanonicalRevision
-        let expected: PublishedIndexState
-    }
-
     private struct Candidate {
         let root: URL
         let url: URL
@@ -64,9 +90,15 @@ final class IndexRecoveryService {
     }
 
     func recoverOnce() throws -> IndexRecoveryOutcome {
-        let source: Source
+        try recoverOnce(using: nil).outcome
+    }
+
+    func recoverOnce(using seed: RecoverySourceSeed?) throws -> IndexRecoveryResult {
+        let source: RecoverySourceSeed
         do {
-            guard let captured = try captureEligibleSource() else { return .notEligible }
+            guard let captured = try seed ?? captureEligibleSource() else {
+                return IndexRecoveryResult(outcome: .notEligible, proof: nil)
+            }
             source = captured
         } catch CanonicalGenerationError.missing,
                 CanonicalGenerationError.pending,
@@ -77,7 +109,7 @@ final class IndexRecoveryService {
                 CanonicalError.transactionCorrupt,
                 IndexError.unverifiableSource,
                 IndexError.stale {
-            return .notEligible
+            return IndexRecoveryResult(outcome: .notEligible, proof: nil)
         }
         try hook?(.sourceCaptured)
         let candidate = try buildCandidate(from: source)
@@ -85,21 +117,31 @@ final class IndexRecoveryService {
         return try publishOrReuse(candidate, from: source)
     }
 
-    private func captureEligibleSource() throws -> Source? {
+    private func captureEligibleSource() throws -> RecoverySourceSeed? {
         try repository.withStableSnapshotForDerivedRecovery(
             onLockAcquired: { try self.hook?(.phase1LockAcquired) }
         ) { snapshot, stable in
-            let revision = try calculator.current(at: root)
-            let published = try probe.inspect(at: destination(for: snapshot.document.id))
-            switch eligibility(published, snapshot: snapshot, stable: stable, revision: revision) {
-            case .autoRecoverable:
+            if let seed = try seedFromObserved(snapshot: snapshot, stable: stable) {
                 try hook?(.phase1Complete)
-                return Source(snapshot: snapshot, stable: stable, revision: revision,
-                              expected: published.state)
-            case .alreadyCurrent, .manualOnly, .blocked:
-                return nil
+                return seed
             }
+            return nil
         }
+    }
+
+    /// The caller must hold the coordinated Query lock. This strict check
+    /// never bootstraps a missing generation or adopts an external edit.
+    func seedFromObserved(snapshot: CanonicalSnapshot,
+                          stable: StableCanonicalGeneration) throws -> RecoverySourceSeed? {
+        guard stable.snapshotIdentity == snapshot.identity else { return nil }
+        let revision = try calculator.current(at: root)
+        let published = try probe.inspect(at: destination(for: snapshot.document.id))
+        guard case .autoRecoverable = eligibility(published, snapshot: snapshot,
+                                                  stable: stable, revision: revision) else {
+            return nil
+        }
+        return RecoverySourceSeed(snapshot: snapshot, stable: stable, revision: revision,
+                                  expected: published.state)
     }
 
     func eligibility(_ published: PublishedIndexObservation, snapshot: CanonicalSnapshot,
@@ -125,7 +167,7 @@ final class IndexRecoveryService {
         }
     }
 
-    private func buildCandidate(from source: Source) throws -> Candidate {
+    private func buildCandidate(from source: RecoverySourceSeed) throws -> Candidate {
         let destination = destination(for: source.snapshot.document.id)
         let parent = destination.deletingLastPathComponent()
         do { try FileManager.default.createDirectory(at: parent, withIntermediateDirectories: true) }
@@ -165,7 +207,8 @@ final class IndexRecoveryService {
         }
     }
 
-    private func publishOrReuse(_ candidate: Candidate, from source: Source) throws -> IndexRecoveryOutcome {
+    private func publishOrReuse(_ candidate: Candidate,
+                                from source: RecoverySourceSeed) throws -> IndexRecoveryResult {
         try repository.withStableGenerationForDerivedRecovery(
             onLockAcquired: { try self.hook?(.phase2LockAcquired) }
         ) { stable in
@@ -180,7 +223,8 @@ final class IndexRecoveryService {
                descriptor.sourceGenerationBinding == .bound(source.stable.generation),
                revision == source.revision {
                 try hook?(.phase2Complete)
-                return .reused(descriptor.id)
+                return IndexRecoveryResult(outcome: .reused(descriptor.id),
+                    proof: proof(for: descriptor.id, source: source))
             }
             guard current.state == source.expected else { throw IndexError.stale }
             try hook?(.beforePublish)
@@ -203,8 +247,18 @@ final class IndexRecoveryService {
                 throw IndexError.stale
             }
             try hook?(.phase2Complete)
-            return .published(actual.id)
+            return IndexRecoveryResult(outcome: .published(actual.id),
+                proof: proof(for: actual.id, source: source))
         }
+    }
+
+    private func proof(for id: IndexGenerationID, source: RecoverySourceSeed) -> RecoveredIndexProof {
+        RecoveredIndexProof(worktreePath: root.resolvingSymlinksInPath().path,
+            documentID: source.snapshot.document.id,
+            indexPath: destination(for: source.snapshot.document.id).path,
+            canonicalGeneration: source.stable.generation,
+            snapshotIdentity: source.snapshot.identity,
+            indexGenerationID: id)
     }
 
     private func destination(for documentID: EntityID) -> URL {
