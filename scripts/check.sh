@@ -7,7 +7,11 @@ else
   hamii_swift="$(command -v swift)"
 fi
 
-"$hamii_swift" --version | head -1 | rg 'Swift version 6\.4'
+hamii_swift_version="$("$hamii_swift" --version)"
+if [[ ! "$hamii_swift_version" =~ Swift[[:space:]]version[[:space:]]6\.4([[:space:]]|$) ]]; then
+  echo "Swift 6.4 is required; found: $hamii_swift_version" >&2
+  exit 1
+fi
 "$hamii_swift" build
 bash scripts/package-app.sh
 codesign --verify --deep --strict .build/hamii.app

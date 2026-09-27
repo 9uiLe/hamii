@@ -4,7 +4,7 @@ set -euo pipefail
 check_imports() {
   local directory="$1"
   local forbidden="$2"
-  if rg -n "^[[:space:]]*import (${forbidden})$" "$directory"; then
+  if grep -R -n -E "^[[:space:]]*import (${forbidden})$" "$directory"; then
     echo "Forbidden dependency in $directory" >&2
     exit 1
   fi
@@ -18,19 +18,24 @@ check_imports Sources/HamiiIntegration 'AppKit|SQLite3|HamiiApplication|HamiiFor
 check_imports Sources/HamiiMigrations 'AppKit|SwiftUI|UIKit|SQLite3|HamiiCore|HamiiApplication|HamiiFormat|HamiiIndex|HamiiCLI|HamiiApp'
 check_imports Sources/HamiiNativeRuntime 'AppKit|SQLite3|HamiiApplication|HamiiFormat|HamiiIndex|HamiiCLI|HamiiApp|HamiiMigrations'
 
-if rg -n 'GitCanonicalRevisionCalculator|git[[:space:]]*\(|Process\(' Sources/HamiiIndex/LocalIndex.swift; then
+if grep -n -E 'GitCanonicalRevisionCalculator|git[[:space:]]*\(|Process\(' Sources/HamiiIndex/LocalIndex.swift; then
   echo 'LocalIndex query/store code must use the CanonicalRevisionCalculating port' >&2
   exit 1
 fi
 
-if rg -n 'adr/' Sources; then
+if grep -R -n 'adr/' Sources; then
   echo 'Production sources must not depend on ADR files' >&2
   exit 1
 fi
 
-if rg -n 'flock\(|write\.lock|client-observation-epoch' Sources -g '*.swift' -g '!WorktreeCoordinator.swift'; then
-  echo 'Worktree lock and observation epoch must be owned by WorktreeCoordinator' >&2
-  exit 1
-fi
+while IFS= read -r file; do
+  if [[ "$file" == */WorktreeCoordinator.swift ]]; then
+    continue
+  fi
+  if grep -n -E 'flock\(|write\.lock|client-observation-epoch' "$file"; then
+    echo "Worktree lock and observation epoch must be owned by WorktreeCoordinator: $file" >&2
+    exit 1
+  fi
+done < <(find Sources -type f -name '*.swift')
 
 echo 'Architecture dependencies valid'
