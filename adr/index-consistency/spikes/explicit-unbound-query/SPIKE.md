@@ -42,6 +42,8 @@ Baseline は `067934e` の production CLI / `scripts/smoke-cli.py`。Production 
 
 **Unresolved implementation detail:** schema 7 の空文字列だけでは intentional unbound と accidental empty を明確に区別できない。Disposable Index schema の次版では `Bound(G)` / `ExplicitlyUnbound` を必須 marker とし、missing / malformed / unknown marker を Invalid として拒否する必要がある。
 
+この Result は Evidence commit `b402e35` 時点の schema 7 を記述している。後続の production 実装では schema 8 の必須 binding marker として区別する。
+
 ## Conclusion
 
 Slow verification は `BoundCurrent`（rows + process-local witness）と `UnboundCurrent`（rows only、次回も slow）を別の成功結果として扱う。ExplicitlyUnbound は Fast path の positive proof を弱めずに、明示的 rebuild の既存 contract を維持できる。Index freshness ADR は `Implementation Required` のまま、Decision を狭く明確化する。

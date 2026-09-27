@@ -4,7 +4,7 @@
 
 Git Repository の分割 JSON が共有 Canonical Data であり、Repository 外の Local SQLite は再構築可能な Query Index である。Published Index が現在の Canonical state に対応していると証明できないとき、production Query は `staleIndex` で検索結果を拒否する。この fail-closed rule は確定している。
 
-現在の Query は coordinated CanonicalSnapshot と Git-based `CanonicalRevision` guard を毎回照合する。Starter copy の CLI fresh query p95 418.612 ms、stale detection p95 424.174 ms は比較条件付きの Evidence であり Product SLA ではない。Startup witness の test-only warm verdict は Starter p95 1.903 ms、1000 tracked components p95 1.664 ms だが、production Query の性能ではない。現行 CLI は command ごとに新 process を起動するため、process-local witness を採用しても one-shot CLI query は毎回 cold slow verification を要する。
+Safe Fast Path 実装前の Query は coordinated CanonicalSnapshot と Git-based `CanonicalRevision` guard を毎回照合した。Starter copy の CLI fresh query p95 418.612 ms、stale detection p95 424.174 ms は比較条件付きの Evidence であり Product SLA ではない。Startup witness の test-only warm verdict は Starter p95 1.903 ms、1000 tracked components p95 1.664 ms であった。Production `IndexQuerySession` は初回に slow verification を行い、同一 process の後続 Query にだけ witness を使う。CLI は command ごとに新 process を起動するため、one-shot CLI query は毎回 cold slow verification を要する。
 
 Writer guarantee は [External Git Write ADR](../git-external-write-coordination/ADR.md) が定める。1 worktree の正式な hamii GUI / CLI / managed Git writer は同じ coordination protocol に参加する。Raw Git、外部 editor / script / AI による同一 worktree の直接変更は正式な safe collaboration path ではない。Index は writer の許可範囲を決めない。
 
@@ -55,10 +55,11 @@ Stale / missing Index を自動で再構築するか、manual full rebuild を�
 
 ## Unknowns
 
-残る内容は implementation / validation work である。Production Query session、witness scope、atomic rename 後の stale SQLite handle 回帰、reader-reader / reader-writer contention、実 Query の cold / warm cost、multiple worktree / Document isolation を検証する。CanonicalRevision の具体的計算 algorithm を architecture requirement として固定しない。非協調 writer の許可境界は External Git Write ADR、power-cut durability は Canonical Power Loss ADR が所有する。
+残る内容は implementation / validation work である。Production Query session、witness scope、atomic rename 後の stale SQLite handle 回帰、実 Query の cold / warm cost、multiple worktree isolation は実装と検証が進んだ。Reader-reader / reader-writer contention latency、GUI lifetime と複数 Document の運用境界は未検証。CanonicalRevision の具体的計算 algorithm を architecture requirement として固定しない。非協調 writer の許可境界は External Git Write ADR、power-cut durability は Canonical Power Loss ADR が所有する。
 
 ## Required Evidence
 
+- [Production Query session performance](artifacts/production-query-session-performance.md): 同一 process の Bound warm Query は 1/1000/5000 Components で p95 2.038 / 2.766 / 5.371 ms、cold slow は p95 385.189 / 643.113 / 1682.507 ms。Starter の one-shot CLI p95 は 378.192 ms。条件の異なる値を混同しない。Production regression は stale SQLite handle、別 OS process save/rebuild race、metadata rejection、Unbound slow-only を検査する。
 - [Explicitly Unbound Index の Slow Query](spikes/explicit-unbound-query/SPIKE.md): 既存 CLI contract は外部編集後の stale → 明示的 rebuild → Git-oracle slow Query を許可する。Bound generation を slow Query に一律要求した未コミット候補はこの contract を壊した。意図的 unbound と metadata 欠損・破損の区別が必要。
 - [Fast Query Read Boundary](spikes/fast-query-read-boundary/SPIKE.md): test-only candidate は実 SQLite `ComponentHit` rows と production oracle の全 field を照合した。別 OS process の save / rebuild は verdict 後の row read 完了まで lock を取得できず、旧 witness はその後に失効した。Missing / corrupt / mismatched metadata は rows を返さない。Production Query は変更していない。
 - [Startup Current Witness](spikes/startup-current-witness/SPIKE.md): 一つの coordinated slow observation で Snapshot / Stable generation / Index descriptor / Git oracle を検証した後だけ process-local witness を発行した。Restart、Index rebuild、別 OS process writer、metadata failure と test-only warm cost を確認した。
@@ -73,7 +74,7 @@ Recovery の Evidence は [Index Recovery Strategy ADR](../index-recovery-strate
 
 ## Decision Criteria
 
-P4 Verify `36323844003` と P5 Verify `36325567176` は成功した。Startup positive witness、coordinated writer / Index rebuild の失効、fast verdict から SQLite row read 完了までの同一 lock、missing / corrupt / pending での拒否は、P4 Evidence `8bd8381` と P5 Evidence `067934e` の tested conditions で成立した。明示的 rebuild 後の unbound slow Query contract と一律 Bound 要求の regression は Evidence `b402e35` に記録した。Production 実装では stale SQLite handle、Bound / ExplicitlyUnbound / Invalid、multiple worktrees / Documents、cold / warm performance、reader contention を regression / benchmark として検証し、完了まで ADR を削除しない。
+P4 Verify `36323844003` と P5 Verify `36325567176` は成功した。Startup positive witness、coordinated writer / Index rebuild の失効、fast verdict から SQLite row read 完了までの同一 lock、missing / corrupt / pending での拒否は、P4 Evidence `8bd8381` と P5 Evidence `067934e` の tested conditions で成立した。明示的 rebuild 後の unbound slow Query contract と一律 Bound 要求の regression は Evidence `b402e35` に記録した。Production `IndexQuerySession` は stale SQLite handle、Bound / ExplicitlyUnbound / Invalid、複数 worktree、cold / warm cost を regression / benchmark で検証した。複数 Document、reader contention と GUI lifetime の評価を終えるまで ADR を削除しない。
 
 ## Status
 
