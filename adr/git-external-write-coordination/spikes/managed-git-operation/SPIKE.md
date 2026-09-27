@@ -36,7 +36,7 @@ lock を無視する Git を hamii-managed operation と誤分類する、また
 
 ## Result
 
-**Confirmed, one disposable Repository, macOS 26.2 / Git 2.52.0:** 親 process が `.hamii/write.lock` を保持し、別 OS process の `hamii inspect` が完了しない間、raw `git switch` は同じ lock の保持中に成功した。試験用 generation は 0 のままで、reader は lock 解放後に切替先 branch を読んだ。これは raw Git が lock / generation を迂回できる具体的反例である。reader の lock 取得地点の marker はこの probe に含まれず、厳密な lock 競合の合図は [Shared Generation process-stop matrix](../../../index-consistency/spikes/shared-worktree-generation/SPIKE.md) の別試験を参照する。
+**Confirmed, one disposable Repository, macOS 26.2 / Git 2.52.0:** 親 process が `.hamii/write.lock` を保持し、別 OS process の `hamii inspect` が完了しない間、raw `git switch` は同じ lock の保持中に成功した。試験用 generation は 0 のままで、reader は lock 解放後に切替先 branch を読んだ。これは raw Git が lock / generation を迂回できる具体的反例である。reader の lock 取得地点の marker はこの probe に含まれず、厳密な lock 競合の合図は Git history `9b4ffd0` の Shared Generation process-stop matrix の別試験を参照する。
 
 **Confirmed for test-only wrapper:** 親 process が同じ lock を保持し、試験用 generation を `pending` にして `git switch` を実行し、世代を 1 に進めてから解放した。reader は解放前に完了せず、解放後に最終 branch を読んだ。**Not implemented:** production の managed Git adapter、journal と generation の結合、Index publish、client session invalidation。150 ms の wait barrier と 1 回の switch だけを測った。これを production concurrency guarantee とは扱わない。
 

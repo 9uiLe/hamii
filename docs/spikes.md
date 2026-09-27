@@ -1,6 +1,6 @@
 # hamii Technical Spikes
 
-Status: 検証中 / 2026-09-26。各 Spike は fixture、対象 OS/SDK/Xcode、実行 command、測定値、screenshot/event/a11y trace、失敗、判断更新を該当する範囲で記録する。pending ADR に対応する検証は [`adr/<name>/spikes/<spike-name>/SPIKE.md`](../adr/) を計画と結果の正本とし、成果物は各 Spike ディレクトリの `artifacts/` に置く。横断的な検証だけ `research/spikes/<id>/` に置く。数値目標は実験前に固定し、測定後に変更しない。P0 failure は製品の Preview/IR 約束を改訂する。Component Scope と Local Index の部分結果は各 Spike に記録済みで、残る検証は継続中。
+Status: 検証中。各 Spike は fixture、対象 OS/SDK/Xcode、実行 command、測定値、screenshot/event/a11y trace、失敗、判断更新を該当する範囲で記録する。pending ADR に対応する検証は [`adr/<name>/spikes/<spike-name>/SPIKE.md`](../adr/) を計画と結果の正本とし、成果物は各 Spike ディレクトリの `artifacts/` に置く。横断的な検証だけ `research/spikes/<id>/` に置く。数値目標は実験前に固定し、測定後に変更しない。P0 failure は製品の Preview/IR 約束を改訂する。
 
 | ID | Priority | Hypothesis and prototype | Evidence / pass-fail gate |
 |---|---|---|---|
@@ -37,13 +37,8 @@ Status: 検証中 / 2026-09-26。各 Spike は fixture、対象 OS/SDK/Xcode、�
 - [Worktree isolation](../adr/git-external-write-coordination/spikes/worktree-isolation/SPIKE.md)
 - [External change detection](../adr/git-external-write-coordination/spikes/external-change-detection/SPIKE.md)
 - [Concurrent worktree merge](../adr/git-external-write-coordination/spikes/concurrent-worktree-merge/SPIKE.md)
-- [Local Query Index の鮮度判定](../adr/index-consistency/spikes/index-drift/SPIKE.md)
-- [Git working tree fingerprint](../adr/index-consistency/spikes/git-working-tree-fingerprint/SPIKE.md)
-- [Nested Git repository query latency](../adr/index-consistency/spikes/nested-repository-query-latency/SPIKE.md)
-- [Single-process Git fingerprint](../adr/index-consistency/spikes/single-process-git-fingerprint/SPIKE.md)
-- [Incremental reindex](../adr/index-consistency/spikes/incremental-reindex/SPIKE.md)
-- [Concurrent Git mutation and index query](../adr/index-consistency/spikes/concurrent-git-mutation/SPIKE.md)
-- [Large project index rebuild](../adr/index-consistency/spikes/large-project-rebuild/SPIKE.md)
+- [Incremental reindex](../adr/index-recovery-strategy/spikes/incremental-reindex/SPIKE.md)
+- [Large project index rebuild](../adr/index-recovery-strategy/spikes/large-project-rebuild/SPIKE.md)
 - [Isolated format upgrade](../adr/migration-core-boundary/spikes/isolated-format-upgrade/SPIKE.md)
 - [Ambiguous value review](../adr/migration-ambiguity-resolution/spikes/ambiguous-value-review/SPIKE.md)
 - [Migration worktree safety](../adr/migration-review-protocol/spikes/worktree-safety/SPIKE.md)

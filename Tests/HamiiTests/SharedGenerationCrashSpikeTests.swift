@@ -109,9 +109,18 @@ final class SharedGenerationCrashSpikeTests: XCTestCase {
 
     private func child(_ method: String, environment: [String: String]) throws -> Process {
         let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/xcrun")
-        process.arguments = ["xctest", "-XCTest", "HamiiTests.SharedGenerationCrashSpikeTests/\(method)", testBundle().path]
-        process.environment = ProcessInfo.processInfo.environment.merging(environment) { _, new in new }
+        process.executableURL = URL(fileURLWithPath: ProcessInfo.processInfo.arguments[0])
+        process.arguments = ["-XCTest", "HamiiTests.SharedGenerationCrashSpikeTests/\(method)", testBundle().path]
+        var childEnvironment = ProcessInfo.processInfo.environment.merging(environment) { _, new in new }
+        for imageIndex in 0..<_dyld_image_count() {
+            guard let imageName = _dyld_get_image_name(imageIndex) else { continue }
+            let imagePath = String(cString: imageName)
+            if imagePath.hasSuffix("/libTesting.dylib") {
+                childEnvironment["DYLD_LIBRARY_PATH"] = URL(fileURLWithPath: imagePath).deletingLastPathComponent().path
+                break
+            }
+        }
+        process.environment = childEnvironment
         process.standardOutput = Pipe()
         process.standardError = process.standardOutput
         try process.run()
@@ -123,7 +132,20 @@ final class SharedGenerationCrashSpikeTests: XCTestCase {
         while !FileManager.default.fileExists(atPath: url.path) && process.isRunning && Date() < deadline {
             Thread.sleep(forTimeInterval: 0.02)
         }
-        XCTAssertTrue(FileManager.default.fileExists(atPath: url.path), "Worker exited or timed out before marker")
+        guard FileManager.default.fileExists(atPath: url.path) else {
+            let details: String
+            if process.isRunning {
+                details = "worker timed out"
+                kill(process.processIdentifier, SIGKILL)
+                process.waitUntilExit()
+            } else {
+                process.waitUntilExit()
+                let bytes = (process.standardOutput as? Pipe)?.fileHandleForReading.readDataToEndOfFile() ?? Data()
+                details = "worker exit \(process.terminationStatus): \(String(decoding: bytes, as: UTF8.self))"
+            }
+            XCTFail("Missing \(url.lastPathComponent): \(details)")
+            throw CocoaError(.fileReadUnknown)
+        }
     }
 
     private func fixture(_ root: URL, indexRoot: URL) throws -> (Document, LocalIndex) {
@@ -320,7 +342,7 @@ final class SharedGenerationCrashSpikeTests: XCTestCase {
             let acquiredMarker = temporary.appendingPathComponent("reader.acquired")
             let sourceRoot = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
             reader.executableURL = URL(fileURLWithPath: "/usr/bin/python3")
-            reader.arguments = [sourceRoot.appendingPathComponent("adr/index-consistency/spikes/shared-worktree-generation/artifacts/restart_query_probe.py").path,
+            reader.arguments = [sourceRoot.appendingPathComponent("Tests/Fixtures/restart_query_probe.py").path,
                                 root.path, index.url.path, "Alpha", "--boot-gate", attemptMarker.path, acquiredMarker.path]
             let readerOutput = Pipe()
             reader.standardOutput = readerOutput
@@ -344,7 +366,7 @@ final class SharedGenerationCrashSpikeTests: XCTestCase {
             XCTAssertEqual(journalPresentBeforeRecovery, stage == "save")
             let ungated = Process()
             ungated.executableURL = URL(fileURLWithPath: "/usr/bin/python3")
-            ungated.arguments = [sourceRoot.appendingPathComponent("adr/index-consistency/spikes/shared-worktree-generation/artifacts/restart_query_probe.py").path,
+            ungated.arguments = [sourceRoot.appendingPathComponent("Tests/Fixtures/restart_query_probe.py").path,
                                  root.path, index.url.path, "Alpha"]
             let ungatedOutput = Pipe()
             ungated.standardOutput = ungatedOutput
@@ -357,7 +379,9 @@ final class SharedGenerationCrashSpikeTests: XCTestCase {
             let recovery = try child("testRecoveryWorker", environment: common.merging([
                 "HAMII_CRASH_SPIKE_RESULT": result.path]) { _, new in new })
             recovery.waitUntilExit()
-            XCTAssertEqual(recovery.terminationStatus, 0, stage)
+            let recoveryOutput = (recovery.standardOutput as? Pipe)?.fileHandleForReading.readDataToEndOfFile() ?? Data()
+            XCTAssertEqual(recovery.terminationStatus, 0,
+                           "\(stage): \(String(decoding: recoveryOutput, as: UTF8.self))")
             let report = try JSONSerialization.jsonObject(with: Data(contentsOf: result)) as! [String: Any]
             XCTAssertEqual(report["bootRejected"] as? Bool, true)
             XCTAssertEqual(report["journalRemainsAfterRecovery"] as? Bool, false)

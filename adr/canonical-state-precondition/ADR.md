@@ -10,7 +10,7 @@ Client / Preview / mutation が、自分の観測した Canonical state と現�
 
 ## Constraints
 
-観測していない Canonical state transition が存在した場合、古い session / token からの mutation を受理しない。未証明なら fail closed。`DocumentRevision`、Canonical state identity、coordinated worktree generation、Index generation、client session token を先に同一概念と仮定しない。Git commit SHA だけでは working Canonical bytes を表せない。Index の freshness 判定は [Index consistency ADR](../index-consistency/ADR.md)、writer の許可・統合経路は [External Git Write ADR](../git-external-write-coordination/ADR.md) の責務とする。Preview の target runtime transport は本 ADR の責務ではない。
+観測していない Canonical state transition が存在した場合、古い session / token からの mutation を受理しない。未証明なら fail closed。`DocumentRevision`、Canonical state identity、coordinated worktree generation、Index generation、client session token を先に同一概念と仮定しない。Git commit SHA だけでは working Canonical bytes を表せない。Index の freshness 判定は [Current Architecture](../../docs/final-architecture.md)、writer の許可・統合経路は [External Git Write ADR](../git-external-write-coordination/ADR.md) の責務とする。Preview の target runtime transport は本 ADR の責務ではない。
 
 ## Options
 

@@ -62,7 +62,7 @@ final class SharedWorktreeGenerationSpikeTests: XCTestCase {
 
     private func childQuery(_ root: URL, index: URL, term: String) throws -> [String: Any] {
         let sourceRoot = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
-        let script = sourceRoot.appendingPathComponent("adr/index-consistency/spikes/shared-worktree-generation/artifacts/restart_query_probe.py")
+        let script = sourceRoot.appendingPathComponent("Tests/Fixtures/restart_query_probe.py")
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/python3")
         process.arguments = [script.path, root.path, index.path, term]

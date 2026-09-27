@@ -2,7 +2,7 @@
 
 ## Related Decision
 
-[Index consistency ADR](../../ADR.md) の自動復旧方式と index generation 公開境界。
+[Index Recovery Strategy ADR](../../ADR.md) の incremental recovery と Index generation 公開境界。
 
 ## Hypothesis
 
@@ -78,6 +78,6 @@ Actual `IndexProjection` rows でも、検証した変更に対する invalidati
 - [current-projection-dependencies.md](artifacts/current-projection-dependencies.md): production code から導いた現行 projection の依存 inventory。実測ではない。
 - [IndexProjectionSpikeTests.swift](../../../../Tests/HamiiTests/IndexProjectionSpikeTests.swift): 実 `IndexProjection` / Canonical loader / LocalIndex branch-switch query を検証する test source。
 - [actual_projection_probe.py](artifacts/actual_projection_probe.py): 実 projection rows を使う generation staging / reader barrier / rollback / SQL benchmark。
-- [actual-projection-result.json](artifacts/actual-projection-result.json): changed/invalidated row keys、atomic reader outcomes、raw p50/p95 timings。`HAMII_PROJECTION_SPIKE_RESULT=/tmp/hamii-projection-spike-result.json swift test --filter IndexProjectionSpikeTests` の後、`python3 adr/index-consistency/spikes/incremental-reindex/artifacts/actual_projection_probe.py /tmp/hamii-projection-spike-result.json /tmp/hamii-actual-projection-result.json` で再測定できる。
+- [actual-projection-result.json](artifacts/actual-projection-result.json): changed/invalidated row keys、atomic reader outcomes、raw p50/p95 timings。`HAMII_PROJECTION_SPIKE_RESULT=/tmp/hamii-projection-spike-result.json swift test --filter IndexProjectionSpikeTests` の後、`python3 adr/index-recovery-strategy/spikes/incremental-reindex/artifacts/actual_projection_probe.py /tmp/hamii-projection-spike-result.json /tmp/hamii-actual-projection-result.json` で再測定できる。
 
-Actual projection rows を使う probe は実施済み。Production incremental reindexer / explicit generation schema は未実装。
+Actual projection rows を使う probe は実施済み。Production incremental reindexer / general atomic generation switch は未実装。Result 内の schema / type の現行形に関する記述は、この Spike を実行した時点の Evidence であり、現在の `LocalIndex` は `IndexGenerationID` と typed source binding を持つ。

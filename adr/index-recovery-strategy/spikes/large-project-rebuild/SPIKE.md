@@ -2,7 +2,7 @@
 
 ## Related Decision
 
-[Index consistency ADR](../../ADR.md) の自動 full rebuild と incremental reindex の適用範囲。
+[Index Recovery Strategy ADR](../../ADR.md) の自動 full rebuild と incremental reindex の適用範囲。
 
 ## Hypothesis
 

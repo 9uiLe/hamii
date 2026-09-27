@@ -38,7 +38,7 @@ Production への generation protocol 導入、`CanonicalRevision` algorithm の
 
 ## Result
 
-**Confirmed for this controlled prototype:** [XCTest](../../../../Tests/HamiiTests/SharedWorktreeGenerationSpikeTests.swift) は別の `CanonicalRepository` instance の save を shared prototype lock 内で実行した。`pending` を先に永続化すると、Canonical save 前と save 後の中断地点を fresh child process が `staleIndex` と判定した。世代を N+1 に進め Index が N のままの地点も拒否。Index metadata を先に `gen-(N+1)` にした future-index negative control も generation mismatch で拒否した。実 `LocalIndex.rebuild` 後は対応する row のみ読み、別 OS process の [reader](artifacts/restart_query_probe.py) も永続 generation / SQLite metadata の一致を読んだ。協調 prototype lock 内の実 Git branch switch は世代を進め、旧 Index を拒否した。
+**Confirmed for this controlled prototype:** [XCTest](../../../../Tests/HamiiTests/SharedWorktreeGenerationSpikeTests.swift) は別の `CanonicalRepository` instance の save を shared prototype lock 内で実行した。`pending` を先に永続化すると、Canonical save 前と save 後の中断地点を fresh child process が `staleIndex` と判定した。世代を N+1 に進め Index が N のままの地点も拒否。Index metadata を先に `gen-(N+1)` にした future-index negative control も generation mismatch で拒否した。実 `LocalIndex.rebuild` 後は対応する row のみ読み、別 OS process の [reader](../../../../Tests/Fixtures/restart_query_probe.py) も永続 generation / SQLite metadata の一致を読んだ。協調 prototype lock 内の実 Git branch switch は世代を進め、旧 Index を拒否した。
 
 **Measured, one local run:** macOS arm64、Swift 6.4 debug XCTest、1 component の使い捨て Git worktree。30 warm Query（実 `LocalIndex.components` + shared `flock` + generation file read）は p50 **0.114 ms**、p95 **0.137 ms**。`pending` record の fsync + rename + parent fsync は **0.581 ms**、`current` への更新は **0.757 ms**（各1回）。Fresh Python process の Query 内部は **1.80 ms**（1回、process startup は含まない）。これらは小規模・無競合・test-only protocol の値であり、Product SLA や production fast path の性能ではない。[raw result](artifacts/shared-generation-result.json) に測定条件と値を保存した。
 
@@ -63,6 +63,6 @@ Shared generation は、**既知の coordinated writer domain 内**で低 cost �
 ## Artifacts
 
 - [SharedWorktreeGenerationSpikeTests.swift](../../../../Tests/HamiiTests/SharedWorktreeGenerationSpikeTests.swift): 実 CanonicalRepository / LocalIndex と test-only shared protocol。`HAMII_SHARED_GENERATION_SPIKE_RESULT=/tmp/hamii-shared-generation-result.json swift test --filter SharedWorktreeGenerationSpikeTests` で再測定する。
-- [restart_query_probe.py](artifacts/restart_query_probe.py): 新 OS process による永続 generation / SQLite metadata の読込。
+- [restart_query_probe.py](../../../../Tests/Fixtures/restart_query_probe.py): 新 OS process による永続 generation / SQLite metadata の読込。
 - [shared-generation-result.json](artifacts/shared-generation-result.json): 1 run の状態・timing・制約。
 - [SharedGenerationCrashSpikeTests.swift](../../../../Tests/HamiiTests/SharedGenerationCrashSpikeTests.swift)、[process-stop-matrix.json](artifacts/process-stop-matrix.json): 4 OS-process `SIGKILL` barrier、reader lock 競合、起動時拒否、Canonical journal recovery、再索引。`HAMII_CRASH_SPIKE_MATRIX_RESULT=/tmp/hamii-crash-matrix.json swift test --filter SharedGenerationCrashSpikeTests/testRealProcessStopsAcrossGenerationPhases` で再実行する。
