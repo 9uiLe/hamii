@@ -1,6 +1,0 @@
-{
-  "barrier" : "after pages\/page_new.json applied, before hamii.json applied",
-  "readerBlockedFor150Ms" : true,
-  "readerLoadedWholeNewDocumentAfterRelease" : true,
-  "scope" : "one hamii-owned save\/load interleaving; external writers do not honor .hamii\/write.lock"
-}
