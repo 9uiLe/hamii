@@ -84,3 +84,33 @@ Evidence commit `1943f46` では、同じ構築済み `[URL]` を入力とし、
 5000 paths では、反復 `URL.path` 評価を避けると sort 自体は p50 **約496 ms**、Snapshot 全体は **約493 ms** 短くなった。これは test-only candidate の比較であり、production 採用や recovery Query 全体の性能保証ではない。Candidate は current と **URL sequence の各位置**および `.path` が一致し、CanonicalSnapshot identity と Document も1/1000/5000/mixed fixtureで一致した。`/var` と `/private/var` の alias は同じ identity/relative path sequence を返した。安全な ASCII ID の自然順・大小文字・記号・prefix の ordering edge cases、3種の Canonical JSON symlink、filename/ID mismatch は current と同じ結果だった。5000 fixtureで別 OS writer は candidate Snapshot 中に worktree lock を取得できず、Snapshot 完了後に取得した。Duplicate path key は test/debug assertion とし、production validation rule は追加していない。
 
 この測定は sort の局所変更だけを比較し、Canonical bytes の二重読込、Git oracle、generation/freshness 判定を含む性能保証ではない。production sort の Phase 1 と writer wait は実際の recovery 経路で測定する。
+
+## Production keyed path sort の再計測
+
+Canonical path の並びは各 root-based `URL.path` を一度だけ取得し、従来と同じ Swift `String <` で sort する。探索、symlink 検査、bytes 読込、Snapshot identity、Git oracle、WorktreeCoordinator の境界は同じ。`testProductionCanonicalPathSortPreservesLegacyOrderAndSnapshot` と `testProductionCanonicalPathSortPreservesClientPreconditionAndMutation` は 1 / 1000 / 5000 / mixed fixture で URL sequence、Snapshot identity、Document、`ClientPrecondition.rawValue` の対応を検証する。`/var` alias、Agent profile、mutation、symlink、filename/ID mismatch、別 OS writer の lock 待機も回帰テストに含む。
+
+`HAMII_CANONICAL_OBSERVATION_PROFILE_RESULT=<path> swift test --filter IndexQuerySessionTests/testMeasuredCanonicalObservationStages` を同じ arm64 macOS 27.0 / Swift 6.4 debug 環境で各 fixture 5回実行した。missing Index の `IndexRecoveryService.recoverOnce()` を計測し、fixture 作成は計測外。下表は **p50 / p95 ms**。p95 は5標本の最大値で Product SLA ではない。Snapshot は各内訳を包含し、Phase 1 は Snapshot と Git oracle を包含する。
+
+| Fixture | Path sort | Path 列挙・symlink | Snapshot | Identity bytes 再読込 | Git oracle | Phase 1 | Total recovery |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 1 | 0.03 / 0.04 | 0.52 / 0.70 | 1.88 / 2.46 | 0.23 / 0.30 | 358.22 / 364.69 | 360.88 / 368.36 | 704.36 / 741.97 |
+| 1000 | 5.75 / 6.08 | 24.69 / 26.84 | 164.68 / 171.01 | 29.22 / 31.11 | 339.78 / 349.47 | 505.36 / 514.82 | 875.44 / 885.87 |
+| 5000 | 27.29 / 28.29 | 131.03 / 135.86 | 795.03 / 844.74 | 177.05 / 195.07 | 375.82 / 382.52 | 1170.86 / 1225.52 | 1626.88 / 1682.85 |
+| Mixed | 0.20 / 0.24 | 1.52 / 1.76 | 7.32 / 7.77 | 1.29 / 1.38 | 357.77 / 371.68 | 366.32 / 379.25 | 729.54 / 747.86 |
+
+同じ fixture の変更前測定と比べ、5000 Component の path sort p50 は **519.43 → 27.29 ms**、Snapshot は **1287.71 → 795.03 ms**、Phase 1 は **1650.05 → 1170.86 ms**。同一マシン上の別実行なので、差はこの環境・fixture に限る。`HAMII_CANONICAL_PATH_PROFILE_RESULT=<path> swift test --filter IndexQuerySessionTests/testMeasuredCanonicalPathBreakdown` では、5000 paths の path total p50/p95 **123.82 / 125.15 ms**、sort **25.76 / 26.01 ms**、root-based URL 再構築 **73.19 / 74.56 ms**、symlink metadata **8.90 / 9.29 ms** だった。
+
+`HAMII_PRODUCTION_RECOVERY_BENCHMARK_RESULT=<path> swift test --filter IndexQuerySessionTests/testMeasuredProductionFullRecoveryCost` は missing / stale Bound の各条件を 1 / 1000 / 5000 Component で各3回測定した。fixture 作成時間は除外し、p95 は3標本の最大値。`Recovered Query` は Index を再度 missing / stale にしてから Query が recovery する end-to-end 時間である。
+
+| Components | Condition | Recovered Query p50 / p95 ms | Max contiguous lock p50 / p95 ms |
+| ---: | --- | ---: | ---: |
+| 1 | missing | 692.67 / 702.93 | 359.47 / 371.25 |
+| 1 | stale Bound | 713.60 / 717.22 | 358.52 / 362.32 |
+| 1000 | missing | 876.73 / 886.43 | 496.97 / 516.29 |
+| 1000 | stale Bound | 885.65 / 888.91 | 489.50 / 491.77 |
+| 5000 | missing | 1620.40 / 1699.38 | 1219.25 / 1239.47 |
+| 5000 | stale Bound | 1613.66 / 1658.56 | 1115.34 / 1122.11 |
+
+`HAMII_CANONICAL_OBSERVATION_WRITER_TIMELINE_RESULT=<path> swift test --filter IndexQuerySessionTests/testMeasuredCanonicalObservationWriterTimeline` の5000 Component 単発試験では、Phase 1 lock 取得から writer attempt は **+69.16 ms**、Snapshot 完了 **+888.83 ms**、Git oracle を含む lock 解放付近 **+1271.02 ms**、writer lock 取得 **+1271.05 ms** だった。writer wait は **1201.90 ms**。変更前の単発 **1651.62 ms** と比較できるが、待機時間の分布や保証値ではない。
+
+現条件で Snapshot p50 **795.03 ms** は Git oracle **375.82 ms** より大きい。Entity bytes 初回読込 **129.90 ms** と identity bytes 再読込 **177.05 ms** が残るため、次の focused experiment は同じ bytes を parse と identity に再利用する single-pass CanonicalSnapshot acquisition の安全性比較が候補となる。Index freshness、production incremental recovery、ADR の Decision はこの計測で確定しない。
