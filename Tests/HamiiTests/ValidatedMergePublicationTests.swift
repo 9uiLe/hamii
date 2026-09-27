@@ -1,5 +1,6 @@
 import Darwin
 import Foundation
+import MachO
 import XCTest
 import HamiiApplication
 import HamiiCore
@@ -337,19 +338,23 @@ final class ValidatedMergePublicationTests: XCTestCase {
 
     private func child(_ method: String, environment: [String: String]) throws -> Process {
         let bundle = Bundle(for: Self.self).bundleURL
-        let xctest = try toolOutput("/usr/bin/xcrun", ["--find", "xctest"])
-        let swiftlySwift = URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent(".swiftly/bin/swift")
-        let targetInfo = try FileManager.default.isExecutableFile(atPath: swiftlySwift.path)
-            ? toolOutput(swiftlySwift.path, ["-print-target-info"])
-            : toolOutput("/usr/bin/env", ["swift", "-print-target-info"])
-        let info = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(targetInfo.utf8)) as? [String: Any])
-        let paths = try XCTUnwrap(info["paths"] as? [String: Any])
-        let resource = try XCTUnwrap(paths["runtimeResourcePath"] as? String)
+        let xctest = URL(fileURLWithPath: ProcessInfo.processInfo.arguments[0])
+        guard FileManager.default.isExecutableFile(atPath: xctest.path) else {
+            throw CocoaError(.executableNotLoadable)
+        }
         let process = Process()
-        process.executableURL = URL(fileURLWithPath: xctest)
+        process.executableURL = xctest
         process.arguments = ["-XCTest", "HamiiTests.ValidatedMergePublicationTests/\(method)", bundle.path]
         var childEnvironment = ProcessInfo.processInfo.environment.merging(environment) { _, new in new }
-        childEnvironment["DYLD_LIBRARY_PATH"] = resource + "/macosx/testing"
+        for imageIndex in 0..<_dyld_image_count() {
+            guard let imageName = _dyld_get_image_name(imageIndex) else { continue }
+            let imagePath = String(cString: imageName)
+            if imagePath.hasSuffix("/libTesting.dylib") {
+                childEnvironment["DYLD_LIBRARY_PATH"] = URL(fileURLWithPath: imagePath)
+                    .deletingLastPathComponent().path
+                break
+            }
+        }
         process.environment = childEnvironment
         process.standardOutput = Pipe()
         process.standardError = process.standardOutput
