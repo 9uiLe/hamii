@@ -251,6 +251,25 @@ final class IndexQuerySessionTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: generation.path))
     }
 
+    func testHiddenGitFlagsAndFiltersDoNotStartAutomaticRecovery() throws {
+        for condition in ["assume-unchanged", "skip-worktree", "filter"] {
+            let fixture = try fixture()
+            defer { try? FileManager.default.removeItem(at: fixture.directory) }
+            let published = try index(fixture).url
+            try FileManager.default.removeItem(at: published)
+            let canonicalPath = "components/component_alpha.json"
+            if condition == "filter" {
+                let attributes = fixture.root.appendingPathComponent(".git/info/attributes")
+                try Data("\(canonicalPath) filter=hamii-test\n".utf8).write(to: attributes)
+                try git(fixture.root, ["config", "filter.hamii-test.clean", "cat"])
+            } else {
+                try git(fixture.root, ["update-index", "--\(condition)", canonicalPath])
+            }
+            XCTAssertThrowsError(try query(session(fixture), fixture), condition)
+            XCTAssertFalse(FileManager.default.fileExists(atPath: published.path), condition)
+        }
+    }
+
     func testStoragePathFailureIsNotClassifiedAsDisposableIndexCorruption() throws {
         let fixture = try fixture()
         defer { try? FileManager.default.removeItem(at: fixture.directory) }
