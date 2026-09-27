@@ -203,7 +203,7 @@ final class IndexQuerySessionTests: XCTestCase {
             }
             let querySession = session(fixture)
             let recovered = try query(querySession, fixture)
-            XCTAssertEqual(recovered.path, .slowBound, damage)
+            XCTAssertEqual(recovered.path, .fast, damage)
             XCTAssertEqual(recovered.hits.map(\.name), ["Alpha"], damage)
             XCTAssertEqual(try query(querySession, fixture).path, .fast, damage)
             let stable = try CanonicalGenerationStore(root: fixture.root).readStable()
@@ -312,7 +312,8 @@ final class IndexQuerySessionTests: XCTestCase {
                 revisionCalculator: calculator, storageRoot: fixture.indexRoot,
                 afterFastVerdict: nil,
                 onRecoveryStep: { recoverySteps.append($0) },
-                onObservationStep: { querySteps.append($0) })
+                onObservationStep: { querySteps.append($0) },
+                observationHandoffEnabled: false)
             XCTAssertEqual(try query(querySession, fixture).hits.count, 1, condition)
             XCTAssertEqual(querySteps.filter { $0 == .slowSnapshotAcquired }.count, 2, condition)
             XCTAssertEqual(querySteps.filter { $0 == .slowLockAcquired }.count, 2, condition)
@@ -601,7 +602,7 @@ final class IndexQuerySessionTests: XCTestCase {
                 sourceGenerationBinding: .bound(stable.generation))
         }
         let session = session(fixture)
-        XCTAssertEqual(try query(session, fixture).path, .slowBound)
+        XCTAssertEqual(try query(session, fixture).path, .fast)
         let published = try LocalIndex.openExisting(projectRoot: fixture.root,
             documentID: fixture.documentID, revisionCalculator: GitCanonicalRevisionCalculator(),
             storageRoot: fixture.indexRoot)
@@ -759,7 +760,7 @@ final class IndexQuerySessionTests: XCTestCase {
 
         try saveComponent(fixture, as: "Beta")
         let renewed = try query(querySession, fixture)
-        XCTAssertEqual(renewed.path, .slowBound)
+        XCTAssertEqual(renewed.path, .fast)
         XCTAssertEqual(renewed.hits, try oracle(fixture, matching: ""))
         XCTAssertEqual(renewed.hits.map(\.name), ["Beta"])
         XCTAssertEqual(try query(querySession, fixture).path, .fast)
@@ -818,7 +819,7 @@ final class IndexQuerySessionTests: XCTestCase {
             XCTAssertEqual(sqlite3_open(try index(fixture).url.path, &database), SQLITE_OK)
             XCTAssertEqual(sqlite3_exec(database, sql, nil, nil, nil), SQLITE_OK)
             sqlite3_close(database)
-            XCTAssertEqual(try query(querySession, fixture).path, .slowBound, sql)
+            XCTAssertEqual(try query(querySession, fixture).path, .fast, sql)
             XCTAssertEqual(try query(querySession, fixture).path, .fast, sql)
             XCTAssertEqual(try query(session(fixture), fixture).path, .slowBound, sql)
         }
@@ -892,7 +893,7 @@ final class IndexQuerySessionTests: XCTestCase {
         XCTAssertEqual(try query(secondSession, second).path, .fast)
         XCTAssertEqual(try query(firstSession, first).path, .fast)
         try saveComponent(first, as: "Beta")
-        XCTAssertEqual(try query(firstSession, first).path, .slowBound)
+        XCTAssertEqual(try query(firstSession, first).path, .fast)
         XCTAssertEqual(try query(secondSession, second).path, .fast)
         XCTAssertEqual(try query(secondSession, second).hits, try oracle(second, matching: ""))
         _ = try rebuild(first)
@@ -908,7 +909,7 @@ final class IndexQuerySessionTests: XCTestCase {
         XCTAssertEqual(try query(XCTUnwrap(opened), fixture).path, .slowBound)
         XCTAssertEqual(try query(XCTUnwrap(opened), fixture).path, .fast)
         try saveComponent(fixture, as: "Beta")
-        XCTAssertEqual(try query(XCTUnwrap(opened), fixture).path, .slowBound)
+        XCTAssertEqual(try query(XCTUnwrap(opened), fixture).path, .fast)
         _ = try rebuild(fixture)
         XCTAssertEqual(try query(XCTUnwrap(opened), fixture).path, .slowBound)
         XCTAssertEqual(try query(XCTUnwrap(opened), fixture).path, .fast)
@@ -1616,7 +1617,7 @@ final class IndexQuerySessionTests: XCTestCase {
         process.waitUntilExit()
         XCTAssertEqual(process.terminationStatus, 0)
         if kind == "save" {
-            XCTAssertEqual(try query(querySession, fixture).path, .slowBound)
+            XCTAssertEqual(try query(querySession, fixture).path, .fast)
         } else {
             XCTAssertEqual(try query(querySession, fixture).path, .slowBound)
             XCTAssertEqual(try query(querySession, fixture).path, .fast)

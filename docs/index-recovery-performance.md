@@ -19,7 +19,7 @@ Phase 1 lock は coherent CanonicalSnapshot の parse、Stable generation、Git 
 
 `IndexQuerySessionTests.testRecoveredQueryObservationBaselineCounts` は、1 Component fixture の missing Index と coordinated save 後の stale Bound Index を別々に実行した。両条件とも1回の recovered Query で、Query の full CanonicalSnapshot 取得2回、Recovery Phase 1 の取得1回、Git revision 計算3回、worktree lock 取得6回、slow Query 2回、Query retry 1回だった。Retry は full Snapshot と Git oracle を再実行しており、fast rows read は0回だった。この実測回数は観測引き継ぎ候補を比較する baseline であり、観測回数の削減を安全性の代替証明にはしない。
 
-## Observation handoff 候補の検証
+## Observation handoff の検証
 
 `HAMII_OBSERVATION_HANDOFF_BENCHMARK_RESULT=<path> swift test --filter IndexQuerySessionTests/testMeasuredObservationHandoffCandidate` は同じ macOS / Swift debug 環境で baseline と候補を各条件3回測定した。セルは p50 / p95 ms、p95 は3標本の最大値。`Initial observation` は Query 開始から recovery source 捕捉まで、`Retry` は公開後の Query 再試行全体。Fixture 作成時間は含まない。
 
@@ -38,6 +38,6 @@ Phase 1 lock は coherent CanonicalSnapshot の parse、Stable generation、Git 
 | 5000 | stale Bound | baseline | 5031.64 / 5038.09 | 2875.98 / 2893.52 | 65.45 / 66.18 | 397.30 / 405.02 | 1689.60 / 1718.99 | 1688.14 / 1717.58 |
 | 5000 | stale Bound | handoff | 2088.39 / 2092.53 | 1624.23 / 1626.53 | 66.36 / 69.22 | 392.74 / 393.50 | 5.33 / 5.46 | 1623.95 / 1626.26 |
 
-候補では Query Snapshot 2回 + Recovery Phase 1 Snapshot 1回が Query Snapshot 1回になり、Git oracle 3回が2回、lock 取得6回が4回になった。公開後の retry は process-local proof から既存 fast path を開始し、**別の lock を再取得して** Stable generation と公開 Index descriptor を確認してから同じ lock 下で rows を読む。Candidate build 中の coordinated writer、公開後から retry 前の writer、Index generation 置換を注入した回帰テストは、古い rows の拒否または新世代の slow 再検証に収束した。Missing / stale Bound / obsolete / malformed / corrupt の `ComponentHit` 全フィールドは baseline と一致した。External edit、ExplicitlyUnbound、Git hidden flag、pending gate は handoff 対象外だった。
+Production Query は、検証済みの初回観測から復旧 source を作れる場合に handoff を使用する。比較試験では Query Snapshot 2回 + Recovery Phase 1 Snapshot 1回が Query Snapshot 1回になり、Git oracle 3回が2回、lock 取得6回が4回になった。公開後の retry は process-local proof から既存 fast path を開始し、**別の lock を再取得して** Stable generation と公開 Index descriptor を確認してから同じ lock 下で rows を読む。Candidate build 中の coordinated writer、公開後から retry 前の writer、Index generation 置換を注入した回帰テストは、古い rows の拒否または新世代の slow 再検証に収束した。Missing / stale Bound / obsolete / malformed / corrupt の `ComponentHit` 全フィールドは baseline と一致した。External edit、ExplicitlyUnbound、Git hidden flag、pending gate は handoff 対象外だった。
 
 別 OS writer が5000 Component の候補初回 slow observation に競合した3標本の待機時間は p50 **1632.31 ms**、p95 **1694.47 ms**。Handoff は一回の recovered Query の重複観測を減らすが、残る一回の Snapshot parse による連続 lock 時間は短縮しない。`Max measured lock` は test hook 間の時間であり、lock 解放の数命令分を含まない。値は local debug fixture の mechanism comparison に限り、Product SLA ではない。

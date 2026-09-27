@@ -62,7 +62,7 @@ public final class IndexQuerySession {
          onRecoveryStep: ((IndexRecoveryStep) throws -> Void)? = nil,
          onBeforeRecoveryRetry: (() throws -> Void)? = nil,
          onObservationStep: ((QueryObservationStep) -> Void)? = nil,
-         observationHandoffEnabled: Bool = false) {
+         observationHandoffEnabled: Bool = true) {
         root = projectRoot.standardizedFileURL
         self.storageRoot = storageRoot
         self.revisionCalculator = revisionCalculator
@@ -180,48 +180,52 @@ public final class IndexQuerySession {
         ) { snapshot, stable in
             onObservationStep?(.slowSnapshotAcquired)
             do {
-            let index = try makeIndex(documentID: snapshot.document.id)
-            let published = try index.publishedGeneration()
-            guard published.documentID == snapshot.document.id,
-                  published.documentRevision == snapshot.document.revision else {
-                throw IndexError.stale
-            }
-            if published.sourceCanonicalIdentity != snapshot.identity {
-                // Retain the Git flag/filter diagnostic of the slow oracle.
-                _ = try revisionCalculator.current(at: root)
-                throw IndexError.stale
-            }
-            let boundGeneration: CanonicalGeneration?
-            switch published.sourceGenerationBinding {
-            case .bound(let source):
-                guard stable.snapshotIdentity == snapshot.identity,
-                      source == stable.generation else { throw IndexError.stale }
-                boundGeneration = source
-            case .explicitlyUnbound:
-                boundGeneration = nil
-            }
-            // Existing Git oracle and its post-row guard remain the cold path.
-            let hits = try index.components(matching: text, consumerScopeID: consumerScopeID,
-                                            documentID: snapshot.document.id,
-                                            revision: snapshot.document.revision,
-                                            expectedSourceIdentity: snapshot.identity)
-            onObservationStep?(.slowRowsRead)
-            guard try index.publishedGeneration() == published else { throw IndexError.stale }
-            if let boundGeneration {
-                witness = VerifiedCurrentWitness(
-                    worktreePath: root.resolvingSymlinksInPath().path,
-                    documentID: snapshot.document.id,
-                    indexPath: index.url.path,
-                    canonicalGeneration: boundGeneration,
-                    snapshotIdentity: snapshot.identity,
-                    indexGenerationID: published.id)
-                return (hits, .slowBound)
-            }
-            witness = nil
-            return (hits, .slowUnbound)
+                let index = try makeIndex(documentID: snapshot.document.id)
+                let published = try index.publishedGeneration()
+                guard published.documentID == snapshot.document.id,
+                      published.documentRevision == snapshot.document.revision else {
+                    throw IndexError.stale
+                }
+                if published.sourceCanonicalIdentity != snapshot.identity {
+                    // Retain the Git flag/filter diagnostic of the slow oracle.
+                    _ = try revisionCalculator.current(at: root)
+                    throw IndexError.stale
+                }
+                let boundGeneration: CanonicalGeneration?
+                switch published.sourceGenerationBinding {
+                case .bound(let source):
+                    guard stable.snapshotIdentity == snapshot.identity,
+                          source == stable.generation else { throw IndexError.stale }
+                    boundGeneration = source
+                case .explicitlyUnbound:
+                    boundGeneration = nil
+                }
+                // Existing Git oracle and its post-row guard remain the cold path.
+                let hits = try index.components(matching: text, consumerScopeID: consumerScopeID,
+                                                documentID: snapshot.document.id,
+                                                revision: snapshot.document.revision,
+                                                expectedSourceIdentity: snapshot.identity)
+                onObservationStep?(.slowRowsRead)
+                guard try index.publishedGeneration() == published else { throw IndexError.stale }
+                if let boundGeneration {
+                    witness = VerifiedCurrentWitness(
+                        worktreePath: root.resolvingSymlinksInPath().path,
+                        documentID: snapshot.document.id,
+                        indexPath: index.url.path,
+                        canonicalGeneration: boundGeneration,
+                        snapshotIdentity: snapshot.identity,
+                        indexGenerationID: published.id)
+                    return (hits, .slowBound)
+                }
+                witness = nil
+                return (hits, .slowUnbound)
             } catch let failure as IndexError {
                 if observationHandoffEnabled {
-                    seedBox.seed = try? recovery.seedFromObserved(snapshot: snapshot, stable: stable)
+                    if case .unverifiableSource = failure {
+                        seedBox.seed = nil
+                    } else {
+                        seedBox.seed = try? recovery.seedFromObserved(snapshot: snapshot, stable: stable)
+                    }
                 }
                 onObservationStep?(.slowAttemptFailed)
                 throw failure
