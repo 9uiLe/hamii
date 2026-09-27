@@ -41,6 +41,14 @@ final class IndexGenerationBindingTests: XCTestCase {
                              revision: snapshot.document.revision, expectedSourceIdentity: snapshot.identity)
     }
 
+    func testSnapshotIdentityIsIndependentOfVarSymlinkSpelling() throws {
+        try withFixture { root, _, snapshot, _, _ in
+            let resolvedRoot = root.resolvingSymlinksInPath()
+            let resolved = try CanonicalRepository(root: resolvedRoot).withCoordinatedSnapshot { $0 }
+            XCTAssertEqual(snapshot.identity, resolved.identity)
+        }
+    }
+
     func testRebuildIssuesNewGenerationForSameCanonicalSnapshot() throws {
         try withFixture { _, _, snapshot, index, scope in
             let first = try index.rebuild(from: snapshot, canonicalRevision: CanonicalRevision("fixed-source"))

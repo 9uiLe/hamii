@@ -282,6 +282,7 @@ public final class CanonicalRepository: ProjectRepository {
             if manager.fileExists(atPath: directory.path) {
                 paths += try manager.contentsOfDirectory(at: directory, includingPropertiesForKeys: [.isSymbolicLinkKey])
                     .filter { $0.pathExtension == "json" }
+                    .map { directory.appendingPathComponent($0.lastPathComponent) }
             }
         }
         for path in paths {
