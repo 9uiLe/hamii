@@ -2,7 +2,7 @@
 
 ## Related Decision
 
-[Index Recovery Strategy ADR](../../ADR.md) の自動 full rebuild と incremental reindex の適用範囲。
+[Incremental Index Recovery ADR](../../ADR.md) の full rebuild と incremental reindex の performance crossover。Automatic full rebuild の recovery policy は [Index Recovery Strategy ADR](../../../index-recovery-strategy/ADR.md) が扱う。
 
 ## Hypothesis
 
@@ -41,7 +41,7 @@ fixture の規模を変えても bottleneck を区別できない、測定の再
 
 ## Conclusion
 
-この pilot では untracked shard が多い条件で fingerprint を含む query cost が増え、5000 shard で query budget を超えた。同じ 5000 shard でも all-tracked 条件は今回の 5 回で予算内だった。**Unknown:** 実 Project の tracked / dirty / untracked 分布、dependency density、memory、incremental との crossover。自動復旧方式と threshold は未決定。
+この pilot では untracked shard が多い条件で fingerprint を含む query cost が増え、5000 shard で query budget を超えた。同じ 5000 shard でも all-tracked 条件は今回の 5 回で予算内だった。**Unknown:** 実 Project の tracked / dirty / untracked 分布、dependency density、memory、incremental との crossover。Incremental の適用 threshold は未決定。
 
 ## Artifacts
 

@@ -65,7 +65,7 @@ Production auto recovery 実装、raw external edit の自動 adoption、非協�
 
 ## Conclusion
 
-未決定。Coordinated Stable source から別 SQLite candidate を作り、source を再確認して公開する経路は tested cases で成立した。以下の追加 Evidence は候補の範囲を狭めるが、manual-only / automatic full / incremental の Recovery policy はまだ選ばない。Production `staleIndex` 拒否と manual full rebuild を維持し、Index Recovery Strategy ADR は `Spike Required` とする。
+この Spike の時点では未決定だった。Coordinated Stable source から別 SQLite candidate を作り、source を再確認して公開する経路は tested cases で成立した。その後、[Recovery Eligibility](../recovery-eligibility/SPIKE.md) の Evidence と CI acceptance を経て、ADR は限定した automatic full rebuild baseline を採用し `Implementation Required` へ進んだ。Production は実装完了まで `staleIndex` 拒否と manual full rebuild を維持する。
 
 **実 OS process の同時 recovery:** 2つの recovery worker が同じ stale `IndexGenerationID` と `S/G` を捕捉して build を終えた後、同時に publication を試みた。Test-only expected published state check により1 worker が publish、もう1 worker は新しい Bound generation を検証して reuse した。両 worker の結果は同じ `IndexGenerationID`。別 reader は `stale`、その後に完全な `Beta` rows を観測し、混在 rows は観測しなかった。これは [concurrent-20260928.json](artifacts/concurrent-20260928.json) の一つの同期 interleaving であり、任意の scheduling / power loss を証明しない。Expected state を確認しない従来の順次2-candidate試験は、不要な generation replacement を許した。
 

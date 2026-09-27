@@ -45,6 +45,21 @@ final class AutomaticFullRebuildSpikeTests: XCTestCase {
         case corruptSQLite
     }
 
+    private enum RecoveryEligibility: Equatable {
+        case alreadyCurrent
+        case autoRecoverable(String)
+        case manualOnly(String)
+        case blocked(String)
+    }
+
+    private enum ReadOnlyIndexProbe {
+        case missing
+        case obsoleteSchema
+        case corruptSQLite
+        case malformedMetadata
+        case valid(IndexGenerationDescriptor, String)
+    }
+
     private struct TimingRecord: Codable {
         let components: Int
         let strategy: String
@@ -120,7 +135,7 @@ final class AutomaticFullRebuildSpikeTests: XCTestCase {
     }
 
     private func build(_ fixture: Fixture, from source: Source,
-                       transactionHook: (() -> Void)? = nil) throws -> Candidate {
+                       transactionHook: (() throws -> Void)? = nil) throws -> Candidate {
         let root = fixture.directory.appendingPathComponent("Candidate-\(UUID().uuidString)")
         let descriptor: IndexGenerationDescriptor
         let candidateURL: URL
@@ -139,7 +154,7 @@ final class AutomaticFullRebuildSpikeTests: XCTestCase {
     }
 
     private func buildFromImmutableSnapshot(_ fixture: Fixture, from source: Source,
-                                            transactionHook: (() -> Void)? = nil) throws -> Candidate {
+                                            transactionHook: (() throws -> Void)? = nil) throws -> Candidate {
         let root = fixture.directory.appendingPathComponent("ImmutableCandidate-\(UUID().uuidString)")
         let descriptor: IndexGenerationDescriptor
         let candidateURL: URL
@@ -156,6 +171,9 @@ final class AutomaticFullRebuildSpikeTests: XCTestCase {
             }.sorted { $0.name < $1.name }
             XCTAssertEqual(actual, expected)
             candidateURL = candidate.url
+        } catch {
+            try? FileManager.default.removeItem(at: root)
+            throw error
         }
         return Candidate(root: root, url: candidateURL, descriptor: descriptor)
     }
@@ -210,6 +228,100 @@ final class AutomaticFullRebuildSpikeTests: XCTestCase {
         }
         let version = sqlite3_column_int(statement, 0)
         return version == LocalIndex.schemaVersion ? .currentSchema : .obsoleteSchema(version)
+    }
+
+    /// The test-only classifier opens only the published Index in read-only
+    /// mode. It must run before LocalIndex.init, which recreates old schemas.
+    private func probePublishedIndex(_ fixture: Fixture) throws -> ReadOnlyIndexProbe {
+        let url = LocalIndexLocation.url(projectRoot: fixture.root,
+            documentID: fixture.documentID, storageRoot: fixture.indexRoot)
+        guard FileManager.default.fileExists(atPath: url.path) else { return .missing }
+        var db: OpaquePointer?
+        let opened = sqlite3_open_v2(url.path, &db, SQLITE_OPEN_READONLY, nil)
+        defer { if let db { sqlite3_close(db) } }
+        if opened == SQLITE_CORRUPT || opened == SQLITE_NOTADB { return .corruptSQLite }
+        guard opened == SQLITE_OK else { throw IndexError.sqlite("Read-only Index open failed: \(opened)") }
+
+        func rows(_ sql: String) throws -> [[String]]? {
+            var statement: OpaquePointer?
+            let prepared = sqlite3_prepare_v2(db, sql, -1, &statement, nil)
+            defer { if let statement { sqlite3_finalize(statement) } }
+            if prepared == SQLITE_CORRUPT || prepared == SQLITE_NOTADB { return nil }
+            guard prepared == SQLITE_OK else {
+                if String(cString: sqlite3_errmsg(db)).contains("no such table") { return [] }
+                throw IndexError.sqlite("Read-only Index prepare failed: \(prepared)")
+            }
+            var result: [[String]] = []
+            while true {
+                let step = sqlite3_step(statement)
+                if step == SQLITE_DONE { return result }
+                if step == SQLITE_CORRUPT || step == SQLITE_NOTADB { return nil }
+                guard step == SQLITE_ROW else { throw IndexError.sqlite("Read-only Index step failed: \(step)") }
+                result.append((0..<sqlite3_column_count(statement)).map { column in
+                    guard let value = sqlite3_column_text(statement, column) else { return "" }
+                    return String(cString: value)
+                })
+            }
+        }
+
+        guard let versionRows = try rows("PRAGMA user_version"),
+              let version = Int(versionRows.first?.first ?? "") else { return .corruptSQLite }
+        guard version == LocalIndex.schemaVersion else { return .obsoleteSchema }
+        guard let integrity = try rows("PRAGMA integrity_check"),
+              integrity.count == 1, integrity[0] == ["ok"] else { return .corruptSQLite }
+        guard let metadataRows = try rows("SELECT key, value FROM metadata"),
+              !metadataRows.isEmpty else { return .malformedMetadata }
+        let metadata = Dictionary(metadataRows.compactMap { row -> (String, String)? in
+            row.count == 2 ? (row[0], row[1]) : nil
+        }, uniquingKeysWith: { first, _ in first })
+        guard let documentID = metadata["documentID"], !documentID.isEmpty,
+              let revision = Int(metadata["revision"] ?? ""), revision >= 0,
+              let generationID = IndexGenerationID(rawValue: metadata["indexGenerationID"] ?? ""),
+              let identity = CanonicalSnapshotIdentity(rawValue: metadata["sourceCanonicalIdentity"] ?? ""),
+              let binding = IndexSourceGenerationBinding(serialized: metadata["sourceGenerationBinding"] ?? ""),
+              let sourceRevision = metadata["canonicalRevision"], !sourceRevision.isEmpty else {
+            return .malformedMetadata
+        }
+        return .valid(IndexGenerationDescriptor(id: generationID,
+            sourceCanonicalIdentity: identity, documentID: EntityID(documentID),
+            documentRevision: revision, sourceGenerationBinding: binding), sourceRevision)
+    }
+
+    private func eligibility(_ fixture: Fixture) -> RecoveryEligibility {
+        do {
+            return try WorktreeCoordinator(root: fixture.root).withReadyExclusive {
+                let local = fixture.root.appendingPathComponent(".hamii")
+                for journal in ["transaction.prepare", "transaction.ready", "transaction.complete"] {
+                    if FileManager.default.fileExists(atPath: local.appendingPathComponent(journal).path) {
+                        return .blocked("canonicalJournalPending")
+                    }
+                }
+                let snapshot = try CanonicalRepository(root: fixture.root)
+                    .snapshotDuringManagedGitTransition()
+                let stable = try CanonicalGenerationStore(root: fixture.root).requireMatchingStable(snapshot)
+                let revision = try calculator.current(at: fixture.root)
+                switch try probePublishedIndex(fixture) {
+                case .missing: return .autoRecoverable("missingIndex")
+                case .obsoleteSchema: return .autoRecoverable("obsoleteSchema")
+                case .corruptSQLite: return .autoRecoverable("corruptSQLite")
+                case .malformedMetadata: return .autoRecoverable("malformedMetadata")
+                case .valid(let descriptor, let sourceRevision):
+                    let sourceMatches = descriptor.documentID == snapshot.document.id &&
+                        descriptor.documentRevision == snapshot.document.revision &&
+                        descriptor.sourceCanonicalIdentity == snapshot.identity &&
+                        sourceRevision == revision.rawValue
+                    switch descriptor.sourceGenerationBinding {
+                    case .explicitlyUnbound:
+                        return sourceMatches ? .alreadyCurrent : .manualOnly("unboundSourceChanged")
+                    case .bound(let generation):
+                        return sourceMatches && generation == stable.generation
+                            ? .alreadyCurrent : .autoRecoverable("staleBoundIndex")
+                    }
+                }
+            }
+        } catch {
+            return .blocked(String(describing: error))
+        }
     }
 
     /// Test-only compare-and-publish candidate. A competing successful recovery
@@ -843,6 +955,188 @@ final class AutomaticFullRebuildSpikeTests: XCTestCase {
         try corruptBytes.write(to: url, options: .atomic)
         XCTAssertEqual(try inspectIndexWithoutMutation(fixture), .corruptSQLite)
         XCTAssertEqual(try Data(contentsOf: url), corruptBytes)
+    }
+
+    func testRecoveryEligibilitySeparatesDerivedFailuresFromUnboundAndCanonicalProblems() throws {
+        let fixture = try fixture()
+        defer { try? FileManager.default.removeItem(at: fixture.directory) }
+        XCTAssertEqual(eligibility(fixture), .autoRecoverable("missingIndex"))
+        let source = try capture(fixture)
+        let candidate = try build(fixture, from: source)
+        try publish(fixture, source: source, candidate: candidate)
+        try? FileManager.default.removeItem(at: candidate.root)
+        XCTAssertEqual(eligibility(fixture), .alreadyCurrent)
+
+        let url = LocalIndexLocation.url(projectRoot: fixture.root,
+            documentID: fixture.documentID, storageRoot: fixture.indexRoot)
+        func sql(_ command: String) throws {
+            var db: OpaquePointer?
+            guard sqlite3_open(url.path, &db) == SQLITE_OK else { throw IndexError.sqlite("Open failed") }
+            defer { sqlite3_close(db) }
+            guard sqlite3_exec(db, command, nil, nil, nil) == SQLITE_OK else {
+                throw IndexError.sqlite("Test SQL failed: \(command)")
+            }
+        }
+        try sql("PRAGMA user_version = 7")
+        let obsolete = try Data(contentsOf: url)
+        XCTAssertEqual(eligibility(fixture), .autoRecoverable("obsoleteSchema"))
+        XCTAssertEqual(try Data(contentsOf: url), obsolete)
+        try sql("PRAGMA user_version = \(LocalIndex.schemaVersion)")
+        try sql("DELETE FROM metadata WHERE key = 'indexGenerationID'")
+        let malformed = try Data(contentsOf: url)
+        XCTAssertEqual(eligibility(fixture), .autoRecoverable("malformedMetadata"))
+        XCTAssertEqual(try Data(contentsOf: url), malformed)
+        let corrupt = Data("not a SQLite database".utf8)
+        try corrupt.write(to: url, options: .atomic)
+        XCTAssertEqual(eligibility(fixture), .autoRecoverable("corruptSQLite"))
+        XCTAssertEqual(try Data(contentsOf: url), corrupt)
+        try FileManager.default.removeItem(at: url)
+        try FileManager.default.createDirectory(at: url, withIntermediateDirectories: false)
+        guard case .blocked = eligibility(fixture) else {
+            return XCTFail("Storage path failure was classified as corrupt Index")
+        }
+
+        let unbound = try self.fixture()
+        defer { try? FileManager.default.removeItem(at: unbound.directory) }
+        let unboundSource = try capture(unbound)
+        let manual = try index(unbound)
+        try manual.rebuild(from: unboundSource.snapshot, canonicalRevision: unboundSource.revision)
+        XCTAssertEqual(eligibility(unbound), .alreadyCurrent)
+        try saveComponent(unbound, as: "Beta")
+        XCTAssertEqual(eligibility(unbound), .manualOnly("unboundSourceChanged"))
+
+        let external = try self.fixture()
+        defer { try? FileManager.default.removeItem(at: external.directory) }
+        let file = external.root.appendingPathComponent("components/component_alpha.json")
+        let text = try String(contentsOf: file, encoding: .utf8)
+        try Data(text.replacingOccurrences(of: "Alpha", with: "Raw Edit").utf8).write(to: file)
+        guard case .blocked = eligibility(external) else { return XCTFail("Raw edit was eligible") }
+        let gate = external.root.appendingPathComponent(".hamii/merge-publication.pending.json")
+        try Data("{}".utf8).write(to: gate)
+        guard case .blocked = eligibility(external) else { return XCTFail("Pending merge was eligible") }
+
+        let hidden = try self.fixture()
+        defer { try? FileManager.default.removeItem(at: hidden.directory) }
+        try git(hidden.root, ["update-index", "--assume-unchanged", "components/component_alpha.json"])
+        guard case .blocked = eligibility(hidden) else { return XCTFail("Hidden Git flag was eligible") }
+
+        let missingGeneration = try self.fixture()
+        defer { try? FileManager.default.removeItem(at: missingGeneration.directory) }
+        try FileManager.default.removeItem(at: missingGeneration.root
+            .appendingPathComponent(".hamii/canonical-generation.json"))
+        guard case .blocked = eligibility(missingGeneration) else {
+            return XCTFail("Missing Canonical generation was eligible")
+        }
+
+        let pendingGeneration = try self.fixture()
+        defer { try? FileManager.default.removeItem(at: pendingGeneration.directory) }
+        try WorktreeCoordinator(root: pendingGeneration.root).withExclusive {
+            let store = CanonicalGenerationStore(root: pendingGeneration.root)
+            let stable = try store.readStable()
+            _ = try store.beginPending(old: stable, expectedNewIdentity: nil)
+        }
+        guard case .blocked = eligibility(pendingGeneration) else {
+            return XCTFail("Pending Canonical generation was eligible")
+        }
+
+        let journal = try self.fixture()
+        defer { try? FileManager.default.removeItem(at: journal.directory) }
+        try FileManager.default.createDirectory(at: journal.root
+            .appendingPathComponent(".hamii/transaction.ready"), withIntermediateDirectories: false)
+        XCTAssertEqual(eligibility(journal), .blocked("canonicalJournalPending"))
+    }
+
+    func testRecoveryFailureInjectionLeavesPublishedBytesAndQueryFailClosed() throws {
+        enum Injected: Error { case create, sqliteWrite, publish }
+        let fixture = try fixture()
+        defer { try? FileManager.default.removeItem(at: fixture.directory) }
+        let initial = try capture(fixture)
+        let old = try build(fixture, from: initial)
+        try publish(fixture, source: initial, candidate: old)
+        try? FileManager.default.removeItem(at: old.root)
+        try saveComponent(fixture, as: "Beta")
+        XCTAssertEqual(eligibility(fixture), .autoRecoverable("staleBoundIndex"))
+        let source = try capture(fixture)
+        let url = LocalIndexLocation.url(projectRoot: fixture.root,
+            documentID: fixture.documentID, storageRoot: fixture.indexRoot)
+        let oldID = try index(fixture).publishedGeneration().id
+
+        for failure in [Injected.create, .sqliteWrite, .publish] {
+            // LocalIndex.init writes a disposable schema marker even for a
+            // current schema, so compare bytes around the recovery attempt.
+            let beforeAttempt = try Data(contentsOf: url)
+            XCTAssertThrowsError(try { () -> Void in
+                if failure == .create { throw Injected.create }
+                let candidate = try buildFromImmutableSnapshot(fixture, from: source,
+                    transactionHook: failure == .sqliteWrite ? { throw Injected.sqliteWrite } : nil)
+                defer { try? FileManager.default.removeItem(at: candidate.root) }
+                if failure == .publish { throw Injected.publish }
+            }())
+            XCTAssertEqual(try Data(contentsOf: url), beforeAttempt)
+            XCTAssertEqual(try index(fixture).publishedGeneration().id, oldID)
+            XCTAssertThrowsError(try query(fixture, with: session(fixture)))
+            XCTAssertEqual(eligibility(fixture), .autoRecoverable("staleBoundIndex"))
+        }
+        XCTAssertEqual(try capture(fixture).snapshot.identity, source.snapshot.identity)
+        let abandoned = try FileManager.default.contentsOfDirectory(atPath: fixture.directory.path)
+            .filter { $0.hasPrefix("ImmutableCandidate-") }
+        XCTAssertTrue(abandoned.isEmpty)
+    }
+
+    func testMixedSemanticFixtureMatchesManualFullProjection() throws {
+        let fixture = try fixture()
+        defer { try? FileManager.default.removeItem(at: fixture.directory) }
+        let repository = CanonicalRepository(root: fixture.root)
+        let old = try repository.load()
+        var document = old
+        let app = fixture.scopeID
+        let commerce = EntityID("scope_commerce")
+        let checkout = EntityID("scope_checkout")
+        let account = EntityID("scope_account")
+        document.scopes += [
+            ArchitectureScope(id: commerce, name: "Commerce", parentID: app),
+            ArchitectureScope(id: checkout, name: "Checkout", parentID: commerce),
+            ArchitectureScope(id: account, name: "Account", parentID: app)
+        ]
+        var shared = document.components[0]
+        shared.availability = AvailabilityPolicy(denyScopeIDs: [account])
+        let commerceOnly = ComponentDefinition(id: EntityID("component_commerce"),
+            name: "CommerceOnly", ownerScopeID: commerce,
+            root: Layer(id: EntityID("layer_commerce"), kind: .stack, name: "Commerce"))
+        document.components = [shared, commerceOnly]
+        document.screens = [Screen(id: EntityID("screen_checkout"), name: "Checkout", scopeID: checkout,
+            root: Layer(id: EntityID("screen_root"), kind: .stack, name: "Root", children: [
+                Layer(id: EntityID("instance_shared"), kind: .componentInstance, name: "Shared",
+                    component: ComponentInstance(definitionID: shared.id)),
+                Layer(id: EntityID("instance_commerce"), kind: .componentInstance, name: "Commerce",
+                    component: ComponentInstance(definitionID: commerceOnly.id))
+            ]))]
+        document.revision += 1
+        try repository.save(document, expected: old)
+        let source = try capture(fixture)
+        let manualRoot = fixture.directory.appendingPathComponent("ManualIndex")
+        let manual = try index(fixture, storageRoot: manualRoot)
+        let manualGeneration = try manual.rebuild(from: source.snapshot,
+            canonicalRevision: source.revision,
+            sourceGenerationBinding: .bound(source.stable.generation))
+        XCTAssertEqual(eligibility(fixture), .autoRecoverable("missingIndex"))
+        let candidate = try build(fixture, from: source)
+        defer { try? FileManager.default.removeItem(at: candidate.root) }
+        XCTAssertEqual(candidate.descriptor.sourceCanonicalIdentity,
+            manualGeneration.sourceCanonicalIdentity)
+        XCTAssertEqual(candidate.descriptor.sourceGenerationBinding,
+            manualGeneration.sourceGenerationBinding)
+        XCTAssertEqual(candidate.descriptor.documentRevision, manualGeneration.documentRevision)
+        XCTAssertEqual(try publishWithGenerationAndGitRecheck(fixture, source: source,
+            candidate: candidate, expected: .missing), .published(candidate.descriptor.id))
+        let published = try index(fixture)
+        for scope in [app, commerce, checkout, account] {
+            XCTAssertEqual(try published.components(matching: "", consumerScopeID: scope,
+                verifiedGeneration: candidate.descriptor),
+                try manual.components(matching: "", consumerScopeID: scope,
+                    verifiedGeneration: manualGeneration))
+        }
+        XCTAssertEqual(eligibility(fixture), .alreadyCurrent)
     }
 
     func testOptimizedPhaseTwoRejectsCoordinatedAndRawSourceChanges() throws {

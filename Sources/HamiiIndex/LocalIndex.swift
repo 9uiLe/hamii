@@ -65,7 +65,7 @@ public final class LocalIndex {
     @discardableResult
     func rebuild(from snapshot: CanonicalSnapshot, canonicalRevision: CanonicalRevision,
                  sourceGenerationBinding: IndexSourceGenerationBinding = .explicitlyUnbound,
-                 transactionHook: (() -> Void)?) throws -> IndexGenerationDescriptor {
+                 transactionHook: (() throws -> Void)?) throws -> IndexGenerationDescriptor {
         let document = snapshot.document
         let generation = IndexGenerationDescriptor(id: .new(), sourceCanonicalIdentity: snapshot.identity,
                                                    documentID: document.id, documentRevision: document.revision,
@@ -80,7 +80,7 @@ public final class LocalIndex {
             for row in projection.scopeClosure {
                 try insert("INSERT INTO scope_closure(consumer_id, ancestor_id) VALUES (?, ?)", [row.consumer.rawValue, row.ancestor.rawValue])
             }
-            transactionHook?()
+            try transactionHook?()
             for row in projection.components {
                 try insert("INSERT INTO components(id, name, owner_scope_id, usage_count) VALUES (?, ?, ?, ?)", [row.id.rawValue, row.name, row.ownerScopeID.rawValue, String(row.usageCount)])
             }

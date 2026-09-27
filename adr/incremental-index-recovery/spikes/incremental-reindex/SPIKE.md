@@ -2,7 +2,7 @@
 
 ## Related Decision
 
-[Index Recovery Strategy ADR](../../ADR.md) の incremental recovery と Index generation 公開境界。
+[Incremental Index Recovery ADR](../../ADR.md) の targeted projection と Index generation 公開境界。Automatic full rebuild の recovery policy は [Index Recovery Strategy ADR](../../../index-recovery-strategy/ADR.md) が扱う。
 
 ## Hypothesis
 
@@ -69,7 +69,7 @@ No changed row was omitted; every patched row set equaled the full `IndexProject
 
 ## Conclusion
 
-Actual `IndexProjection` rows でも、検証した変更に対する invalidation set と staging / atomic publish の組は full projection oracle に一致した。実 `LocalIndex` query の branch switch 1 条件も stale として拒否した。**Unknown:** production incremental projector、Canonical files の一貫した source snapshot、Git 操作と generation build の競合、end-to-end cost。自動復旧方式は ADR で未決定。
+Actual `IndexProjection` rows でも、検証した変更に対する invalidation set と staging / atomic publish の組は full projection oracle に一致した。実 `LocalIndex` query の branch switch 1 条件も stale として拒否した。**Unknown:** production incremental projector、Canonical files の一貫した source snapshot、Git 操作と generation build の競合、end-to-end cost。この Spike 実施時点では自動復旧方式は未決定だった。現在の判断状態は各 ADR に記録する。
 
 ## Artifacts
 
@@ -78,6 +78,6 @@ Actual `IndexProjection` rows でも、検証した変更に対する invalidati
 - [current-projection-dependencies.md](artifacts/current-projection-dependencies.md): production code から導いた現行 projection の依存 inventory。実測ではない。
 - [IndexProjectionSpikeTests.swift](../../../../Tests/HamiiTests/IndexProjectionSpikeTests.swift): 実 `IndexProjection` / Canonical loader / LocalIndex branch-switch query を検証する test source。
 - [actual_projection_probe.py](artifacts/actual_projection_probe.py): 実 projection rows を使う generation staging / reader barrier / rollback / SQL benchmark。
-- [actual-projection-result.json](artifacts/actual-projection-result.json): changed/invalidated row keys、atomic reader outcomes、raw p50/p95 timings。`HAMII_PROJECTION_SPIKE_RESULT=/tmp/hamii-projection-spike-result.json swift test --filter IndexProjectionSpikeTests` の後、`python3 adr/index-recovery-strategy/spikes/incremental-reindex/artifacts/actual_projection_probe.py /tmp/hamii-projection-spike-result.json /tmp/hamii-actual-projection-result.json` で再測定できる。
+- [actual-projection-result.json](artifacts/actual-projection-result.json): changed/invalidated row keys、atomic reader outcomes、raw p50/p95 timings。`HAMII_PROJECTION_SPIKE_RESULT=/tmp/hamii-projection-spike-result.json swift test --filter IndexProjectionSpikeTests` の後、`python3 adr/incremental-index-recovery/spikes/incremental-reindex/artifacts/actual_projection_probe.py /tmp/hamii-projection-spike-result.json /tmp/hamii-actual-projection-result.json` で再測定できる。
 
 Actual projection rows を使う probe は実施済み。Production incremental reindexer / general atomic generation switch は未実装。Result 内の schema / type の現行形に関する記述は、この Spike を実行した時点の Evidence であり、現在の `LocalIndex` は `IndexGenerationID` と typed source binding を持つ。
