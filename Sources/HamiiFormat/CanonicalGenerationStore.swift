@@ -61,7 +61,7 @@ public struct CanonicalGenerationStore {
     /// snapshot. A missing record must never be interpreted as generation 1
     /// merely because a project exists on disk.
     public func bootstrapVerified(_ snapshot: CanonicalSnapshot) throws -> StableCanonicalGeneration {
-        guard !FileManager.default.fileExists(atPath: recordURL.path) else { return try readStable() }
+        guard !FileManager.default.fileExists(atPath: recordURL.path) else { return try requireMatchingStable(snapshot) }
         let stable = StableCanonicalGeneration(generation: CanonicalGeneration(lineage: UUID(), value: 1), snapshotIdentity: snapshot.identity)
         try write(Record.stable(generation: stable.generation, identity: snapshot.identity.rawValue))
         return stable
@@ -126,7 +126,25 @@ public struct CanonicalGenerationStore {
     private func read() throws -> Record {
         guard FileManager.default.fileExists(atPath: recordURL.path) else { throw CanonicalGenerationError.missing }
         guard let record = try? JSONDecoder().decode(Record.self, from: Data(contentsOf: recordURL)),
-              record.formatVersion == 1 else { throw CanonicalGenerationError.corrupt }
+              record.formatVersion == 1, record.lineageID != nil, record.generation > 0 else {
+            throw CanonicalGenerationError.corrupt
+        }
+        switch record.phase {
+        case .stable:
+            guard CanonicalSnapshotIdentity(rawValue: record.snapshotIdentity ?? "") != nil,
+                  record.operationID == nil, record.proposedGeneration == nil,
+                  record.oldSnapshotIdentity == nil, record.expectedNewIdentity == nil else {
+                throw CanonicalGenerationError.corrupt
+            }
+        case .pending:
+            guard record.generation < UInt64.max, record.snapshotIdentity == nil,
+                  record.operationID != nil, record.proposedGeneration == record.generation + 1,
+                  CanonicalSnapshotIdentity(rawValue: record.oldSnapshotIdentity ?? "") != nil,
+                  record.expectedNewIdentity == nil ||
+                    CanonicalSnapshotIdentity(rawValue: record.expectedNewIdentity ?? "") != nil else {
+                throw CanonicalGenerationError.corrupt
+            }
+        }
         return record
     }
 

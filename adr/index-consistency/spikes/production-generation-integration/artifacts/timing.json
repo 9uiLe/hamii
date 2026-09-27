@@ -1,0 +1,62 @@
+{
+  "1000-components": {
+    "coordinatedGenerationRead": {
+      "p50": 0.243,
+      "p95": 0.294
+    },
+    "fullRebuildFromPreacquiredSnapshot": {
+      "p50": 365.236,
+      "p95": 383.29
+    },
+    "productionOracleQuery": {
+      "p50": 627.957,
+      "p95": 647.495
+    },
+    "productionShadowVerdict": {
+      "p50": 1.092,
+      "p95": 1.518
+    },
+    "revisionCalculation": {
+      "p50": 358.892,
+      "p95": 381.521
+    },
+    "snapshotAcquisition": {
+      "p50": 271.456,
+      "p95": 290.799
+    },
+    "verifiedBindingCheck": {
+      "p50": 640.954,
+      "p95": 693.278
+    }
+  },
+  "starter": {
+    "coordinatedGenerationRead": {
+      "p50": 0.239,
+      "p95": 0.257
+    },
+    "fullRebuildFromPreacquiredSnapshot": {
+      "p50": 368.995,
+      "p95": 383.367
+    },
+    "productionOracleQuery": {
+      "p50": 355.22,
+      "p95": 370.96
+    },
+    "productionShadowVerdict": {
+      "p50": 1.024,
+      "p95": 1.421
+    },
+    "revisionCalculation": {
+      "p50": 347.211,
+      "p95": 371.196
+    },
+    "snapshotAcquisition": {
+      "p50": 2.275,
+      "p95": 2.447
+    },
+    "verifiedBindingCheck": {
+      "p50": 348.879,
+      "p95": 358.645
+    }
+  }
+}

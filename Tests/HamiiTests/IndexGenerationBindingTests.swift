@@ -83,6 +83,12 @@ final class IndexGenerationBindingTests: XCTestCase {
             try execute("UPDATE metadata SET value='broken' WHERE key='sourceCanonicalIdentity'", at: index.url)
             expectStale()
             try index.rebuild(from: snapshot, canonicalRevision: source)
+            try execute("DELETE FROM metadata WHERE key='sourceCanonicalGeneration'", at: index.url)
+            expectStale()
+            try index.rebuild(from: snapshot, canonicalRevision: source)
+            try execute("UPDATE metadata SET value='not-a-generation' WHERE key='sourceCanonicalGeneration'", at: index.url)
+            expectStale()
+            try index.rebuild(from: snapshot, canonicalRevision: source)
             let wrong = CanonicalSnapshotIdentity(rawValue: String(repeating: "a", count: 64))!
             XCTAssertNotEqual(wrong, snapshot.identity)
             XCTAssertThrowsError(try index.components(matching: "Button", consumerScopeID: scope,
@@ -107,6 +113,9 @@ final class IndexGenerationBindingTests: XCTestCase {
             let source = CanonicalRevision("fixed-source")
             let first = try index.rebuild(from: snapshot, canonicalRevision: source)
             try execute("CREATE TRIGGER reject_source BEFORE INSERT ON metadata WHEN NEW.key='sourceCanonicalIdentity' BEGIN SELECT RAISE(ABORT, 'injected'); END", at: index.url)
+            XCTAssertThrowsError(try index.rebuild(from: snapshot, canonicalRevision: source))
+            try execute("DROP TRIGGER reject_source", at: index.url)
+            try execute("CREATE TRIGGER reject_generation BEFORE INSERT ON metadata WHEN NEW.key='sourceCanonicalGeneration' BEGIN SELECT RAISE(ABORT, 'injected'); END", at: index.url)
             XCTAssertThrowsError(try index.rebuild(from: snapshot, canonicalRevision: source))
             XCTAssertEqual(try index.assertCurrent(documentID: snapshot.document.id,
                 revision: snapshot.document.revision, expectedSourceIdentity: snapshot.identity), first)

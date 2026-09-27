@@ -151,7 +151,14 @@ private enum CLI {
                 let before = try calculator.current(at: path)
                 let stable = try calculator.current(at: path)
                 guard before == stable else { throw IndexError.stale }
-                let sourceGeneration = try CanonicalGenerationStore(root: path).requireMatchingStable(snapshot).generation
+                // An external edit can be indexed by the existing slow oracle,
+                // but it cannot inherit a coordinated-generation proof.
+                let sourceGeneration: CanonicalGeneration?
+                do {
+                    sourceGeneration = try CanonicalGenerationStore(root: path).requireMatchingStable(snapshot).generation
+                } catch CanonicalGenerationError.unknownState {
+                    sourceGeneration = nil
+                }
                 _ = try LocalIndex(projectRoot: path, documentID: snapshot.document.id, revisionCalculator: calculator)
                     .rebuild(from: snapshot, canonicalRevision: stable, sourceCanonicalGeneration: sourceGeneration)
                 guard try calculator.current(at: path) == stable else { throw IndexError.stale }

@@ -27,6 +27,12 @@ final class ProductionGenerationShadowSpikeTests: XCTestCase {
         let indexGenerationID: String
     }
 
+    private struct ProductionWitness {
+        let generation: CanonicalGeneration
+        let snapshotIdentity: CanonicalSnapshotIdentity
+        let indexGenerationID: IndexGenerationID
+    }
+
     private struct Plan: Decodable {
         struct Entry: Decodable { let path: String; let newHash: String? }
         let entries: [Entry]
@@ -165,7 +171,9 @@ final class ProductionGenerationShadowSpikeTests: XCTestCase {
         let calculator = GitCanonicalRevisionCalculator()
         let source = try calculator.current(at: fixture.root)
         let local = try index(fixture)
-        let descriptor = try local.rebuild(from: snapshot, canonicalRevision: source)
+        let productionSource = try? CanonicalGenerationStore(root: fixture.root).requireMatchingStable(snapshot).generation
+        let descriptor = try local.rebuild(from: snapshot, canonicalRevision: source,
+                                           sourceCanonicalGeneration: productionSource)
         try putShadowSource(generation, into: local.url)
         return descriptor
     }
@@ -231,6 +239,38 @@ final class ProductionGenerationShadowSpikeTests: XCTestCase {
         }) ?? .unknown
     }
 
+    private func productionBoot(_ fixture: Fixture) throws -> ProductionWitness {
+        try CanonicalRepository(root: fixture.root).withCoordinatedSnapshot { snapshot in
+            let stable = try CanonicalGenerationStore(root: fixture.root).requireMatchingStable(snapshot)
+            let published = try index(fixture).assertCurrent(documentID: snapshot.document.id,
+                revision: snapshot.document.revision, expectedSourceIdentity: snapshot.identity)
+            guard published.sourceCanonicalGeneration == stable.generation else { throw IndexError.stale }
+            return ProductionWitness(generation: stable.generation, snapshotIdentity: snapshot.identity,
+                                     indexGenerationID: published.id)
+        }
+    }
+
+    private func productionShadow(_ fixture: Fixture, witness: ProductionWitness?) -> Verdict {
+        guard let witness else { return .unknown }
+        return (try? WorktreeCoordinator(root: fixture.root).withExclusive { () throws -> Verdict in
+            let coordinator = WorktreeCoordinator(root: fixture.root)
+            try coordinator.requireReady()
+            let stable = try CanonicalGenerationStore(root: fixture.root).readStable()
+            guard stable.generation.lineage == witness.generation.lineage else { return .unknown }
+            guard stable.generation.value >= witness.generation.value else { return .unknown }
+            guard stable.generation == witness.generation else { return .stale }
+            guard stable.snapshotIdentity == witness.snapshotIdentity else { return .unknown }
+            let published = try index(fixture).shadowPublishedGeneration()
+            guard published.id == witness.indexGenerationID,
+                  published.sourceCanonicalIdentity == witness.snapshotIdentity else { return .unknown }
+            guard let source = published.sourceCanonicalGeneration,
+                  source.lineage == stable.generation.lineage else { return .unknown }
+            if source.value < stable.generation.value { return .stale }
+            if source.value > stable.generation.value { return .unknown }
+            return .knownCurrent
+        }) ?? .unknown
+    }
+
     private func oracle(_ fixture: Fixture, text: String = "Alpha") -> Verdict {
         do {
             return try CanonicalRepository(root: fixture.root).withCoordinatedSnapshot { snapshot in
@@ -251,6 +291,9 @@ final class ProductionGenerationShadowSpikeTests: XCTestCase {
             try coordinator.requireReady()
             let repository = CanonicalRepository(root: fixture.root)
             let snapshot = try repository.snapshotDuringManagedGitTransition()
+            let productionStore = CanonicalGenerationStore(root: fixture.root)
+            do { _ = try productionStore.readStable() }
+            catch CanonicalGenerationError.pending { _ = try productionStore.reconcile(snapshot) }
             var shared = try record(fixture.root)
             if shared.phase == "pending" {
                 if snapshot.identity.rawValue == shared.snapshotIdentity {
@@ -439,6 +482,7 @@ final class ProductionGenerationShadowSpikeTests: XCTestCase {
         let fixture = Fixture(root: URL(fileURLWithPath: rootPath), indexRoot: URL(fileURLWithPath: indexRoot),
             documentID: EntityID(documentID), scopeID: EntityID(scopeID), initialIdentity: "")
         let witness = try XCTUnwrap(boot(fixture, rebuildIfStale: false))
+        let productionBefore = try CanonicalGenerationStore(root: fixture.root).readStable().generation
         try Data().write(to: URL(fileURLWithPath: ready))
         let deadline = Date().addingTimeInterval(15)
         while !FileManager.default.fileExists(atPath: proceed) && Date() < deadline {
@@ -446,7 +490,8 @@ final class ProductionGenerationShadowSpikeTests: XCTestCase {
         }
         XCTAssertTrue(FileManager.default.fileExists(atPath: proceed))
         let result = ["shadow": shadow(fixture, witness: witness).rawValue,
-                      "oracle": oracle(fixture).rawValue]
+                      "oracle": oracle(fixture).rawValue,
+                      "productionChanged": String(try CanonicalGenerationStore(root: fixture.root).readStable().generation != productionBefore)]
         try JSONSerialization.data(withJSONObject: result, options: [.sortedKeys])
             .write(to: URL(fileURLWithPath: resultPath))
     }
@@ -455,6 +500,8 @@ final class ProductionGenerationShadowSpikeTests: XCTestCase {
         for stage in ["beforePending", "afterPending", "duringShardApply", "afterCanonicalCommit", "afterFinalize"] {
             let f = try fixture()
             defer { try? FileManager.default.removeItem(at: f.root.deletingLastPathComponent()) }
+            let productionBefore = try CanonicalGenerationStore(root: f.root).readStable()
+            let productionWitness = try productionBoot(f)
             let marker = f.root.deletingLastPathComponent().appendingPathComponent("writer.stop")
             let attempt = f.root.deletingLastPathComponent().appendingPathComponent("reader.attempt")
             let acquired = f.root.deletingLastPathComponent().appendingPathComponent("reader.acquired")
@@ -487,12 +534,21 @@ final class ProductionGenerationShadowSpikeTests: XCTestCase {
             let snapshot = try CanonicalRepository(root: f.root).withCoordinatedSnapshot { $0 }
             XCTAssertEqual(snapshot.document.components[0].name, expectedNew ? "Beta" : "Alpha", stage)
             XCTAssertEqual(witness.snapshotIdentity, snapshot.identity.rawValue, stage)
+            let productionAfter = try CanonicalGenerationStore(root: f.root).readStable()
+            XCTAssertEqual(productionAfter.generation.lineage, productionBefore.generation.lineage, stage)
+            XCTAssertEqual(productionAfter.generation.value,
+                           productionBefore.generation.value + (expectedNew ? 1 : 0), stage)
+            XCTAssertEqual(productionAfter.snapshotIdentity, snapshot.identity, stage)
+            XCTAssertEqual(productionShadow(f, witness: productionWitness), expectedNew ? .stale : .knownCurrent, stage)
+            XCTAssertEqual(productionShadow(f, witness: try productionBoot(f)), .knownCurrent, stage)
         }
     }
 
     func testSecondProcessSaveAndShadowComparison() throws {
         let f = try fixture()
         defer { try? FileManager.default.removeItem(at: f.root.deletingLastPathComponent()) }
+        let productionBefore = try CanonicalGenerationStore(root: f.root).readStable()
+        let productionWitness = try productionBoot(f)
         let first = try XCTUnwrap(boot(f, rebuildIfStale: false))
         XCTAssertEqual(shadow(f, witness: first), .knownCurrent)
         XCTAssertEqual(oracle(f), .knownCurrent)
@@ -509,6 +565,11 @@ final class ProductionGenerationShadowSpikeTests: XCTestCase {
         XCTAssertNotEqual(second.indexGenerationID, first.indexGenerationID)
         XCTAssertEqual(shadow(f, witness: second), .knownCurrent)
         XCTAssertEqual(oracle(f, text: "Beta"), .knownCurrent)
+        let productionAfter = try CanonicalGenerationStore(root: f.root).readStable()
+        XCTAssertEqual(productionAfter.generation.value, productionBefore.generation.value + 1)
+        XCTAssertEqual(productionAfter.generation.lineage, productionBefore.generation.lineage)
+        XCTAssertEqual(productionShadow(f, witness: productionWitness), .stale)
+        XCTAssertEqual(productionShadow(f, witness: try productionBoot(f)), .knownCurrent)
     }
 
     func testNewReaderProcessBootsUnknownThenRebuildsFromCommittedSave() throws {
@@ -564,6 +625,7 @@ final class ProductionGenerationShadowSpikeTests: XCTestCase {
             let result = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: resultURL)) as? [String: String])
             XCTAssertEqual(result["shadow"], "stale")
             XCTAssertEqual(result["oracle"], "stale")
+            XCTAssertEqual(result["productionChanged"], "true")
         }
     }
 
@@ -571,21 +633,70 @@ final class ProductionGenerationShadowSpikeTests: XCTestCase {
         let f = try fixture()
         defer { try? FileManager.default.removeItem(at: f.root.deletingLastPathComponent()) }
         let first = try XCTUnwrap(boot(f, rebuildIfStale: false))
+        let productionFirst = try productionBoot(f)
         let snapshot = try CanonicalRepository(root: f.root).withCoordinatedSnapshot { $0 }
         let rebuilt = try rebuild(f, snapshot: snapshot, generation: first.generation)
         XCTAssertNotEqual(rebuilt.id.rawValue, first.indexGenerationID)
         XCTAssertEqual(try record(f.root).generation, first.generation)
         XCTAssertEqual(shadow(f, witness: first), .unknown)
+        XCTAssertEqual(productionShadow(f, witness: productionFirst), .unknown)
         let second = try XCTUnwrap(boot(f, rebuildIfStale: false))
+        let productionSecond = try productionBoot(f)
         XCTAssertEqual(second.snapshotIdentity, first.snapshotIdentity)
         XCTAssertEqual(shadow(f, witness: second), .knownCurrent)
+        XCTAssertEqual(productionShadow(f, witness: productionSecond), .knownCurrent)
         let file = f.root.appendingPathComponent("components/component_probe.json")
         let old = try String(contentsOf: file, encoding: .utf8)
         try old.replacingOccurrences(of: "Alpha", with: "External").write(to: file, atomically: true, encoding: .utf8)
         // Outside the coordinated writer contract, shared generation cannot
         // prove arbitrary working tree freshness. The production guard rejects.
         XCTAssertEqual(shadow(f, witness: second), .knownCurrent)
+        XCTAssertEqual(productionShadow(f, witness: productionSecond), .knownCurrent)
         XCTAssertEqual(oracle(f), .stale)
+    }
+
+    func testProductionRecordAndIndexMetadataKeepShadowUnknownUntilVerified() throws {
+        let f = try fixture()
+        defer { try? FileManager.default.removeItem(at: f.root.deletingLastPathComponent()) }
+        let first = try productionBoot(f)
+        XCTAssertEqual(productionShadow(f, witness: first), .knownCurrent)
+        let recordURL = f.root.appendingPathComponent(".hamii/canonical-generation.json")
+        let saved = try Data(contentsOf: recordURL)
+        try FileManager.default.removeItem(at: recordURL)
+        XCTAssertEqual(productionShadow(f, witness: first), .unknown)
+        try Data("broken".utf8).write(to: recordURL)
+        XCTAssertEqual(productionShadow(f, witness: first), .unknown)
+        try saved.write(to: recordURL)
+
+        let local = try index(f)
+        var db: OpaquePointer?
+        XCTAssertEqual(sqlite3_open(local.url.path, &db), SQLITE_OK)
+        defer { sqlite3_close(db) }
+        XCTAssertEqual(sqlite3_exec(db, "DELETE FROM metadata WHERE key='sourceCanonicalGeneration'", nil, nil, nil), SQLITE_OK)
+        XCTAssertEqual(productionShadow(f, witness: first), .unknown)
+        XCTAssertEqual(oracle(f), .stale)
+        let snapshot = try CanonicalRepository(root: f.root).withCoordinatedSnapshot { $0 }
+        _ = try rebuild(f, snapshot: snapshot, generation: try record(f.root).generation)
+        let second = try productionBoot(f)
+        XCTAssertEqual(productionShadow(f, witness: second), .knownCurrent)
+        let generation = try CanonicalGenerationStore(root: f.root).readStable().generation
+        let future = CanonicalGeneration(lineage: generation.lineage, value: generation.value + 1).serialized
+        XCTAssertEqual(sqlite3_exec(db,
+            "UPDATE metadata SET value='\(future)' WHERE key='sourceCanonicalGeneration'", nil, nil, nil), SQLITE_OK)
+        XCTAssertEqual(productionShadow(f, witness: second), .unknown)
+        // The current production oracle still relies on Snapshot/Git identity,
+        // and does not promote this shadow generation to a Query proof.
+        XCTAssertEqual(oracle(f), .knownCurrent)
+        _ = try rebuild(f, snapshot: snapshot, generation: try record(f.root).generation)
+        let third = try productionBoot(f)
+        let store = CanonicalGenerationStore(root: f.root)
+        let old = try store.readStable()
+        _ = try WorktreeCoordinator(root: f.root).withExclusive {
+            try store.beginPending(old: old, expectedNewIdentity: nil)
+        }
+        XCTAssertEqual(productionShadow(f, witness: third), .unknown)
+        _ = try WorktreeCoordinator(root: f.root).withExclusive { try store.reconcile(snapshot) }
+        XCTAssertEqual(productionShadow(f, witness: third), .knownCurrent)
     }
 
     func testMissingAndCorruptSharedRecordOrIndexBindingNeverAuthorizeShadowQuery() throws {
@@ -703,6 +814,8 @@ final class ProductionGenerationShadowSpikeTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: f.root.deletingLastPathComponent()) }
         let branch = try branchFixture(f)
         let first = try XCTUnwrap(boot(f, rebuildIfStale: false))
+        let productionFirst = try CanonicalGenerationStore(root: f.root).readStable()
+        let productionFirstWitness = try productionBoot(f)
         let revision = try CanonicalRepository(root: f.root).load().revision
         XCTAssertEqual(shadow(f, witness: first), .knownCurrent)
         try managedSwitch(f, branch: "feature", proposedIdentity: branch.featureIdentity)
@@ -710,11 +823,21 @@ final class ProductionGenerationShadowSpikeTests: XCTestCase {
         XCTAssertEqual(shadow(f, witness: first), .stale)
         XCTAssertEqual(oracle(f), .stale)
         let second = try XCTUnwrap(boot(f, rebuildIfStale: true))
+        let productionSecond = try CanonicalGenerationStore(root: f.root).readStable()
+        XCTAssertEqual(productionSecond.generation.value, productionFirst.generation.value + 1)
+        XCTAssertEqual(productionShadow(f, witness: productionFirstWitness), .stale)
+        let productionSecondWitness = try productionBoot(f)
         XCTAssertEqual(second.generation, first.generation + 1)
         XCTAssertEqual(second.snapshotIdentity, branch.featureIdentity)
         try managedSwitch(f, branch: branch.source, proposedIdentity: f.initialIdentity)
         XCTAssertEqual(shadow(f, witness: second), .stale)
         let third = try XCTUnwrap(boot(f, rebuildIfStale: true))
+        let productionThird = try CanonicalGenerationStore(root: f.root).readStable()
+        XCTAssertEqual(productionThird.generation.value, productionFirst.generation.value + 2)
+        XCTAssertEqual(productionThird.snapshotIdentity, productionFirst.snapshotIdentity)
+        XCTAssertEqual(productionShadow(f, witness: productionFirstWitness), .stale)
+        XCTAssertEqual(productionShadow(f, witness: productionSecondWitness), .stale)
+        XCTAssertEqual(productionShadow(f, witness: try productionBoot(f)), .knownCurrent)
         XCTAssertEqual(third.snapshotIdentity, first.snapshotIdentity)
         XCTAssertEqual(third.generation, first.generation + 2)
         XCTAssertEqual(shadow(f, witness: first), .stale)
@@ -723,23 +846,30 @@ final class ProductionGenerationShadowSpikeTests: XCTestCase {
         // A no-op managed switch has no Canonical transition.
         try managedSwitch(f, branch: branch.source, proposedIdentity: f.initialIdentity)
         XCTAssertEqual(try record(f.root).generation, third.generation)
+        XCTAssertEqual(try CanonicalGenerationStore(root: f.root).readStable(), productionThird)
     }
 
     func testRawGitSwitchBypassesSharedGenerationNegativeControl() throws {
         let f = try fixture()
         defer { try? FileManager.default.removeItem(at: f.root.deletingLastPathComponent()) }
         _ = try branchFixture(f)
+        let productionBefore = try CanonicalGenerationStore(root: f.root).readStable()
+        let productionWitness = try productionBoot(f)
         let old = try XCTUnwrap(boot(f, rebuildIfStale: false))
         try git(f.root, "switch", "-q", "feature")
+        XCTAssertEqual(try CanonicalGenerationStore(root: f.root).readStable(), productionBefore)
         XCTAssertEqual(try record(f.root).generation, old.generation)
         XCTAssertEqual(shadow(f, witness: old), .knownCurrent)
+        XCTAssertEqual(productionShadow(f, witness: productionWitness), .knownCurrent)
         XCTAssertEqual(oracle(f), .stale)
     }
 
     func testNoOpSemanticMutationDoesNotAdvanceSharedGeneration() throws {
         let f = try starterFixture()
         defer { try? FileManager.default.removeItem(at: f.root.deletingLastPathComponent()) }
+        let productionBefore = try CanonicalGenerationStore(root: f.root).readStable()
         let witness = try XCTUnwrap(boot(f, rebuildIfStale: false))
+        let productionWitness = try productionBoot(f)
         let repository = CanonicalRepository(root: f.root)
         let service = ProjectService(repository: repository)
         let observed = try service.observe()
@@ -751,8 +881,10 @@ final class ProductionGenerationShadowSpikeTests: XCTestCase {
         XCTAssertTrue(result.patches.isEmpty)
         XCTAssertEqual(result.revision, observed.document.revision)
         XCTAssertEqual(try record(f.root).generation, witness.generation)
+        XCTAssertEqual(try CanonicalGenerationStore(root: f.root).readStable(), productionBefore)
         XCTAssertEqual(try repository.withCoordinatedSnapshot { $0.identity.rawValue }, witness.snapshotIdentity)
         XCTAssertEqual(shadow(f, witness: witness), .knownCurrent)
+        XCTAssertEqual(productionShadow(f, witness: productionWitness), .knownCurrent)
         XCTAssertEqual(oracle(f), .knownCurrent)
     }
 
@@ -760,6 +892,8 @@ final class ProductionGenerationShadowSpikeTests: XCTestCase {
         for stage in ["switchPending", "switchApplied", "switchValidated"] {
             let f = try fixture()
             defer { try? FileManager.default.removeItem(at: f.root.deletingLastPathComponent()) }
+            let productionBefore = try CanonicalGenerationStore(root: f.root).readStable()
+            let productionWitness = try productionBoot(f)
             let branch = try branchFixture(f)
             let old = try XCTUnwrap(boot(f, rebuildIfStale: false))
             let marker = f.root.deletingLastPathComponent().appendingPathComponent("switch.stop")
@@ -782,6 +916,12 @@ final class ProductionGenerationShadowSpikeTests: XCTestCase {
             XCTAssertEqual(restored.snapshotIdentity, expectedNew ? branch.featureIdentity : f.initialIdentity, stage)
             XCTAssertEqual(shadow(f, witness: restored), .knownCurrent, stage)
             XCTAssertEqual(oracle(f, text: expectedNew ? "Feature" : "Alpha"), .knownCurrent, stage)
+            let productionAfter = try CanonicalGenerationStore(root: f.root).readStable()
+            XCTAssertEqual(productionAfter.generation.value,
+                           productionBefore.generation.value + (expectedNew ? 1 : 0), stage)
+            XCTAssertEqual(productionAfter.snapshotIdentity.rawValue, restored.snapshotIdentity, stage)
+            XCTAssertEqual(productionShadow(f, witness: productionWitness), expectedNew ? .stale : .knownCurrent, stage)
+            XCTAssertEqual(productionShadow(f, witness: try productionBoot(f)), .knownCurrent, stage)
         }
     }
 
@@ -858,6 +998,8 @@ final class ProductionGenerationShadowSpikeTests: XCTestCase {
     func testValidatedMergeShadowGenerationAndRecoveryStops() throws {
         for stage in ["mergePending", "mergeAfterCAS", "mergeBeforeIndex", "mergeBeforeRelease", "mergeReleased"] {
             let (f, sourceBranch) = try mergeFixture()
+            let productionBefore = try CanonicalGenerationStore(root: f.root).readStable()
+            let productionWitness = try productionBoot(f)
             defer {
                 let indexURL = LocalIndexLocation.url(projectRoot: f.root, documentID: f.documentID)
                 try? FileManager.default.removeItem(at: indexURL.deletingLastPathComponent())
@@ -883,6 +1025,12 @@ final class ProductionGenerationShadowSpikeTests: XCTestCase {
             XCTAssertEqual(restored.generation, expectedOld ? old.generation : old.generation + 1, stage)
             XCTAssertEqual(shadow(f, witness: restored), .knownCurrent, stage)
             XCTAssertEqual(oracle(f, text: expectedOld ? "Alpha" : "Feature"), .knownCurrent, stage)
+            let productionAfter = try CanonicalGenerationStore(root: f.root).readStable()
+            XCTAssertEqual(productionAfter.generation.value,
+                           productionBefore.generation.value + (expectedOld ? 0 : 1), stage)
+            XCTAssertEqual(productionAfter.snapshotIdentity.rawValue, restored.snapshotIdentity, stage)
+            XCTAssertEqual(productionShadow(f, witness: productionWitness), expectedOld ? .knownCurrent : .stale, stage)
+            XCTAssertEqual(productionShadow(f, witness: try productionBoot(f)), .knownCurrent, stage)
         }
     }
 
@@ -995,6 +1143,76 @@ final class ProductionGenerationShadowSpikeTests: XCTestCase {
             let snapshot = try CanonicalRepository(root: f.root).withCoordinatedSnapshot { $0 }
             stages["fullRebuild"] = distribution(try (0..<5).map { _ in
                 try milliseconds { _ = try rebuild(f, snapshot: snapshot, generation: stable.generation) }
+            })
+            report[name] = stages
+        }
+        let bytes = try JSONSerialization.data(withJSONObject: report, options: [.prettyPrinted, .sortedKeys])
+        try bytes.write(to: URL(fileURLWithPath: output))
+    }
+
+    func testMeasuredProductionGenerationShadowCost() throws {
+        guard let output = ProcessInfo.processInfo.environment["HAMII_PRODUCTION_GENERATION_BENCHMARK_RESULT"] else {
+            throw XCTSkip("Run with HAMII_PRODUCTION_GENERATION_BENCHMARK_RESULT for measurements")
+        }
+        func milliseconds(_ operation: () throws -> Void) throws -> Double {
+            let begin = ProcessInfo.processInfo.systemUptime
+            try operation()
+            return (ProcessInfo.processInfo.systemUptime - begin) * 1000
+        }
+        func distribution(_ values: [Double]) -> [String: Double] {
+            let sorted = values.sorted()
+            func quantile(_ value: Double) -> Double {
+                let index = max(0, Int(ceil(Double(sorted.count) * value)) - 1)
+                return Double(String(format: "%.3f", sorted[index]))!
+            }
+            return ["p50": quantile(0.50), "p95": quantile(0.95)]
+        }
+        var report: [String: [String: [String: Double]]] = [:]
+        for (name, create) in [("starter", starterFixture), ("1000-components", largeFixture)] {
+            let f = try create()
+            defer { try? FileManager.default.removeItem(at: f.root.deletingLastPathComponent()) }
+            let repository = CanonicalRepository(root: f.root)
+            let store = CanonicalGenerationStore(root: f.root)
+            let snapshot = try repository.withCoordinatedSnapshot { $0 }
+            let source = try store.requireMatchingStable(snapshot).generation
+            let local = try index(f)
+            let calculator = GitCanonicalRevisionCalculator()
+            _ = try local.rebuild(from: snapshot, canonicalRevision: calculator.current(at: f.root),
+                                  sourceCanonicalGeneration: source)
+            let candidateWitness = try productionBoot(f)
+            var stages: [String: [String: Double]] = [:]
+            stages["coordinatedGenerationRead"] = distribution(try (0..<40).map { _ in
+                try milliseconds {
+                    _ = try WorktreeCoordinator(root: f.root).withExclusive { try store.readStable() }
+                }
+            })
+            stages["productionShadowVerdict"] = distribution(try (0..<40).map { _ in
+                try milliseconds { XCTAssertEqual(productionShadow(f, witness: candidateWitness), .knownCurrent) }
+            })
+            stages["snapshotAcquisition"] = distribution(try (0..<20).map { _ in
+                try milliseconds { _ = try repository.withCoordinatedSnapshot { $0.identity } }
+            })
+            stages["revisionCalculation"] = distribution(try (0..<20).map { _ in
+                try milliseconds { _ = try calculator.current(at: f.root) }
+            })
+            stages["productionOracleQuery"] = distribution(try (0..<20).map { _ in
+                try milliseconds { XCTAssertEqual(oracle(f, text: name == "starter" ? "" : "Component"), .knownCurrent) }
+            })
+            stages["verifiedBindingCheck"] = distribution(try (0..<5).map { _ in
+                try milliseconds {
+                    try repository.withCoordinatedSnapshot { current in
+                        let stable = try store.requireMatchingStable(current)
+                        let indexed = try local.assertCurrent(documentID: current.document.id,
+                            revision: current.document.revision, expectedSourceIdentity: current.identity)
+                        XCTAssertEqual(indexed.sourceCanonicalGeneration, stable.generation)
+                    }
+                }
+            })
+            stages["fullRebuildFromPreacquiredSnapshot"] = distribution(try (0..<5).map { _ in
+                try milliseconds {
+                    _ = try local.rebuild(from: snapshot, canonicalRevision: calculator.current(at: f.root),
+                                          sourceCanonicalGeneration: source)
+                }
             })
             report[name] = stages
         }

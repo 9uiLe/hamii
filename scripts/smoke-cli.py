@@ -83,11 +83,12 @@ with tempfile.TemporaryDirectory(prefix="hamii-cli-") as directory:
     tracked_local = subprocess.run(["git", "-C", directory, "ls-files", ".hamii"], check=True, capture_output=True, text=True)
     assert not tracked_local.stdout.strip()
     source_branch = subprocess.run(["git", "-C", directory, "branch", "--show-current"], check=True, capture_output=True, text=True).stdout.strip()
-    subprocess.run(["git", "-C", directory, "switch", "-qc", "alternate"], check=True, capture_output=True)
+    subprocess.run(["git", "-C", directory, "branch", "alternate"], check=True, capture_output=True)
+    state[0] = run("git", "switch", "alternate", "--state", state[0])["statePrecondition"]["rawValue"]
     mutate("page", "create", "Alternate")
     subprocess.run(["git", "-C", directory, "add", "-A"], check=True, capture_output=True)
     subprocess.run(["git", "-C", directory, "-c", "user.name=Smoke", "-c", "user.email=smoke@example.invalid", "commit", "-qm", "alternate"], check=True, capture_output=True)
-    subprocess.run(["git", "-C", directory, "switch", "-q", source_branch], check=True, capture_output=True)
+    state[0] = run("git", "switch", source_branch, "--state", state[0])["statePrecondition"]["rawValue"]
     source_state = run("inspect")["statePrecondition"]["rawValue"]
     switched = run("git", "switch", "alternate", "--state", source_state)
     assert switched["document"]["revision"] == 8

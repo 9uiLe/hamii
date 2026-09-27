@@ -179,11 +179,15 @@ final class ArchitectureTests: XCTestCase {
         let service = ProjectService(repository: repository)
         let store = CanonicalBlobStore(root: path)
         let data = Data("image bytes".utf8)
+        let generationBefore = try CanonicalGenerationStore(root: path).readStable().generation
         let initialState = try service.observe().statePrecondition
         XCTAssertThrowsError(try service.importRepositoryAsset(data, name: "Denied", scopeID: scopeID, mediaType: "image/png", expectedState: initialState, author: .agent, agent: AgentHarness(profileName: "reviewer", maximumMutations: 0), blobs: store))
+        XCTAssertEqual(try CanonicalGenerationStore(root: path).readStable().generation, generationBefore)
         XCTAssertFalse(FileManager.default.fileExists(atPath: path.appendingPathComponent("assets/blobs").path))
         let first = try service.importRepositoryAsset(data, name: "Avatar", scopeID: scopeID, mediaType: "image/png", expectedState: initialState, author: .human, blobs: store)
+        XCTAssertEqual(try CanonicalGenerationStore(root: path).readStable().generation.value, generationBefore.value + 1)
         let second = try service.importRepositoryAsset(data, name: "Avatar Copy", scopeID: scopeID, mediaType: "image/png", expectedState: try XCTUnwrap(first.statePrecondition), author: .human, blobs: store)
+        XCTAssertEqual(try CanonicalGenerationStore(root: path).readStable().generation.value, generationBefore.value + 2)
         XCTAssertEqual(first.revision, 1)
         XCTAssertEqual(second.revision, 2)
         let assets = try repository.load().assets

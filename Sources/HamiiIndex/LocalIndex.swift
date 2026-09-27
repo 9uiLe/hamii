@@ -181,6 +181,20 @@ public final class LocalIndex {
                                          sourceCanonicalGeneration: sourceGeneration)
     }
 
+    // Internal evidence probe. This reads one SQLite generation atomically but
+    // performs no Canonical freshness check and must not authorize a Query.
+    func shadowPublishedGeneration() throws -> IndexGenerationDescriptor {
+        try execute("BEGIN DEFERRED TRANSACTION")
+        do {
+            let result = try readGeneration()
+            try execute("COMMIT")
+            return result
+        } catch {
+            try? execute("ROLLBACK")
+            throw error
+        }
+    }
+
     private func metadata(_ key: String) throws -> String? {
         let statement = try prepare("SELECT value FROM metadata WHERE key = ?")
         defer { sqlite3_finalize(statement) }

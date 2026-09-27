@@ -2,7 +2,9 @@ import Foundation
 import HamiiCore
 
 /// One complete published materialized view. Its ID identifies the build;
-/// sourceCanonicalIdentity identifies the contents used to derive its rows.
+/// sourceCanonicalIdentity identifies the contents used to derive its rows;
+/// sourceCanonicalGeneration records the coordinated writer transition when
+/// one is available. Neither field alone authorizes a production Query.
 public struct IndexGenerationID: Hashable {
     public let rawValue: String
 
