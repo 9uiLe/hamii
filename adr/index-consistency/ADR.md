@@ -26,6 +26,7 @@ Canonical Data が唯一の正本。`CanonicalSnapshot` は exact contents、sou
 
 ## Required Evidence
 
+- [Production Canonical writer coverage](spikes/production-writer-coverage/SPIKE.md): 初回 create、commit / save、managed switch / recovery、validated merge publish / recovery の正式 writer と、Index rebuild / Query / merge check / semantic no-op の非 writer を source audit で分類した。停止・再起動 correctness は後続の production 検証が必要。
 - [Index drift and scale](spikes/index-drift/SPIKE.md): revision-only 判定の反例と 1k/10k/50k scale を確認。
 - [Consistent CanonicalSnapshot](spikes/consistent-canonical-snapshot/SPIKE.md): hamii-owned lock 下の reader/save 境界と pinned Git tree の保証範囲を確認。非協調 writer を含む current working tree の coherent snapshot は未解決。
 - [Safe freshness fast path](spikes/safe-freshness-fast-path/SPIKE.md): manifest + metadata shortcut の false negative を確認。`certainly current` の安全な一般条件と slow verifier は未確定。
