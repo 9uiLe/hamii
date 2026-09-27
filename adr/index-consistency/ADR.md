@@ -33,13 +33,27 @@ Stale / missing Index を手動 full rebuild、自動 full rebuild、incremental
 
 ## Current Hypothesis
 
-**未確定:** Option 2 が coordinated writer domain 内の long-lived process では有力。Startup は `Unknown`、slow verification は Canonical recovery / Ready gate / coherent Snapshot / Stable generation / Index descriptor / Git oracle を一つの lock 内で照合する。Witness は worktree・Document・Index namespace に scope した process-local value とする。Warm Query は同じ lock で generation と descriptor を比較し、rows を読み終えてから unlock する。Generation 変更は `Stale`、同じ Canonical state の Index rebuild は `Unknown` として再検証する。
+**Decision 前の仮説は採用済み。** Option 2 の coordinated writer domain 内の Safe Fast Path を採用する。具体的な contract は次の Decision に記録する。Production 実装で `IndexQuerySession` 相当の process-local owner を設けることは実装仮説であり、型名を仕様として固定しない。
 
 **Confirmed within tested conditions:** Process-local generation 単独は外部編集・実 branch switch・別 Repository instance save を見落とす。Raw external writer は shared generation を迂回する。P4 の production-object startup witness と P5 の別 OS process save / Index rebuild race では、検証した coordinated interleaving に false current や verdict→row-read TOCTOU は生じなかった。これらは production fast Query の完成証明ではない。
 
+## Decision
+
+**Safe Fast Path は coordinated writer-domain guarantee の内側だけで有効とする。** これは raw Git、外部 editor / script / AI による非協調書込に対する鮮度証明ではない。外部変更 signal は witness を `Unknown` へ失効させることはできるが、signal が無いことを current の証拠にしない。
+
+各 process / Query session は `Unknown` から始まる。Positive witness は disk に保存しない。Process restart 後に旧 witness を再利用しない。Witness は worktree、Document、published Index namespace に scope し、CanonicalGeneration、CanonicalSnapshotIdentity、IndexGenerationID を別 field として保持する。TTL は correctness mechanism としない。
+
+`Unknown` から current を証明する唯一の経路は、一つの `WorktreeCoordinator` lock 内での slow verification とする。Canonical transaction recovery、Ready gate、coherent CanonicalSnapshot、対応する Stable CanonicalGeneration、published Index descriptor の source identity / source generation / generation ID、および現行 Git freshness oracle を照合する。検証が完了して初めて process-local witness を発行できる。Slow verification が失敗すれば rows を返さない。
+
+Warm Query は同じ worktree lock 内で Ready gate、Stable CanonicalGeneration、現在公開された Index descriptor を witness と照合する。Generation、Snapshot identity、IndexGenerationID、Index source generation / identity、Document / namespace がすべて一致した場合のみ `KnownCurrent` とし、**その lock を保持したまま同じ公開 SQLite generation の rows を読み終える**。Verdict と row read の間に unlock しない。Atomic rename 前に開いた長寿命 SQLite connection を新しい公開世代として再利用しない。
+
+CanonicalGeneration が変わり、旧 Index の source generation が current と一致しなければ `Stale → staleIndex`。CanonicalGeneration が同じでも IndexGenerationID が変われば `Unknown → slow verification` とする。Slow verification が新 Index と同じ Canonical state を確認した場合だけ新 witness を発行する。Pending、missing / corrupt generation、missing / corrupt / mismatched Index descriptor、future source generation、unverifiable Git oracle は `KnownCurrent` にしない。Missing generation の verified bootstrap だけでは旧 Index を current にしない。Corrupt generation を推測で repair しない。
+
+Stale / missing Index を自動で再構築するか、manual full rebuild を求めるか、incremental reindex を行うかは [Index Recovery Strategy ADR](../index-recovery-strategy/ADR.md) が決める。Power-cut durability は [Canonical Power Loss ADR](../canonical-power-loss-durability/ADR.md) が決める。Current one-shot CLI は毎回 `Unknown` から slow path を通るため、この Decision は CLI の単発 Query latency を改善するという主張ではない。
+
 ## Unknowns
 
-P5 Verify の結果、production `IndexQuerySession` の設計と lifecycle、同一 worktree / Document / Index namespace への witness scope、published DB の atomic rename 後に古い SQLite connection を再利用しない方法、reader-reader / reader-writer contention、実 production Query の cold / warm cost。CanonicalRevision の具体的計算 algorithm を architecture requirement として固定しない。非協調 writer の許可境界は External Git Write ADR、power-cut durability は [Canonical Power Loss ADR](../canonical-power-loss-durability/ADR.md) が所有する。
+残る内容は implementation / validation work である。Production Query session、witness scope、atomic rename 後の stale SQLite handle 回帰、reader-reader / reader-writer contention、実 Query の cold / warm cost、multiple worktree / Document isolation を検証する。CanonicalRevision の具体的計算 algorithm を architecture requirement として固定しない。非協調 writer の許可境界は External Git Write ADR、power-cut durability は Canonical Power Loss ADR が所有する。
 
 ## Required Evidence
 
@@ -56,8 +70,8 @@ Recovery の Evidence は [Index Recovery Strategy ADR](../index-recovery-strate
 
 ## Decision Criteria
 
-P4 GitHub Actions Verify と P5 Verify が成功し、startup positive witness、coordinated writer / Index rebuild の失効、fast verdict から SQLite row read 完了までの同一 lock、missing / corrupt / pending での拒否が Evidence で成立したら判断する。Decision commit は Spike Evidence commit と分ける。Production 実装では stale SQLite handle、multiple worktrees / Documents、cold / warm performance を regression / benchmark として検証し、完了まで ADR を削除しない。
+P4 Verify `36323844003` と P5 Verify `36325567176` は成功した。Startup positive witness、coordinated writer / Index rebuild の失効、fast verdict から SQLite row read 完了までの同一 lock、missing / corrupt / pending での拒否は、P4 Evidence `8bd8381` と P5 Evidence `067934e` の tested conditions で成立したため、上記 Decision を採用した。Production 実装では stale SQLite handle、multiple worktrees / Documents、cold / warm performance、reader contention を regression / benchmark として検証し、完了まで ADR を削除しない。
 
 ## Status
 
-Spike Required
+Implementation Required
