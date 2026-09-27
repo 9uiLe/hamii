@@ -37,12 +37,16 @@ Future / mixed Index の検索結果、旧 client token の再受理、未検証
 
 ## Result
 
-未実施。`git merge check` は candidate validation と一時 Index rebuild のみ検証済みで、publication の Evidence ではない。
+**Measured / Confirmed for the tested interleavings:** `artifacts/probe.py` は disposable Git repository と実 SQLite Index を使い、valid candidate commit を source branch へ fast-forward する試作 protocol を 4 回実行した。各回、別 OS process の writer を `pending`、`gitUpdated`、`indexPublished`、`gateReleased` の直後に SIGKILL した。Reader は lock attempt を記録し、writer 生存中に取得できず、SIGKILL 後に取得した。最初の 3 地点では production CLI query が `transitionPending` を返した。`gateReleased` では query が current を返した。試作 recovery は source HEAD が旧または candidate commit の既知値であることを確認し、新 HEAD の場合は source / candidate の Canonical JSON identity を比較して candidate Index を source namespace に置いた後に gate を解除した。4 ケースすべてで recovery 後の query は current、旧 client token は conflict、other branch HEAD は保持された。生データは [result.json](artifacts/result.json)。
+
+**Inferred:** lock・pending gate・validated candidate・source と一致する Index の組み合わせは、検証した phase 間停止に対する in-place publication 候補を支持する。これは production protocol の成立証明ではない。
+
+**Unknown / not measured:** SIGKILL を Git worktree update または SQLite commit の途中に注入していない。`IndexGenerationID` と production CanonicalGeneration の結合はない。SQLite file copy は試作用で、公開済み DB reader との全 interleaving、cross-volume rename、fsync / power loss は未検証。Performance p50 / p95 と large-project scaling は測っていない。非協調 writer は保証外。
 
 ## Conclusion
 
-方式は未決定。Result 取得後に ADR の Decision Criteria と照合する。
+In-place fast-forward と pending gate は phase 間 SIGKILL の 4 ケースで fail-closed を保った。Git 更新途中、Index generation の atomic publish、production recovery、代替方式との比較が残るため方式は未決定。ADR は `Spike Required` のまま維持する。
 
 ## Artifacts
 
-実測時にこの Spike の `artifacts/` に停止地点と生データを保存する。現時点で artifact はない。
+[Probe](artifacts/probe.py)、[Result](artifacts/result.json)。数値を production performance として扱わない。

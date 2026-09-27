@@ -35,7 +35,7 @@ Git ref と worktree 更新の停止後状態、candidate commit の保持、Ind
 
 ## Required Evidence
 
-- [Publication stop matrix](spikes/publication-stop-matrix/SPIKE.md): 実 Git worktree と SQLite Index を使い、候補方式の publication 各段階を別 OS process で停止し、再起動時の gate・recovery・query・client token を検証する。
+- [Publication stop matrix](spikes/publication-stop-matrix/SPIKE.md): 実 Git worktree と SQLite Index の in-place fast-forward 試作で、4 つの phase 間 SIGKILL 後に gate・recovery・query・client token を検証した。Git / SQLite 更新処理中の停止と production generation binding、代替方式との比較は未完了。
 - 現行の [semantic merge result](../git-external-write-coordination/spikes/concurrent-worktree-merge/SPIKE.md) と `scripts/smoke-merge-candidate.py` は candidate validation の Evidence。Publication 成功の Evidence ではない。
 
 ## Decision Criteria

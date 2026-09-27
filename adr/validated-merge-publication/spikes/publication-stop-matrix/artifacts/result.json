@@ -1,0 +1,50 @@
+{
+  "cases": [
+    {
+      "stage": "pending",
+      "readerLockAttempted": true,
+      "readerBlockedOnLiveWriterLock": true,
+      "readerAcquiredAfterSIGKILL": true,
+      "readerAfterSIGKILL": "transitionPending",
+      "recoveredHead": "old",
+      "queryAfterRecovery": "current",
+      "oldClientRejected": true,
+      "otherBranchPreserved": true
+    },
+    {
+      "stage": "gitUpdated",
+      "readerLockAttempted": true,
+      "readerBlockedOnLiveWriterLock": true,
+      "readerAcquiredAfterSIGKILL": true,
+      "readerAfterSIGKILL": "transitionPending",
+      "recoveredHead": "candidate",
+      "queryAfterRecovery": "current",
+      "oldClientRejected": true,
+      "otherBranchPreserved": true
+    },
+    {
+      "stage": "indexPublished",
+      "readerLockAttempted": true,
+      "readerBlockedOnLiveWriterLock": true,
+      "readerAcquiredAfterSIGKILL": true,
+      "readerAfterSIGKILL": "transitionPending",
+      "recoveredHead": "candidate",
+      "queryAfterRecovery": "current",
+      "oldClientRejected": true,
+      "otherBranchPreserved": true
+    },
+    {
+      "stage": "gateReleased",
+      "readerLockAttempted": true,
+      "readerBlockedOnLiveWriterLock": true,
+      "readerAcquiredAfterSIGKILL": true,
+      "readerAfterSIGKILL": "current",
+      "recoveredHead": "candidate",
+      "queryAfterRecovery": "current",
+      "oldClientRejected": true,
+      "otherBranchPreserved": true
+    }
+  ],
+  "scope": "Disposable Git worktrees; prototype pending marker and SQLite file copy; SIGKILL between phases, not inside Git or SQLite",
+  "limits": "No production IndexGenerationID, no atomic Git multi-file snapshot proof, no power-loss injection, no publication performance measurement"
+}
