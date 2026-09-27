@@ -24,7 +24,7 @@ public enum CanonicalError: Error, CustomStringConvertible {
         case .transactionConflict(let path): return "Canonical save conflicts with an external edit: \(path)"
         case .transactionCorrupt(let detail): return "Canonical save journal is invalid: \(detail)"
         case .invalidClientEpoch: return "Client observation epoch is invalid"
-        case .managedGitPending: return "Managed Git transition is pending; run hamii git recover"
+        case .managedGitPending: return "Worktree transition is pending; recovery is required"
         }
     }
 }

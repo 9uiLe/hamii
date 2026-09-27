@@ -96,6 +96,7 @@ public final class ManagedGit {
     public func recover() throws -> ProjectObservation {
         try coordinator.withExclusive {
             try requireWorktreeRoot()
+            guard !coordinator.mergePublicationPending() else { throw CanonicalError.managedGitPending }
             guard let pending = try coordinator.pendingGitTransition() else {
                 return try repository.observeDuringManagedGitTransition()
             }

@@ -31,6 +31,7 @@ public struct WorktreeCoordinator {
 
     var epochURL: URL { root.appendingPathComponent(".hamii/client-observation-epoch") }
     private var transitionURL: URL { root.appendingPathComponent(".hamii/managed-git-transition.json") }
+    var mergePublicationURL: URL { root.appendingPathComponent(".hamii/merge-publication.pending.json") }
 
     // These methods are called only while withExclusive holds the lock.
     func clientEpoch() throws -> String {
@@ -45,9 +46,14 @@ public struct WorktreeCoordinator {
     }
 
     func requireReady() throws {
-        guard !FileManager.default.fileExists(atPath: transitionURL.path) else {
+        guard !FileManager.default.fileExists(atPath: transitionURL.path),
+              !mergePublicationPending() else {
             throw CanonicalError.managedGitPending
         }
+    }
+
+    func mergePublicationPending() -> Bool {
+        FileManager.default.fileExists(atPath: mergePublicationURL.path)
     }
 
     func pendingGitTransition() throws -> ManagedGitTransition? {

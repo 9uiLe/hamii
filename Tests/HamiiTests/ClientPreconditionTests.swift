@@ -150,6 +150,28 @@ final class ClientPreconditionTests: XCTestCase {
         XCTAssertNotEqual(beforeInvalid.statePrecondition, afterInvalid.statePrecondition)
     }
 
+    func testMergePublicationPendingGateRejectsNormalAccessAndSwitchRecovery() throws {
+        let root = temporaryRoot()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let repository = CanonicalRepository(root: root)
+        _ = try repository.create(name: "Pending publication")
+        try Data(".hamii/\n".utf8).write(to: root.appendingPathComponent(".gitignore"))
+        try git(root, "init", "-q")
+        try commit(root, "baseline")
+        let state = try repository.observe().statePrecondition
+        let gate = root.appendingPathComponent(".hamii/merge-publication.pending.json")
+        try Data("{\"phase\":\"Pending\"}".utf8).write(to: gate, options: .atomic)
+        XCTAssertThrowsError(try repository.observe()) { error in
+            guard case CanonicalError.managedGitPending = error else { return XCTFail("Wrong error: \(error)") }
+        }
+        XCTAssertThrowsError(try repository.withCoordinatedIdentity { _, _ in true })
+        XCTAssertThrowsError(try ProjectService(repository: repository).mutate(.createPage(name: "Blocked"), expectedState: state, author: .human))
+        XCTAssertThrowsError(try ManagedGit(root: root).recover()) { error in
+            guard case CanonicalError.managedGitPending = error else { return XCTFail("Wrong error: \(error)") }
+        }
+        XCTAssertTrue(FileManager.default.fileExists(atPath: gate.path))
+    }
+
     private func temporaryRoot() -> URL {
         FileManager.default.temporaryDirectory.appendingPathComponent("hamii-client-test-\(UUID().uuidString)", isDirectory: true)
     }
