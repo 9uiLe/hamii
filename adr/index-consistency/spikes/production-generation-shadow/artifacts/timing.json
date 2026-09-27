@@ -1,0 +1,99 @@
+{
+  "environment": {
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "architecture": "arm64",
+    "swift": "6.4",
+    "date": "2026-09-27"
+  },
+  "method": "In-process xctest, monotonic uptime, nearest-rank p50/p95; 40 steady-state iterations, 20 Git/snapshot iterations, 5 boot/rebuild iterations per fixture. Values are milliseconds. Shadow is test-only and does not authorize production Query.",
+  "fixtures": {
+    "starter": "Copy of Samples/Starter in a new Git repository",
+    "1000-components": "Generated tracked Git repository with 1000 component shards"
+  },
+  "results": {
+    "1000-components": {
+      "bootVerification": {
+        "p50": 985.906,
+        "p95": 995.97
+      },
+      "fullRebuild": {
+        "p50": 368.688,
+        "p95": 374.234
+      },
+      "generationPersistence": {
+        "p50": 0.386,
+        "p95": 0.487
+      },
+      "lock": {
+        "p50": 0.067,
+        "p95": 0.078
+      },
+      "lockAndGenerationRead": {
+        "p50": 0.112,
+        "p95": 0.273
+      },
+      "productionOracle": {
+        "p50": 625.111,
+        "p95": 637.307
+      },
+      "revisionCalculation": {
+        "p50": 353.573,
+        "p95": 374.929
+      },
+      "shadowVerdict": {
+        "p50": 1.136,
+        "p95": 1.326
+      },
+      "snapshotAcquisition": {
+        "p50": 271.071,
+        "p95": 287.86
+      },
+      "sqliteMetadataRead": {
+        "p50": 0.31,
+        "p95": 0.371
+      }
+    },
+    "starter": {
+      "bootVerification": {
+        "p50": 724.844,
+        "p95": 733.401
+      },
+      "fullRebuild": {
+        "p50": 358.274,
+        "p95": 371.502
+      },
+      "generationPersistence": {
+        "p50": 0.656,
+        "p95": 0.82
+      },
+      "lock": {
+        "p50": 0.201,
+        "p95": 0.465
+      },
+      "lockAndGenerationRead": {
+        "p50": 0.117,
+        "p95": 0.158
+      },
+      "productionOracle": {
+        "p50": 358.212,
+        "p95": 370.949
+      },
+      "revisionCalculation": {
+        "p50": 352.865,
+        "p95": 366.571
+      },
+      "shadowVerdict": {
+        "p50": 1.092,
+        "p95": 1.394
+      },
+      "snapshotAcquisition": {
+        "p50": 2.224,
+        "p95": 2.627
+      },
+      "sqliteMetadataRead": {
+        "p50": 0.429,
+        "p95": 0.503
+      }
+    }
+  }
+}
