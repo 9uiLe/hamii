@@ -1,0 +1,199 @@
+{
+  "git": "/usr/bin/git",
+  "version": "git version 2.54.0 (Apple Git-157)",
+  "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+  "states": {
+    "clean": {
+      "status": {
+        "args": [
+          "status",
+          "--porcelain=v2",
+          "--branch",
+          "-z",
+          "--untracked-files=all",
+          "--ignored=matching",
+          "--",
+          "hamii.json",
+          ":(glob)components/*.json"
+        ],
+        "exit": 0,
+        "stdout": "# branch.oid d8693dad54ea3d4449bc14714cad70f5c3f797d6\\0# branch.head main\\0",
+        "stderr": ""
+      },
+      "ls_files_flags": {
+        "args": [
+          "ls-files",
+          "-v",
+          "-z",
+          "--",
+          "hamii.json",
+          ":(glob)components/*.json"
+        ],
+        "exit": 0,
+        "stdout": "H components/a.json\\0H hamii.json\\0",
+        "stderr": ""
+      },
+      "check_attr_filter": {
+        "args": [
+          "check-attr",
+          "-z",
+          "--stdin",
+          "filter"
+        ],
+        "exit": 0,
+        "stdout": "components/a.json\\0filter\\0unspecified\\0hamii.json\\0filter\\0unspecified\\0",
+        "stderr": ""
+      },
+      "ls_files_categories": {
+        "args": [
+          "ls-files",
+          "-v",
+          "-c",
+          "-m",
+          "-d",
+          "-o",
+          "--exclude-standard",
+          "--",
+          "hamii.json",
+          ":(glob)components/*.json"
+        ],
+        "exit": 0,
+        "stdout": "H components/a.json\nH hamii.json\n",
+        "stderr": ""
+      },
+      "ls_files_eol": {
+        "args": [
+          "ls-files",
+          "-v",
+          "--eol",
+          "--",
+          "hamii.json",
+          ":(glob)components/*.json"
+        ],
+        "exit": 0,
+        "stdout": "H i/lf    w/lf    attr/                 \tcomponents/a.json\nH i/lf    w/lf    attr/                 \thamii.json\n",
+        "stderr": ""
+      },
+      "ls_files_attr_format": {
+        "args": [
+          "ls-files",
+          "--format=%(attr:filter)",
+          "--",
+          "hamii.json",
+          ":(glob)components/*.json"
+        ],
+        "exit": 128,
+        "stdout": "",
+        "stderr": "fatal: bad ls-files format: %(attr:filter)\n"
+      }
+    },
+    "hidden_flag": {
+      "status": {
+        "args": [
+          "status",
+          "--porcelain=v2",
+          "--branch",
+          "-z",
+          "--untracked-files=all",
+          "--ignored=matching",
+          "--",
+          "hamii.json",
+          ":(glob)components/*.json"
+        ],
+        "exit": 0,
+        "stdout": "# branch.oid d8693dad54ea3d4449bc14714cad70f5c3f797d6\\0# branch.head main\\0",
+        "stderr": ""
+      },
+      "ls_files_flags": {
+        "args": [
+          "ls-files",
+          "-v",
+          "-z",
+          "--",
+          "hamii.json",
+          ":(glob)components/*.json"
+        ],
+        "exit": 0,
+        "stdout": "h components/a.json\\0H hamii.json\\0",
+        "stderr": ""
+      }
+    },
+    "active_filter": {
+      "status": {
+        "args": [
+          "status",
+          "--porcelain=v2",
+          "--branch",
+          "-z",
+          "--untracked-files=all",
+          "--ignored=matching",
+          "--",
+          "hamii.json",
+          ":(glob)components/*.json"
+        ],
+        "exit": 0,
+        "stdout": "# branch.oid d8693dad54ea3d4449bc14714cad70f5c3f797d6\\0# branch.head main\\0",
+        "stderr": ""
+      },
+      "check_attr_filter": {
+        "args": [
+          "check-attr",
+          "filter",
+          "--",
+          "components/a.json"
+        ],
+        "exit": 0,
+        "stdout": "components/a.json: filter: hamii-probe\n",
+        "stderr": ""
+      },
+      "ls_files_eol": {
+        "args": [
+          "ls-files",
+          "-v",
+          "--eol",
+          "--",
+          "hamii.json",
+          ":(glob)components/*.json"
+        ],
+        "exit": 0,
+        "stdout": "H i/lf    w/lf    attr/                 \tcomponents/a.json\nH i/lf    w/lf    attr/                 \thamii.json\n",
+        "stderr": ""
+      }
+    },
+    "mixed_changes": {
+      "status": {
+        "args": [
+          "status",
+          "--porcelain=v2",
+          "--branch",
+          "-z",
+          "--untracked-files=all",
+          "--ignored=matching",
+          "--",
+          "hamii.json",
+          ":(glob)components/*.json"
+        ],
+        "exit": 0,
+        "stdout": "# branch.oid d8693dad54ea3d4449bc14714cad70f5c3f797d6\\0# branch.head main\\01 .M N... 100644 100644 100644 3614ab9c0cd212ec0ca5c26cc64cd14f5a3e47b1 3614ab9c0cd212ec0ca5c26cc64cd14f5a3e47b1 components/a.json\\02 R. N... 100644 100644 100644 276a48a711c4511698eb08f9b95a250ef2c0c9ae 276a48a711c4511698eb08f9b95a250ef2c0c9ae R100 components/moved.json\\0hamii.json\\0? components/b.json\\0",
+        "stderr": ""
+      },
+      "ls_files_categories": {
+        "args": [
+          "ls-files",
+          "-v",
+          "-c",
+          "-m",
+          "-d",
+          "-o",
+          "--exclude-standard",
+          "--",
+          "hamii.json",
+          ":(glob)components/*.json"
+        ],
+        "exit": 0,
+        "stdout": "? components/b.json\nH components/a.json\nC components/a.json\nH components/moved.json\n",
+        "stderr": ""
+      }
+    }
+  }
+}
