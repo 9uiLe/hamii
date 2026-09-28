@@ -1,0 +1,367 @@
+{
+  "schema": "minimal-ir-corpus-matrix/v1",
+  "scope": "Conceptual IR lowering classification; no target runtime or generator execution was measured.",
+  "frameworks": [
+    "swiftUI",
+    "uiKit",
+    "jetpackCompose",
+    "composeMultiplatform"
+  ],
+  "fixtures": [
+    "portable",
+    "navigation",
+    "component",
+    "divergent"
+  ],
+  "rows": [
+    {
+      "fixture": "portable",
+      "semantic": "vertical stack and ordered children",
+      "baselineRepresentation": "typedExact",
+      "candidateRepresentation": "typedPayload",
+      "portable": true,
+      "targetClassification": {
+        "swiftUI": "portable",
+        "uiKit": "portable",
+        "jetpackCompose": "portable",
+        "composeMultiplatform": "portable"
+      },
+      "loss": {
+        "swiftUI": "none",
+        "uiKit": "none",
+        "jetpackCompose": "none",
+        "composeMultiplatform": "none"
+      },
+      "notes": "Node payload owns Stack axis and ordered children."
+    },
+    {
+      "fixture": "portable",
+      "semantic": "scroll content",
+      "baselineRepresentation": "typedExact",
+      "candidateRepresentation": "typedPayload",
+      "portable": true,
+      "targetClassification": {
+        "swiftUI": "portable",
+        "uiKit": "portable",
+        "jetpackCompose": "portable",
+        "composeMultiplatform": "portable"
+      },
+      "loss": {
+        "swiftUI": "none",
+        "uiKit": "none",
+        "jetpackCompose": "none",
+        "composeMultiplatform": "none"
+      },
+      "notes": "Candidate has one typed content root; current Scroll accepts arbitrary children."
+    },
+    {
+      "fixture": "portable",
+      "semantic": "text binding with fallback",
+      "baselineRepresentation": "typedExact",
+      "candidateRepresentation": "typedPayload",
+      "portable": true,
+      "targetClassification": {
+        "swiftUI": "externalIntegrationRequired",
+        "uiKit": "externalIntegrationRequired",
+        "jetpackCompose": "externalIntegrationRequired",
+        "composeMultiplatform": "externalIntegrationRequired"
+      },
+      "loss": {
+        "swiftUI": "externalIntegrationRequired",
+        "uiKit": "externalIntegrationRequired",
+        "jetpackCompose": "externalIntegrationRequired",
+        "composeMultiplatform": "externalIntegrationRequired"
+      },
+      "notes": "IR stores binding; production data source is external integration."
+    },
+    {
+      "fixture": "portable",
+      "semantic": "system image asset reference",
+      "baselineRepresentation": "typedExact",
+      "candidateRepresentation": "typedPayload",
+      "portable": true,
+      "targetClassification": {
+        "swiftUI": "exact",
+        "uiKit": "targetSpecific",
+        "jetpackCompose": "unsupported",
+        "composeMultiplatform": "unsupported"
+      },
+      "loss": {
+        "swiftUI": "none",
+        "uiKit": "none",
+        "jetpackCompose": "unsupported",
+        "composeMultiplatform": "unsupported"
+      },
+      "notes": "System asset name is an Apple symbol in this fixture; no Android mapping is supplied."
+    },
+    {
+      "fixture": "portable",
+      "semantic": "button title and emitted event",
+      "baselineRepresentation": "typedExact",
+      "candidateRepresentation": "typedPayload",
+      "portable": true,
+      "targetClassification": {
+        "swiftUI": "externalIntegrationRequired",
+        "uiKit": "externalIntegrationRequired",
+        "jetpackCompose": "externalIntegrationRequired",
+        "composeMultiplatform": "externalIntegrationRequired"
+      },
+      "loss": {
+        "swiftUI": "externalIntegrationRequired",
+        "uiKit": "externalIntegrationRequired",
+        "jetpackCompose": "externalIntegrationRequired",
+        "composeMultiplatform": "externalIntegrationRequired"
+      },
+      "notes": "Event emission is typed, production handler mapping remains external."
+    },
+    {
+      "fixture": "portable",
+      "semantic": "spacing token reference",
+      "baselineRepresentation": "typedExact",
+      "candidateRepresentation": "typedPayload",
+      "portable": true,
+      "targetClassification": {
+        "swiftUI": "portable",
+        "uiKit": "portable",
+        "jetpackCompose": "portable",
+        "composeMultiplatform": "portable"
+      },
+      "loss": {
+        "swiftUI": "none",
+        "uiKit": "none",
+        "jetpackCompose": "none",
+        "composeMultiplatform": "none"
+      },
+      "notes": "Token remains in separate graph."
+    },
+    {
+      "fixture": "portable",
+      "semantic": "ordered padding then background",
+      "baselineRepresentation": "genericBagRequired",
+      "candidateRepresentation": "typedOrderedEffect",
+      "portable": true,
+      "targetClassification": {
+        "swiftUI": "portable",
+        "uiKit": "portable",
+        "jetpackCompose": "portable",
+        "composeMultiplatform": "portable"
+      },
+      "loss": {
+        "swiftUI": "none",
+        "uiKit": "none",
+        "jetpackCompose": "none",
+        "composeMultiplatform": "none"
+      },
+      "notes": "Current nativeIntent String stores background/order; candidate effect array preserves order."
+    },
+    {
+      "fixture": "portable",
+      "semantic": "accessible button label",
+      "baselineRepresentation": "typedExact",
+      "candidateRepresentation": "typedPayload",
+      "portable": true,
+      "targetClassification": {
+        "swiftUI": "portable",
+        "uiKit": "portable",
+        "jetpackCompose": "portable",
+        "composeMultiplatform": "portable"
+      },
+      "loss": {
+        "swiftUI": "none",
+        "uiKit": "none",
+        "jetpackCompose": "none",
+        "composeMultiplatform": "none"
+      },
+      "notes": "Candidate common accessibility field remains explicit."
+    },
+    {
+      "fixture": "navigation",
+      "semantic": "system navigation title",
+      "baselineRepresentation": "typedExact",
+      "candidateRepresentation": "typedScreenSystem",
+      "portable": true,
+      "targetClassification": {
+        "swiftUI": "exact",
+        "uiKit": "exact",
+        "jetpackCompose": "approximate",
+        "composeMultiplatform": "approximate"
+      },
+      "loss": {
+        "swiftUI": "none",
+        "uiKit": "none",
+        "jetpackCompose": "approximate",
+        "composeMultiplatform": "approximate"
+      },
+      "notes": "SwiftUI/UIKit navigation is platform-owned; Compose TopAppBar is a Material composable approximation."
+    },
+    {
+      "fixture": "navigation",
+      "semantic": "system toolbar action",
+      "baselineRepresentation": "typedExact",
+      "candidateRepresentation": "typedScreenSystem",
+      "portable": true,
+      "targetClassification": {
+        "swiftUI": "exact",
+        "uiKit": "exact",
+        "jetpackCompose": "approximate",
+        "composeMultiplatform": "approximate"
+      },
+      "loss": {
+        "swiftUI": "none",
+        "uiKit": "none",
+        "jetpackCompose": "approximate",
+        "composeMultiplatform": "approximate"
+      },
+      "notes": "Compose app-bar actions approximate Apple toolbar ownership."
+    },
+    {
+      "fixture": "navigation",
+      "semantic": "scrollable screen content",
+      "baselineRepresentation": "typedExact",
+      "candidateRepresentation": "typedPayload",
+      "portable": true,
+      "targetClassification": {
+        "swiftUI": "portable",
+        "uiKit": "portable",
+        "jetpackCompose": "portable",
+        "composeMultiplatform": "portable"
+      },
+      "loss": {
+        "swiftUI": "none",
+        "uiKit": "none",
+        "jetpackCompose": "none",
+        "composeMultiplatform": "none"
+      },
+      "notes": "Content remains a node tree, separate from system navigation."
+    },
+    {
+      "fixture": "component",
+      "semantic": "component definition and nested reference",
+      "baselineRepresentation": "typedExact",
+      "candidateRepresentation": "typedSeparateGraph",
+      "portable": true,
+      "targetClassification": {
+        "swiftUI": "portable",
+        "uiKit": "portable",
+        "jetpackCompose": "portable",
+        "composeMultiplatform": "portable"
+      },
+      "loss": {
+        "swiftUI": "none",
+        "uiKit": "none",
+        "jetpackCompose": "none",
+        "composeMultiplatform": "none"
+      },
+      "notes": "Definition and nested reference stay outside generic visual node payload."
+    },
+    {
+      "fixture": "component",
+      "semantic": "instance variant selection",
+      "baselineRepresentation": "typedExact",
+      "candidateRepresentation": "typedSeparateGraph",
+      "portable": true,
+      "targetClassification": {
+        "swiftUI": "portable",
+        "uiKit": "portable",
+        "jetpackCompose": "portable",
+        "composeMultiplatform": "portable"
+      },
+      "loss": {
+        "swiftUI": "none",
+        "uiKit": "none",
+        "jetpackCompose": "none",
+        "composeMultiplatform": "none"
+      },
+      "notes": "Variant belongs to ComponentDefinition API."
+    },
+    {
+      "fixture": "component",
+      "semantic": "instance property override",
+      "baselineRepresentation": "typedExact",
+      "candidateRepresentation": "typedSeparateGraph",
+      "portable": true,
+      "targetClassification": {
+        "swiftUI": "portable",
+        "uiKit": "portable",
+        "jetpackCompose": "portable",
+        "composeMultiplatform": "portable"
+      },
+      "loss": {
+        "swiftUI": "none",
+        "uiKit": "none",
+        "jetpackCompose": "none",
+        "composeMultiplatform": "none"
+      },
+      "notes": "Property names resolve through ComponentDefinition API."
+    },
+    {
+      "fixture": "component",
+      "semantic": "instance slot content",
+      "baselineRepresentation": "typedExact",
+      "candidateRepresentation": "typedSeparateGraph",
+      "portable": true,
+      "targetClassification": {
+        "swiftUI": "portable",
+        "uiKit": "portable",
+        "jetpackCompose": "portable",
+        "composeMultiplatform": "portable"
+      },
+      "loss": {
+        "swiftUI": "none",
+        "uiKit": "none",
+        "jetpackCompose": "none",
+        "composeMultiplatform": "none"
+      },
+      "notes": "Slot content contains typed nodes and retains order."
+    },
+    {
+      "fixture": "divergent",
+      "semantic": "portable overlay content",
+      "baselineRepresentation": "typedExact",
+      "candidateRepresentation": "typedPayload",
+      "portable": true,
+      "targetClassification": {
+        "swiftUI": "portable",
+        "uiKit": "portable",
+        "jetpackCompose": "portable",
+        "composeMultiplatform": "portable"
+      },
+      "loss": {
+        "swiftUI": "none",
+        "uiKit": "none",
+        "jetpackCompose": "none",
+        "composeMultiplatform": "none"
+      },
+      "notes": "Shared base UI is independent of target extension."
+    },
+    {
+      "fixture": "divergent",
+      "semantic": "iOS sheet medium/large detents",
+      "baselineRepresentation": "genericBagRequired",
+      "candidateRepresentation": "typedTargetExtension",
+      "portable": false,
+      "targetClassification": {
+        "swiftUI": "targetSpecific",
+        "uiKit": "unsupported",
+        "jetpackCompose": "unsupported",
+        "composeMultiplatform": "unsupported"
+      },
+      "loss": {
+        "swiftUI": "none",
+        "uiKit": "unsupported",
+        "jetpackCompose": "unsupported",
+        "composeMultiplatform": "unsupported"
+      },
+      "notes": "Candidate only models SwiftUI extension; UIKit has a related native API but needs its own explicit mapping. Unsupported here means unmapped candidate, not impossible framework behavior."
+    }
+  ],
+  "metrics": {
+    "requiredSemanticIntents": 17,
+    "baselineTypedExact": 15,
+    "baselineGenericBagRequired": 2,
+    "candidateTyped": 17,
+    "candidateGenericBagRequired": 0,
+    "candidateSilentLoss": 0,
+    "candidateTargetSpecificExtensions": 1
+  }
+}

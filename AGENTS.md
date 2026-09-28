@@ -19,3 +19,9 @@ Delete an ADR directory only after **all** are true: the decision is made, requi
 Git history is the archive. Do not retain resolved ADRs or obsolete Spike material in the working tree. Do not routinely pull deleted ADRs from Git history into AI context. The desired `adr/` state is `.gitkeep` only, but never remove an unresolved ADR to reduce the count.
 
 For the full Human and AI workflow, see [docs/adr-workflow.md](docs/adr-workflow.md).
+
+## Delivery verification
+
+- After committing and pushing a change, find the GitHub Actions `Verify` run for the exact pushed commit SHA. Wait for its final conclusion without asking a human to check it.
+- If `Verify` fails, inspect the failed step and logs, fix the cause, rerun local checks, commit and push the fix, then verify the new run. A successful local check or an earlier commit's green run does not establish the pushed commit's CI result.
+- Report the run URL and conclusion together with the commit SHA. Check the working tree and remote tracking status before reporting completion.
