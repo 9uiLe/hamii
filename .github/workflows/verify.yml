@@ -6,13 +6,35 @@ on:
 jobs:
   macos:
     runs-on: macos-latest
+    timeout-minutes: 65
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Select verification gate
+        id: impact
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: python3 scripts/change_impact.py --base "$BASE_SHA" --head HEAD --github-output "$GITHUB_OUTPUT"
       - name: Install Swift 6.4
+        if: steps.impact.outputs.mode == 'full'
         run: |
           curl -fsSL -o /tmp/swiftly.pkg https://download.swift.org/swiftly/darwin/swiftly.pkg
           installer -pkg /tmp/swiftly.pkg -target CurrentUserHomeDirectory
           ~/.swiftly/bin/swiftly init --assume-yes --no-modify-profile --quiet-shell-followup
           ~/.swiftly/bin/swiftly use 6.4.0
       - name: Verify architecture and behavior
-        run: bash scripts/check.sh
+        id: verify
+        if: steps.impact.outcome == 'success'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: python3 scripts/verify-change.py --base "$BASE_SHA" --head HEAD --expected-mode "${{ steps.impact.outputs.mode }}"
+      - name: Upload detailed verification log
+        if: always() && steps.verify.outcome != 'skipped'
+        uses: actions/upload-artifact@v7
+        with:
+          name: verification-log
+          path: .build/verify-logs/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7

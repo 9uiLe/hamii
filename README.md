@@ -79,10 +79,10 @@ Layer の実装済み kind は Stack、Text、Image、Button、Scroll、Overlay�
 ## Tests / development / ADR
 
 ```bash
-bash scripts/check.sh
+python3 scripts/verify-change.py --base HEAD --include-worktree
 ```
 
-Swift 6.4 build/test、module dependency、ADR/Spike 形式、CLI smoke test を実行します。CI も同じ入口を使います。
+日常の変更確認には `verify-change.py` を使います。README / AGENTS / `docs/` / `adr/` の Markdown だけなら ADR 形式と local link を確認し、Swift build/test は **未実行**と報告します。コード、Canonical sample、設定、スクリプト、判定不能な差分では `check.sh` 全体を実行します。変更内容に関わらず全体を明示的に確認する場合は `bash scripts/check.sh` を使います。CI は同じ選択と検証入口を使い、commit SHA の結果を確認します。詳細、失敗ログ、再実行条件は [Development verification](docs/development-verification.md) を参照してください。
 
 [`adr/`](adr/) は未確定・未検証・未実装の設計判断の queue です。判断は一件一境界、実験は `spikes/<name>/SPIKE.md` に記録します。判断と実験結果を先に commit、実装を次に commit、完了した ADR の削除を後の commit に分けます。[ADR workflow](docs/adr-workflow.md) と [Current Architecture](docs/final-architecture.md) を参照してください。
 

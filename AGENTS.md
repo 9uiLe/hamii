@@ -25,3 +25,4 @@ For the full Human and AI workflow, see [docs/adr-workflow.md](docs/adr-workflow
 - After committing and pushing a change, find the GitHub Actions `Verify` run for the exact pushed commit SHA. Wait for its final conclusion without asking a human to check it.
 - If `Verify` fails, inspect the failed step and logs, fix the cause, rerun local checks, commit and push the fix, then verify the new run. A successful local check or an earlier commit's green run does not establish the pushed commit's CI result.
 - Report the run URL and conclusion together with the commit SHA. Check the working tree and remote tracking status before reporting completion.
+- `python3 scripts/wait-ci.py --sha "$(git rev-parse HEAD)"` waits for the exact `Verify` run and returns a bounded JSON verdict. On failure, inspect that run's log and fix the cause.
