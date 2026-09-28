@@ -170,11 +170,13 @@ final class AffectedProjectionDependencySpikeTests: XCTestCase {
     /// Setup may materialize old rows; candidate reads never enumerate old projection values.
     private final class KeyedOldIndex {
         private var db: OpaquePointer?
+        private let productionSchema: Bool
         private(set) var projectionValuesRead = 0
         private(set) var usageValuesRead = 0
         private(set) var selectMilliseconds = 0.0
 
         init(_ published: Published) throws {
+            productionSchema = false
             guard sqlite3_open(":memory:", &db) == SQLITE_OK else { throw ProbeError.invalidSummary }
             try execute("CREATE TABLE meta(key TEXT PRIMARY KEY, value TEXT NOT NULL)")
             try execute("CREATE TABLE components(id TEXT PRIMARY KEY, value TEXT NOT NULL)")
@@ -209,6 +211,13 @@ final class AffectedProjectionDependencySpikeTests: XCTestCase {
             } catch {
                 try? execute("ROLLBACK")
                 throw error
+            }
+        }
+
+        init(productionFile: URL) throws {
+            productionSchema = true
+            guard sqlite3_open_v2(productionFile.path, &db, SQLITE_OPEN_READONLY, nil) == SQLITE_OK else {
+                throw ProbeError.invalidSummary
             }
         }
 
@@ -249,13 +258,22 @@ final class AffectedProjectionDependencySpikeTests: XCTestCase {
         }
 
         func preflight(generation: String, source: String, requireUsage: Bool) throws {
-            let meta = try Dictionary(uniqueKeysWithValues: query("SELECT key,value FROM meta").map { ($0[0], $0[1]) })
-            guard meta["generation"] == generation, meta["source"] == source, meta["version"] == "1" else {
-                throw ProbeError.invalidSummary
+            let table = productionSchema ? "metadata" : "meta"
+            let meta = try Dictionary(uniqueKeysWithValues: query("SELECT key,value FROM \(table)").map { ($0[0], $0[1]) })
+            if productionSchema {
+                guard meta["indexGenerationID"] == generation, meta["sourceCanonicalIdentity"] == source,
+                      meta["summaryVersion"] == "1" || !requireUsage else { throw ProbeError.invalidSummary }
+            } else {
+                guard meta["generation"] == generation, meta["source"] == source, meta["version"] == "1" else {
+                    throw ProbeError.invalidSummary
+                }
             }
             if requireUsage {
-                let fields = try query("SELECT screen,component,count FROM usage")
-                guard meta["usageDigest"] == SummaryStore.digest(fields),
+                let usageTable = productionSchema ? "source_screen_usage" : "usage"
+                let fields = try query("SELECT screen,component,count FROM \(usageTable)")
+                guard (!productionSchema ||
+                       (meta["summaryIndexGenerationID"] == generation && meta["summarySourceCanonicalIdentity"] == source)),
+                      meta["usageDigest"] == SummaryStore.digest(fields),
                       meta["usageCount"] == String(fields.count),
                       fields.allSatisfy({ Int($0[2]).map { $0 > 0 } == true }) else {
                     throw ProbeError.invalidSummary
@@ -265,20 +283,30 @@ final class AffectedProjectionDependencySpikeTests: XCTestCase {
         }
 
         func componentIDs() throws -> Set<String> { Set(try query("SELECT id FROM components").map { $0[0] }) }
-        func scopeIDs() throws -> Set<String> { Set(try query("SELECT DISTINCT consumer FROM closure").map { $0[0] }) }
+        func scopeIDs() throws -> Set<String> {
+            let sql = productionSchema ? "SELECT DISTINCT consumer_id FROM scope_closure" : "SELECT DISTINCT consumer FROM closure"
+            return Set(try query(sql).map { $0[0] })
+        }
         func consumers(withAncestor ancestor: String) throws -> Set<String> {
-            Set(try query("SELECT consumer FROM closure WHERE ancestor=?", [ancestor]).map { $0[0] })
+            let sql = productionSchema ? "SELECT consumer_id FROM scope_closure WHERE ancestor_id=?"
+                                       : "SELECT consumer FROM closure WHERE ancestor=?"
+            return Set(try query(sql, [ancestor]).map { $0[0] })
         }
         func ancestors(of consumer: String) throws -> Set<String> {
-            Set(try query("SELECT ancestor FROM closure WHERE consumer=?", [consumer]).map { $0[0] })
+            let sql = productionSchema ? "SELECT ancestor_id FROM scope_closure WHERE consumer_id=?"
+                                       : "SELECT ancestor FROM closure WHERE consumer=?"
+            return Set(try query(sql, [consumer]).map { $0[0] })
         }
         func componentValue(_ id: String) throws -> String? {
-            let rows = try query("SELECT value FROM components WHERE id=?", [id])
+            let sql = productionSchema ? "SELECT name,owner_scope_id,usage_count FROM components WHERE id=?"
+                                       : "SELECT value FROM components WHERE id=?"
+            let rows = try query(sql, [id])
             projectionValuesRead += rows.count
-            return rows.first?.first
+            return rows.first.map { productionSchema ? $0.joined(separator: "|") : $0[0] }
         }
         func usage(in screen: String) throws -> [String: Int] {
-            let rows = try query("SELECT component,count FROM usage WHERE screen=?", [screen])
+            let table = productionSchema ? "source_screen_usage" : "usage"
+            let rows = try query("SELECT component,count FROM \(table) WHERE screen=?", [screen])
             usageValuesRead += rows.count
             var result: [String: Int] = [:]
             for row in rows {
@@ -442,6 +470,11 @@ final class AffectedProjectionDependencySpikeTests: XCTestCase {
         init(_ published: Published) {
             generation = published.generation
             source = published.source
+        }
+
+        init(_ descriptor: IndexGenerationDescriptor) {
+            generation = descriptor.id.rawValue
+            source = descriptor.sourceCanonicalIdentity.rawValue
         }
     }
 
@@ -1352,6 +1385,716 @@ final class AffectedProjectionDependencySpikeTests: XCTestCase {
         let root: [String: Any] = ["environment": "Swift 6.4 debug XCTest, macOS, in-process; no Canonical acquisition, Git, CLI, targeted projector, or publication",
                                    "fixtures": reports]
         try JSONSerialization.data(withJSONObject: root, options: [.prettyPrinted, .sortedKeys])
+            .write(to: URL(fileURLWithPath: output))
+    }
+}
+
+// Test-only production-shaped candidate file. The published v8 tables and
+// LocalIndex.rebuild remain production code; inventory/summary tables are
+// experimental metadata on the copied file, never a production schema change.
+extension AffectedProjectionDependencySpikeTests {
+    private final class CandidateFile {
+        let url: URL
+        private var db: OpaquePointer?
+
+        init(_ url: URL) throws {
+            self.url = url
+            guard sqlite3_open_v2(url.path, &db, SQLITE_OPEN_READWRITE, nil) == SQLITE_OK else {
+                throw ProbeError.invalidSummary
+            }
+            _ = sqlite3_busy_timeout(db, 5_000)
+        }
+
+        deinit { sqlite3_close(db) }
+
+        func execute(_ sql: String) throws {
+            guard sqlite3_exec(db, sql, nil, nil, nil) == SQLITE_OK else { throw ProbeError.invalidSummary }
+        }
+
+        func rows(_ sql: String, _ args: [String] = []) throws -> [[String]] {
+            var statement: OpaquePointer?
+            guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK else { throw ProbeError.invalidSummary }
+            defer { sqlite3_finalize(statement) }
+            let transient = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
+            for (offset, value) in args.enumerated() {
+                guard sqlite3_bind_text(statement, Int32(offset + 1), value, -1, transient) == SQLITE_OK else {
+                    throw ProbeError.invalidSummary
+                }
+            }
+            var result: [[String]] = []
+            while true {
+                let step = sqlite3_step(statement)
+                if step == SQLITE_DONE { return result }
+                guard step == SQLITE_ROW else { throw ProbeError.invalidSummary }
+                result.append((0..<sqlite3_column_count(statement)).map { column in
+                    guard let value = sqlite3_column_text(statement, column) else { return "" }
+                    return String(cString: value)
+                })
+            }
+        }
+
+        func insert(_ sql: String, _ args: [String]) throws { _ = try rows(sql, args) }
+
+        func metadata() throws -> [String: String] {
+            Dictionary(uniqueKeysWithValues: try rows("SELECT key,value FROM metadata").map { ($0[0], $0[1]) })
+        }
+
+        func setMetadata(_ key: String, _ value: String) throws {
+            try insert("INSERT OR REPLACE INTO metadata(key,value) VALUES (?,?)", [key, value])
+        }
+
+        func installHistory(inventory: [String: String], usage: [Usage]?, binding: PublishedBinding) throws {
+            try execute("CREATE TABLE source_inventory(path TEXT PRIMARY KEY, digest TEXT NOT NULL)")
+            try execute("CREATE TABLE source_screen_usage(screen TEXT NOT NULL, component TEXT NOT NULL, count INTEGER NOT NULL, PRIMARY KEY(screen,component))")
+            try execute("BEGIN IMMEDIATE")
+            do {
+                for (path, digest) in inventory {
+                    try insert("INSERT INTO source_inventory VALUES (?,?)", [path, digest])
+                }
+                try setMetadata("inventoryVersion", "1")
+                try setMetadata("inventoryIndexGenerationID", binding.generation)
+                try setMetadata("inventorySourceCanonicalIdentity", binding.source)
+                try setMetadata("inventoryCount", String(inventory.count))
+                try setMetadata("inventoryDigest", Self.inventoryDigest(inventory))
+                if let usage {
+                    for row in usage {
+                        try insert("INSERT INTO source_screen_usage VALUES (?,?,?)",
+                                   [row.screen, row.component, String(row.count)])
+                    }
+                    let fields = usage.map { [$0.screen, $0.component, String($0.count)] }
+                    try setMetadata("summaryVersion", "1")
+                    try setMetadata("summaryIndexGenerationID", binding.generation)
+                    try setMetadata("summarySourceCanonicalIdentity", binding.source)
+                    try setMetadata("usageCount", String(usage.count))
+                    try setMetadata("usageDigest", SummaryStore.digest(fields))
+                }
+                try execute("COMMIT")
+            } catch {
+                try? execute("ROLLBACK")
+                throw error
+            }
+        }
+
+        static func inventoryDigest(_ inventory: [String: String]) -> String {
+            SummaryStore.digest(inventory.map { [$0.key, $0.value] })
+        }
+
+        func readInventory(binding: PublishedBinding) throws -> [String: String] {
+            let meta = try metadata()
+            guard meta["inventoryVersion"] == "1",
+                  meta["inventoryIndexGenerationID"] == binding.generation,
+                  meta["inventorySourceCanonicalIdentity"] == binding.source else {
+                throw ProbeError.invalidSummary
+            }
+            let entries = try rows("SELECT path,digest FROM source_inventory")
+            let inventory = Dictionary(uniqueKeysWithValues: entries.map { ($0[0], $0[1]) })
+            guard entries.count == inventory.count, meta["inventoryCount"] == String(entries.count),
+                  meta["inventoryDigest"] == Self.inventoryDigest(inventory),
+                  inventory.values.allSatisfy({ value in
+                      value.utf8.count == 64 && value.utf8.allSatisfy {
+                          ($0 >= 48 && $0 <= 57) || ($0 >= 97 && $0 <= 102)
+                      }
+                  }) else { throw ProbeError.invalidSummary }
+            return inventory
+        }
+
+        func projectionRows() throws -> [String: String] {
+            var result: [String: String] = [:]
+            for row in try rows("SELECT id,name,owner_scope_id,usage_count FROM components") {
+                result["component:\(row[0])"] = "\(row[1])|\(row[2])|\(row[3])"
+            }
+            for row in try rows("SELECT consumer_id,ancestor_id FROM scope_closure") {
+                result["closure:\(row[0]):\(row[1])"] = "1"
+            }
+            for row in try rows("SELECT consumer_id,component_id FROM component_availability") {
+                result["availability:\(row[0]):\(row[1])"] = "1"
+            }
+            return result
+        }
+
+        func hits(text: String, consumer: EntityID) throws -> [ComponentHit] {
+            try rows("SELECT c.id,c.name,c.owner_scope_id,c.usage_count FROM components c JOIN component_availability a ON a.component_id=c.id WHERE a.consumer_id=? AND c.name LIKE ? ORDER BY c.name",
+                     [consumer.rawValue, "%\(text)%"]).compactMap { row in
+                guard let count = Int(row[3]) else { return nil }
+                return ComponentHit(id: EntityID(row[0]), name: row[1], ownerScopeID: EntityID(row[2]), usageCount: count)
+            }
+        }
+
+        func apply(_ patch: TargetedPatch, changedPaths: Set<String>, inventory: [String: String],
+                   snapshot: CanonicalSnapshot, canonicalRevision: CanonicalRevision,
+                   sourceGeneration: CanonicalGeneration, strategy: UsageStrategy,
+                   changedScreens: Set<String>, transactionHook: (() throws -> Void)? = nil) throws -> IndexGenerationDescriptor {
+            guard patch.isBound(to: sourceGeneration.serialized, identity: snapshot.identity.rawValue) else {
+                throw ProbeError.invalidSummary
+            }
+            let newID = IndexGenerationID.new()
+            try execute("BEGIN IMMEDIATE")
+            do {
+                for key in patch.planned.all {
+                    let parts = key.split(separator: ":").map(String.init)
+                    switch parts.first {
+                    case "component" where parts.count == 2:
+                        try insert("DELETE FROM components WHERE id=?", [parts[1]])
+                        if let value = patch.replacements[key] {
+                            let fields = value.split(separator: "|", omittingEmptySubsequences: false).map(String.init)
+                            guard fields.count >= 3, Int(fields.last ?? "") != nil else { throw ProbeError.invalidSummary }
+                            try insert("INSERT INTO components(id,name,owner_scope_id,usage_count) VALUES (?,?,?,?)",
+                                       [parts[1], fields.dropLast(2).joined(separator: "|"), fields[fields.count - 2], fields.last!])
+                        }
+                    case "closure" where parts.count == 3:
+                        try insert("DELETE FROM scope_closure WHERE consumer_id=? AND ancestor_id=?", [parts[1], parts[2]])
+                        if patch.replacements[key] != nil {
+                            try insert("INSERT INTO scope_closure VALUES (?,?)", [parts[1], parts[2]])
+                        }
+                    case "availability" where parts.count == 3:
+                        try insert("DELETE FROM component_availability WHERE consumer_id=? AND component_id=?", [parts[1], parts[2]])
+                        if patch.replacements[key] != nil {
+                            try insert("INSERT INTO component_availability VALUES (?,?)", [parts[1], parts[2]])
+                        }
+                    default: throw ProbeError.invalidSummary
+                    }
+                }
+                try transactionHook?()
+                for path in changedPaths {
+                    try insert("DELETE FROM source_inventory WHERE path=?", [path])
+                    if let digest = inventory[path] {
+                        try insert("INSERT INTO source_inventory VALUES (?,?)", [path, digest])
+                    }
+                }
+                try setMetadata("inventoryIndexGenerationID", newID.rawValue)
+                try setMetadata("inventorySourceCanonicalIdentity", snapshot.identity.rawValue)
+                try setMetadata("inventoryCount", String(inventory.count))
+                try setMetadata("inventoryDigest", Self.inventoryDigest(inventory))
+                if strategy == .historicalDelta {
+                    for screenID in changedScreens {
+                        try insert("DELETE FROM source_screen_usage WHERE screen=?", [screenID])
+                        if let screen = snapshot.document.screens.first(where: { $0.id.rawValue == screenID }) {
+                            for (id, count) in AffectedProjectionDependencySpikeTests.usage(screen) {
+                                try insert("INSERT INTO source_screen_usage VALUES (?,?,?)", [screenID, id, String(count)])
+                            }
+                        }
+                    }
+                    let fields = try rows("SELECT screen,component,count FROM source_screen_usage")
+                    try setMetadata("summaryIndexGenerationID", newID.rawValue)
+                    try setMetadata("summarySourceCanonicalIdentity", snapshot.identity.rawValue)
+                    try setMetadata("usageCount", String(fields.count))
+                    try setMetadata("usageDigest", SummaryStore.digest(fields))
+                } else {
+                    try execute("DELETE FROM source_screen_usage")
+                    for key in ["summaryVersion", "summaryIndexGenerationID", "summarySourceCanonicalIdentity", "usageCount", "usageDigest"] {
+                        try insert("DELETE FROM metadata WHERE key=?", [key])
+                    }
+                }
+                try setMetadata("documentID", snapshot.document.id.rawValue)
+                try setMetadata("revision", String(snapshot.document.revision))
+                try setMetadata("canonicalRevision", canonicalRevision.rawValue)
+                try setMetadata("indexGenerationID", newID.rawValue)
+                try setMetadata("sourceCanonicalIdentity", snapshot.identity.rawValue)
+                try setMetadata("sourceGenerationBinding", IndexSourceGenerationBinding.bound(sourceGeneration).serialized)
+                try execute("COMMIT")
+                return IndexGenerationDescriptor(id: newID, sourceCanonicalIdentity: snapshot.identity,
+                    documentID: snapshot.document.id, documentRevision: snapshot.document.revision,
+                    sourceGenerationBinding: .bound(sourceGeneration))
+            } catch {
+                try? execute("ROLLBACK")
+                throw error
+            }
+        }
+    }
+}
+
+extension AffectedProjectionDependencySpikeTests {
+    private struct DiskFixture {
+        let root: URL
+        let repository: CanonicalRepository
+        let before: Document
+        let oldSnapshot: CanonicalSnapshot
+        let oldStable: StableCanonicalGeneration
+        let oldRevision: CanonicalRevision
+        let oldInventory: [String: String]
+    }
+
+    private func diskFixture(components: Int, usageHeavy: Bool = false,
+                             graphShape: String? = nil) throws -> DiskFixture {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("hamii-incremental-candidate-\(UUID().uuidString)")
+        let root = directory.appendingPathComponent("Project")
+        let repository = CanonicalRepository(root: root)
+        let created = try repository.create(name: "Incremental candidate")
+        var before = fixture()
+        before.id = created.id
+        before.revision = created.revision + 1
+        for number in 4..<components {
+            before.components.append(ComponentDefinition(id: EntityID("component_\(number)"),
+                name: "Component \(number)", ownerScopeID: EntityID("scope_app"),
+                root: Layer(id: EntityID("root_\(number)"), kind: .stack, name: "Root")))
+        }
+        if graphShape == "chain" {
+            for number in 4..<components {
+                let target = number == 4 ? "component_x" : "component_\(number - 1)"
+                before.components[number].root.children = [Layer(id: EntityID("edge_\(number)"),
+                    kind: .componentInstance, name: "Dependency",
+                    component: ComponentInstance(definitionID: EntityID(target)))]
+            }
+        }
+        if graphShape == "fanout" {
+            for number in 4..<components {
+                before.components[number].root.children = [Layer(id: EntityID("edge_\(number)"),
+                    kind: .componentInstance, name: "Dependency",
+                    component: ComponentInstance(definitionID: EntityID("component_b")))]
+            }
+        }
+        if usageHeavy {
+            for screenNumber in 0..<120 {
+                let children = (0..<30).map { layerNumber in
+                    Layer(id: EntityID("usage_\(screenNumber)_\(layerNumber)"), kind: .componentInstance,
+                          name: "Used", component: ComponentInstance(definitionID: EntityID("component_other")))
+                }
+                before.screens.append(Screen(id: EntityID("usage_screen_\(screenNumber)"), name: "Usage",
+                    scopeID: EntityID("scope_app"), root: Layer(id: EntityID("usage_root_\(screenNumber)"),
+                        kind: .stack, name: "Root", children: children)))
+            }
+        }
+        Self.validate(before)
+        try repository.save(before, expected: created)
+        let git = Process()
+        git.executableURL = URL(fileURLWithPath: "/usr/bin/git")
+        git.arguments = ["-C", root.path, "init", "-q"]
+        git.standardOutput = Pipe(); git.standardError = git.standardOutput
+        try git.run(); git.waitUntilExit()
+        guard git.terminationStatus == 0 else { throw ProbeError.invalidSummary }
+        let (captured, stable) = try repository.withStableSinglePassProbe(captureFileDigests: true) { ($0, $1) }
+        XCTAssertTrue(captured.readCounts.values.allSatisfy { $0 == 1 })
+        let revision = try GitCanonicalRevisionCalculator().current(at: root)
+        return DiskFixture(root: root, repository: repository, before: before,
+            oldSnapshot: captured.snapshot, oldStable: stable, oldRevision: revision,
+            oldInventory: captured.fileDigests)
+    }
+
+    private func changedDocument(_ fixture: DiskFixture, scenario: String, localChanges: Int = 1) throws -> Document {
+        var next = fixture.before
+        switch scenario {
+        case "nameOnly", "chain", "fanout": next.components[0].name = "Changed B"
+        case "nativeOnly": next.components[0].nativeSemantics["hint"] = "changed"
+        case "availability": next.components[0].availability.denyScopeIDs = [EntityID("scope_child")]
+        case "owner": next.components[4].ownerScopeID = EntityID("scope_child")
+        case "add": next.components.append(ComponentDefinition(id: EntityID("component_added"),
+            name: "Added", ownerScopeID: EntityID("scope_app"),
+            root: Layer(id: EntityID("root_added"), kind: .stack, name: "Added")))
+        case "delete": next.components.removeLast()
+        case "tenLocal":
+            for number in 4..<(4 + localChanges) { next.components[number].name = "Changed \(number)" }
+        case "screenAdd", "screenMulti", "usageHeavy":
+            next.screens[0].root.children.append(Layer(id: EntityID("new_usage"), kind: .componentInstance,
+                name: "New usage", component: ComponentInstance(definitionID: EntityID("component_b"))))
+            if scenario == "screenMulti" {
+                next.screens.append(Screen(id: EntityID("screen_added"), name: "Added", scopeID: EntityID("scope_app"),
+                    root: Layer(id: EntityID("screen_added_root"), kind: .stack, name: "Root",
+                        children: [Layer(id: EntityID("added_to_b"), kind: .componentInstance, name: "B",
+                            component: ComponentInstance(definitionID: EntityID("component_b")))])))
+            }
+            if scenario == "usageHeavy" {
+                next.screens[1].root.children.append(Layer(id: EntityID("heavy_to_b"), kind: .componentInstance,
+                    name: "B", component: ComponentInstance(definitionID: EntityID("component_b"))))
+            }
+        case "screenRemove": next.screens[0].root.children.removeAll()
+        case "screenDelete": next.screens.removeAll()
+        case "scope": next.scopes[1].parentID = EntityID("scope_other")
+        default: throw ProbeError.unsupportedInput
+        }
+        next.revision += 1
+        Self.validate(next)
+        try fixture.repository.save(next, expected: fixture.before)
+        return next
+    }
+
+    private func fullIndex(_ fixture: DiskFixture, snapshot: CanonicalSnapshot,
+                           generation: CanonicalGeneration, revision: CanonicalRevision,
+                           storageName: String) throws -> (URL, IndexGenerationDescriptor) {
+        let storageRoot = fixture.root.deletingLastPathComponent().appendingPathComponent(storageName)
+        let index = try LocalIndex(projectRoot: fixture.root, documentID: snapshot.document.id,
+            revisionCalculator: GitCanonicalRevisionCalculator(), storageRoot: storageRoot)
+        let descriptor = try index.rebuild(from: snapshot, canonicalRevision: revision,
+            sourceGenerationBinding: .bound(generation))
+        return (index.url, descriptor)
+    }
+
+    private func oldPublished(_ fixture: DiskFixture, includeUsage: Bool, storageName: String) throws -> (URL, IndexGenerationDescriptor) {
+        let (url, descriptor) = try fullIndex(fixture, snapshot: fixture.oldSnapshot,
+            generation: fixture.oldStable.generation, revision: fixture.oldRevision, storageName: storageName)
+        let store = try CandidateFile(url)
+        try store.installHistory(inventory: fixture.oldInventory,
+            usage: includeUsage ? Self.usageSummary(fixture.before) : nil, binding: PublishedBinding(descriptor))
+        return (url, descriptor)
+    }
+
+    private struct CandidateBuild {
+        let url: URL
+        let descriptor: IndexGenerationDescriptor
+        let stages: [String: Double]
+        let plannedRows: Int
+    }
+
+    private func copyCandidateBytes(from source: URL, to destination: URL) throws {
+        let input = try FileHandle(forReadingFrom: source)
+        defer { try? input.close() }
+        guard FileManager.default.createFile(atPath: destination.path, contents: nil) else {
+            throw ProbeError.invalidSummary
+        }
+        let output = try FileHandle(forWritingTo: destination)
+        defer { try? output.close() }
+        while let block = try input.read(upToCount: 64 * 1024), !block.isEmpty {
+            try output.write(contentsOf: block)
+        }
+    }
+
+    private func incrementalCandidate(_ fixture: DiskFixture, oldURL: URL, oldDescriptor: IndexGenerationDescriptor,
+                                      snapshot: CanonicalSnapshot, stable: StableCanonicalGeneration,
+                                      revision: CanonicalRevision, inventory: [String: String],
+                                      strategy: UsageStrategy, name: String,
+                                      beforeCopy: (() throws -> Void)? = nil,
+                                      copyOperation: ((URL, URL) throws -> Void)? = nil,
+                                      beforePatchCommit: (() throws -> Void)? = nil) throws -> CandidateBuild {
+        var stages: [String: Double] = [:]
+        func timed<T>(_ key: String, _ body: () throws -> T) rethrows -> T {
+            let start = ProcessInfo.processInfo.systemUptime
+            let value = try body()
+            stages[key] = (ProcessInfo.processInfo.systemUptime - start) * 1_000
+            return value
+        }
+        let oldObservation = try timed("publishedProbe") { try PublishedIndexProbe().inspect(at: oldURL) }
+        guard case .valid(let observed, let oldRevision) = oldObservation.assessment,
+              observed == oldDescriptor, oldRevision == fixture.oldRevision,
+              observed.sourceCanonicalIdentity == fixture.oldSnapshot.identity,
+              observed.sourceGenerationBinding == .bound(fixture.oldStable.generation) else {
+            throw ProbeError.invalidSummary
+        }
+        try beforeCopy?()
+        let candidateURL = fixture.root.deletingLastPathComponent().appendingPathComponent("\(name)-\(UUID().uuidString).sqlite")
+        try timed("baseCopy") {
+            if let copyOperation { try copyOperation(oldURL, candidateURL) }
+            else { try copyCandidateBytes(from: oldURL, to: candidateURL) }
+        }
+        do {
+            let copied = try timed("copiedBaseProbe") { try PublishedIndexProbe().inspect(at: candidateURL) }
+            guard case .valid(let actual, let copiedRevision) = copied.assessment,
+                  actual == observed, copiedRevision == oldRevision else { throw ProbeError.invalidSummary }
+            let store = try CandidateFile(candidateURL)
+            let oldInventory = try timed("inventoryReadIntegrity") { try store.readInventory(binding: PublishedBinding(actual)) }
+            let changes = try timed("inventoryDiff") { try Self.sourceChanges(old: oldInventory, new: inventory) }
+            let old = try KeyedOldIndex(productionFile: candidateURL)
+            let patch = try timed("targetedCompute") {
+                try Self.targeted(changes, current: snapshot.document, old: old,
+                    binding: PublishedBinding(actual), strategy: strategy,
+                    toGeneration: stable.generation.serialized, toIdentity: snapshot.identity.rawValue)
+            }
+            for (key, value) in patch.milliseconds { stages["targeted.\(key)"] = value }
+            let changedPaths = Set(oldInventory.keys).union(inventory.keys).filter { oldInventory[$0] != inventory[$0] }
+            let changedScreens = Set(changes.filter { $0.kind == "screens" }.map { $0.id.rawValue })
+            let descriptor = try timed("sqlitePatch") {
+                try store.apply(patch, changedPaths: changedPaths, inventory: inventory,
+                    snapshot: snapshot, canonicalRevision: revision, sourceGeneration: stable.generation,
+                    strategy: strategy, changedScreens: changedScreens, transactionHook: beforePatchCommit)
+            }
+            let verified = try timed("candidateValidation") { try PublishedIndexProbe().inspect(at: candidateURL) }
+            guard case .valid(let found, let foundRevision) = verified.assessment,
+                  found == descriptor, foundRevision == revision,
+                  try store.readInventory(binding: PublishedBinding(descriptor)) == inventory else {
+                throw ProbeError.invalidSummary
+            }
+            return CandidateBuild(url: candidateURL, descriptor: descriptor, stages: stages,
+                                  plannedRows: patch.planned.all.count)
+        } catch {
+            try? FileManager.default.removeItem(at: candidateURL)
+            throw error
+        }
+    }
+}
+
+extension AffectedProjectionDependencySpikeTests {
+    private func assertCandidateEqualsFull(_ candidate: CandidateBuild, fullURL: URL,
+                                           snapshot: CanonicalSnapshot, revision: CanonicalRevision,
+                                           generation: CanonicalGeneration, file: StaticString = #filePath,
+                                           line: UInt = #line) throws {
+        let incremental = try CandidateFile(candidate.url)
+        let full = try CandidateFile(fullURL)
+        XCTAssertEqual(try incremental.projectionRows(), try full.projectionRows(), file: file, line: line)
+        let candidateMeta = try incremental.metadata()
+        let fullMeta = try full.metadata()
+        for key in ["documentID", "revision", "canonicalRevision", "sourceCanonicalIdentity", "sourceGenerationBinding"] {
+            XCTAssertEqual(candidateMeta[key], fullMeta[key], "\(key)", file: file, line: line)
+        }
+        XCTAssertEqual(candidateMeta["documentID"], snapshot.document.id.rawValue, file: file, line: line)
+        XCTAssertEqual(candidateMeta["canonicalRevision"], revision.rawValue, file: file, line: line)
+        XCTAssertEqual(candidateMeta["sourceCanonicalIdentity"], snapshot.identity.rawValue, file: file, line: line)
+        XCTAssertEqual(candidateMeta["sourceGenerationBinding"],
+                       IndexSourceGenerationBinding.bound(generation).serialized, file: file, line: line)
+        XCTAssertNotEqual(candidateMeta["indexGenerationID"], fullMeta["indexGenerationID"], file: file, line: line)
+        for text in ["", "B", "Component", "Changed"] {
+            for scope in snapshot.document.scopes.prefix(3) {
+                XCTAssertEqual(try incremental.hits(text: text, consumer: scope.id),
+                               try full.hits(text: text, consumer: scope.id), file: file, line: line)
+            }
+        }
+    }
+
+    func testProductionShapedCandidateMatrix() throws {
+        let scenarios: [(String, Int, Bool, String?)] = [
+            ("nameOnly", 12, false, nil), ("nativeOnly", 12, false, nil),
+            ("availability", 12, false, nil), ("owner", 12, false, nil),
+            ("add", 12, false, nil), ("delete", 12, false, nil),
+            ("screenAdd", 12, false, nil), ("screenRemove", 12, false, nil),
+            ("screenDelete", 12, false, nil), ("screenMulti", 12, false, nil),
+            ("usageHeavy", 100, true, nil), ("chain", 100, false, "chain"),
+            ("fanout", 100, false, "fanout"), ("scope", 12, false, nil)
+        ]
+        for (scenario, count, heavy, shape) in scenarios {
+            let fixture = try diskFixture(components: count, usageHeavy: heavy, graphShape: shape)
+            defer { try? FileManager.default.removeItem(at: fixture.root.deletingLastPathComponent()) }
+            let before = fixture.before
+            let oldU1 = try oldPublished(fixture, includeUsage: true, storageName: "old-u1")
+            let oldU2 = try oldPublished(fixture, includeUsage: false, storageName: "old-u2")
+            let next = try changedDocument(fixture, scenario: scenario)
+            let (captured, stable) = try fixture.repository.withStableSinglePassProbe(captureFileDigests: true) { ($0, $1) }
+            XCTAssertTrue(captured.readCounts.values.allSatisfy { $0 == 1 }, scenario)
+            let revision = try GitCanonicalRevisionCalculator().current(at: fixture.root)
+            let full = try fullIndex(fixture, snapshot: captured.snapshot, generation: stable.generation,
+                                     revision: revision, storageName: "full-\(scenario)")
+            for (strategy, old) in [(UsageStrategy.historicalDelta, oldU1), (.currentScreenRescan, oldU2)] {
+                let candidate = try incrementalCandidate(fixture, oldURL: old.0, oldDescriptor: old.1,
+                    snapshot: captured.snapshot, stable: stable, revision: revision,
+                    inventory: captured.fileDigests, strategy: strategy, name: "candidate-\(scenario)-\(strategy.rawValue)")
+                try assertCandidateEqualsFull(candidate, fullURL: full.0, snapshot: captured.snapshot,
+                    revision: revision, generation: stable.generation)
+                let store = try CandidateFile(candidate.url)
+                XCTAssertEqual(try store.readInventory(binding: PublishedBinding(candidate.descriptor)), captured.fileDigests)
+                XCTAssertEqual(try CandidateFile(old.0).projectionRows(), Self.rows(before), scenario)
+                XCTAssertEqual(try CandidateFile(full.0).projectionRows(), Self.rows(next), scenario)
+            }
+        }
+    }
+
+    func testProductionShapedCandidateCopyAndSourceRaces() throws {
+        let fixture = try diskFixture(components: 12)
+        defer { try? FileManager.default.removeItem(at: fixture.root.deletingLastPathComponent()) }
+        let old = try oldPublished(fixture, includeUsage: true, storageName: "race-old")
+        _ = try changedDocument(fixture, scenario: "nameOnly")
+        let (captured, stable) = try fixture.repository.withStableSinglePassProbe(captureFileDigests: true) { ($0, $1) }
+        let revision = try GitCanonicalRevisionCalculator().current(at: fixture.root)
+        let full = try fullIndex(fixture, snapshot: captured.snapshot, generation: stable.generation,
+                                 revision: revision, storageName: "race-full")
+
+        // The source file is replaced after its descriptor was observed. The
+        // copied descriptor must be checked again before old rows are trusted.
+        var replacedBeforeCopy = false
+        XCTAssertThrowsError(try incrementalCandidate(fixture, oldURL: old.0, oldDescriptor: old.1,
+            snapshot: captured.snapshot, stable: stable, revision: revision,
+            inventory: captured.fileDigests, strategy: .historicalDelta, name: "copy-replaced",
+            beforeCopy: {
+                let replacementCopy = fixture.root.deletingLastPathComponent().appendingPathComponent("early-replacement.sqlite")
+                try FileManager.default.copyItem(at: full.0, to: replacementCopy)
+                guard rename(replacementCopy.path, old.0.path) == 0 else { throw ProbeError.invalidSummary }
+                replacedBeforeCopy = true
+            }))
+        XCTAssertTrue(replacedBeforeCopy)
+
+        let original = try oldPublished(fixture, includeUsage: true, storageName: "race-old-again")
+        let replacement = try fullIndex(fixture, snapshot: captured.snapshot, generation: stable.generation,
+                                        revision: revision, storageName: "race-replacement")
+        let copied = try incrementalCandidate(fixture, oldURL: original.0, oldDescriptor: original.1,
+            snapshot: captured.snapshot, stable: stable, revision: revision,
+            inventory: captured.fileDigests, strategy: .historicalDelta, name: "copy-open-inode",
+            copyOperation: { source, destination in
+                let input = try FileHandle(forReadingFrom: source)
+                defer { try? input.close() }
+                let output = FileManager.default.createFile(atPath: destination.path, contents: nil)
+                XCTAssertTrue(output)
+                let writer = try FileHandle(forWritingTo: destination)
+                defer { try? writer.close() }
+                let first = try input.read(upToCount: 4096) ?? Data()
+                try writer.write(contentsOf: first)
+                guard rename(replacement.0.path, source.path) == 0 else { throw ProbeError.invalidSummary }
+                while let next = try input.read(upToCount: 64 * 1024), !next.isEmpty {
+                    try writer.write(contentsOf: next)
+                }
+            })
+        try assertCandidateEqualsFull(copied, fullURL: full.0, snapshot: captured.snapshot,
+                                     revision: revision, generation: stable.generation)
+        let replaced = try PublishedIndexProbe().inspect(at: original.0)
+        if case .valid(let descriptor, _) = replaced.assessment {
+            XCTAssertEqual(descriptor.id, replacement.1.id)
+        } else { XCTFail("Other publisher's file should be valid") }
+
+        // Building from S1 after a later canonical save may produce a valid S1
+        // candidate, but it cannot be published as the now-current S2 state.
+        var later = captured.snapshot.document
+        later.components[0].name = "Later transition"
+        later.revision += 1
+        try fixture.repository.save(later, expected: captured.snapshot.document)
+        let (latest, latestStable) = try fixture.repository.withStableSinglePassProbe(captureFileDigests: true) { ($0, $1) }
+        XCTAssertNotEqual(copied.descriptor.sourceCanonicalIdentity, latest.snapshot.identity)
+        XCTAssertNotEqual(copied.descriptor.sourceGenerationBinding, .bound(latestStable.generation))
+    }
+
+    func testProductionShapedCandidateRollbackAndPublisherRace() throws {
+        let fixture = try diskFixture(components: 12)
+        defer { try? FileManager.default.removeItem(at: fixture.root.deletingLastPathComponent()) }
+        let old = try oldPublished(fixture, includeUsage: true, storageName: "rollback-old")
+        _ = try changedDocument(fixture, scenario: "nameOnly")
+        let (captured, stable) = try fixture.repository.withStableSinglePassProbe(captureFileDigests: true) { ($0, $1) }
+        let revision = try GitCanonicalRevisionCalculator().current(at: fixture.root)
+        let oldBytes = try Data(contentsOf: old.0)
+        XCTAssertThrowsError(try incrementalCandidate(fixture, oldURL: old.0, oldDescriptor: old.1,
+            snapshot: captured.snapshot, stable: stable, revision: revision,
+            inventory: captured.fileDigests, strategy: .historicalDelta, name: "rollback",
+            beforePatchCommit: { throw ProbeError.invalidSummary }))
+        XCTAssertEqual(try Data(contentsOf: old.0), oldBytes)
+        XCTAssertEqual(try CandidateFile(old.0).projectionRows(), Self.rows(fixture.before))
+
+        let other = try fullIndex(fixture, snapshot: captured.snapshot, generation: stable.generation,
+                                  revision: revision, storageName: "other-publisher")
+        let candidate = try incrementalCandidate(fixture, oldURL: old.0, oldDescriptor: old.1,
+            snapshot: captured.snapshot, stable: stable, revision: revision,
+            inventory: captured.fileDigests, strategy: .historicalDelta, name: "publisher-race",
+            beforePatchCommit: {
+                guard rename(other.0.path, old.0.path) == 0 else { throw ProbeError.invalidSummary }
+            })
+        let published = try PublishedIndexProbe().inspect(at: old.0)
+        if case .valid(let descriptor, _) = published.assessment {
+            XCTAssertEqual(descriptor.id, other.1.id)
+            XCTAssertNotEqual(candidate.descriptor.id, descriptor.id)
+        } else { XCTFail("Other publisher's file should be valid") }
+        XCTAssertEqual(candidate.descriptor.sourceCanonicalIdentity, captured.snapshot.identity)
+        // Publication must CAS the original descriptor; this Spike never
+        // publishes candidate bytes and cannot overwrite the other publisher.
+        XCTAssertEqual(try CandidateFile(old.0).projectionRows(), Self.rows(captured.snapshot.document))
+    }
+
+    func testProductionShapedCandidateHistoryIntegrityFallback() throws {
+        let fixture = try diskFixture(components: 12)
+        defer { try? FileManager.default.removeItem(at: fixture.root.deletingLastPathComponent()) }
+        let brokenInventory = try oldPublished(fixture, includeUsage: true, storageName: "broken-inventory")
+        let brokenSummary = try oldPublished(fixture, includeUsage: true, storageName: "broken-summary")
+        _ = try changedDocument(fixture, scenario: "screenAdd")
+        let (captured, stable) = try fixture.repository.withStableSinglePassProbe(captureFileDigests: true) { ($0, $1) }
+        let revision = try GitCanonicalRevisionCalculator().current(at: fixture.root)
+        try CandidateFile(brokenInventory.0).setMetadata("inventoryDigest", "corrupt")
+        XCTAssertThrowsError(try incrementalCandidate(fixture, oldURL: brokenInventory.0,
+            oldDescriptor: brokenInventory.1, snapshot: captured.snapshot, stable: stable,
+            revision: revision, inventory: captured.fileDigests, strategy: .historicalDelta,
+            name: "inventory-fallback"))
+        try CandidateFile(brokenSummary.0).setMetadata("usageDigest", "corrupt")
+        XCTAssertThrowsError(try incrementalCandidate(fixture, oldURL: brokenSummary.0,
+            oldDescriptor: brokenSummary.1, snapshot: captured.snapshot, stable: stable,
+            revision: revision, inventory: captured.fileDigests, strategy: .historicalDelta,
+            name: "summary-fallback"))
+        let u2 = try incrementalCandidate(fixture, oldURL: brokenSummary.0,
+            oldDescriptor: brokenSummary.1, snapshot: captured.snapshot, stable: stable,
+            revision: revision, inventory: captured.fileDigests, strategy: .currentScreenRescan,
+            name: "summary-not-needed-u2")
+        let full = try fullIndex(fixture, snapshot: captured.snapshot, generation: stable.generation,
+                                 revision: revision, storageName: "history-full")
+        try assertCandidateEqualsFull(u2, fullURL: full.0, snapshot: captured.snapshot,
+                                     revision: revision, generation: stable.generation)
+    }
+
+    func testMeasuredProductionShapedCandidateCost() throws {
+        guard let output = ProcessInfo.processInfo.environment["HAMII_PRODUCTION_CANDIDATE_BENCHMARK_RESULT"] else {
+            throw XCTSkip("Run explicitly for production-shaped incremental candidate Spike benchmark")
+        }
+        let cases: [(String, Int, Bool, String?, String, Int)] = [
+            ("independent-1000-one", 1000, false, nil, "nameOnly", 1),
+            ("independent-5000-one", 5000, false, nil, "nameOnly", 1),
+            ("independent-5000-ten", 5000, false, nil, "tenLocal", 10),
+            ("usage-heavy-100-one", 100, true, nil, "screenAdd", 1),
+            ("usage-heavy-100-multiple", 100, true, nil, "usageHeavy", 1),
+            ("chain-100", 100, false, "chain", "chain", 1),
+            ("fanout-100", 100, false, "fanout", "fanout", 1),
+            ("scope-100", 100, false, nil, "scope", 1)
+        ]
+        var reports: [[String: Any]] = []
+        for (name, count, heavy, shape, change, localChanges) in cases {
+            let fixture = try diskFixture(components: count, usageHeavy: heavy, graphShape: shape)
+            defer { try? FileManager.default.removeItem(at: fixture.root.deletingLastPathComponent()) }
+            let plain = try fullIndex(fixture, snapshot: fixture.oldSnapshot,
+                generation: fixture.oldStable.generation, revision: fixture.oldRevision,
+                storageName: "plain-old")
+            let oldU1 = try oldPublished(fixture, includeUsage: true, storageName: "old-u1")
+            let oldU2 = try oldPublished(fixture, includeUsage: false, storageName: "old-u2")
+            _ = try changedDocument(fixture, scenario: change, localChanges: localChanges)
+            var measures: [String: [Double]] = [:]
+            var planned: [String: [Int]] = [:]
+            for run in 0..<5 {
+                for includeUsage in [true, false] {
+                    let name = includeUsage ? "u1" : "u2"
+                    let metadataCopy = fixture.root.deletingLastPathComponent()
+                        .appendingPathComponent("metadata-\(run)-\(name).sqlite")
+                    try FileManager.default.copyItem(at: plain.0, to: metadataCopy)
+                    let metadata = try CandidateFile(metadataCopy)
+                    let writeStart = ProcessInfo.processInfo.systemUptime
+                    try metadata.installHistory(inventory: fixture.oldInventory,
+                        usage: includeUsage ? Self.usageSummary(fixture.before) : nil,
+                        binding: PublishedBinding(plain.1))
+                    measures["\(name).metadataInstall", default: []]
+                        .append((ProcessInfo.processInfo.systemUptime - writeStart) * 1_000)
+                    try FileManager.default.removeItem(at: metadataCopy)
+                }
+                let firstCapturesDigests = run.isMultiple(of: 2)
+                let started = ProcessInfo.processInfo.systemUptime
+                let first = try fixture.repository.withStableSinglePassProbe(captureFileDigests: firstCapturesDigests) { ($0, $1) }
+                measures[firstCapturesDigests ? "snapshotWithDigests" : "snapshotBaseline", default: []]
+                    .append((ProcessInfo.processInfo.systemUptime - started) * 1_000)
+                let secondStart = ProcessInfo.processInfo.systemUptime
+                let second = try fixture.repository.withStableSinglePassProbe(captureFileDigests: !firstCapturesDigests) { ($0, $1) }
+                measures[firstCapturesDigests ? "snapshotBaseline" : "snapshotWithDigests", default: []]
+                    .append((ProcessInfo.processInfo.systemUptime - secondStart) * 1_000)
+                let captured = firstCapturesDigests ? first : second
+                XCTAssertEqual(first.0.snapshot.identity, second.0.snapshot.identity)
+                XCTAssertEqual(first.1.generation, second.1.generation)
+                XCTAssertTrue(captured.0.readCounts.values.allSatisfy { $0 == 1 })
+                measures["perFileDigestCPU", default: []].append(captured.0.digestMilliseconds)
+                let revisionStart = ProcessInfo.processInfo.systemUptime
+                let revision = try GitCanonicalRevisionCalculator().current(at: fixture.root)
+                measures["gitRevision", default: []].append((ProcessInfo.processInfo.systemUptime - revisionStart) * 1_000)
+                for (strategy, old) in [(UsageStrategy.historicalDelta, oldU1), (.currentScreenRescan, oldU2)] {
+                    let label = strategy.rawValue
+                    let candidateStart = ProcessInfo.processInfo.systemUptime
+                    let candidate = try incrementalCandidate(fixture, oldURL: old.0, oldDescriptor: old.1,
+                        snapshot: captured.0.snapshot, stable: captured.1, revision: revision,
+                        inventory: captured.0.fileDigests, strategy: strategy, name: "candidate-\(name)-\(run)-\(label)")
+                    measures["\(label).candidateTotal", default: []]
+                        .append((ProcessInfo.processInfo.systemUptime - candidateStart) * 1_000)
+                    planned[label, default: []].append(candidate.plannedRows)
+                    for (stage, elapsed) in candidate.stages {
+                        measures["\(label).\(stage)", default: []].append(elapsed)
+                    }
+                    let fullStart = ProcessInfo.processInfo.systemUptime
+                    let full = try fullIndex(fixture, snapshot: captured.0.snapshot,
+                        generation: captured.1.generation, revision: revision,
+                        storageName: "full-\(name)-\(run)-\(label)")
+                    measures["\(label).fullBuild", default: []]
+                        .append((ProcessInfo.processInfo.systemUptime - fullStart) * 1_000)
+                    let validationStart = ProcessInfo.processInfo.systemUptime
+                    try assertCandidateEqualsFull(candidate, fullURL: full.0,
+                        snapshot: captured.0.snapshot, revision: revision, generation: captured.1.generation)
+                    measures["\(label).oracleComparison", default: []]
+                        .append((ProcessInfo.processInfo.systemUptime - validationStart) * 1_000)
+                    try FileManager.default.removeItem(at: candidate.url)
+                }
+            }
+            let sizes = try ["plain": plain.0, "u1": oldU1.0, "u2": oldU2.0].mapValues {
+                try FileManager.default.attributesOfItem(atPath: $0.path)[.size] as? Int ?? 0
+            }
+            reports.append(["fixture": name, "components": count, "canonicalFiles": fixture.oldInventory.count,
+                "runs": 5, "databaseBytes": sizes,
+                "plannedRows": planned.mapValues { ["min": $0.min() ?? 0, "max": $0.max() ?? 0] },
+                "timings": measures.mapValues { ["p50Ms": percentile($0, 0.5), "p95Ms": percentile($0, 0.95)] }])
+        }
+        let report: [String: Any] = [
+            "environment": "Swift 6.4 debug XCTest, macOS, local temporary Git worktree; 5 paired in-process runs per fixture; no publication or CLI",
+            "measurementScope": "Snapshot capture and Git revision measured separately; candidate stages include copied v8 SQLite and test-only inventory; fullBuild is LocalIndex.rebuild from the same captured Snapshot and revision, excluding Snapshot capture",
+            "fixtures": reports
+        ]
+        try JSONSerialization.data(withJSONObject: report, options: [.prettyPrinted, .sortedKeys])
             .write(to: URL(fileURLWithPath: output))
     }
 }
