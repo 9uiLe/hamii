@@ -32,6 +32,26 @@ typed node と別 graph、汎用 property bag、framework-specific AST。
 
 Spike の成功/失敗基準に照らして方式を選び、必要な実装・検証を完了し、恒久的なルールを Current Architecture または code に移す。[ADR workflow](../../docs/adr-workflow.md) の削除条件と commit 順に従う。
 
+## Decision
+
+2026-09-28: [minimal-ir Spike](spikes/minimal-ir/SPIKE.md) の代表 corpus と検証結果に基づき、Current IR の設計境界として **typed semantic node payload、順序を保持する typed effects、独立した domain graph、Screen-level の system semantics、明示的な typed target extension、分離された native escape hatch** を採用する。これは taxonomy の方向を決めるものであり、Spike の試作型をそのまま production schema にする決定ではない。
+
+- Text、Image、Button、Stack、Scroll、Overlay、ComponentInstance など、node kind 固有の意味は対応する typed payload が所有する。異なる kind の optional field を共有する形や、汎用 property bag を supported semantics の通常表現にしない。
+- 意味が順序に依存する effect は IR 内の順序付き collection として扱う。Spike の padding/background という具体例だけに対象を固定しない。
+- Page、ArchitectureScope、ComponentDefinition、Token、Asset、Interaction、Motion、PreviewFixture、Target は visual node に吸収しない。既存の stable EntityID、ComponentDefinition/Instance 分離、Token/Asset 参照、binding/event identity を維持する。
+- System Navigation と Toolbar は自由配置の visual Layer ではなく、Screen-level の typed system semantics として扱う。Custom navigation は visual Layer tree を参照できる。
+- Portable semantics に収まらない supported intent は、target/platform/framework と version を明示する typed extension に置く。Spike の `iOSSheetDetents` は境界の検証例であり、production API としては確定しない。
+- Native escape hatch は portable payload と分離し、semantic owner、対象 target/platform/framework、payload version を明示する。代表 corpus の通常表現に使わない。
+- Framework-specific AST を Core IR にせず、`nativeIntent` の文字列や任意の `targetOverrides` dictionary を supported semantics の主要表現にしない。
+
+Evidence commit `1a9ab4e874ecb35ac31ab2caaabdfec0dae3e0e0` では、4 fixtures / 17 required intents の範囲で、現行形は2 intent に generic string を要し、typed candidate は generic bag と escape hatch を使わず表現した。5 focused tests は round-trip、stable ID、effect order、invalid-state probes を検証し、4 target の loss matrix は unsupported / approximate を明示した。これは **選択した corpus における taxonomy 境界**の根拠であり、framework API の網羅性、runtime parity、production lowering、将来の extension 使用頻度を証明しない。
+
+代表的な product screen が繰り返し escape hatch を必要とする、target extension が portable semantics を支配する、必須意味に framework API の Core への漏出が必要になる、新しい順序依存を ordered effects が表せない、または UIKit / Compose lowering で一つの portable semantic の意味が両立しないと判明した場合に、この taxonomy 境界を再評価する。現時点で件数 threshold は設けない。
+
+## Remaining Implementation
+
+Production の `Layer` payload と ordered effects、Screen system semantics、typed target extension を導入し、Validator、TargetPlanner、Canvas、Native Preview、Generator を接続する。Canonical Format v1 の既存 bytes の意味を黙って変更しない。encoding-compatible な内部変更か、Current Format 更新と隔離された migration のどちらが必要かを実装時の証拠で決める。Capability の宣言粒度は [capability-contract ADR](../capability-contract/ADR.md) の責務とする。この ADR は production 実装と検証が完了するまで残す。
+
 ## Status
 
-Spike Required
+Implementation Required
