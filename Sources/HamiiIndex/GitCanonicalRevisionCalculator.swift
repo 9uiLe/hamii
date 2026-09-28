@@ -36,20 +36,43 @@ private final class GitRevisionProfileRecorder {
 /// are included without reading every clean shard on each query.
 public struct GitCanonicalRevisionCalculator: CanonicalRevisionCalculating {
     private let afterInitialStatus: (() throws -> Void)?
-    public init() { afterInitialStatus = nil }
-    init(afterInitialStatus: @escaping () throws -> Void) { self.afterInitialStatus = afterInitialStatus }
+    private let afterFlagsObserved: (() throws -> Void)?
+    private let afterFilterObserved: (() throws -> Void)?
+    public init() {
+        afterInitialStatus = nil
+        afterFlagsObserved = nil
+        afterFilterObserved = nil
+    }
+    init(afterInitialStatus: @escaping () throws -> Void) {
+        self.afterInitialStatus = afterInitialStatus
+        afterFlagsObserved = nil
+        afterFilterObserved = nil
+    }
+    #if DEBUG
+    init(afterFlagsObserved: @escaping () throws -> Void) {
+        afterInitialStatus = nil
+        self.afterFlagsObserved = afterFlagsObserved
+        afterFilterObserved = nil
+    }
+    init(afterFilterObserved: @escaping () throws -> Void) {
+        afterInitialStatus = nil
+        afterFlagsObserved = nil
+        self.afterFilterObserved = afterFilterObserved
+    }
+    #endif
     private static let paths = ["hamii.json", "pages", "screens", "scopes", "components", "tokens", "assets", "interactions", "motions", "fixtures", "targets"]
     private static let gitPaths = ["hamii.json"] + paths.dropFirst().map { ":(glob)\($0)/*.json" }
 
     public func current(at root: URL) throws -> CanonicalRevision {
-        try CanonicalRevision(Self.calculate(at: root, afterInitialStatus: afterInitialStatus, profile: nil))
+        try CanonicalRevision(Self.calculate(at: root, afterInitialStatus: afterInitialStatus,
+            afterFlagsObserved: afterFlagsObserved, afterFilterObserved: afterFilterObserved, profile: nil))
     }
 
     #if DEBUG
     func profiledCurrent(at root: URL) throws -> (revision: CanonicalRevision, profile: GitCanonicalRevisionProfile) {
         let recorder = GitRevisionProfileRecorder()
         let revision = try CanonicalRevision(Self.calculate(at: root, afterInitialStatus: afterInitialStatus,
-            profile: recorder))
+            afterFlagsObserved: afterFlagsObserved, afterFilterObserved: afterFilterObserved, profile: recorder))
         return (revision, recorder.result)
     }
     #endif
@@ -61,6 +84,8 @@ public struct GitCanonicalRevisionCalculator: CanonicalRevisionCalculating {
     }
 
     private static func calculate(at root: URL, afterInitialStatus: (() throws -> Void)?,
+                                  afterFlagsObserved: (() throws -> Void)?,
+                                  afterFilterObserved: (() throws -> Void)?,
                                   profile: GitRevisionProfileRecorder?) throws -> String {
         let started = profile == nil ? 0 : ProcessInfo.processInfo.systemUptime
         defer {
@@ -91,6 +116,7 @@ public struct GitCanonicalRevisionCalculator: CanonicalRevisionCalculating {
             }
         }
         profile?.trackedCanonicalFileCount = trackedPaths.count
+        try afterFlagsObserved?()
         let attributeInput = measured("checkAttrInputPreparation", profile: profile) {
             var input = Data()
             for path in trackedPaths {
@@ -121,6 +147,7 @@ public struct GitCanonicalRevisionCalculator: CanonicalRevisionCalculating {
                 }
             }
         }
+        try afterFilterObserved?()
         var oid: Data?
         var changed: [Data] = []
         var skipOriginal = false

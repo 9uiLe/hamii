@@ -49,7 +49,11 @@ Any false current verdict within the coordinated writer guarantee or for evidenc
 
 Using Apple Git 2.54.0 in a temporary clean worktree, [the focused probe](artifacts/baseline_interleaving_probe.py) ran E1/E2/E3, injected one raw noncoordinated mutation, then ran E4. [Results](artifacts/baseline-interleavings.json) show that a raw Canonical edit and branch switch changed E4 output; `assume-unchanged`, `skip-worktree`, and `.git/info/attributes` filter changes after E2/E3 left E1 and E4 output identical, even though a later E2 or E3 read saw the new metadata. This is command-output evidence, not yet a measured production calculator return value. The current source has no explicit re-observation of E2/E3 after E4. These interleavings are outside the coordinated writer contract; they characterize the limits of defense-in-depth rather than a product promise of arbitrary external-writer atomicity.
 
-Production-shaped DEBUG hook results, candidate parity, and performance are pending.
+### Confirmed calculator outcomes in the tested interleavings
+
+A DEBUG-only barrier in the actual calculator was placed immediately after E2 flag parsing or E3 filter parsing. In both cases, a raw Git / `.git/info/attributes` change occurred before E4. [Captured outcomes](artifacts/calculator-metadata-interleavings.json) show that the hooked calculator returned the **same revision as before** the injected change; a new calculator call after the change returned `unverifiableSource`. The test did not assume the hooked result in advance. These two deterministic cases confirm that E4 is not a final fence for E2/E3 metadata. They do not establish the outcome for every external-writer interleaving or alter the coordinated writer Product Contract.
+
+The baseline guarantee matrix is therefore: hidden flag/filter rejection when those values are present at their respective E2/E3 observation; fail-closed on observed malformed or contradictory evidence; and E1/E4 rejection of the tested branch/raw-edit status changes. After-E2/E3 metadata changes remain characterized blind windows. Candidate parity and performance are pending.
 
 ## Conclusion
 
@@ -59,3 +63,4 @@ Pending evidence; the production four-execution calculator remains unchanged.
 
 - [Baseline interleaving probe](artifacts/baseline_interleaving_probe.py)
 - [Baseline command-output results](artifacts/baseline-interleavings.json)
+- [Actual calculator DEBUG-hook outcomes](artifacts/calculator-metadata-interleavings.json)

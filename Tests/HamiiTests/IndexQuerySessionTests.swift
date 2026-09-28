@@ -2356,6 +2356,54 @@ extension IndexQuerySessionTests {
 }
 
 extension IndexQuerySessionTests {
+    private struct GitMetadataInterleavingSample: Codable {
+        let injection: String
+        let baselineBefore: String
+        let hookedOutcome: String
+        let postMutationOutcome: String
+        let hookedRevisionMatchesBefore: Bool
+    }
+
+    func testMeasuredGitMetadataInterleavingBaseline() throws {
+        guard let output = ProcessInfo.processInfo.environment["HAMII_GIT_METADATA_INTERLEAVING_RESULT"] else {
+            throw XCTSkip("Set HAMII_GIT_METADATA_INTERLEAVING_RESULT for baseline characterization")
+        }
+        func outcome(_ calculator: GitCanonicalRevisionCalculator, at root: URL) -> String {
+            do { return "revision:\(try calculator.current(at: root).rawValue)" }
+            catch IndexError.stale { return "stale" }
+            catch IndexError.unverifiableSource { return "unverifiableSource" }
+            catch { return "other:\(error)" }
+        }
+        var samples: [GitMetadataInterleavingSample] = []
+        for injection in ["assume-unchanged-after-E2", "filter-after-E3"] {
+            let fixture = try fixture()
+            defer { try? FileManager.default.removeItem(at: fixture.directory) }
+            let before = outcome(GitCanonicalRevisionCalculator(), at: fixture.root)
+            let calculator: GitCanonicalRevisionCalculator
+            if injection == "assume-unchanged-after-E2" {
+                calculator = GitCanonicalRevisionCalculator(afterFlagsObserved: {
+                    try self.git(fixture.root, ["update-index", "--assume-unchanged",
+                                                "components/component_alpha.json"])
+                })
+            } else {
+                calculator = GitCanonicalRevisionCalculator(afterFilterObserved: {
+                    try Data("components/component_alpha.json filter=hamii-probe\n".utf8)
+                        .write(to: fixture.root.appendingPathComponent(".git/info/attributes"))
+                })
+            }
+            let hooked = outcome(calculator, at: fixture.root)
+            let after = outcome(GitCanonicalRevisionCalculator(), at: fixture.root)
+            XCTAssertTrue(before.hasPrefix("revision:"), injection)
+            XCTAssertEqual(after, "unverifiableSource", injection)
+            samples.append(GitMetadataInterleavingSample(injection: injection,
+                baselineBefore: before, hookedOutcome: hooked, postMutationOutcome: after,
+                hookedRevisionMatchesBefore: hooked == before))
+        }
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        try encoder.encode(samples).write(to: URL(fileURLWithPath: output), options: .atomic)
+    }
+
     private struct GitOracleStageSample: Codable {
         let fixture: String
         let iteration: Int
