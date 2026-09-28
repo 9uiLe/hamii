@@ -32,7 +32,7 @@ ArchitectureScope の依存 predicate は `owner ∈ ancestors(consumer) ∪ {co
 
 Layer は stable ID、kind 別の `LayerPayload`、hierarchy、layout、accessibility、native intent、target override を持ちます。実装済み payload は Stack、Text、Image、Button、Component Instance、Scroll、Overlay です。Text の値と binding、Button の label と任意 event、Image の任意 asset reference、Component Instance の参照は各 payload が所有します。現行 Canonical Format v1 は平坦な Layer JSON のままで、encode/decode 時に payload へ変換します。v1 で受理済みの他 kind 用 field は Format v1 residual として lossless に保持し、supported UI semantics に昇格させません。Scroll の child 数、Button event、Image asset reference の validation は現行 v1 のままです。Ordered effects と typed target extension など残る production lowering は [Native-semantic IR ADR](../adr/native-semantic-ir/ADR.md) の実装対象です。System UI を自由配置 Rectangle として保存する設計は採用しません。
 
-`CapabilityDeclaration` は target ごとに `Exact`、`Portable`、`Target-specific`、`Approximate`、`Unsupported`、`External Integration Required` を表します。`TargetPlanner` は未宣言を Unsupported とし、Approximate に明示承認を要求します。Framework ごとの確定 coverage と粒度は [Capability ADR](../adr/capability-contract/ADR.md) で検証します。
+`CapabilityDeclaration` は target ごとに `Exact`、`Portable`、`Target-specific`、`Approximate`、`Unsupported`、`External Integration Required` を表します。`TargetPlanner` は未宣言を Unsupported とし、Approximate に明示承認を要求します。現行 Planner は Layer kind と一部の追加条件を検査します。複合 semantics と product integration obligation の共通 loss evaluator は未実装です。[Capability ADR](../adr/capability-contract/ADR.md) は semantic requirement 粒度を決定し、production 接続と framework ごとの coverage 検証を残しています。
 
 ## Mutation and authoring
 

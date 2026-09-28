@@ -6,32 +6,34 @@ Target ごとの対応範囲を Human、AI、Preview、Generator が同じ基準
 
 ## Decision to Make
 
-`feature/property/target/runtime version` のどの粒度で Exact、Portable、Approximate 等を宣言し、loss を block するか。
+`node/property/semantic-contract` のどの粒度で target/runtime version ごとの Exact、Portable、Target-specific、Approximate、Unsupported、External Integration Required を宣言し、loss を block するか。
 
 ## Constraints
 
-Unsupported を黙って近似しない。Canvas、Host、Generator、AI は同じ判定を使う。
+Unsupported を黙って近似しない。Canvas、Host、Generator、AI は同じ判定を使う。Product-specific handler / state mapping を hamii IR の built-in 実装として扱わない。個別 framework の未検証 API support を宣言しない。
 
 ## Options
 
-node 単位、property 単位、semantic contract 単位。Navigation/Toolbar/Remote Asset は複合 capability が必要。
+Node 単位、property 単位、semantic contract 単位。Navigation/Toolbar/Remote Asset は複合 capability が必要。
 
 ## Current Hypothesis
 
-**未確定:** feature/property/target/runtime の組合せに対する shared registry で、silent approximation を防ぎつつ保守可能な loss report を出せる。
+**Decision:** IR から semantic requirements を抽出し、target/runtime profile に対して requirement 単位の support を評価し、共有 loss report を出す。Approved Approximate も loss を隠さない。Property metadata は requirement 抽出の入力になり得るが、判定単位は独立した意味とその integration obligation とする。Node 単位の一括 support を判定の正本にしない。
+
+これは granularity と評価境界の決定であり、SwiftUI/UIKit/Compose の正確な supported API set の決定ではない。Production の既存 `TargetPlanner` はまだこの共有 evaluator へ移行していない。
 
 ## Unknowns
 
-node/property/semantic contract の適切な粒度、複合機能の評価方法、OS version 差、registry の保守費。
+Production IR の全 requirement 抽出範囲、profile と runtime version の登録方法、四 consumer への loss report 接続、registry の更新時 validation。特定 framework の support set は別途一次資料・実行検証が必要。
 
 ## Required Evidence
 
-[spikes/capability-granularity/SPIKE.md](spikes/capability-granularity/SPIKE.md) を実施し、観測値と結論を同じディレクトリに記録する。未実施の結果を確定判断として扱わない。
+[spikes/capability-granularity/SPIKE.md](spikes/capability-granularity/SPIKE.md) に oracle、14 row / 33 requirement の比較、現行 Planner baseline、test-only Swift code、限界を記録した。Oracle は候補より先に Git commit `0f2694f` に保存した。Fixture extraction で発見した D root Stack の欠落を候補計測前に訂正した。
 
 ## Decision Criteria
 
-[spikes/capability-granularity/SPIKE.md](spikes/capability-granularity/SPIKE.md) の成功・失敗基準に照らして選択肢を比較し、採用する方式と残る制約を記録する。判断と結果を commit した後に、必要な実装・検証と現行 docs への反映を完了する。削除は [ADR workflow](../../docs/adr-workflow.md) の全条件を満たすまで行わない。
+採用候補は false positive = 0、四 consumer divergence = 0、silent approximation = 0。False negative、registry entry、変更増幅を比較する。今回の corpus では semantic-contract 候補が 0/0/0、node は false positive 9、property は 3。Production 実装では同じ hard gates を維持し、未検証 target support を Exact としない。
 
 ## Status
 
-Spike Required
+Implementation Required

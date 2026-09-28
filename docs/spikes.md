@@ -27,7 +27,6 @@ Status: 検証中。各 Spike は fixture、対象 OS/SDK/Xcode、実行 command
 - [Git / LFS threshold and availability](../adr/asset-storage-policy/spikes/git-lfs-threshold/SPIKE.md)
 - [Authoring Harness の共通 policy 実行](../adr/authoring-policy-enforcement/spikes/actor-policy-parity/SPIKE.md)
 - [Large Canvas benchmark](../adr/canvas-renderer-performance/spikes/large-canvas/SPIKE.md)
-- [Capability の契約粒度](../adr/capability-contract/spikes/capability-granularity/SPIKE.md)
 - [Component Scope の共通検証境界](../adr/component-scope-validation/spikes/scope-rule-parity/SPIKE.md)
 - [Component Variant と Instance の解決](../adr/component-variant-resolution/spikes/instance-resolution/SPIKE.md)
 - [Compose IR validation](../adr/compose-target-timing/spikes/compose-ir-validation/SPIKE.md)

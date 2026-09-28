@@ -72,6 +72,10 @@
       "approval": false,
       "semanticRequirements": [
         {
+          "key": "stack.container",
+          "support": "exact"
+        },
+        {
           "key": "navigation.systemContainer",
           "support": "exact"
         },
