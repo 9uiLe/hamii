@@ -36,4 +36,4 @@
 
 `Max contiguous lock` はこの測定では各条件の Phase 1 でした。5000 Component の missing / stale Bound p95 はそれぞれ **958.11 / 895.96 ms** です。別 OS process の writer が Phase 1 中に lock を試みた単発試験では、reader lock 取得から writer attempt **+69.37 ms**、Snapshot 完了 **+655.80 ms**、Phase 1 完了 **+1014.46 ms**、writer wait **945.01 ms** でした。単発値は writer latency の分布を示しません。
 
-Index recovery は initial Query の検証済み観測を利用できる場合、同じ Snapshot から source を引き継ぎます。公開後の retry は新しい lock 下で generation と Index descriptor を再確認します。Candidate build 中または retry 前に source が変われば、古い rows を使いません。初回 Query、full rebuild、retry、CLI process 起動のそれぞれを分けて比較してください。増分再索引と大規模 Project の rebuild cost は [Incremental Index Recovery ADR](../adr/incremental-index-recovery/ADR.md) が扱います。
+Index recovery は initial Query の検証済み観測を利用できる場合、同じ Snapshot から source を引き継ぎます。公開後の retry は新しい lock 下で generation と Index descriptor を再確認します。Candidate build 中または retry 前に source が変われば、古い rows を使いません。初回 Query、full rebuild、retry、CLI process 起動のそれぞれを分けて比較してください。現行の自動復旧は full rebuild です。この測定より大きい実 Project の rebuild cost は未測定であり、表の値を Product SLA として扱いません。

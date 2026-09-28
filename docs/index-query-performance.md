@@ -14,9 +14,7 @@ Separate one-shot CLI measurement: disposable copy of `Samples/Starter`, 10 JSON
 
 Correctness regressions in `IndexQuerySessionTests` verify the selected path, complete row equality with the slow oracle, bounded automatic recovery after a coordinated save, slow re-verification after Index replacement, explicit unbound slow-only behavior, missing/corrupt Canonical generation rejection, worktree isolation, and separate OS process save/rebuild blocking inside the fast verdict-to-row-read lock. These tests establish the checked interleavings, not power-loss durability or safety for noncoordinated writers.
 
-Implementation commit `965ded3` was validated by `bash scripts/check.sh`: 114 Swift tests, 24 expected skips, 0 failures; architecture dependencies, ADR structure, documentation links, CLI contract, merge validation/publication, and sample validation all passed.
-
-Warm same-process timing is not a one-shot CLI value, nor proof that the GUI currently uses this Query session. [Automatic full recovery](index-recovery-performance.md) has separate end-to-end measurements. A genuinely large production project and power-loss durability remain unmeasured. Incremental indexing is tracked in [Incremental Index Recovery ADR](../adr/incremental-index-recovery/ADR.md).
+Warm same-process timing is not a one-shot CLI value, nor proof that the GUI currently uses this Query session. [Automatic full recovery](index-recovery-performance.md) has separate end-to-end measurements. A genuinely large production project and power-loss durability remain unmeasured. Current automatic recovery uses a complete Index rebuild from a verified CanonicalSnapshot.
 
 ## Coordinated lock contention
 
@@ -34,6 +32,4 @@ Warm same-process timing is not a one-shot CLI value, nor proof that the GUI cur
 
 現 Editor の Component 一覧は `ProjectService.availableComponents` を使い、`IndexQuerySession` をまだ所有しない。Session lifecycle regression は production session を project open lifetime に保持し、coordinated mutation 後は自動復旧で slow→fast、close で破棄、reopen で cold に戻ることを確認する。別 worktree の2 session を A→B→A と使い、A の mutation が B の witness を失効させないことも確認する。将来 Editor の Index-backed search を追加する際は、その project-open lifetime に session を保持する。
 
-Reader contention は現在の排他 `WorktreeCoordinator` に伴う性能上の tradeoff である。これらの測定だけを根拠に lock protocol を変更しない。Automatic full recovery の lock 計測は [Production Index recovery performance](index-recovery-performance.md) にあり、incremental indexing は [Incremental Index Recovery ADR](../adr/incremental-index-recovery/ADR.md) で検証中である。
-
-この lifecycle / contention validation を追加した後の `bash scripts/check.sh` は、Swift 120 tests / 29 expected skips / 0 failures、architecture、ADR、documentation links、CLI、merge、sample checks がすべて成功した。前段の production implementation commit `8c11754` に対する Verify `36329894031` も success。今回の追補 commit の CI 結果は別に確認する。
+Reader contention は現在の排他 `WorktreeCoordinator` に伴う性能上の tradeoff である。これらの測定だけを根拠に lock protocol を変更しない。Automatic full recovery の lock 計測は [Production Index recovery performance](index-recovery-performance.md) にあり、現行の自動復旧は full rebuild を使う。

@@ -12,7 +12,7 @@ Status: 検証中。各 Spike は fixture、対象 OS/SDK/Xcode、実行 command
 | **06 Component Variant** | P1 | Definition+axes+sparse deltas+instance overrides を実装し 1k instance を解決。 | Definition edit の依存 invalidation、instance edit の局所性、cycle/error、保存に subtree copy が無いこと。 |
 | **07 Authoring Harness** | P0 | tokenOnly、absolutePositioning forbidden、component availability、a11y rule を versioned policy にする。 | 同じ違反を Human/AI command が同一 rule ID で拒否し、waiver が監査されること。Prompt だけで成立したら失敗。 |
 | **08 Git Repository Storage** | P0 | stable ID shards と atomic multi-file save、二人の branch edit/pull/merge、crash during save を再現。 | untouched entities に diff が出ない、complete old/new revision へ recovery、merge 後 validation。torn canonical graph が残れば失敗。 |
-| **09 Local Query DB** | P1 | 1k/10k/50k Layer、Scope closure、component/token/asset usage を SQLite に index。pull/外部編集を incremental reindex。 | query p50/p95、index rebuild 時間、fingerprint drift 検知。破損 DB を消して正本から復旧できること。 |
+| **09 Local Query DB** | P1 | 1k/10k/50k Layer、Scope closure、component/token/asset usage を SQLite に index。Canonical 変更後は整合性を検証し、必要な Index generation を full rebuild。 | query p50/p95、index rebuild 時間、fingerprint drift 検知。破損 DB を消して正本から復旧できること。 |
 | **10 Migration** | P0 | v1→v2→v3 edge、別 target の historical types、temporary worktree、fresh index rebuild。 | Core の依存 graph に legacy type が無いこと、元 tree 不変、同一結果への repeatability。 |
 | **11 Destructive Migration** | P1 | literal color→token の複数候補、missing asset、unsupported component を入力。 | Requires Resolution と影響 diff、blocking report、review/commit 前は元 tree 不変。曖昧値の自動推測は失敗。 |
 | **12 Asset Storage** | P1 | small Git、large LFS、remote URL/cache、runtime binding、hash object、offline を検証。 | hash integrity、LFS missing preflight、cache 削除後も document 正常、secret URL 拒否。repo size/clone time も測る。 |
@@ -37,8 +37,6 @@ Status: 検証中。各 Spike は fixture、対象 OS/SDK/Xcode、実行 command
 - [Worktree isolation](../adr/git-external-write-coordination/spikes/worktree-isolation/SPIKE.md)
 - [External change detection](../adr/git-external-write-coordination/spikes/external-change-detection/SPIKE.md)
 - [Concurrent worktree merge](../adr/git-external-write-coordination/spikes/concurrent-worktree-merge/SPIKE.md)
-- [Incremental reindex](../adr/incremental-index-recovery/spikes/incremental-reindex/SPIKE.md)
-- [Large project index rebuild](../adr/incremental-index-recovery/spikes/large-project-rebuild/SPIKE.md)
 - [Isolated format upgrade](../adr/migration-core-boundary/spikes/isolated-format-upgrade/SPIKE.md)
 - [Ambiguous value review](../adr/migration-ambiguity-resolution/spikes/ambiguous-value-review/SPIKE.md)
 - [Migration worktree safety](../adr/migration-review-protocol/spikes/worktree-safety/SPIKE.md)
