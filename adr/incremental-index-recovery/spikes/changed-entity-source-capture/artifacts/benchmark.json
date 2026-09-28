@@ -1,0 +1,299 @@
+[
+  {
+    "baselineSnapshotWithoutDigest" : {
+      "p50Ms" : 97.404791667941026,
+      "p95Ms" : 99.298875007661991
+    },
+    "changedEntities" : 1,
+    "components" : 1000,
+    "digestBytes" : 32192,
+    "digestCallback" : {
+      "p50Ms" : 5.6594585039420053,
+      "p95Ms" : 5.6833331764210016
+    },
+    "fixture" : "1000",
+    "indexRowIntegrityRead" : {
+      "p50Ms" : 19.47574999940116,
+      "p95Ms" : 19.558625004719943
+    },
+    "inventoryDiffAndChangeSet" : {
+      "p50Ms" : 2.5265416625188664,
+      "p95Ms" : 2.5889583339449018
+    },
+    "inventoryRead" : {
+      "p50Ms" : 8.7779583263909444,
+      "p95Ms" : 8.8324583339272067
+    },
+    "inventoryRows" : 1006,
+    "runs" : 5,
+    "snapshot" : {
+      "p50Ms" : 103.55725001136307,
+      "p95Ms" : 104.44412499782629
+    },
+    "sqliteFileBytes" : 643072
+  },
+  {
+    "baselineSnapshotWithoutDigest" : {
+      "p50Ms" : 97.90279166190885,
+      "p95Ms" : 99.91891666140873
+    },
+    "changedEntities" : 10,
+    "components" : 1000,
+    "digestBytes" : 32192,
+    "digestCallback" : {
+      "p50Ms" : 5.6860413023969159,
+      "p95Ms" : 5.8239166392013431
+    },
+    "fixture" : "1000",
+    "indexRowIntegrityRead" : {
+      "p50Ms" : 19.442708333372138,
+      "p95Ms" : 20.714916652650572
+    },
+    "inventoryDiffAndChangeSet" : {
+      "p50Ms" : 2.5597083294996992,
+      "p95Ms" : 2.6320000033592805
+    },
+    "inventoryRead" : {
+      "p50Ms" : 8.8116666593123227,
+      "p95Ms" : 9.3487083358922973
+    },
+    "inventoryRows" : 1006,
+    "runs" : 5,
+    "snapshot" : {
+      "p50Ms" : 104.72033334372099,
+      "p95Ms" : 107.73908333794679
+    },
+    "sqliteFileBytes" : 643072
+  },
+  {
+    "baselineSnapshotWithoutDigest" : {
+      "p50Ms" : 97.666041663615033,
+      "p95Ms" : 98.004999992554076
+    },
+    "changedEntities" : 100,
+    "components" : 1000,
+    "digestBytes" : 32192,
+    "digestCallback" : {
+      "p50Ms" : 5.6756251724436879,
+      "p95Ms" : 5.8100832829950377
+    },
+    "fixture" : "1000",
+    "indexRowIntegrityRead" : {
+      "p50Ms" : 19.446916659944691,
+      "p95Ms" : 19.49012499244418
+    },
+    "inventoryDiffAndChangeSet" : {
+      "p50Ms" : 2.5802083255257457,
+      "p95Ms" : 2.6033333269879222
+    },
+    "inventoryRead" : {
+      "p50Ms" : 8.7782916671130806,
+      "p95Ms" : 8.8269999978365377
+    },
+    "inventoryRows" : 1006,
+    "runs" : 5,
+    "snapshot" : {
+      "p50Ms" : 104.4464166770922,
+      "p95Ms" : 106.11954166961368
+    },
+    "sqliteFileBytes" : 638976
+  },
+  {
+    "baselineSnapshotWithoutDigest" : {
+      "p50Ms" : 493.02912499115337,
+      "p95Ms" : 519.45675000024494
+    },
+    "changedEntities" : 1,
+    "components" : 5000,
+    "digestBytes" : 160192,
+    "digestCallback" : {
+      "p50Ms" : 28.779874803149141,
+      "p95Ms" : 29.535666675656103
+    },
+    "fixture" : "5000",
+    "indexRowIntegrityRead" : {
+      "p50Ms" : 88.708958341157995,
+      "p95Ms" : 96.099916670937091
+    },
+    "inventoryDiffAndChangeSet" : {
+      "p50Ms" : 11.39875000808388,
+      "p95Ms" : 12.127458336181007
+    },
+    "inventoryRead" : {
+      "p50Ms" : 43.734208331443369,
+      "p95Ms" : 46.152541661285795
+    },
+    "inventoryRows" : 5006,
+    "runs" : 5,
+    "snapshot" : {
+      "p50Ms" : 528.75883333035745,
+      "p95Ms" : 561.06133334105834
+    },
+    "sqliteFileBytes" : 3174400
+  },
+  {
+    "baselineSnapshotWithoutDigest" : {
+      "p50Ms" : 495.82266666402575,
+      "p95Ms" : 515.2267500088783
+    },
+    "changedEntities" : 10,
+    "components" : 5000,
+    "digestBytes" : 160192,
+    "digestCallback" : {
+      "p50Ms" : 28.732666643918492,
+      "p95Ms" : 29.011207967414521
+    },
+    "fixture" : "5000",
+    "indexRowIntegrityRead" : {
+      "p50Ms" : 86.860208321013488,
+      "p95Ms" : 89.509208337403834
+    },
+    "inventoryDiffAndChangeSet" : {
+      "p50Ms" : 11.438250003266148,
+      "p95Ms" : 11.472250000224449
+    },
+    "inventoryRead" : {
+      "p50Ms" : 43.095791668747552,
+      "p95Ms" : 43.28408332366962
+    },
+    "inventoryRows" : 5006,
+    "runs" : 5,
+    "snapshot" : {
+      "p50Ms" : 529.24866667308379,
+      "p95Ms" : 540.91191665793303
+    },
+    "sqliteFileBytes" : 3186688
+  },
+  {
+    "baselineSnapshotWithoutDigest" : {
+      "p50Ms" : 497.18854167440441,
+      "p95Ms" : 542.51408333948348
+    },
+    "changedEntities" : 100,
+    "components" : 5000,
+    "digestBytes" : 160192,
+    "digestCallback" : {
+      "p50Ms" : 28.763083202647977,
+      "p95Ms" : 29.076500359224156
+    },
+    "fixture" : "5000",
+    "indexRowIntegrityRead" : {
+      "p50Ms" : 86.96258332929574,
+      "p95Ms" : 87.75475001311861
+    },
+    "inventoryDiffAndChangeSet" : {
+      "p50Ms" : 11.293750008917414,
+      "p95Ms" : 12.080833330401219
+    },
+    "inventoryRead" : {
+      "p50Ms" : 43.128666671691462,
+      "p95Ms" : 43.186166658415459
+    },
+    "inventoryRows" : 5006,
+    "runs" : 5,
+    "snapshot" : {
+      "p50Ms" : 529.51137500349432,
+      "p95Ms" : 543.24166667356621
+    },
+    "sqliteFileBytes" : 3153920
+  },
+  {
+    "baselineSnapshotWithoutDigest" : {
+      "p50Ms" : 12.674791665631346,
+      "p95Ms" : 12.789541666279547
+    },
+    "changedEntities" : 1,
+    "components" : 100,
+    "digestBytes" : 4352,
+    "digestCallback" : {
+      "p50Ms" : 0.76304173853714019,
+      "p95Ms" : 0.7764582842355594
+    },
+    "fixture" : "mixed",
+    "indexRowIntegrityRead" : {
+      "p50Ms" : 6.069333350751549,
+      "p95Ms" : 6.1016250110697001
+    },
+    "inventoryDiffAndChangeSet" : {
+      "p50Ms" : 0.26933333720080554,
+      "p95Ms" : 0.28608333377633244
+    },
+    "inventoryRead" : {
+      "p50Ms" : 1.2930416560266167,
+      "p95Ms" : 1.3377916620811448
+    },
+    "inventoryRows" : 136,
+    "runs" : 5,
+    "snapshot" : {
+      "p50Ms" : 13.407166654360481,
+      "p95Ms" : 13.618208336993121
+    },
+    "sqliteFileBytes" : 196608
+  },
+  {
+    "baselineSnapshotWithoutDigest" : {
+      "p50Ms" : 12.59541665785946,
+      "p95Ms" : 12.620833338587545
+    },
+    "changedEntities" : 10,
+    "components" : 100,
+    "digestBytes" : 4352,
+    "digestCallback" : {
+      "p50Ms" : 0.75937491783406585,
+      "p95Ms" : 0.78925008710939437
+    },
+    "fixture" : "mixed",
+    "indexRowIntegrityRead" : {
+      "p50Ms" : 6.0015833296347409,
+      "p95Ms" : 6.0386666737031192
+    },
+    "inventoryDiffAndChangeSet" : {
+      "p50Ms" : 0.26987500314135104,
+      "p95Ms" : 0.27799999224953353
+    },
+    "inventoryRead" : {
+      "p50Ms" : 1.2840833369409665,
+      "p95Ms" : 1.3218749954830855
+    },
+    "inventoryRows" : 136,
+    "runs" : 5,
+    "snapshot" : {
+      "p50Ms" : 13.513458325178362,
+      "p95Ms" : 13.751374994171783
+    },
+    "sqliteFileBytes" : 196608
+  },
+  {
+    "baselineSnapshotWithoutDigest" : {
+      "p50Ms" : 12.694583332631737,
+      "p95Ms" : 13.101791671942919
+    },
+    "changedEntities" : 100,
+    "components" : 100,
+    "digestBytes" : 4352,
+    "digestCallback" : {
+      "p50Ms" : 0.76916658144909889,
+      "p95Ms" : 0.78937500074971467
+    },
+    "fixture" : "mixed",
+    "indexRowIntegrityRead" : {
+      "p50Ms" : 6.0367083497112617,
+      "p95Ms" : 6.0638333379756659
+    },
+    "inventoryDiffAndChangeSet" : {
+      "p50Ms" : 0.33095832623075694,
+      "p95Ms" : 0.34941665944643319
+    },
+    "inventoryRead" : {
+      "p50Ms" : 1.2886249896837398,
+      "p95Ms" : 1.3435000000754371
+    },
+    "inventoryRows" : 136,
+    "runs" : 5,
+    "snapshot" : {
+      "p50Ms" : 13.421499999822117,
+      "p95Ms" : 13.599499987321906
+    },
+    "sqliteFileBytes" : 196608
+  }
+]

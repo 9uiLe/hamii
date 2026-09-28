@@ -41,30 +41,47 @@ struct SinglePassSnapshotProbeResult {
     let relativePaths: [String]
     let readCounts: [String: Int]
     let capturedBytes: Int
+    let fileDigests: [String: String]
+    let digestMilliseconds: Double
     let milliseconds: [String: Double]
 }
 
 extension CanonicalRepository {
     // A test probe for the production acquisition path; it does not decode or
     // hash independently. Normal callers leave the capture callback nil.
-    func singlePassSnapshotProbe() throws -> SinglePassSnapshotProbeResult {
+    func singlePassSnapshotProbe(captureFileDigests: Bool = false) throws -> SinglePassSnapshotProbeResult {
         var relativePaths: [String] = []
         var readCounts: [String: Int] = [:]
         var capturedBytes = 0
+        var fileDigests: [String: String] = [:]
+        var digestMilliseconds = 0.0
         var measurements: [CanonicalObservationMeasurement] = []
         let started = ProcessInfo.processInfo.systemUptime
         let snapshot = try snapshotDuringManagedGitTransition(
             onObservation: { measurements.append($0) },
-            onFileCaptured: { path, count in
+            onFileCaptured: { path, bytes in
                 relativePaths.append(path)
                 readCounts[path, default: 0] += 1
-                capturedBytes += count
+                capturedBytes += bytes.count
+                if captureFileDigests {
+                    let digestStarted = ProcessInfo.processInfo.systemUptime
+                    let hexadecimal = Array("0123456789abcdef".utf8)
+                    var result: [UInt8] = []
+                    result.reserveCapacity(64)
+                    for byte in SHA256.hash(data: bytes) {
+                        result.append(hexadecimal[Int(byte >> 4)])
+                        result.append(hexadecimal[Int(byte & 15)])
+                    }
+                    fileDigests[path] = String(decoding: result, as: UTF8.self)
+                    digestMilliseconds += (ProcessInfo.processInfo.systemUptime - digestStarted) * 1_000
+                }
             })
         func duration(_ stage: CanonicalObservationStage) -> Double {
             measurements.filter { $0.stage == stage }.reduce(0) { $0 + $1.milliseconds }
         }
         return SinglePassSnapshotProbeResult(snapshot: snapshot, relativePaths: relativePaths,
-            readCounts: readCounts, capturedBytes: capturedBytes, milliseconds: [
+            readCounts: readCounts, capturedBytes: capturedBytes,
+            fileDigests: fileDigests, digestMilliseconds: digestMilliseconds, milliseconds: [
                 "pathDiscovery": duration(.canonicalPathEnumerationAndSymlinkCheck),
                 "bytesCapture": duration(.canonicalBytesCapture),
                 "manifestDecode": duration(.manifestDecode),
@@ -78,6 +95,7 @@ extension CanonicalRepository {
 
     func withStableSinglePassProbe<T>(
         onLockAcquired: (() throws -> Void)? = nil,
+        captureFileDigests: Bool = false,
         _ operation: (SinglePassSnapshotProbeResult, StableCanonicalGeneration) throws -> T
     ) throws -> T {
         try coordinator.withExclusive {
@@ -85,7 +103,7 @@ extension CanonicalRepository {
             try transaction.recoverIfNeeded()
             try coordinator.requireReady()
             let stable = try generations.readStable()
-            let candidate = try singlePassSnapshotProbe()
+            let candidate = try singlePassSnapshotProbe(captureFileDigests: captureFileDigests)
             guard stable.snapshotIdentity == candidate.snapshot.identity else {
                 throw CanonicalGenerationError.unknownState
             }
@@ -407,7 +425,7 @@ public final class CanonicalRepository: ProjectRepository {
     func snapshotDuringManagedGitTransition(
         validationHook: (() throws -> Void)? = nil,
         onObservation: CanonicalObservationRecorder? = nil,
-        onFileCaptured: ((String, Int) -> Void)? = nil
+        onFileCaptured: ((String, Data) -> Void)? = nil
     ) throws -> CanonicalSnapshot {
         try measureCanonical(.transactionRecovery, recorder: onObservation) { try transaction.recoverIfNeeded() }
         let captured = try captureCanonicalFiles(onObservation: onObservation,
@@ -464,7 +482,7 @@ public final class CanonicalRepository: ProjectRepository {
 
     private func captureCanonicalFiles(
         onObservation: CanonicalObservationRecorder?,
-        onFileCaptured: ((String, Int) -> Void)?
+        onFileCaptured: ((String, Data) -> Void)?
     ) throws -> [CapturedCanonicalFile] {
         let paths = try measureCanonical(.canonicalPathEnumerationAndSymlinkCheck, recorder: onObservation) {
             try canonicalJSONPaths(onObservation: onObservation)
@@ -478,7 +496,7 @@ public final class CanonicalRepository: ProjectRepository {
             let bytes = try Data(contentsOf: url)
             captured.append(CapturedCanonicalFile(relativePath: relative, url: url, bytes: bytes))
             if onObservation != nil { totalBytes += bytes.count }
-            onFileCaptured?(relative, bytes.count)
+            onFileCaptured?(relative, bytes)
         }
         if let onObservation {
             onObservation(CanonicalObservationMeasurement(stage: .canonicalBytesCapture,

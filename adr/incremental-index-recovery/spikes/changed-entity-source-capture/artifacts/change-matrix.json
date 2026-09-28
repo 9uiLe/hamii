@@ -1,0 +1,168 @@
+[
+  {
+    "actualChangedProjectionRows" : [
+      "component:component_0"
+    ],
+    "changes" : [
+      {
+        "id" : "component_0",
+        "kind" : "components",
+        "operation" : "modified"
+      }
+    ],
+    "scenario" : "componentModify",
+    "sourceMatchesByteOracle" : true
+  },
+  {
+    "actualChangedProjectionRows" : [
+      "availability:scope_child:component_1"
+    ],
+    "changes" : [
+      {
+        "id" : "component_1",
+        "kind" : "components",
+        "operation" : "modified"
+      }
+    ],
+    "scenario" : "componentAvailability",
+    "sourceMatchesByteOracle" : true
+  },
+  {
+    "actualChangedProjectionRows" : [
+      "availability:scope_0c9ce898-ee5f-4185-a2f9-ca77627a9396:component_added",
+      "availability:scope_child:component_added",
+      "availability:scope_leaf:component_added",
+      "component:component_added"
+    ],
+    "changes" : [
+      {
+        "id" : "component_added",
+        "kind" : "components",
+        "operation" : "added"
+      }
+    ],
+    "scenario" : "componentAdd",
+    "sourceMatchesByteOracle" : true
+  },
+  {
+    "actualChangedProjectionRows" : [
+      "availability:scope_5c60f1c6-b0a8-4d86-b052-b025a4343b1c:component_2",
+      "availability:scope_child:component_2",
+      "availability:scope_leaf:component_2",
+      "component:component_2"
+    ],
+    "changes" : [
+      {
+        "id" : "component_2",
+        "kind" : "components",
+        "operation" : "deleted"
+      }
+    ],
+    "scenario" : "componentDelete",
+    "sourceMatchesByteOracle" : true
+  },
+  {
+    "actualChangedProjectionRows" : [
+      "component:component_1"
+    ],
+    "changes" : [
+      {
+        "id" : "screen_main",
+        "kind" : "screens",
+        "operation" : "modified"
+      }
+    ],
+    "scenario" : "screenUsageAdd",
+    "sourceMatchesByteOracle" : true
+  },
+  {
+    "actualChangedProjectionRows" : [
+      "component:component_0"
+    ],
+    "changes" : [
+      {
+        "id" : "screen_main",
+        "kind" : "screens",
+        "operation" : "modified"
+      }
+    ],
+    "scenario" : "screenUsageRemove",
+    "sourceMatchesByteOracle" : true
+  },
+  {
+    "actualChangedProjectionRows" : [
+      "closure:scope_leaf:scope_child"
+    ],
+    "changes" : [
+      {
+        "id" : "scope_leaf",
+        "kind" : "scopes",
+        "operation" : "modified"
+      }
+    ],
+    "scenario" : "scopeParentMove",
+    "sourceMatchesByteOracle" : true
+  },
+  {
+    "actualChangedProjectionRows" : [
+      "availability:scope_added:component_0",
+      "availability:scope_added:component_1",
+      "availability:scope_added:component_2",
+      "closure:scope_added:scope_added",
+      "closure:scope_added:scope_ee28c0cb-b3d1-4f23-92bb-a357d8a26307"
+    ],
+    "changes" : [
+      {
+        "id" : "scope_added",
+        "kind" : "scopes",
+        "operation" : "added"
+      }
+    ],
+    "scenario" : "scopeAdd",
+    "sourceMatchesByteOracle" : true
+  },
+  {
+    "actualChangedProjectionRows" : [
+      "availability:scope_leaf:component_0",
+      "availability:scope_leaf:component_1",
+      "availability:scope_leaf:component_2",
+      "closure:scope_leaf:scope_8c3ded1e-5cdd-4130-a17a-010279782b9c",
+      "closure:scope_leaf:scope_leaf"
+    ],
+    "changes" : [
+      {
+        "id" : "scope_leaf",
+        "kind" : "scopes",
+        "operation" : "deleted"
+      }
+    ],
+    "scenario" : "scopeDelete",
+    "sourceMatchesByteOracle" : true
+  },
+  {
+    "actualChangedProjectionRows" : [
+      "availability:scope_child:component_2",
+      "availability:scope_child:component_renamed",
+      "availability:scope_faf2b402-36ed-4997-85d3-2c5c1ace9345:component_2",
+      "availability:scope_faf2b402-36ed-4997-85d3-2c5c1ace9345:component_renamed",
+      "availability:scope_leaf:component_2",
+      "availability:scope_leaf:component_renamed",
+      "component:component_2",
+      "component:component_renamed"
+    ],
+    "changes" : [
+      {
+        "id" : "component_2",
+        "kind" : "components",
+        "operation" : "deleted"
+      },
+      {
+        "id" : "component_renamed",
+        "kind" : "components",
+        "operation" : "added"
+      }
+    ],
+    "scenario" : "stableIDRename",
+    "sourceMatchesByteOracle" : true
+  }
+]

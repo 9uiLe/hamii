@@ -31,6 +31,7 @@ Production changed-entity detection、reverse dependency store、deletion / scop
 
 ## Required Evidence
 
+- [Changed-entity source capture](spikes/changed-entity-source-capture/SPIKE.md): test-only Index-bound inventory from exact single-pass Snapshot bytes matched a ten-case added/modified/deleted byte oracle, including two saves, process restart, and stable-ID rename. Corrupt/unbound/unknown source fell back to full rebuild; full-projection row diffs expose historical dependency evidence needed by the next Spike. Five-run source-capture timings are fixture-local and do not prove production incremental recovery.
 - [Incremental Reindex](spikes/incremental-reindex/SPIKE.md): 実 `IndexProjection` の5変更で affected row set と full oracle が一致し、試作 SQLite generation の tested commit / rollback barrier は partial rows を見せなかった。Production targeted projector は未検証。
 - [Large Project Rebuild](spikes/large-project-rebuild/SPIKE.md): tracked / mostly-untracked shard の pilot。実 workload 分布、dependency density、memory、incremental crossover は未測定。
 - [Production full recovery performance](../../docs/index-recovery-performance.md): 1 / 1000 / 5000 Component、各3 run の full recovery を測定。5000 Component の recovered Query p95 は missing 5051.98 ms / stale Bound 5006.30 ms、Phase 1 lock p95 は最大 1683.95 ms。Off-lock build p95 は最大 86.70 ms。この fixture と環境に限定し、incremental path の便益や Product SLA はまだ示さない。
