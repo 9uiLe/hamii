@@ -30,7 +30,7 @@ A persistent cache, watcher, or `CanonicalGeneration` alone is not a positive fr
 
 ## Current Hypothesis
 
-Option 2 may reduce wall time, but no available command combination has yet been shown to cover the tracked flags, filter attributes, initial state, and final observation fence. Test-only exploration should identify which evidence can be combined before any production rewrite. Option 3 is not the preferred first candidate because it may reimplement Git semantics.
+Option 2 may reduce wall time, but no tested command combination covers the tracked flags, filter attributes, initial state, and final observation fence. The first test-only `ls-files -v --eol` consolidation uses three real Git executions but misses a pre-existing clean filter and is slower at 1000/5000 Components in its measurement harness; it is rejected. Further test-only exploration may identify a different combination before any production rewrite. Option 3 is not the preferred first candidate because it may reimplement Git semantics.
 
 ## Unknowns
 
