@@ -166,6 +166,129 @@ final class AffectedProjectionDependencySpikeTests: XCTestCase {
         }
     }
 
+    /// Test-only key-scoped access to a validated old Index generation.
+    /// Setup may materialize old rows; candidate reads never enumerate old projection values.
+    private final class KeyedOldIndex {
+        private var db: OpaquePointer?
+        private(set) var projectionValuesRead = 0
+        private(set) var usageValuesRead = 0
+        private(set) var selectMilliseconds = 0.0
+
+        init(_ published: Published) throws {
+            guard sqlite3_open(":memory:", &db) == SQLITE_OK else { throw ProbeError.invalidSummary }
+            try execute("CREATE TABLE meta(key TEXT PRIMARY KEY, value TEXT NOT NULL)")
+            try execute("CREATE TABLE components(id TEXT PRIMARY KEY, value TEXT NOT NULL)")
+            try execute("CREATE TABLE closure(consumer TEXT NOT NULL, ancestor TEXT NOT NULL, PRIMARY KEY(consumer,ancestor))")
+            try execute("CREATE INDEX closure_ancestor ON closure(ancestor)")
+            try execute("CREATE TABLE availability(consumer TEXT NOT NULL, component TEXT NOT NULL, PRIMARY KEY(consumer,component))")
+            try execute("CREATE TABLE usage(screen TEXT NOT NULL, component TEXT NOT NULL, count INTEGER NOT NULL, PRIMARY KEY(screen,component))")
+            try execute("BEGIN IMMEDIATE")
+            do {
+                for (key, value) in published.rows {
+                    let parts = key.split(separator: ":").map(String.init)
+                    switch parts.first {
+                    case "component" where parts.count == 2:
+                        try insert("INSERT INTO components VALUES (?,?)", [parts[1], value])
+                    case "closure" where parts.count == 3:
+                        try insert("INSERT INTO closure VALUES (?,?)", [parts[1], parts[2]])
+                    case "availability" where parts.count == 3:
+                        try insert("INSERT INTO availability VALUES (?,?)", [parts[1], parts[2]])
+                    default: throw ProbeError.invalidSummary
+                    }
+                }
+                for item in published.usage {
+                    try insert("INSERT INTO usage VALUES (?,?,?)", [item.screen, item.component, String(item.count)])
+                }
+                let fields = published.usage.map { [$0.screen, $0.component, String($0.count)] }
+                for (key, value) in ["generation": published.generation, "source": published.source,
+                                     "version": "1", "usageDigest": SummaryStore.digest(fields),
+                                     "usageCount": String(fields.count)] {
+                    try insert("INSERT INTO meta VALUES (?,?)", [key, value])
+                }
+                try execute("COMMIT")
+            } catch {
+                try? execute("ROLLBACK")
+                throw error
+            }
+        }
+
+        deinit { sqlite3_close(db) }
+
+        func execute(_ sql: String) throws {
+            guard sqlite3_exec(db, sql, nil, nil, nil) == SQLITE_OK else { throw ProbeError.invalidSummary }
+        }
+
+        private func insert(_ sql: String, _ args: [String]) throws { _ = try query(sql, args) }
+
+        private func query(_ sql: String, _ args: [String] = []) throws -> [[String]] {
+            let started = ProcessInfo.processInfo.systemUptime
+            defer {
+                if sql.hasPrefix("SELECT") {
+                    selectMilliseconds += (ProcessInfo.processInfo.systemUptime - started) * 1_000
+                }
+            }
+            var statement: OpaquePointer?
+            guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK else { throw ProbeError.invalidSummary }
+            defer { sqlite3_finalize(statement) }
+            let transient = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
+            for (offset, value) in args.enumerated() {
+                guard sqlite3_bind_text(statement, Int32(offset + 1), value, -1, transient) == SQLITE_OK else {
+                    throw ProbeError.invalidSummary
+                }
+            }
+            var rows: [[String]] = []
+            while true {
+                let state = sqlite3_step(statement)
+                if state == SQLITE_DONE { return rows }
+                guard state == SQLITE_ROW else { throw ProbeError.invalidSummary }
+                rows.append((0..<sqlite3_column_count(statement)).map { index in
+                    guard let bytes = sqlite3_column_text(statement, index) else { return "" }
+                    return String(cString: bytes)
+                })
+            }
+        }
+
+        func preflight(generation: String, source: String, requireUsage: Bool) throws {
+            let meta = try Dictionary(uniqueKeysWithValues: query("SELECT key,value FROM meta").map { ($0[0], $0[1]) })
+            guard meta["generation"] == generation, meta["source"] == source, meta["version"] == "1" else {
+                throw ProbeError.invalidSummary
+            }
+            if requireUsage {
+                let fields = try query("SELECT screen,component,count FROM usage")
+                guard meta["usageDigest"] == SummaryStore.digest(fields),
+                      meta["usageCount"] == String(fields.count),
+                      fields.allSatisfy({ Int($0[2]).map { $0 > 0 } == true }) else {
+                    throw ProbeError.invalidSummary
+                }
+                usageValuesRead += fields.count // Summary integrity read, not projection row scan.
+            }
+        }
+
+        func componentIDs() throws -> Set<String> { Set(try query("SELECT id FROM components").map { $0[0] }) }
+        func scopeIDs() throws -> Set<String> { Set(try query("SELECT DISTINCT consumer FROM closure").map { $0[0] }) }
+        func consumers(withAncestor ancestor: String) throws -> Set<String> {
+            Set(try query("SELECT consumer FROM closure WHERE ancestor=?", [ancestor]).map { $0[0] })
+        }
+        func ancestors(of consumer: String) throws -> Set<String> {
+            Set(try query("SELECT ancestor FROM closure WHERE consumer=?", [consumer]).map { $0[0] })
+        }
+        func componentValue(_ id: String) throws -> String? {
+            let rows = try query("SELECT value FROM components WHERE id=?", [id])
+            projectionValuesRead += rows.count
+            return rows.first?.first
+        }
+        func usage(in screen: String) throws -> [String: Int] {
+            let rows = try query("SELECT component,count FROM usage WHERE screen=?", [screen])
+            usageValuesRead += rows.count
+            var result: [String: Int] = [:]
+            for row in rows {
+                guard let count = Int(row[1]), count > 0 else { throw ProbeError.invalidSummary }
+                result[row[0]] = count
+            }
+            return result
+        }
+    }
+
     private static func rows(_ document: Document) -> [String: String] {
         let projection = IndexProjection(document: document)
         var rows: [String: String] = [:]
@@ -310,6 +433,217 @@ final class AffectedProjectionDependencySpikeTests: XCTestCase {
                     impactedUnion: impactedUnion, impactedAll: impactedAll, sourceIdentity: sourceIdentity)
     }
 
+    private enum UsageStrategy: String { case historicalDelta, currentScreenRescan }
+
+    private struct PublishedBinding {
+        let generation: String
+        let source: String
+
+        init(_ published: Published) {
+            generation = published.generation
+            source = published.source
+        }
+    }
+
+    private struct TargetedPatch {
+        let fromIndexGenerationID: String
+        let fromCanonicalIdentity: String
+        let toCanonicalGeneration: String
+        let toCanonicalIdentity: String
+        let planned: Affected
+        let replacements: [String: String]
+        let availabilityEvaluations: Int
+        let screensVisited: Int
+        let layersVisited: Int
+        let milliseconds: [String: Double]
+
+        func isBound(to generation: String, identity: String) -> Bool {
+            toCanonicalGeneration == generation && toCanonicalIdentity == identity
+        }
+    }
+
+    /// A separate key-scoped planner: unlike the previous proof-of-coverage planner,
+    /// this never reads the old projection into a Dictionary.
+    private static func keyedPlan(_ changes: Set<Change>, current: Document, old: KeyedOldIndex,
+                                  usageStrategy: UsageStrategy) throws -> Affected {
+        guard changes.allSatisfy({ ["components", "screens", "scopes"].contains($0.kind) }) else {
+            throw ProbeError.unsupportedInput
+        }
+        let componentChanges = Set(changes.filter { $0.kind == "components" }.map { $0.id.rawValue })
+        let screenChanges = Set(changes.filter { $0.kind == "screens" }.map { $0.id.rawValue })
+        let scopeChanges = Set(changes.filter { $0.kind == "scopes" }.map { $0.id.rawValue })
+        let oldComponents = try old.componentIDs()
+        let oldScopes = try old.scopeIDs()
+        let currentComponents = Set(current.components.map { $0.id.rawValue })
+        let currentScopes = Set(current.scopes.map { $0.id.rawValue })
+        var affected = Affected()
+        affected.components.formUnion(componentChanges.map { "component:\($0)" })
+
+        let currentScreens = Dictionary(uniqueKeysWithValues: current.screens.map { ($0.id.rawValue, $0) })
+        if usageStrategy == .historicalDelta {
+            var oldChangedUsage: [String: Int] = [:]
+            var newChangedUsage: [String: Int] = [:]
+            for screen in screenChanges {
+                for (component, count) in try old.usage(in: screen) { oldChangedUsage[component, default: 0] += count }
+                if let currentScreen = currentScreens[screen] {
+                    for (component, count) in usage(currentScreen) { newChangedUsage[component, default: 0] += count }
+                }
+            }
+            for component in Set(oldChangedUsage.keys).union(newChangedUsage.keys)
+                where oldChangedUsage[component, default: 0] != newChangedUsage[component, default: 0] {
+                affected.components.insert("component:\(component)")
+            }
+        } else if !screenChanges.isEmpty {
+            // Without per-Screen history, any old/current Component may have changed usage.
+            // This is intentionally broad; its economic cost is part of this Spike.
+            affected.components.formUnion(oldComponents.union(currentComponents).map { "component:\($0)" })
+        }
+
+        let impacted = reverseClosure(componentChanges, graph: graph(current))
+        for component in impacted {
+            for scope in oldScopes.union(currentScopes) {
+                affected.availability.insert("availability:\(scope):\(component)")
+            }
+        }
+        var affectedConsumers: Set<String> = []
+        for changedScope in scopeChanges { affectedConsumers.formUnion(try old.consumers(withAncestor: changedScope)) }
+        let evaluator = ScopeEvaluator(current.scopes)
+        for scope in current.scopes {
+            if evaluator.ancestorsIncludingSelf(of: scope.id)?.contains(where: { scopeChanges.contains($0.rawValue) }) == true {
+                affectedConsumers.insert(scope.id.rawValue)
+            }
+        }
+        for consumer in affectedConsumers {
+            for ancestor in try old.ancestors(of: consumer) {
+                affected.closure.insert("closure:\(consumer):\(ancestor)")
+            }
+            for ancestor in evaluator.ancestorsIncludingSelf(of: EntityID(consumer)) ?? [] {
+                affected.closure.insert("closure:\(consumer):\(ancestor.rawValue)")
+            }
+            for component in oldComponents.union(currentComponents) {
+                affected.availability.insert("availability:\(consumer):\(component)")
+            }
+        }
+        return affected
+    }
+
+    private static func targeted(_ changes: Set<Change>, current: Document, old: KeyedOldIndex,
+                                 binding: PublishedBinding, strategy: UsageStrategy,
+                                 toGeneration: String, toIdentity: String) throws -> TargetedPatch {
+        var timings: [String: Double] = [:]
+        func measured<T>(_ name: String, _ body: () throws -> T) rethrows -> T {
+            let start = ProcessInfo.processInfo.systemUptime
+            let value = try body()
+            timings[name] = (ProcessInfo.processInfo.systemUptime - start) * 1_000
+            return value
+        }
+        let totalStart = ProcessInfo.processInfo.systemUptime
+        let selectStart = old.selectMilliseconds
+        try measured("oldKeyedPreflight") {
+            try old.preflight(generation: binding.generation, source: binding.source,
+                              requireUsage: strategy == .historicalDelta)
+        }
+        let selectAfterPreflight = old.selectMilliseconds
+        let affected = try measured("keyedPlanner") {
+            try keyedPlan(changes, current: current, old: old, usageStrategy: strategy)
+        }
+        let (definitions, typedDefinitions, scopes) = measured("evaluationContext") {
+            (Dictionary(uniqueKeysWithValues: current.components.map { ($0.id.rawValue, $0) }),
+             Dictionary(uniqueKeysWithValues: current.components.map { ($0.id, $0) }), ScopeEvaluator(current.scopes))
+        }
+        let currentScopeIDs = Set(current.scopes.map { $0.id.rawValue })
+        let screenChanges = Set(changes.filter { $0.kind == "screens" }.map { $0.id.rawValue })
+        var screensVisited = 0
+        var layersVisited = 0
+        func collect(_ screen: Screen, into counts: inout [String: Int]) {
+            screensVisited += 1
+            func visit(_ layer: Layer) {
+                layersVisited += 1
+                if let id = layer.component?.definitionID.rawValue { counts[id, default: 0] += 1 }
+                for child in layer.children { visit(child) }
+            }
+            visit(screen.root)
+        }
+
+        let plannedComponents = Set(affected.components.map { String($0.dropFirst("component:".count)) })
+        var usageCounts: [String: Int] = [:]
+        try measured("usageRecompute") {
+            switch strategy {
+            case .historicalDelta:
+                var oldDelta: [String: Int] = [:]
+                var newDelta: [String: Int] = [:]
+                for screenID in screenChanges {
+                    for (id, count) in try old.usage(in: screenID) { oldDelta[id, default: 0] += count }
+                    if let screen = current.screens.first(where: { $0.id.rawValue == screenID }) {
+                        collect(screen, into: &newDelta)
+                    }
+                }
+                for id in plannedComponents {
+                    let oldValue = try old.componentValue(id)
+                    let oldCount: Int
+                    if let oldValue {
+                        guard let field = oldValue.split(separator: "|").last, let count = Int(field), count >= 0 else {
+                            throw ProbeError.invalidSummary
+                        }
+                        oldCount = count
+                    } else {
+                        oldCount = 0
+                    }
+                    let count = oldCount - oldDelta[id, default: 0] + newDelta[id, default: 0]
+                    guard count >= 0 else { throw ProbeError.invalidSummary }
+                    usageCounts[id] = count
+                }
+            case .currentScreenRescan:
+                var all: [String: Int] = [:]
+                for screen in current.screens { collect(screen, into: &all) }
+                for id in plannedComponents { usageCounts[id] = all[id, default: 0] }
+            }
+        }
+
+        var replacements: [String: String] = [:]
+        measured("componentRecompute") {
+            for key in affected.components {
+                let id = String(key.dropFirst("component:".count))
+                if let definition = definitions[id] {
+                    replacements[key] = "\(definition.name)|\(definition.ownerScopeID.rawValue)|\(usageCounts[id, default: 0])"
+                }
+            }
+        }
+        measured("closureRecompute") {
+            let consumers = Set(affected.closure.compactMap { $0.split(separator: ":").dropFirst().first.map(String.init) })
+            var currentAncestors: [String: Set<String>] = [:]
+            for consumer in consumers {
+                currentAncestors[consumer] = Set((scopes.ancestorsIncludingSelf(of: EntityID(consumer)) ?? []).map(\.rawValue))
+            }
+            for key in affected.closure {
+                let parts = key.split(separator: ":")
+                if parts.count == 3 && currentAncestors[String(parts[1]), default: []].contains(String(parts[2])) {
+                    replacements[key] = "1"
+                }
+            }
+        }
+        let evaluated = measured("availabilityRecompute") { () -> Int in
+            var count = 0
+            for key in affected.availability {
+                let parts = key.split(separator: ":")
+                guard parts.count == 3 else { continue }
+                let consumer = String(parts[1]); let component = String(parts[2])
+                guard currentScopeIDs.contains(consumer), let definition = definitions[component] else { continue }
+                count += 1
+                if ComponentAvailability.reason(definition, consumer: EntityID(consumer), scopes: scopes,
+                                                definitions: typedDefinitions) == nil { replacements[key] = "1" }
+            }
+            return count
+        }
+        timings["targetedTotal"] = (ProcessInfo.processInfo.systemUptime - totalStart) * 1_000
+        timings["oldKeyedLookup"] = old.selectMilliseconds - selectAfterPreflight
+        timings["oldPreflightSelect"] = selectAfterPreflight - selectStart
+        return TargetedPatch(fromIndexGenerationID: binding.generation, fromCanonicalIdentity: binding.source,
+                             toCanonicalGeneration: toGeneration, toCanonicalIdentity: toIdentity,
+                             planned: affected, replacements: replacements, availabilityEvaluations: evaluated,
+                             screensVisited: screensVisited, layersVisited: layersVisited, milliseconds: timings)
+    }
+
     private static func actual(_ old: [String: String], _ new: [String: String]) -> Set<String> {
         Set(old.keys).union(new.keys).filter { old[$0] != new[$0] }
     }
@@ -324,6 +658,31 @@ final class AffectedProjectionDependencySpikeTests: XCTestCase {
         for key in plan.affected.all { patched.removeValue(forKey: key) }
         for key in plan.affected.all { patched[key] = newRows[key] }
         XCTAssertEqual(patched, newRows, file: file, line: line)
+    }
+
+    @discardableResult
+    private static func assertTargeted(_ changes: Set<Change>, old: Published, current: Document,
+                                       strategy: UsageStrategy, file: StaticString = #filePath,
+                                       line: UInt = #line) throws -> TargetedPatch {
+        let keyed = try KeyedOldIndex(old)
+        let patch = try targeted(changes, current: current, old: keyed, binding: PublishedBinding(old), strategy: strategy,
+                                 toGeneration: "canonical-next", toIdentity: "identity-next")
+        // The full projector is an oracle only after the candidate patch has completed.
+        let oracle = rows(current)
+        let changed = actual(old.rows, oracle)
+        XCTAssertTrue(changed.isSubset(of: patch.planned.all),
+                      "Missed \(changed.subtracting(patch.planned.all).sorted())", file: file, line: line)
+        XCTAssertTrue(Set(patch.replacements.keys).isSubset(of: patch.planned.all), file: file, line: line)
+        var applied = old.rows
+        for key in patch.planned.all { applied.removeValue(forKey: key) }
+        applied.merge(patch.replacements) { _, new in new }
+        XCTAssertEqual(applied, oracle, file: file, line: line)
+        XCTAssertEqual(patch.fromIndexGenerationID, old.generation, file: file, line: line)
+        XCTAssertEqual(patch.fromCanonicalIdentity, old.source, file: file, line: line)
+        XCTAssertTrue(patch.isBound(to: "canonical-next", identity: "identity-next"), file: file, line: line)
+        XCTAssertFalse(patch.isBound(to: "canonical-later", identity: "identity-later"), file: file, line: line)
+        XCTAssertLessThanOrEqual(keyed.projectionValuesRead, patch.planned.components.count, file: file, line: line)
+        return patch
     }
 
     private func fixture() -> Document {
@@ -438,6 +797,9 @@ final class AffectedProjectionDependencySpikeTests: XCTestCase {
             let changes = try Self.sourceChanges(old: before, new: next)
             let plan = try Self.plan(changes, current: next, published: old, oldGraphForComparison: graph)
             Self.assertOracle(plan, old: old, current: next)
+            let patchU1 = try Self.assertTargeted(changes, old: old, current: next, strategy: .historicalDelta)
+            let patchU2 = try Self.assertTargeted(changes, old: old, current: next, strategy: .currentScreenRescan)
+            XCTAssertEqual(patchU1.planned.all, patchU2.planned.all, scenario)
             let actual = Self.actual(old.rows, Self.rows(next))
             report.append(["scenario": scenario, "changedComponents": changes.filter { $0.kind == "components" }.map { $0.id.rawValue }.sorted(),
                            "actualRows": actual.count, "plannedRows": plan.affected.all.count,
@@ -481,6 +843,8 @@ final class AffectedProjectionDependencySpikeTests: XCTestCase {
                 Self.validate(two); Self.validate(next)
                 let plan = try Self.plan(changes, current: next, published: published)
                 Self.assertOracle(plan, old: published, current: next)
+                try Self.assertTargeted(changes, old: published, current: next, strategy: .historicalDelta)
+                try Self.assertTargeted(changes, old: published, current: next, strategy: .currentScreenRescan)
                 report.append(["scenario": scenario, "actualRows": Self.actual(published.rows, Self.rows(next)).count,
                                "plannedRows": plan.affected.all.count, "missingRows": []])
                 continue
@@ -503,6 +867,8 @@ final class AffectedProjectionDependencySpikeTests: XCTestCase {
             let changes = try Self.sourceChanges(old: baseline, new: next)
             let plan = try Self.plan(changes, current: next, published: old)
             Self.assertOracle(plan, old: old, current: next)
+            try Self.assertTargeted(changes, old: old, current: next, strategy: .historicalDelta)
+            try Self.assertTargeted(changes, old: old, current: next, strategy: .currentScreenRescan)
             let actual = Self.actual(old.rows, Self.rows(next))
             report.append(["scenario": scenario, "actualRows": actual.count,
                            "plannedRows": plan.affected.all.count,
@@ -542,6 +908,63 @@ final class AffectedProjectionDependencySpikeTests: XCTestCase {
         XCTAssertFalse(secondPlan.affected.components.contains("component:component_b"))
         Self.assertOracle(firstPlan, old: Self.published(first), current: firstNext)
         Self.assertOracle(secondPlan, old: Self.published(second), current: secondNext)
+    }
+
+    func testTargetedUsageAcrossMultipleScreensAndNewComponent() throws {
+        var before = fixture()
+        before.screens.append(Screen(id: EntityID("screen_second"), name: "Second", scopeID: EntityID("scope_app"),
+            root: Layer(id: EntityID("screen_second_root"), kind: .stack, name: "Root",
+                children: [Layer(id: EntityID("second_to_other"), kind: .componentInstance, name: "Other",
+                    component: ComponentInstance(definitionID: EntityID("component_other")))])))
+        Self.validate(before)
+        let old = Self.published(before)
+        var next = before
+        next.components.append(ComponentDefinition(id: EntityID("component_new"), name: "New",
+            ownerScopeID: EntityID("scope_app"), root: Layer(id: EntityID("root_new"), kind: .stack, name: "New")))
+        next.screens[0].root.children = [Layer(id: EntityID("first_to_new"), kind: .componentInstance,
+            name: "New", component: ComponentInstance(definitionID: EntityID("component_new")))]
+        next.screens[1].root.children.append(Layer(id: EntityID("second_to_new"), kind: .componentInstance,
+            name: "New", component: ComponentInstance(definitionID: EntityID("component_new"))))
+        Self.validate(next)
+        let changes = try Self.sourceChanges(old: before, new: next)
+        let u1 = try Self.assertTargeted(changes, old: old, current: next, strategy: .historicalDelta)
+        let u2 = try Self.assertTargeted(changes, old: old, current: next, strategy: .currentScreenRescan)
+        XCTAssertEqual(u1.replacements["component:component_new"], "New|scope_app|2")
+        XCTAssertEqual(u1.screensVisited, 2)
+        XCTAssertEqual(u2.screensVisited, 2)
+        XCTAssertGreaterThan(u2.planned.components.count, u1.planned.components.count)
+    }
+
+    func testTargetedHistoricalSummaryCorruptionFailsClosed() throws {
+        let before = fixture()
+        let old = Self.published(before)
+        var next = before
+        next.screens[0].root.children = []
+        let changes = try Self.sourceChanges(old: before, new: next)
+        for statement in ["DELETE FROM usage", "UPDATE usage SET count=0", "UPDATE meta SET value='2' WHERE key='version'",
+                          "UPDATE meta SET value='wrong' WHERE key='generation'",
+                          "UPDATE meta SET value='wrong' WHERE key='source'",
+                          "DELETE FROM meta WHERE key='usageDigest'"] {
+            let keyed = try KeyedOldIndex(old)
+            try keyed.execute(statement)
+            XCTAssertThrowsError(try Self.targeted(changes, current: next, old: keyed, binding: PublishedBinding(old),
+                                                    strategy: .historicalDelta, toGeneration: "G2", toIdentity: "S2"),
+                                 statement)
+        }
+        // U2 does not consume historical per-Screen contributions; the published row/source binding still applies.
+        let noSummary = try KeyedOldIndex(old)
+        try noSummary.execute("DELETE FROM usage")
+        let u2 = try Self.targeted(changes, current: next, old: noSummary, binding: PublishedBinding(old),
+                                   strategy: .currentScreenRescan, toGeneration: "G2", toIdentity: "S2")
+        var patched = old.rows
+        for key in u2.planned.all { patched.removeValue(forKey: key) }
+        patched.merge(u2.replacements) { _, new in new }
+        XCTAssertEqual(patched, Self.rows(next))
+        let badComponentRow = try KeyedOldIndex(old)
+        try badComponentRow.execute("UPDATE components SET value='invalid' WHERE id='component_other'")
+        XCTAssertThrowsError(try Self.targeted(changes, current: next, old: badComponentRow,
+                                                binding: PublishedBinding(old), strategy: .historicalDelta,
+                                                toGeneration: "G2", toIdentity: "S2"))
     }
 
     func testSummaryGenerationBindingAtomicVisibilityAndCorruptionFallback() throws {
@@ -611,6 +1034,7 @@ final class AffectedProjectionDependencySpikeTests: XCTestCase {
                 let plan = try Self.plan(changes, current: current, published: published,
                                          oldGraphForComparison: oldGraph)
                 Self.assertOracle(plan, old: published, current: current)
+                try Self.assertTargeted(changes, old: published, current: current, strategy: .historicalDelta)
                 let changedAvailability = Set(Self.actual(published.rows, Self.rows(current))
                     .filter { $0.hasPrefix("availability:") }
                     .compactMap { $0.split(separator: ":").last.map(String.init) })
@@ -692,12 +1116,17 @@ final class AffectedProjectionDependencySpikeTests: XCTestCase {
         XCTAssertEqual(Set(keys), plan.affected.all)
         XCTAssertTrue(plan.isBound(to: newSource))
         Self.assertOracle(plan, old: loaded, current: current)
+        let targeted = try Self.targeted(sourceChanges, current: current, old: KeyedOldIndex(loaded),
+                                         binding: PublishedBinding(loaded), strategy: .historicalDelta,
+                                         toGeneration: "canonical-generation-after-save", toIdentity: newSource)
+        XCTAssertTrue(targeted.isBound(to: "canonical-generation-after-save", identity: newSource))
         var later = current
         later.components[3].name = "After plan"
         later.revision += 1
         try repository.save(later, expected: current)
         let laterSource = try repository.withStableSinglePassProbe { probe, _ in probe.snapshot.identity.rawValue }
         XCTAssertFalse(plan.isBound(to: laterSource), "Captured plan must not publish after a later save")
+        XCTAssertFalse(targeted.isBound(to: "canonical-generation-after-save", identity: laterSource))
     }
 
     func testRestartWorker() throws {
@@ -721,6 +1150,122 @@ final class AffectedProjectionDependencySpikeTests: XCTestCase {
     private func percentile(_ samples: [Double], _ proportion: Double) -> Double {
         let sorted = samples.sorted()
         return sorted[max(0, Int(ceil(Double(sorted.count) * proportion)) - 1)]
+    }
+
+    func testMeasuredTargetedProjectionCost() throws {
+        guard let output = ProcessInfo.processInfo.environment["HAMII_TARGETED_BENCHMARK_RESULT"] else {
+            throw XCTSkip("Run explicitly for targeted projection Spike benchmark")
+        }
+        let fixtures: [(String, String, Int)] = [
+            ("independent-1000-local", "Component local", 1000),
+            ("independent-5000-availability", "Component dependency/availability", 5000),
+            ("mixed-scope-100", "Scope topology", 100),
+            ("chain-100", "Component dependency/availability", 100),
+            ("fanout-500", "Component dependency/availability", 500),
+            ("usage-heavy", "Screen usage", 100),
+            ("mixed-combined-100", "combined", 100)
+        ]
+        var reports: [[String: Any]] = []
+        for (name, changeClass, count) in fixtures {
+            var before = fixture()
+            for number in 4..<count {
+                before.components.append(ComponentDefinition(id: EntityID("component_\(number)"),
+                    name: "Component \(number)", ownerScopeID: EntityID("scope_app"),
+                    root: Layer(id: EntityID("root_\(number)"), kind: .stack, name: "Root")))
+            }
+            if name == "chain-100" {
+                for number in 4..<count {
+                    let target = number == 4 ? "component_x" : "component_\(number - 1)"
+                    before.components[number].root.children = [Layer(id: EntityID("chain_\(number)"),
+                        kind: .componentInstance, name: "Dependency",
+                        component: ComponentInstance(definitionID: EntityID(target)))]
+                }
+            }
+            if name == "fanout-500" {
+                for number in 4..<count {
+                    before.components[number].root.children = [Layer(id: EntityID("fanout_\(number)"),
+                        kind: .componentInstance, name: "Dependency",
+                        component: ComponentInstance(definitionID: EntityID("component_b")))]
+                }
+            }
+            if name == "usage-heavy" {
+                for screenNumber in 0..<120 {
+                    let children = (0..<30).map { layerNumber in
+                        Layer(id: EntityID("usage_\(screenNumber)_\(layerNumber)"), kind: .componentInstance,
+                              name: "Used", component: ComponentInstance(definitionID: EntityID("component_other")))
+                    }
+                    before.screens.append(Screen(id: EntityID("usage_screen_\(screenNumber)"), name: "Usage",
+                        scopeID: EntityID("scope_app"), root: Layer(id: EntityID("usage_root_\(screenNumber)"),
+                            kind: .stack, name: "Root", children: children)))
+                }
+            }
+            Self.validate(before)
+            let published = Self.published(before)
+            let keyed = try KeyedOldIndex(published)
+            var current = before
+            switch name {
+            case "independent-1000-local": current.components[0].name = "Changed B"
+            case "mixed-scope-100": current.scopes[1].parentID = EntityID("scope_other")
+            case "usage-heavy":
+                current.screens[1].root.children.append(Layer(id: EntityID("usage_added_b"),
+                    kind: .componentInstance, name: "Added", component: ComponentInstance(definitionID: EntityID("component_b"))))
+            case "mixed-combined-100":
+                current.components[0].availability.denyScopeIDs = [EntityID("scope_child")]
+                current.scopes[1].parentID = EntityID("scope_other")
+                current.screens[0].root.children.append(Layer(id: EntityID("combined_added_b"),
+                    kind: .componentInstance, name: "Added", component: ComponentInstance(definitionID: EntityID("component_b"))))
+            default: current.components[0].availability.denyScopeIDs = [EntityID("scope_child")]
+            }
+            Self.validate(current)
+            let changes = try Self.sourceChanges(old: before, new: current)
+            var measures: [String: [Double]] = [:]
+            var patchU1: TargetedPatch?
+            var patchU2: TargetedPatch?
+            for _ in 0..<5 {
+                let fullStart = ProcessInfo.processInfo.systemUptime
+                _ = IndexProjection(document: current)
+                measures["fullProjection", default: []].append((ProcessInfo.processInfo.systemUptime - fullStart) * 1_000)
+                for strategy in [UsageStrategy.historicalDelta, .currentScreenRescan] {
+                    let integratedStart = ProcessInfo.processInfo.systemUptime
+                    let detected = try Self.sourceChanges(old: before, new: current)
+                    let inventoryEnd = ProcessInfo.processInfo.systemUptime
+                    let patch = try Self.targeted(detected, current: current, old: keyed,
+                                                   binding: PublishedBinding(published),
+                                                   strategy: strategy, toGeneration: "G2", toIdentity: "S2")
+                    let prefix = strategy.rawValue
+                    measures["\(prefix).inventoryDiff", default: []]
+                        .append((inventoryEnd - integratedStart) * 1_000)
+                    measures["\(prefix).integratedCompute", default: []]
+                        .append((ProcessInfo.processInfo.systemUptime - integratedStart) * 1_000)
+                    for (phase, milliseconds) in patch.milliseconds {
+                        measures["\(prefix).\(phase)", default: []].append(milliseconds)
+                    }
+                    if strategy == .historicalDelta { patchU1 = patch } else { patchU2 = patch }
+                }
+            }
+            guard let u1 = patchU1, let u2 = patchU2 else { throw ProbeError.invalidSummary }
+            let oracle = Self.rows(current) // Only after candidate timing.
+            for patch in [u1, u2] {
+                var applied = published.rows
+                for key in patch.planned.all { applied.removeValue(forKey: key) }
+                applied.merge(patch.replacements) { _, new in new }
+                XCTAssertEqual(applied, oracle, "\(name): \(patch.planned.all.count) planned")
+            }
+            let summary = measures.mapValues { ["p50Ms": percentile($0, 0.5), "p95Ms": percentile($0, 0.95)] }
+            reports.append(["fixture": name, "changeClass": changeClass, "components": count,
+                            "screens": current.screens.count, "runs": 5, "changedEntities": changes.count,
+                            "totalProjectionRows": oracle.count, "changedRows": Self.actual(published.rows, oracle).count,
+                            "u1PlannedRows": u1.planned.all.count, "u2PlannedRows": u2.planned.all.count,
+                            "u1AvailabilityEvaluations": u1.availabilityEvaluations,
+                            "u2AvailabilityEvaluations": u2.availabilityEvaluations,
+                            "u1ScreensVisited": u1.screensVisited, "u2ScreensVisited": u2.screensVisited,
+                            "u1LayersVisited": u1.layersVisited, "u2LayersVisited": u2.layersVisited,
+                            "timings": summary])
+        }
+        let report: [String: Any] = ["environment": "Swift 6.4 debug XCTest, macOS, in-process, five runs per fixture; excludes CanonicalSnapshot, Git, publication, Query; old test SQLite setup excluded",
+                                     "fixtures": reports]
+        try JSONSerialization.data(withJSONObject: report, options: [.prettyPrinted, .sortedKeys])
+            .write(to: URL(fileURLWithPath: output))
     }
 
     func testMeasuredDependencyPlanningCost() throws {
