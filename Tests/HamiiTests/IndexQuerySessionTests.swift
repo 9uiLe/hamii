@@ -804,17 +804,15 @@ final class IndexQuerySessionTests: XCTestCase {
         let stages = Set(measurements.map(\.stage))
         let requiredStages: [CanonicalObservationStage] = [
             .transactionRecovery, .readyGate, .stableGenerationRead, .snapshotAcquisition,
-            .manifestRead, .directoryEnumeration, .entityBytesRead, .entityDecode,
-            .documentValidation, .assetIntegrityValidation, .agentProfilesReadValidation,
-            .canonicalPathEnumerationAndSymlinkCheck, .identityBytesRead, .identityHash
+            .manifestDecode, .canonicalBytesCapture, .entityDecode,
+            .documentValidation, .assetIntegrityValidation, .agentProfilesValidation,
+            .canonicalPathEnumerationAndSymlinkCheck, .identityHash
         ]
         for stage in requiredStages {
             XCTAssertTrue(stages.contains(stage), "Missing profile stage \(stage)")
         }
-        XCTAssertEqual(measurements.filter { $0.stage == .directoryEnumeration }.count, 10)
-        XCTAssertEqual(measurements.filter { $0.stage == .entityBytesRead }.count, 10)
         XCTAssertEqual(measurements.filter { $0.stage == .entityDecode }.count, 10)
-        XCTAssertGreaterThan(measurements.first { $0.stage == .identityBytesRead }?.bytes ?? 0, 0)
+        XCTAssertGreaterThan(measurements.first { $0.stage == .canonicalBytesCapture }?.bytes ?? 0, 0)
         let revision = try GitCanonicalRevisionCalculator().current(at: fixture.root)
         let sourceIndex = try index(fixture)
         let recovery = IndexRecoveryService(projectRoot: fixture.root,
@@ -2049,7 +2047,7 @@ final class IndexQuerySessionTests: XCTestCase {
 }
 
 extension IndexQuerySessionTests {
-    func testSinglePassCandidateMatchesSnapshotAndReadsEachCanonicalJSONOnce() throws {
+    func testProductionSinglePassMatchesSnapshotAndReadsEachCanonicalJSONOnce() throws {
         for kind in ["1", "1000", "5000", "mixed"] {
             let count = kind == "mixed" ? 20 : Int(kind)!
             let fixture = try fixture(componentCount: count)
@@ -2057,9 +2055,12 @@ extension IndexQuerySessionTests {
             if kind == "mixed" { try addMixedSemanticContent(fixture) }
             let repository = CanonicalRepository(root: fixture.root)
             try repository.withStableSnapshotForDerivedRecovery { legacy, stable in
-                let candidate = try repository.singlePassSnapshotCandidate()
+                let candidate = try repository.singlePassSnapshotProbe()
+                let reference = try repository.legacySnapshotForComparison()
                 XCTAssertEqual(candidate.snapshot.document, legacy.document)
                 XCTAssertEqual(candidate.snapshot.identity, legacy.identity)
+                XCTAssertEqual(candidate.snapshot.document, reference.document)
+                XCTAssertEqual(candidate.snapshot.identity, reference.identity)
                 XCTAssertEqual(candidate.snapshot.identity, stable.snapshotIdentity)
                 XCTAssertEqual(candidate.snapshot.document.components.map(\.id),
                                legacy.document.components.map(\.id))
@@ -2076,7 +2077,7 @@ extension IndexQuerySessionTests {
                 }
                 XCTAssertEqual(candidate.capturedBytes, uniqueBytes)
             }
-            let accepted = try repository.withStableSinglePassCandidate { candidate, stable in
+            let accepted = try repository.withStableSinglePassProbe { candidate, stable in
                 XCTAssertEqual(candidate.snapshot.identity, stable.snapshotIdentity)
                 return candidate.snapshot.document.components.count
             }
@@ -2084,7 +2085,7 @@ extension IndexQuerySessionTests {
         }
     }
 
-    func testSinglePassCandidatePreservesRepositoryAssetAndAliasIdentity() throws {
+    func testProductionSinglePassPreservesRepositoryAssetAndAliasIdentity() throws {
         let fixture = try fixture()
         defer { try? FileManager.default.removeItem(at: fixture.directory) }
         let repository = CanonicalRepository(root: fixture.root)
@@ -2094,9 +2095,12 @@ extension IndexQuerySessionTests {
             mediaType: "image/png", expectedState: service.observe().statePrecondition,
             author: .human, blobs: CanonicalBlobStore(root: fixture.root))
         try repository.withStableSnapshotForDerivedRecovery { legacy, stable in
-            let candidate = try repository.singlePassSnapshotCandidate()
+            let candidate = try repository.singlePassSnapshotProbe()
+            let reference = try repository.legacySnapshotForComparison()
             XCTAssertEqual(candidate.snapshot.document, legacy.document)
             XCTAssertEqual(candidate.snapshot.identity, legacy.identity)
+            XCTAssertEqual(candidate.snapshot.document, reference.document)
+            XCTAssertEqual(candidate.snapshot.identity, reference.identity)
             XCTAssertEqual(candidate.snapshot.identity, stable.snapshotIdentity)
             XCTAssertEqual(candidate.snapshot.document.assets.count, 1)
             XCTAssertEqual(candidate.readCounts["assets/\(legacy.document.assets[0].id.rawValue).json"], 1)
@@ -2114,9 +2118,9 @@ extension IndexQuerySessionTests {
         } else {
             throw XCTSkip("No /var and /private/var alias on this host")
         }
-        func observation(_ root: URL) throws -> SinglePassCandidateResult {
+        func observation(_ root: URL) throws -> SinglePassSnapshotProbeResult {
             let repository = CanonicalRepository(root: root)
-            return try repository.withStableSinglePassCandidate { result, _ in result }
+            return try repository.withStableSinglePassProbe { result, _ in result }
         }
         let direct = try observation(root)
         let alternate = try observation(URL(fileURLWithPath: alias))
@@ -2124,28 +2128,28 @@ extension IndexQuerySessionTests {
         XCTAssertEqual(direct.relativePaths, alternate.relativePaths)
     }
 
-    func testSinglePassCandidateIdentityTracksExactCanonicalBytes() throws {
+    func testProductionSinglePassIdentityTracksExactCanonicalBytes() throws {
         let fixture = try fixture()
         defer { try? FileManager.default.removeItem(at: fixture.directory) }
         let repository = CanonicalRepository(root: fixture.root)
         let file = fixture.root.appendingPathComponent("components/component_alpha.json")
         let before = try repository.withStableSnapshotForDerivedRecovery { snapshot, _ in
-            let candidate = try repository.singlePassSnapshotCandidate()
+            let candidate = try repository.singlePassSnapshotProbe()
             XCTAssertEqual(candidate.snapshot.identity, snapshot.identity)
             return snapshot
         }
         let bytes = try Data(contentsOf: file)
         try Data([0x20] + bytes).write(to: file, options: .atomic)
         let after = try WorktreeCoordinator(root: fixture.root).withExclusive {
-            let legacy = try repository.snapshotDuringManagedGitTransition()
-            let candidate = try repository.singlePassSnapshotCandidate()
+            let legacy = try repository.legacySnapshotForComparison()
+            let candidate = try repository.singlePassSnapshotProbe()
             XCTAssertEqual(candidate.snapshot.identity, legacy.identity)
             XCTAssertEqual(candidate.snapshot.document, legacy.document)
             return legacy
         }
         XCTAssertEqual(before.document, after.document)
         XCTAssertNotEqual(before.identity, after.identity)
-        XCTAssertThrowsError(try repository.withStableSinglePassCandidate { _, _ in }) { error in
+        XCTAssertThrowsError(try repository.withStableSinglePassProbe { _, _ in }) { error in
             guard case CanonicalGenerationError.unknownState = error else {
                 return XCTFail("Wrong stale-generation error: \(error)")
             }
@@ -2168,7 +2172,7 @@ extension IndexQuerySessionTests {
         }
     }
 
-    func testSinglePassCandidatePreservesErrorCategories() throws {
+    func testProductionSinglePassPreservesErrorCategories() throws {
         let cases = ["missingManifest", "unsupportedManifest", "malformedManifest", "malformedEntity",
                      "filenameMismatch", "brokenScope", "missingAssetBlob",
                      "unsupportedProfiles", "duplicateProfiles", "missingProfiles",
@@ -2231,13 +2235,13 @@ extension IndexQuerySessionTests {
             let categories = try WorktreeCoordinator(root: fixture.root).withExclusive { () -> (String, String) in
                 func legacy() -> String {
                     do {
-                        _ = try repository.snapshotDuringManagedGitTransition()
+                        _ = try repository.legacySnapshotForComparison()
                         return "accepted"
                     } catch { return singlePassErrorCategory(error) }
                 }
                 func candidate() -> String {
                     do {
-                        _ = try repository.singlePassSnapshotCandidate()
+                        _ = try repository.singlePassSnapshotProbe()
                         return "accepted"
                     } catch { return singlePassErrorCategory(error) }
                 }
@@ -2248,12 +2252,12 @@ extension IndexQuerySessionTests {
         }
     }
 
-    func testSinglePassCandidateRejectsRawEditAgainstStableGeneration() throws {
+    func testProductionSinglePassRejectsRawEditAgainstStableGeneration() throws {
         let fixture = try fixture()
         defer { try? FileManager.default.removeItem(at: fixture.directory) }
         try changeComponent(fixture, from: "Alpha", to: "Externally edited")
         let repository = CanonicalRepository(root: fixture.root)
-        XCTAssertThrowsError(try repository.withStableSinglePassCandidate { _, _ in }) { error in
+        XCTAssertThrowsError(try repository.withStableSinglePassProbe { _, _ in }) { error in
             guard case CanonicalGenerationError.unknownState = error else {
                 return XCTFail("Wrong candidate error: \(error)")
             }
@@ -2265,7 +2269,7 @@ extension IndexQuerySessionTests {
         }
     }
 
-    func testSinglePassCandidateKeepsCoordinatedWriterOutsideSnapshot() throws {
+    func testProductionSinglePassKeepsCoordinatedWriterOutsideSnapshot() throws {
         let fixture = try fixture(componentCount: 5_000)
         defer { try? FileManager.default.removeItem(at: fixture.directory) }
         let attempt = fixture.directory.appendingPathComponent("single-pass-writer-attempt")
@@ -2280,7 +2284,7 @@ extension IndexQuerySessionTests {
         let repository = CanonicalRepository(root: fixture.root)
         var completed = 0.0
         var candidateSnapshotMS = 0.0
-        try repository.withStableSinglePassCandidate(onLockAcquired: {
+        try repository.withStableSinglePassProbe(onLockAcquired: {
             worker = try self.child("testRecoveryLockProbeWorker", environment: [
                 "HAMII_LOCK_PROBE_PROJECT": fixture.root.path,
                 "HAMII_LOCK_PROBE_ATTEMPT": attempt.path,
@@ -2313,7 +2317,7 @@ extension IndexQuerySessionTests {
             }
             var legacySnapshotMS = 0.0
             var legacyCompleted = 0.0
-            try repository.withStableSnapshotForDerivedRecovery(onLockAcquired: {
+            try repository.withStableLegacySnapshotForComparison(onLockAcquired: {
                 legacyWorker = try self.child("testRecoveryLockProbeWorker", environment: [
                     "HAMII_LOCK_PROBE_PROJECT": fixture.root.path,
                     "HAMII_LOCK_PROBE_ATTEMPT": legacyAttempt.path,
@@ -2352,7 +2356,7 @@ extension IndexQuerySessionTests {
 }
 
 extension IndexQuerySessionTests {
-    func testSinglePassCandidateDoesNotBypassHiddenGitSourceRejection() throws {
+    func testProductionSinglePassDoesNotBypassHiddenGitSourceRejection() throws {
         for condition in ["assume-unchanged", "skip-worktree", "filter"] {
             let fixture = try fixture()
             defer { try? FileManager.default.removeItem(at: fixture.directory) }
@@ -2365,7 +2369,7 @@ extension IndexQuerySessionTests {
                 try git(fixture.root, ["update-index", "--\(condition)", canonicalPath])
             }
             let repository = CanonicalRepository(root: fixture.root)
-            try repository.withStableSinglePassCandidate { candidate, stable in
+            try repository.withStableSinglePassProbe { candidate, stable in
                 XCTAssertEqual(candidate.snapshot.identity, stable.snapshotIdentity)
                 XCTAssertThrowsError(try GitCanonicalRevisionCalculator().current(at: fixture.root), condition) { error in
                     guard case IndexError.unverifiableSource = error else {
@@ -2392,9 +2396,9 @@ extension IndexQuerySessionTests {
         let canonicalFileCount: Int
     }
 
-    func testMeasuredSinglePassSnapshotCandidate() throws {
-        guard let output = ProcessInfo.processInfo.environment["HAMII_SINGLE_PASS_CANDIDATE_RESULT"] else {
-            throw XCTSkip("Set HAMII_SINGLE_PASS_CANDIDATE_RESULT for paired Snapshot measurements")
+    func testMeasuredProductionSinglePassSnapshot() throws {
+        guard let output = ProcessInfo.processInfo.environment["HAMII_SINGLE_PASS_SNAPSHOT_RESULT"] else {
+            throw XCTSkip("Set HAMII_SINGLE_PASS_SNAPSHOT_RESULT for paired Snapshot measurements")
         }
         var samples: [SinglePassBenchmarkSample] = []
         for kind in ["1", "1000", "5000", "mixed"] {
@@ -2409,11 +2413,11 @@ extension IndexQuerySessionTests {
                 var legacyPhase1MS = 0.0
                 var candidatePhase1MS = 0.0
                 var legacy: CanonicalSnapshot?
-                var candidate: SinglePassCandidateResult?
+                var candidate: SinglePassSnapshotProbeResult?
                 func measureLegacy() throws {
                     let started = ProcessInfo.processInfo.systemUptime
                     var observations: [CanonicalObservationMeasurement] = []
-                    legacy = try repository.withStableSnapshotForDerivedRecovery(
+                    legacy = try repository.withStableLegacySnapshotForComparison(
                         onObservation: { observations.append($0) }) { snapshot, _ in
                         _ = try GitCanonicalRevisionCalculator().current(at: fixture.root)
                         return snapshot
@@ -2425,7 +2429,7 @@ extension IndexQuerySessionTests {
                 }
                 func measureCandidate() throws {
                     let started = ProcessInfo.processInfo.systemUptime
-                    candidate = try repository.withStableSinglePassCandidate { result, _ in
+                    candidate = try repository.withStableSinglePassProbe { result, _ in
                         _ = try GitCanonicalRevisionCalculator().current(at: fixture.root)
                         return result
                     }

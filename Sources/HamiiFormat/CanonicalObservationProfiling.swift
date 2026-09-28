@@ -10,9 +10,12 @@ package enum CanonicalObservationStage: String, Codable {
     case manifestRead
     case directoryEnumeration
     case entityBytesRead
+    case manifestDecode
+    case canonicalBytesCapture
     case entityDecode
     case documentValidation
     case assetIntegrityValidation
+    case agentProfilesValidation
     case agentProfilesReadValidation
     case canonicalPathEnumerationAndSymlinkCheck
     case identityBytesRead

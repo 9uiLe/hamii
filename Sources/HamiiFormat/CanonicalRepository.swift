@@ -29,8 +29,14 @@ public enum CanonicalError: Error, CustomStringConvertible {
     }
 }
 
+private struct CapturedCanonicalFile {
+    let relativePath: String
+    let url: URL
+    let bytes: Data
+}
+
 #if DEBUG
-struct SinglePassCandidateResult {
+struct SinglePassSnapshotProbeResult {
     let snapshot: CanonicalSnapshot
     let relativePaths: [String]
     let readCounts: [String: Int]
@@ -38,130 +44,104 @@ struct SinglePassCandidateResult {
     let milliseconds: [String: Double]
 }
 
-private struct CapturedCanonicalFile {
-    let relativePath: String
-    let url: URL
-    let bytes: Data
-}
-
 extension CanonicalRepository {
-    // Evidence-only path. The caller holds WorktreeCoordinator for the entire
-    // observation; normal repository, Query, and save methods never call it.
-    func singlePassSnapshotCandidate() throws -> SinglePassCandidateResult {
-        func mark() -> Double { ProcessInfo.processInfo.systemUptime }
-        func elapsed(_ start: Double) -> Double { (mark() - start) * 1_000 }
-        let totalStart = mark()
-        try transaction.recoverIfNeeded()
-        var stages: [String: Double] = [:]
-        let discoveryStart = mark()
-        let paths = try canonicalJSONPaths()
-        stages["pathDiscovery"] = elapsed(discoveryStart)
-
-        let captureStart = mark()
-        var captured: [CapturedCanonicalFile] = []
+    // A test probe for the production acquisition path; it does not decode or
+    // hash independently. Normal callers leave the capture callback nil.
+    func singlePassSnapshotProbe() throws -> SinglePassSnapshotProbeResult {
+        var relativePaths: [String] = []
         var readCounts: [String: Int] = [:]
-        for url in paths {
-            let relative = url.path.replacingOccurrences(of: root.path + "/", with: "")
-            let bytes = try Data(contentsOf: url)
-            captured.append(CapturedCanonicalFile(relativePath: relative, url: url, bytes: bytes))
-            readCounts[relative, default: 0] += 1
+        var capturedBytes = 0
+        var measurements: [CanonicalObservationMeasurement] = []
+        let started = ProcessInfo.processInfo.systemUptime
+        let snapshot = try snapshotDuringManagedGitTransition(
+            onObservation: { measurements.append($0) },
+            onFileCaptured: { path, count in
+                relativePaths.append(path)
+                readCounts[path, default: 0] += 1
+                capturedBytes += count
+            })
+        func duration(_ stage: CanonicalObservationStage) -> Double {
+            measurements.filter { $0.stage == stage }.reduce(0) { $0 + $1.milliseconds }
         }
-        stages["bytesCapture"] = elapsed(captureStart)
-        let byPath = Dictionary(uniqueKeysWithValues: captured.map { ($0.relativePath, $0.bytes) })
-        let manifestBytes = byPath["hamii.json"]!
-
-        let manifestStart = mark()
-        let header = try JSONDecoder().decode(FormatHeader.self, from: manifestBytes)
-        guard header.formatVersion == 1 else { throw CanonicalError.unsupportedFormat(header.formatVersion) }
-        let manifest = try JSONDecoder().decode(Manifest.self, from: manifestBytes)
-        guard manifest.formatVersion == 1,
-              manifest.versions.document == 1,
-              manifest.versions.authoringHarness == 1 else {
-            throw CanonicalError.unsupportedFormat(manifest.formatVersion)
-        }
-        stages["manifestDecode"] = elapsed(manifestStart)
-
-        var document = Document(name: manifest.name)
-        document.id = manifest.id
-        document.revision = manifest.revision
-        document.versions = manifest.versions
-        document.authoringHarness = manifest.authoringHarness
-        document.capabilityDeclarations = manifest.capabilityDeclarations
-        document.tokenTemplate = manifest.tokenTemplate
-
-        let entityStart = mark()
-        document.pages = try decodeCaptured("pages", from: captured)
-        document.screens = try decodeCaptured("screens", from: captured)
-        document.scopes = try decodeCaptured("scopes", from: captured)
-        document.components = try decodeCaptured("components", from: captured)
-        document.tokens = try decodeCaptured("tokens", from: captured)
-        document.assets = try decodeCaptured("assets", from: captured)
-        document.interactions = try decodeCaptured("interactions", from: captured)
-        document.motions = try decodeCaptured("motions", from: captured)
-        document.fixtures = try decodeCaptured("fixtures", from: captured)
-        document.targets = try decodeCaptured("targets", from: captured)
-        stages["entityDecode"] = elapsed(entityStart)
-
-        let validationStart = mark()
-        let diagnostics = allDiagnostics(document)
-        if diagnostics.contains(where: { $0.severity == .error }) {
-            throw CanonicalError.invalid(diagnostics)
-        }
-        stages["documentAndAssetValidation"] = elapsed(validationStart)
-
-        let profileStart = mark()
-        // Missing profiles must fail like AgentProfilesRepository.profiles().
-        let profileBytes = try byPath["hamii-agent-profiles.json"]
-            ?? Data(contentsOf: root.appendingPathComponent("hamii-agent-profiles.json"))
-        let profileDocument = try JSONDecoder().decode(AgentProfilesDocument.self, from: profileBytes)
-        guard profileDocument.formatVersion == 1 else {
-            throw AgentProfileError.unsupportedFormat(profileDocument.formatVersion)
-        }
-        let names = profileDocument.profiles.map(\.profileName)
-        if let duplicate = names.first(where: { name in names.filter { $0 == name }.count > 1 }) {
-            throw AgentProfileError.duplicateProfile(duplicate)
-        }
-        stages["agentProfileValidation"] = elapsed(profileStart)
-
-        let identityStart = mark()
-        let identity = hashIdentity(byPath)
-        stages["identityHash"] = elapsed(identityStart)
-        stages["snapshotTotal"] = elapsed(totalStart)
-        return SinglePassCandidateResult(
-            snapshot: CanonicalSnapshot(document: document, identity: identity),
-            relativePaths: captured.map(\.relativePath), readCounts: readCounts,
-            capturedBytes: captured.reduce(0) { $0 + $1.bytes.count },
-            milliseconds: stages)
+        return SinglePassSnapshotProbeResult(snapshot: snapshot, relativePaths: relativePaths,
+            readCounts: readCounts, capturedBytes: capturedBytes, milliseconds: [
+                "pathDiscovery": duration(.canonicalPathEnumerationAndSymlinkCheck),
+                "bytesCapture": duration(.canonicalBytesCapture),
+                "manifestDecode": duration(.manifestDecode),
+                "entityDecode": duration(.entityDecode),
+                "documentAndAssetValidation": duration(.documentValidation) + duration(.assetIntegrityValidation),
+                "agentProfileValidation": duration(.agentProfilesValidation),
+                "identityHash": duration(.identityHash),
+                "snapshotTotal": (ProcessInfo.processInfo.systemUptime - started) * 1_000
+            ])
     }
 
-    private func decodeCaptured<T: Decodable & Identifiable>(
-        _ folder: String, from files: [CapturedCanonicalFile]
-    ) throws -> [T] where T.ID == EntityID {
-        try files.filter { $0.relativePath.hasPrefix(folder + "/") }
-            .sorted { $0.url.lastPathComponent < $1.url.lastPathComponent }
-            .map { file in
-                let value = try JSONDecoder().decode(T.self, from: file.bytes)
-                guard file.url.deletingPathExtension().lastPathComponent == value.id.rawValue else {
-                    throw CanonicalError.filenameMismatch(file.url.lastPathComponent)
-                }
-                return value
-            }
-    }
-
-    func withStableSinglePassCandidate<T>(
+    func withStableSinglePassProbe<T>(
         onLockAcquired: (() throws -> Void)? = nil,
-        _ operation: (SinglePassCandidateResult, StableCanonicalGeneration) throws -> T
+        _ operation: (SinglePassSnapshotProbeResult, StableCanonicalGeneration) throws -> T
     ) throws -> T {
         try coordinator.withExclusive {
             try onLockAcquired?()
             try transaction.recoverIfNeeded()
             try coordinator.requireReady()
             let stable = try generations.readStable()
-            let candidate = try singlePassSnapshotCandidate()
+            let candidate = try singlePassSnapshotProbe()
             guard stable.snapshotIdentity == candidate.snapshot.identity else {
                 throw CanonicalGenerationError.unknownState
             }
             return try operation(candidate, stable)
+        }
+    }
+
+    // Only tests use this reference path after production adopts one capture.
+    func legacySnapshotForComparison(
+        validationHook: (() throws -> Void)? = nil,
+        onObservation: CanonicalObservationRecorder? = nil
+    ) throws -> CanonicalSnapshot {
+        try measureCanonical(.transactionRecovery, recorder: onObservation) { try transaction.recoverIfNeeded() }
+        let document = try loadUnlocked(validate: true, validationHook: validationHook,
+                                        onObservation: onObservation)
+        _ = try measureCanonical(.agentProfilesReadValidation, recorder: onObservation) {
+            try AgentProfilesRepository(root: root).profiles()
+        }
+        var files: [String: Data] = [:]
+        let paths = try measureCanonical(.canonicalPathEnumerationAndSymlinkCheck, recorder: onObservation) {
+            try canonicalJSONPaths(onObservation: onObservation)
+        }
+        let readStart = onObservation == nil ? 0 : ProcessInfo.processInfo.systemUptime
+        var bytesRead = 0
+        for path in paths {
+            let relative = path.path.replacingOccurrences(of: root.path + "/", with: "")
+            let data = try Data(contentsOf: path)
+            files[relative] = data
+            if onObservation != nil { bytesRead += data.count }
+        }
+        if let onObservation {
+            onObservation(CanonicalObservationMeasurement(stage: .identityBytesRead,
+                milliseconds: (ProcessInfo.processInfo.systemUptime - readStart) * 1_000,
+                bytes: bytesRead))
+        }
+        let identity = measureCanonical(.identityHash, recorder: onObservation) { hashIdentity(files) }
+        return CanonicalSnapshot(document: document, identity: identity)
+    }
+
+    func withStableLegacySnapshotForComparison<T>(
+        onLockAcquired: (() throws -> Void)? = nil,
+        onObservation: CanonicalObservationRecorder? = nil,
+        _ operation: (CanonicalSnapshot, StableCanonicalGeneration) throws -> T
+    ) throws -> T {
+        try coordinator.withExclusive {
+            try onLockAcquired?()
+            try transaction.recoverIfNeeded()
+            try coordinator.requireReady()
+            let stable = try generations.readStable()
+            let snapshot = try measureCanonical(.snapshotAcquisition, recorder: onObservation) {
+                try legacySnapshotForComparison(onObservation: onObservation)
+            }
+            guard stable.snapshotIdentity == snapshot.identity else {
+                throw CanonicalGenerationError.unknownState
+            }
+            return try operation(snapshot, stable)
         }
     }
 }
@@ -422,35 +402,107 @@ public final class CanonicalRepository: ProjectRepository {
     }
 
     // The caller holds WorktreeCoordinator across the entire observation.
-    // A revision cannot make multiple files coherent; the coordinated read
-    // provides the snapshot boundary for hamii-managed writers.
-    func snapshotDuringManagedGitTransition(validationHook: (() throws -> Void)? = nil,
-                                            onObservation: CanonicalObservationRecorder? = nil) throws -> CanonicalSnapshot {
+    // Captured bytes are the sole decode, validation, and identity input for
+    // Canonical JSON. The lock supplies coherence for hamii-managed writers.
+    func snapshotDuringManagedGitTransition(
+        validationHook: (() throws -> Void)? = nil,
+        onObservation: CanonicalObservationRecorder? = nil,
+        onFileCaptured: ((String, Int) -> Void)? = nil
+    ) throws -> CanonicalSnapshot {
         try measureCanonical(.transactionRecovery, recorder: onObservation) { try transaction.recoverIfNeeded() }
-        let document = try loadUnlocked(validate: true, validationHook: validationHook,
-                                        onObservation: onObservation)
-        _ = try measureCanonical(.agentProfilesReadValidation, recorder: onObservation) {
-            try AgentProfilesRepository(root: root).profiles()
-        }
+        let captured = try captureCanonicalFiles(onObservation: onObservation,
+                                                 onFileCaptured: onFileCaptured)
         var files: [String: Data] = [:]
-        let paths = try measureCanonical(.canonicalPathEnumerationAndSymlinkCheck, recorder: onObservation) {
-            try canonicalJSONPaths(onObservation: onObservation)
+        for file in captured {
+            guard files[file.relativePath] == nil else {
+                throw CanonicalError.transactionCorrupt("Duplicate Canonical path: \(file.relativePath)")
+            }
+            files[file.relativePath] = file.bytes
         }
-        let readStart = onObservation == nil ? 0 : ProcessInfo.processInfo.systemUptime
-        var bytesRead = 0
-        for path in paths {
-            let relative = path.path.replacingOccurrences(of: root.path + "/", with: "")
-            let data = try Data(contentsOf: path)
-            files[relative] = data
-            if onObservation != nil { bytesRead += data.count }
+        // canonicalJSONPaths always includes hamii.json; the fallback keeps a
+        // missing manifest a recoverable file error instead of an abort.
+        let manifestBytes = try files["hamii.json"]
+            ?? Data(contentsOf: root.appendingPathComponent("hamii.json"))
+        let manifest = try measureCanonical(.manifestDecode, recorder: onObservation) { () -> Manifest in
+            let header = try JSONDecoder().decode(FormatHeader.self, from: manifestBytes)
+            guard header.formatVersion == 1 else { throw CanonicalError.unsupportedFormat(header.formatVersion) }
+            let value = try JSONDecoder().decode(Manifest.self, from: manifestBytes)
+            guard value.formatVersion == 1, value.versions.document == 1,
+                  value.versions.authoringHarness == 1 else {
+                throw CanonicalError.unsupportedFormat(value.formatVersion)
+            }
+            return value
         }
-        if let onObservation {
-            onObservation(CanonicalObservationMeasurement(stage: .identityBytesRead,
-                milliseconds: (ProcessInfo.processInfo.systemUptime - readStart) * 1_000,
-                bytes: bytesRead))
+        var document = Document(name: manifest.name)
+        document.id = manifest.id
+        document.revision = manifest.revision
+        document.versions = manifest.versions
+        document.authoringHarness = manifest.authoringHarness
+        document.capabilityDeclarations = manifest.capabilityDeclarations
+        document.tokenTemplate = manifest.tokenTemplate
+        document.pages = try decodeCaptured("pages", from: captured, onObservation: onObservation)
+        document.screens = try decodeCaptured("screens", from: captured, onObservation: onObservation)
+        document.scopes = try decodeCaptured("scopes", from: captured, onObservation: onObservation)
+        document.components = try decodeCaptured("components", from: captured, onObservation: onObservation)
+        document.tokens = try decodeCaptured("tokens", from: captured, onObservation: onObservation)
+        document.assets = try decodeCaptured("assets", from: captured, onObservation: onObservation)
+        document.interactions = try decodeCaptured("interactions", from: captured, onObservation: onObservation)
+        document.motions = try decodeCaptured("motions", from: captured, onObservation: onObservation)
+        document.fixtures = try decodeCaptured("fixtures", from: captured, onObservation: onObservation)
+        document.targets = try decodeCaptured("targets", from: captured, onObservation: onObservation)
+        try validationHook?()
+        let diagnostics = allDiagnostics(document, onObservation: onObservation)
+        if diagnostics.contains(where: { $0.severity == .error }) { throw CanonicalError.invalid(diagnostics) }
+        let profileBytes = try files["hamii-agent-profiles.json"]
+            ?? Data(contentsOf: root.appendingPathComponent("hamii-agent-profiles.json"))
+        _ = try measureCanonical(.agentProfilesValidation, recorder: onObservation) {
+            try AgentProfilesRepository.decodeProfiles(from: profileBytes)
         }
         let identity = measureCanonical(.identityHash, recorder: onObservation) { hashIdentity(files) }
         return CanonicalSnapshot(document: document, identity: identity)
+    }
+
+    private func captureCanonicalFiles(
+        onObservation: CanonicalObservationRecorder?,
+        onFileCaptured: ((String, Int) -> Void)?
+    ) throws -> [CapturedCanonicalFile] {
+        let paths = try measureCanonical(.canonicalPathEnumerationAndSymlinkCheck, recorder: onObservation) {
+            try canonicalJSONPaths(onObservation: onObservation)
+        }
+        let started = onObservation == nil ? 0 : ProcessInfo.processInfo.systemUptime
+        var captured: [CapturedCanonicalFile] = []
+        captured.reserveCapacity(paths.count)
+        var totalBytes = 0
+        for url in paths {
+            let relative = url.path.replacingOccurrences(of: root.path + "/", with: "")
+            let bytes = try Data(contentsOf: url)
+            captured.append(CapturedCanonicalFile(relativePath: relative, url: url, bytes: bytes))
+            if onObservation != nil { totalBytes += bytes.count }
+            onFileCaptured?(relative, bytes.count)
+        }
+        if let onObservation {
+            onObservation(CanonicalObservationMeasurement(stage: .canonicalBytesCapture,
+                milliseconds: (ProcessInfo.processInfo.systemUptime - started) * 1_000,
+                bytes: totalBytes, pathCount: paths.count))
+        }
+        return captured
+    }
+
+    private func decodeCaptured<T: Decodable & Identifiable>(
+        _ folder: String, from files: [CapturedCanonicalFile],
+        onObservation: CanonicalObservationRecorder?
+    ) throws -> [T] where T.ID == EntityID {
+        try measureCanonical(.entityDecode, detail: folder, recorder: onObservation) {
+            try files.filter { $0.relativePath.hasPrefix(folder + "/") }
+                .sorted { $0.url.lastPathComponent < $1.url.lastPathComponent }
+                .map { file in
+                    let value = try JSONDecoder().decode(T.self, from: file.bytes)
+                    guard file.url.deletingPathExtension().lastPathComponent == value.id.rawValue else {
+                        throw CanonicalError.filenameMismatch(file.url.lastPathComponent)
+                    }
+                    return value
+                }
+        }
     }
 
     private func writeDocument(_ document: Document, expected: Document?) throws {

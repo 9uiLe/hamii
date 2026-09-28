@@ -48,7 +48,11 @@ public struct AgentProfilesRepository {
 
     public func profiles() throws -> [AgentHarness] {
         let url = root.appendingPathComponent("hamii-agent-profiles.json")
-        let document = try JSONDecoder().decode(AgentProfilesDocument.self, from: Data(contentsOf: url))
+        return try Self.decodeProfiles(from: Data(contentsOf: url))
+    }
+
+    static func decodeProfiles(from bytes: Data) throws -> [AgentHarness] {
+        let document = try JSONDecoder().decode(AgentProfilesDocument.self, from: bytes)
         guard document.formatVersion == 1 else { throw AgentProfileError.unsupportedFormat(document.formatVersion) }
         let names = document.profiles.map(\.profileName)
         if let duplicate = names.first(where: { name in names.filter { $0 == name }.count > 1 }) {
