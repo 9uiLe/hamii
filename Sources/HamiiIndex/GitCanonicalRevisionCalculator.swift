@@ -1,6 +1,36 @@
 import CryptoKit
 import Foundation
 
+struct GitCanonicalRevisionProfile {
+    let stageMilliseconds: [String: Double]
+    let gitSubprocessCount: Int
+    let trackedCanonicalFileCount: Int
+    let changedCanonicalFileCount: Int
+    let workingTreeHashedBytes: Int
+}
+
+private final class GitRevisionProfileRecorder {
+    var stageMilliseconds: [String: Double] = [:]
+    var gitSubprocessCount = 0
+    var trackedCanonicalFileCount = 0
+    var changedCanonicalFileCount = 0
+    var workingTreeHashedBytes = 0
+
+    func measure<T>(_ stage: String, _ body: () throws -> T) rethrows -> T {
+        let start = ProcessInfo.processInfo.systemUptime
+        defer { stageMilliseconds[stage, default: 0] += (ProcessInfo.processInfo.systemUptime - start) * 1_000 }
+        return try body()
+    }
+
+    var result: GitCanonicalRevisionProfile {
+        GitCanonicalRevisionProfile(stageMilliseconds: stageMilliseconds,
+            gitSubprocessCount: gitSubprocessCount,
+            trackedCanonicalFileCount: trackedCanonicalFileCount,
+            changedCanonicalFileCount: changedCanonicalFileCount,
+            workingTreeHashedBytes: workingTreeHashedBytes)
+    }
+}
+
 /// A content identity for the canonical JSON visible in one Git working tree.
 /// Git supplies clean tracked content through HEAD; dirty and untracked bytes
 /// are included without reading every clean shard on each query.
@@ -12,79 +42,141 @@ public struct GitCanonicalRevisionCalculator: CanonicalRevisionCalculating {
     private static let gitPaths = ["hamii.json"] + paths.dropFirst().map { ":(glob)\($0)/*.json" }
 
     public func current(at root: URL) throws -> CanonicalRevision {
-        try CanonicalRevision(Self.calculate(at: root, afterInitialStatus: afterInitialStatus))
+        try CanonicalRevision(Self.calculate(at: root, afterInitialStatus: afterInitialStatus, profile: nil))
     }
 
-    private static func calculate(at root: URL, afterInitialStatus: (() throws -> Void)?) throws -> String {
+    #if DEBUG
+    func profiledCurrent(at root: URL) throws -> (revision: CanonicalRevision, profile: GitCanonicalRevisionProfile) {
+        let recorder = GitRevisionProfileRecorder()
+        let revision = try CanonicalRevision(Self.calculate(at: root, afterInitialStatus: afterInitialStatus,
+            profile: recorder))
+        return (revision, recorder.result)
+    }
+    #endif
+
+    private static func measured<T>(_ stage: String, profile: GitRevisionProfileRecorder?,
+                                    _ body: () throws -> T) rethrows -> T {
+        guard let profile else { return try body() }
+        return try profile.measure(stage, body)
+    }
+
+    private static func calculate(at root: URL, afterInitialStatus: (() throws -> Void)?,
+                                  profile: GitRevisionProfileRecorder?) throws -> String {
+        let started = profile == nil ? 0 : ProcessInfo.processInfo.systemUptime
+        defer {
+            if let profile { profile.stageMilliseconds["total", default: 0] +=
+                (ProcessInfo.processInfo.systemUptime - started) * 1_000 }
+        }
         var hash = SHA256()
-        let status = try git(root, ["status", "--porcelain=v2", "--branch", "-z", "--untracked-files=all", "--ignored=matching", "--"] + gitPaths)
+        let status = try measured("status1", profile: profile) {
+            profile?.gitSubprocessCount += 1
+            return try git(root, ["status", "--porcelain=v2", "--branch", "-z", "--untracked-files=all",
+                "--ignored=matching", "--"] + gitPaths)
+        }
         try afterInitialStatus?()
         guard status.status == 0 else { throw IndexError.unverifiableSource }
         // Git omits working-tree edits to assume-unchanged and skip-worktree
         // paths from status. Refuse to identify such a source as current.
-        let tracked = try git(root, ["ls-files", "-v", "-z", "--"] + gitPaths)
-        guard tracked.status == 0 else { throw IndexError.stale }
-        var attributeInput = Data()
-        var trackedPaths: [Data] = []
-        for record in tracked.output.split(separator: 0) {
-            guard record.count >= 3, record.first == 72, record.dropFirst().first == 32 else { throw IndexError.unverifiableSource }
-            let path = Data(record.dropFirst(2))
-            trackedPaths.append(path)
-            attributeInput.append(path)
-            attributeInput.append(0)
+        let tracked = try measured("lsFiles", profile: profile) {
+            profile?.gitSubprocessCount += 1
+            return try git(root, ["ls-files", "-v", "-z", "--"] + gitPaths)
         }
-        if !trackedPaths.isEmpty {
-            let attributes = try git(root, ["check-attr", "-z", "--stdin", "filter"], input: attributeInput)
-            guard attributes.status == 0 else { throw IndexError.unverifiableSource }
-            let fields = attributes.output.split(separator: 0, omittingEmptySubsequences: false)
-            guard fields.count == trackedPaths.count * 3 + 1, fields.last?.isEmpty == true else { throw IndexError.unverifiableSource }
-            for (index, path) in trackedPaths.enumerated() {
-                guard fields[index * 3] == path, fields[index * 3 + 1] == Data("filter".utf8) else {
+        guard tracked.status == 0 else { throw IndexError.stale }
+        let trackedPaths = try measured("trackedFlagsParse", profile: profile) {
+            try tracked.output.split(separator: 0).map { record -> Data in
+                guard record.count >= 3, record.first == 72, record.dropFirst().first == 32 else {
                     throw IndexError.unverifiableSource
                 }
-                let value = fields[index * 3 + 2]
-                guard value == Data("unspecified".utf8) || value == Data("unset".utf8) else {
+                return Data(record.dropFirst(2))
+            }
+        }
+        profile?.trackedCanonicalFileCount = trackedPaths.count
+        let attributeInput = measured("checkAttrInputPreparation", profile: profile) {
+            var input = Data()
+            for path in trackedPaths {
+                input.append(path)
+                input.append(0)
+            }
+            return input
+        }
+        if !trackedPaths.isEmpty {
+            let attributes = try measured("checkAttr", profile: profile) {
+                profile?.gitSubprocessCount += 1
+                return try git(root, ["check-attr", "-z", "--stdin", "filter"], input: attributeInput)
+            }
+            guard attributes.status == 0 else { throw IndexError.unverifiableSource }
+            try measured("attributeParse", profile: profile) {
+                let fields = attributes.output.split(separator: 0, omittingEmptySubsequences: false)
+                guard fields.count == trackedPaths.count * 3 + 1, fields.last?.isEmpty == true else {
                     throw IndexError.unverifiableSource
+                }
+                for (index, path) in trackedPaths.enumerated() {
+                    guard fields[index * 3] == path, fields[index * 3 + 1] == Data("filter".utf8) else {
+                        throw IndexError.unverifiableSource
+                    }
+                    let value = fields[index * 3 + 2]
+                    guard value == Data("unspecified".utf8) || value == Data("unset".utf8) else {
+                        throw IndexError.unverifiableSource
+                    }
                 }
             }
         }
         var oid: Data?
         var changed: [Data] = []
         var skipOriginal = false
-        for record in status.output.split(separator: 0) {
-            if skipOriginal { skipOriginal = false; continue }
-            if record.starts(with: Data("# branch.oid ".utf8)) {
-                oid = Data(record.dropFirst("# branch.oid ".utf8.count))
-            } else if record.starts(with: Data("# ".utf8)) {
-                continue
-            } else if record.starts(with: Data("1 ".utf8)) {
-                changed.append(try pathField(record, index: 8))
-            } else if record.starts(with: Data("2 ".utf8)) {
-                changed.append(try pathField(record, index: 9))
-                skipOriginal = true
-            } else if record.starts(with: Data("? ".utf8)) || record.starts(with: Data("! ".utf8)) {
-                changed.append(Data(record.dropFirst(2)))
-            } else {
-                throw IndexError.stale
+        try measured("status1Parse", profile: profile) {
+            for record in status.output.split(separator: 0) {
+                if skipOriginal { skipOriginal = false; continue }
+                if record.starts(with: Data("# branch.oid ".utf8)) {
+                    oid = Data(record.dropFirst("# branch.oid ".utf8.count))
+                } else if record.starts(with: Data("# ".utf8)) {
+                    continue
+                } else if record.starts(with: Data("1 ".utf8)) {
+                    changed.append(try pathField(record, index: 8))
+                } else if record.starts(with: Data("2 ".utf8)) {
+                    changed.append(try pathField(record, index: 9))
+                    skipOriginal = true
+                } else if record.starts(with: Data("? ".utf8)) || record.starts(with: Data("! ".utf8)) {
+                    changed.append(Data(record.dropFirst(2)))
+                } else {
+                    throw IndexError.stale
+                }
             }
         }
         guard let oid, !skipOriginal else { throw IndexError.stale }
         append(oid, to: &hash)
-        for raw in changed.sorted(by: { $0.lexicographicallyPrecedes($1) }) {
-            guard let name = String(data: raw, encoding: .utf8), safe(name) else { throw IndexError.stale }
-            let url = root.appendingPathComponent(name)
-            append(raw, to: &hash)
-            if FileManager.default.fileExists(atPath: url.path) {
-                guard try url.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink != true else { throw IndexError.stale }
-                append(try Data(contentsOf: url), to: &hash)
-            } else {
-                append(Data("<deleted>".utf8), to: &hash)
+        let sortedChanged = measured("changedPathSort", profile: profile) {
+            changed.sorted(by: { $0.lexicographicallyPrecedes($1) })
+        }
+        profile?.changedCanonicalFileCount = sortedChanged.count
+        try measured("changedWorkingTreeBytes", profile: profile) {
+            for raw in sortedChanged {
+                guard let name = String(data: raw, encoding: .utf8), safe(name) else { throw IndexError.stale }
+                let url = root.appendingPathComponent(name)
+                append(raw, to: &hash)
+                if FileManager.default.fileExists(atPath: url.path) {
+                    guard try url.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink != true else {
+                        throw IndexError.stale
+                    }
+                    let bytes = try Data(contentsOf: url)
+                    profile?.workingTreeHashedBytes += bytes.count
+                    append(bytes, to: &hash)
+                } else {
+                    append(Data("<deleted>".utf8), to: &hash)
+                }
             }
         }
         // A checkout can complete after the first status call while the
         // remaining Git calls still succeed. Refuse that mixed snapshot.
-        let verification = try git(root, ["status", "--porcelain=v2", "--branch", "-z", "--untracked-files=all", "--ignored=matching", "--"] + gitPaths)
-        guard verification.status == 0, verification.output == status.output else { throw IndexError.stale }
+        let verification = try measured("status2", profile: profile) {
+            profile?.gitSubprocessCount += 1
+            return try git(root, ["status", "--porcelain=v2", "--branch", "-z", "--untracked-files=all",
+                "--ignored=matching", "--"] + gitPaths)
+        }
+        let unchanged = measured("status2Equality", profile: profile) {
+            verification.status == 0 && verification.output == status.output
+        }
+        guard unchanged else { throw IndexError.stale }
         return hash.finalize().map { String(format: "%02x", $0) }.joined()
     }
 

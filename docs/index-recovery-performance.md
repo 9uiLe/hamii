@@ -19,7 +19,7 @@
 | 5000 Components | 5003 / 3,477,459 B | 138.11 / 141.07 | 154.90 / 202.67 | 173.21 / 179.55 | 516.87 / 550.42 | 376.13 / 386.42 | 898.26 / 927.76 | 1350.19 / 1368.54 |
 | Mixed semantic content | 25 / 15,050 B | 1.99 / 2.03 | 1.60 / 1.62 | 1.53 / 1.64 | 6.08 / 6.26 | 352.15 / 378.78 | 355.88 / 386.24 | 720.05 / 763.93 |
 
-5000 Component では Document / Asset validation が **35.19 / 37.27 ms**、identity hash が **13.99 / 15.01 ms** でした。Captured bytes は `Data` payload の合計であり peak RSS ではありません。Git oracle は Snapshot 外の別 stage です。`canonicalJSONPaths()` は root-based URL と keyed `String <` sort を使用し、symlink を拒否します。Entity array は folder 別 `lastPathComponent` 順です。
+5000 Component では Document / Asset validation が **35.19 / 37.27 ms**、identity hash が **13.99 / 15.01 ms** でした。Captured bytes は `Data` payload の合計であり peak RSS ではありません。Git oracle は Snapshot 外の別 stage です。Git subprocess と parse の内訳は [Git CanonicalRevision profiling](git-canonical-revision-performance.md) を参照してください。`canonicalJSONPaths()` は root-based URL と keyed `String <` sort を使用し、symlink を拒否します。Entity array は folder 別 `lastPathComponent` 順です。
 
 ## Recovered Query
 

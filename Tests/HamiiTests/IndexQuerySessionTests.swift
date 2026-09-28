@@ -2356,6 +2356,131 @@ extension IndexQuerySessionTests {
 }
 
 extension IndexQuerySessionTests {
+    private struct GitOracleStageSample: Codable {
+        let fixture: String
+        let iteration: Int
+        let stages: [String: Double]
+        let subprocessCount: Int
+        let trackedCanonicalFiles: Int
+        let changedCanonicalFiles: Int
+        let workingTreeHashedBytes: Int
+    }
+
+    func testGitOracleProfilingPreservesRevisionAndRejection() throws {
+        let fixture = try fixture()
+        defer { try? FileManager.default.removeItem(at: fixture.directory) }
+        let calculator = GitCanonicalRevisionCalculator()
+        func assertSameRevision(_ label: String) throws {
+            let unprofiled = try calculator.current(at: fixture.root)
+            let profiled = try calculator.profiledCurrent(at: fixture.root)
+            XCTAssertEqual(profiled.revision, unprofiled, label)
+            XCTAssertEqual(profiled.profile.gitSubprocessCount, 4, label)
+            XCTAssertGreaterThan(profiled.profile.stageMilliseconds["total"] ?? 0, 0, label)
+        }
+        try assertSameRevision("clean tracked")
+        try changeComponent(fixture, from: "Alpha", to: "Dirty tracked")
+        try assertSameRevision("dirty tracked")
+        let untracked = fixture.root.appendingPathComponent("components/component_untracked.json")
+        try Data(contentsOf: fixture.root.appendingPathComponent("components/component_alpha.json"))
+            .write(to: untracked)
+        try assertSameRevision("untracked Canonical shard")
+        try FileManager.default.removeItem(at: untracked)
+        try git(fixture.root, ["checkout", "--", "components/component_alpha.json"])
+
+        for condition in ["assume-unchanged", "skip-worktree", "filter"] {
+            let path = "components/component_alpha.json"
+            if condition == "filter" {
+                try Data("\(path) filter=hamii-test\n".utf8)
+                    .write(to: fixture.root.appendingPathComponent(".git/info/attributes"))
+                try git(fixture.root, ["config", "filter.hamii-test.clean", "cat"])
+            } else {
+                try git(fixture.root, ["update-index", "--\(condition)", path])
+            }
+            for action in [{ try calculator.current(at: fixture.root) },
+                           { try calculator.profiledCurrent(at: fixture.root).revision }] {
+                XCTAssertThrowsError(try action(), condition) { error in
+                    guard case IndexError.unverifiableSource = error else {
+                        return XCTFail("Wrong \(condition) error: \(error)")
+                    }
+                }
+            }
+            if condition == "filter" {
+                try FileManager.default.removeItem(at: fixture.root.appendingPathComponent(".git/info/attributes"))
+            } else {
+                try git(fixture.root, ["update-index", "--no-\(condition)", path])
+            }
+        }
+        try assertSameRevision("after hidden source cleanup")
+
+        try git(fixture.root, ["switch", "-qc", "profile-alternate"])
+        try changeComponent(fixture, from: "Alpha", to: "Alternate branch")
+        try git(fixture.root, ["add", "-A"])
+        try git(fixture.root, ["-c", "user.name=Test", "-c", "user.email=test@example.invalid",
+                               "commit", "-qm", "alternate"])
+        try git(fixture.root, ["switch", "-q", "-"])
+        let profiledRace = GitCanonicalRevisionCalculator(afterInitialStatus: {
+            try self.git(fixture.root, ["switch", "-q", "profile-alternate"])
+        })
+        XCTAssertThrowsError(try profiledRace.profiledCurrent(at: fixture.root)) { error in
+            guard case IndexError.stale = error else { return XCTFail("Wrong profile race error: \(error)") }
+        }
+        try git(fixture.root, ["switch", "-q", "-"])
+        let normalRace = GitCanonicalRevisionCalculator(afterInitialStatus: {
+            try self.git(fixture.root, ["switch", "-q", "profile-alternate"])
+        })
+        XCTAssertThrowsError(try normalRace.current(at: fixture.root)) { error in
+            guard case IndexError.stale = error else { return XCTFail("Wrong normal race error: \(error)") }
+        }
+    }
+
+    func testMeasuredGitOracleStages() throws {
+        guard let output = ProcessInfo.processInfo.environment["HAMII_GIT_ORACLE_PROFILE_RESULT"] else {
+            throw XCTSkip("Set HAMII_GIT_ORACLE_PROFILE_RESULT for Git oracle measurements")
+        }
+        var samples: [GitOracleStageSample] = []
+        for kind in ["1", "1000", "5000", "mixed", "dirty", "untracked"] {
+            let count = kind == "mixed" ? 20 : (Int(kind) ?? 1)
+            let fixture = try fixture(componentCount: count)
+            defer { try? FileManager.default.removeItem(at: fixture.directory) }
+            if kind == "mixed" {
+                try addMixedSemanticContent(fixture)
+                try git(fixture.root, ["add", "-A"])
+                try git(fixture.root, ["-c", "user.name=Test", "-c", "user.email=test@example.invalid",
+                                       "commit", "-qm", "mixed"])
+            } else if kind == "dirty" {
+                try changeComponent(fixture, from: "Alpha", to: "Dirty tracked")
+            } else if kind == "untracked" {
+                let shard = fixture.root.appendingPathComponent("components/component_untracked.json")
+                try Data(contentsOf: fixture.root.appendingPathComponent("components/component_alpha.json"))
+                    .write(to: shard)
+            }
+            let calculator = GitCanonicalRevisionCalculator()
+            for iteration in 0..<5 {
+                let result = try calculator.profiledCurrent(at: fixture.root)
+                XCTAssertEqual(result.revision, try calculator.current(at: fixture.root))
+                XCTAssertEqual(result.profile.gitSubprocessCount, 4)
+                if kind == "dirty" || kind == "untracked" {
+                    XCTAssertGreaterThan(result.profile.changedCanonicalFileCount, 0)
+                    XCTAssertGreaterThan(result.profile.workingTreeHashedBytes, 0)
+                } else {
+                    XCTAssertEqual(result.profile.changedCanonicalFileCount, 0)
+                    XCTAssertEqual(result.profile.workingTreeHashedBytes, 0)
+                }
+                samples.append(GitOracleStageSample(fixture: kind, iteration: iteration,
+                    stages: result.profile.stageMilliseconds,
+                    subprocessCount: result.profile.gitSubprocessCount,
+                    trackedCanonicalFiles: result.profile.trackedCanonicalFileCount,
+                    changedCanonicalFiles: result.profile.changedCanonicalFileCount,
+                    workingTreeHashedBytes: result.profile.workingTreeHashedBytes))
+            }
+        }
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        try encoder.encode(samples).write(to: URL(fileURLWithPath: output), options: .atomic)
+    }
+}
+
+extension IndexQuerySessionTests {
     func testProductionSinglePassDoesNotBypassHiddenGitSourceRejection() throws {
         for condition in ["assume-unchanged", "skip-worktree", "filter"] {
             let fixture = try fixture()
