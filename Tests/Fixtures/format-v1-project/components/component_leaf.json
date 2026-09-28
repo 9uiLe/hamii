@@ -1,0 +1,58 @@
+{
+  "api" : {
+    "bindings" : [
+
+    ],
+    "events" : [
+
+    ],
+    "overridablePaths" : [
+
+    ],
+    "properties" : [
+
+    ],
+    "slots" : [
+
+    ]
+  },
+  "availability" : {
+    "allowOnlyScopeIDs" : [
+
+    ],
+    "denyScopeIDs" : [
+
+    ]
+  },
+  "id" : {
+    "rawValue" : "component_leaf"
+  },
+  "name" : "Leaf",
+  "nativeSemantics" : {
+
+  },
+  "ownerScopeID" : {
+    "rawValue" : "scope_app"
+  },
+  "root" : {
+    "children" : [
+
+    ],
+    "id" : {
+      "rawValue" : "layer_leaf_text"
+    },
+    "kind" : "text",
+    "layout" : {
+
+    },
+    "name" : "Leaf Text",
+    "targetOverrides" : {
+
+    },
+    "text" : "Nested"
+  },
+  "variants" : [
+
+  ],
+  "visibility" : "public"
+}

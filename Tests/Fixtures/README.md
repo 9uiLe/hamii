@@ -13,18 +13,20 @@ a currently accepted cross-kind asset reference. The test requires exact bytes
 for both construction and decode/re-encode.
 
 `format-v1-project/` was written by `CanonicalRepository` built from the same
-pre-refactor commit. It contains a Screen, ComponentDefinition, Asset, Scope,
+pre-refactor commit. It contains a Screen, two nested ComponentDefinitions, Asset, Scope,
 manifest, and agent profiles. The local `.hamii/` coordination records are
 excluded because they are not Canonical Project Data.
 
 - Pre-refactor `CanonicalSnapshot.identity`:
-  `02196c93723e3fc19c1eb19253079993d44888a8a545c8469b728390e8334f0a`
+  `e0bb7311812a2a4f194456cced0f1cbfb73fd59b3570fc3f4e04672c560c3d9a`
 - Screen shard SHA-256:
   `6ddadd8716ecefc5698f91fdc1cd212956c55b5a05e02eb0b1d4889e4f6e00ad`
-- Component shard SHA-256:
-  `faf5bdc3a27c6ae685b9f0ed5396aa95cf0e6dfe3f9b17ca935a4b616d76468a`
+- Badge Component shard SHA-256:
+  `13b80669ab54505b5d3dfe94c4b52189b5a5eb00868539fb4623a5e067957dfd`
+- Leaf Component shard SHA-256:
+  `3f381249c8e93b582071cc023579254eb43d38090eb35007f8407791d8a3cbbe`
 
 The project test copies these exact files to a temporary root, observes the
 current loader and typed model, compares Screen/Component re-encoding byte for
-byte, then verifies a no-op semantic mutation leaves all six shards, the
+byte, then verifies a no-op semantic mutation leaves all seven shards, the
 Snapshot identity, coordinated generation, and client precondition unchanged.

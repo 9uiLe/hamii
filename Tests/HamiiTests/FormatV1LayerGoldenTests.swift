@@ -106,7 +106,8 @@ final class FormatV1LayerGoldenTests: XCTestCase {
         try FileManager.default.copyItem(at: fixture, to: root)
         let paths = [
             "hamii.json", "hamii-agent-profiles.json", "scopes/scope_app.json",
-            "screens/screen_main.json", "components/component_badge.json", "assets/asset_symbol.json"
+            "screens/screen_main.json", "components/component_badge.json",
+            "components/component_leaf.json", "assets/asset_symbol.json"
         ]
         func bytes() throws -> [String: Data] {
             try Dictionary(uniqueKeysWithValues: paths.map { ($0, try Data(contentsOf: root.appendingPathComponent($0))) })
@@ -116,7 +117,7 @@ final class FormatV1LayerGoldenTests: XCTestCase {
         let service = ProjectService(repository: repository)
         let observed = try service.observe()
         let snapshot = try repository.withCoordinatedSnapshot { $0 }
-        XCTAssertEqual(snapshot.identity.rawValue, "02196c93723e3fc19c1eb19253079993d44888a8a545c8469b728390e8334f0a")
+        XCTAssertEqual(snapshot.identity.rawValue, "e0bb7311812a2a4f194456cced0f1cbfb73fd59b3570fc3f4e04672c560c3d9a")
         XCTAssertEqual(snapshot.document, observed.document)
 
         let encoder = JSONEncoder()
@@ -127,7 +128,11 @@ final class FormatV1LayerGoldenTests: XCTestCase {
             return data
         }
         XCTAssertEqual(try encoded(snapshot.document.screens[0]), original["screens/screen_main.json"])
-        XCTAssertEqual(try encoded(snapshot.document.components[0]), original["components/component_badge.json"])
+        for component in snapshot.document.components {
+            XCTAssertEqual(try encoded(component), original["components/\(component.id.rawValue).json"])
+        }
+        let badge = try XCTUnwrap(snapshot.document.components.first { $0.id == EntityID("component_badge") })
+        XCTAssertEqual(badge.root.children.last?.component?.definitionID, EntityID("component_leaf"))
 
         let generationBefore = try CanonicalGenerationStore(root: root).readStable()
         let result = try service.mutate(
