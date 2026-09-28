@@ -10,6 +10,7 @@ run_check() {
 }
 
 run_check change-impact-tests python3 scripts/test_change_impact.py
+run_check swift-test-shard-tests python3 scripts/test_swift_test_shards.py
 run_check architecture bash scripts/check-architecture.sh
 run_check adr python3 scripts/check-adr.py
 run_check links python3 scripts/check-links.py
@@ -27,10 +28,10 @@ if [[ ! "$hamii_swift_version" =~ Swift[[:space:]]version[[:space:]]6\.4([[:spac
   exit 1
 fi
 echo "HAMII_CHECK_PASSED swift-version"
-run_check swift-build "$hamii_swift" build
+run_check swift-build "$hamii_swift" build --build-tests
 run_check package-app bash scripts/package-app.sh
 run_check codesign codesign --verify --deep --strict .build/hamii.app
-run_check swift-test "$hamii_swift" test
+run_check swift-test env HAMII_SWIFT="$hamii_swift" python3 scripts/run-swift-tests.py
 run_check cli-smoke python3 scripts/smoke-cli.py
 run_check state-precondition-smoke python3 scripts/smoke-state-precondition.py
 run_check merge-candidate-smoke python3 scripts/smoke-merge-candidate.py

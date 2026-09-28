@@ -17,7 +17,7 @@ import time
 from change_impact import ROOT, classify
 
 FULL_CHECKS = (
-    "change-impact-tests", "architecture", "adr", "links", "swift-version",
+    "change-impact-tests", "swift-test-shard-tests", "architecture", "adr", "links", "swift-version",
     "swift-build", "package-app", "codesign", "swift-test", "cli-smoke",
     "state-precondition-smoke", "merge-candidate-smoke", "samples",
 )
