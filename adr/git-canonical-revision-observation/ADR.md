@@ -16,7 +16,7 @@ Can the current fail-closed evidence for Canonical working-tree identity and uns
 - A shell or wrapper that invokes four Git children still counts as four Git executions.
 - Preserve the current revision for clean, dirty, untracked, deleted, and renamed Canonical JSON in the Spike's parity matrix. This does not settle the long-term CanonicalRevision algorithm or false positive invalidation on unrelated commits.
 - Hidden `assume-unchanged` / `skip-worktree` state and active clean filters cannot authorize current. Failure, malformed output, unexpected encoding, or uncertain source must fail closed.
-- The final observation fence must reject an observed mixed source. `git status #2` is the current implementation, not a permanent product command requirement. A candidate cannot simply remove it without equivalent evidence.
+- The final observation fence must retain the branch / working-tree races actually rejected by the current status comparison. `git status #2` is the current implementation, not a permanent product command requirement. It is not a fence over every Git metadata source.
 - A repeated digest, metadata-only check, or watcher silence does not prove a coherent multi-file snapshot under arbitrary external writers.
 - This ADR neither expands the coordinated writer contract nor chooses an Index recovery strategy. [Incremental Index Recovery](../incremental-index-recovery/ADR.md) remains separate.
 
@@ -37,16 +37,16 @@ Option 2 may reduce wall time, but no available command combination has yet been
 - Whether one real Git invocation can report more than one of the required evidence classes without changing semantics.
 - Whether a fewer-process candidate can preserve the current `CanonicalRevision` and all rejection cases.
 - What the existing final status comparison does and does not detect for metadata changes made after the flag or filter check.
-- Whether a candidate can reject branch switch, raw Canonical edit, hidden flag change, and filter/config change at each relevant interleaving point.
+- Which branch / working-tree races the current status comparison rejects; which hidden flag / filter interleavings remain defense-in-depth blind windows; and whether a candidate preserves or intentionally strengthens that boundary.
 - Whether fewer calls yield lower total wall time across small, large, mixed, dirty, and untracked fixtures.
 
 ## Required Evidence
 
-The [Git evidence consolidation Spike](spikes/git-evidence-consolidation/SPIKE.md) first maps the current four calls to E1 initial worktree observation, E2 tracked paths/flags, E3 filter attributes, and E4 final worktree observation. It then tests one test-only fewer-process candidate against production results, including clean 1/1000/5000/mixed, dirty, untracked, deleted, and renamed JSON; hidden flags/filter; malformed/error outcomes; and branch, raw edit, hidden metadata, and filter/config races. Record actual Git execution count, per-call and total p50/p95, tracked/changed counts, and working bytes hashed. Distinguish confirmed behavior from inferred guarantees.
+The [Git evidence consolidation Spike](spikes/git-evidence-consolidation/SPIKE.md) first maps the current four calls to E1 initial worktree observation, E2 tracked paths/flags, E3 filter attributes, and E4 final worktree observation. It characterizes which interleavings E4 detects and which metadata changes it does not, including production-shaped hooks for after-E2 and after-E3 changes. It then tests one test-only fewer-process candidate against production results, including clean 1/1000/5000/mixed, dirty, untracked, deleted, and renamed JSON; hidden flags/filter present at their respective observation points; malformed/error outcomes; and branch/raw-edit races. Record actual Git execution count, per-call and total p50/p95, tracked/changed counts, and working bytes hashed. Distinguish confirmed behavior from inferred guarantees.
 
 ## Decision Criteria
 
-A candidate can advance only if it uses fewer than four real Git executions; matches production revision for all listed normal states; rejects hidden flags, filters, malformed output and command failures; does not return positive current for the race matrix; and shows an observed total wall-time benefit without disproportionate complexity. A missing gate keeps the four-call production baseline. No fixed latency threshold or Product SLA is set by this ADR.
+A candidate can advance only if it uses fewer than four real Git executions; matches production revision for all listed normal states; rejects hidden flags and active filters when its relevant evidence is captured; fails closed on malformed, uncertain, or contradictory observed evidence; rejects the branch/working-tree mixed observations that production rejects; documents rather than claims closure of known metadata blind windows; infers no arbitrary external-writer atomicity; and shows an observed total wall-time benefit without disproportionate complexity. A missing gate keeps the four-call production baseline. Stronger metadata-race rejection, if observed, is separate defense-in-depth evidence rather than required parity. No fixed latency threshold or Product SLA is set by this ADR.
 
 ## Status
 

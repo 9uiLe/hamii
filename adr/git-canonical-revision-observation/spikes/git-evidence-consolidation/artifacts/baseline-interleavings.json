@@ -1,0 +1,42 @@
+[
+  {
+    "filterAttributesChanged": false,
+    "injection": "assume-unchanged",
+    "status1Bytes": 73,
+    "status2Bytes": 73,
+    "statusEquality": true,
+    "trackedFlagsChanged": true
+  },
+  {
+    "filterAttributesChanged": false,
+    "injection": "skip-worktree",
+    "status1Bytes": 73,
+    "status2Bytes": 73,
+    "statusEquality": true,
+    "trackedFlagsChanged": true
+  },
+  {
+    "filterAttributesChanged": true,
+    "injection": "filter",
+    "status1Bytes": 73,
+    "status2Bytes": 73,
+    "statusEquality": true,
+    "trackedFlagsChanged": false
+  },
+  {
+    "filterAttributesChanged": false,
+    "injection": "raw-edit",
+    "status1Bytes": 73,
+    "status2Bytes": 204,
+    "statusEquality": false,
+    "trackedFlagsChanged": false
+  },
+  {
+    "filterAttributesChanged": false,
+    "injection": "branch-switch",
+    "status1Bytes": 73,
+    "status2Bytes": 78,
+    "statusEquality": false,
+    "trackedFlagsChanged": false
+  }
+]
