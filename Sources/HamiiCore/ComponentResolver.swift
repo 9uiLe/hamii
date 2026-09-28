@@ -59,7 +59,10 @@ public enum ComponentResolver {
 
     private static func replaceChildren(_ children: [Layer], at id: EntityID, in layer: inout Layer) -> Bool {
         if layer.id == id {
-            guard layer.kind == .stack || layer.kind == .overlay || layer.kind == .scroll else { return false }
+            switch layer.payload {
+            case .stack, .overlay, .scroll: break
+            default: return false
+            }
             layer.children = children
             return true
         }
@@ -73,8 +76,11 @@ public enum ComponentResolver {
         let parts = path.split(separator: ".").map(String.init)
         guard parts.count == 2, parts[1] == "text" else { return false }
         if layer.id.rawValue == parts[0] {
-            guard layer.kind == .text || layer.kind == .button else { return false }
-            layer.text = text
+            switch layer.payload {
+            case .text(var payload): payload.value = text; layer.payload = .text(payload)
+            case .button(var payload): payload.label = text; layer.payload = .button(payload)
+            default: return false
+            }
             return true
         }
         for index in layer.children.indices {

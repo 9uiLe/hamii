@@ -54,7 +54,7 @@ public enum TargetPlanner {
         }
         func check(_ layer: Layer) {
             let key: CapabilityKey
-            switch layer.kind {
+            switch layer.payload {
             case .stack: key = CapabilityKey("layout.stack")
             case .overlay: key = CapabilityKey("layout.overlay")
             case .scroll: key = CapabilityKey("layout.scroll")

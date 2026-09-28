@@ -172,27 +172,210 @@ public struct ComponentInstance: Codable, Equatable {
     }
 }
 
+public struct TextLayerPayload: Equatable {
+    public var value: String?
+    public var binding: String?
+    public init(value: String? = nil, binding: String? = nil) {
+        self.value = value; self.binding = binding
+    }
+}
+
+public struct ButtonLayerPayload: Equatable {
+    public var label: String?
+    public var binding: String?
+    public var emittedEvent: String?
+    public init(label: String? = nil, binding: String? = nil, emittedEvent: String? = nil) {
+        self.label = label; self.binding = binding; self.emittedEvent = emittedEvent
+    }
+}
+
+public struct ImageLayerPayload: Equatable {
+    public var assetID: EntityID?
+    public init(assetID: EntityID? = nil) { self.assetID = assetID }
+}
+
+public struct ComponentInstanceLayerPayload: Equatable {
+    public var instance: ComponentInstance?
+    public init(instance: ComponentInstance? = nil) { self.instance = instance }
+}
+
+/// Runtime node meaning. Format v1 continues to encode the established flat Layer keys.
+public enum LayerPayload: Equatable {
+    case stack
+    case overlay
+    case scroll
+    case text(TextLayerPayload)
+    case image(ImageLayerPayload)
+    case button(ButtonLayerPayload)
+    case componentInstance(ComponentInstanceLayerPayload)
+
+    public var kind: LayerKind {
+        switch self {
+        case .stack: .stack
+        case .overlay: .overlay
+        case .scroll: .scroll
+        case .text: .text
+        case .image: .image
+        case .button: .button
+        case .componentInstance: .componentInstance
+        }
+    }
+}
+
+/// Format v1 permits fields on unrelated kinds. Preserve those exact persisted values
+/// without treating them as supported semantics for the typed node.
+private struct FormatV1Residual: Equatable {
+    var text: String?
+    var textBinding: String?
+    var emittedEvent: String?
+    var assetID: EntityID?
+    var component: ComponentInstance?
+}
+
 public struct Layer: Codable, Equatable, Identifiable {
     public var id: EntityID
-    public var kind: LayerKind
     public var name: String
     public var children: [Layer]
     public var layout: Layout
-    public var text: String?
-    public var textBinding: String?
-    public var emittedEvent: String?
-    public var assetID: EntityID?
-    public var component: ComponentInstance?
+    public var payload: LayerPayload
     public var interactionID: EntityID?
     public var accessibilityLabel: String?
     public var nativeIntent: String?
     public var targetOverrides: [String: String]
+    private var formatV1Residual = FormatV1Residual()
+
+    public var kind: LayerKind { payload.kind }
+
+    public var text: String? {
+        get {
+            switch payload {
+            case .text(let value): value.value
+            case .button(let value): value.label
+            default: formatV1Residual.text
+            }
+        }
+        set {
+            switch payload {
+            case .text(var value): value.value = newValue; payload = .text(value)
+            case .button(var value): value.label = newValue; payload = .button(value)
+            default: formatV1Residual.text = newValue
+            }
+        }
+    }
+
+    public var textBinding: String? {
+        get {
+            switch payload {
+            case .text(let value): value.binding
+            case .button(let value): value.binding
+            default: formatV1Residual.textBinding
+            }
+        }
+        set {
+            switch payload {
+            case .text(var value): value.binding = newValue; payload = .text(value)
+            case .button(var value): value.binding = newValue; payload = .button(value)
+            default: formatV1Residual.textBinding = newValue
+            }
+        }
+    }
+
+    public var emittedEvent: String? {
+        get {
+            if case .button(let value) = payload { return value.emittedEvent }
+            return formatV1Residual.emittedEvent
+        }
+        set {
+            if case .button(var value) = payload { value.emittedEvent = newValue; payload = .button(value) }
+            else { formatV1Residual.emittedEvent = newValue }
+        }
+    }
+
+    public var assetID: EntityID? {
+        get {
+            if case .image(let value) = payload { return value.assetID }
+            return formatV1Residual.assetID
+        }
+        set {
+            if case .image(var value) = payload { value.assetID = newValue; payload = .image(value) }
+            else { formatV1Residual.assetID = newValue }
+        }
+    }
+
+    public var component: ComponentInstance? {
+        get {
+            if case .componentInstance(let value) = payload { return value.instance }
+            return formatV1Residual.component
+        }
+        set {
+            if case .componentInstance(var value) = payload { value.instance = newValue; payload = .componentInstance(value) }
+            else { formatV1Residual.component = newValue }
+        }
+    }
+
+    public init(id: EntityID, name: String, payload: LayerPayload, children: [Layer] = [], layout: Layout = Layout()) {
+        self.id = id; self.name = name; self.payload = payload; self.children = children; self.layout = layout
+        interactionID = nil; accessibilityLabel = nil; nativeIntent = nil; targetOverrides = [:]
+    }
 
     public init(id: EntityID, kind: LayerKind, name: String, children: [Layer] = [], layout: Layout = Layout(), text: String? = nil, assetID: EntityID? = nil, component: ComponentInstance? = nil) {
-        self.id = id; self.kind = kind; self.name = name; self.children = children; self.layout = layout
-        self.text = text; self.textBinding = nil; self.emittedEvent = nil
-        self.assetID = assetID; self.component = component; self.interactionID = nil
-        self.accessibilityLabel = nil; self.nativeIntent = nil; self.targetOverrides = [:]
+        let payload: LayerPayload
+        switch kind {
+        case .stack: payload = .stack
+        case .overlay: payload = .overlay
+        case .scroll: payload = .scroll
+        case .text: payload = .text(TextLayerPayload(value: text))
+        case .image: payload = .image(ImageLayerPayload(assetID: assetID))
+        case .button: payload = .button(ButtonLayerPayload(label: text))
+        case .componentInstance: payload = .componentInstance(ComponentInstanceLayerPayload(instance: component))
+        }
+        self.init(id: id, name: name, payload: payload, children: children, layout: layout)
+        if kind != .text && kind != .button { self.text = text }
+        if kind != .image { self.assetID = assetID }
+        if kind != .componentInstance { self.component = component }
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, kind, name, children, layout, text, textBinding, emittedEvent, assetID
+        case component, interactionID, accessibilityLabel, nativeIntent, targetOverrides
+    }
+
+    public init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(
+            id: try values.decode(EntityID.self, forKey: .id),
+            kind: try values.decode(LayerKind.self, forKey: .kind),
+            name: try values.decode(String.self, forKey: .name),
+            children: try values.decode([Layer].self, forKey: .children),
+            layout: try values.decode(Layout.self, forKey: .layout),
+            text: try values.decodeIfPresent(String.self, forKey: .text),
+            assetID: try values.decodeIfPresent(EntityID.self, forKey: .assetID),
+            component: try values.decodeIfPresent(ComponentInstance.self, forKey: .component)
+        )
+        textBinding = try values.decodeIfPresent(String.self, forKey: .textBinding)
+        emittedEvent = try values.decodeIfPresent(String.self, forKey: .emittedEvent)
+        interactionID = try values.decodeIfPresent(EntityID.self, forKey: .interactionID)
+        accessibilityLabel = try values.decodeIfPresent(String.self, forKey: .accessibilityLabel)
+        nativeIntent = try values.decodeIfPresent(String.self, forKey: .nativeIntent)
+        targetOverrides = try values.decode([String: String].self, forKey: .targetOverrides)
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var values = encoder.container(keyedBy: CodingKeys.self)
+        try values.encode(id, forKey: .id)
+        try values.encode(kind, forKey: .kind)
+        try values.encode(name, forKey: .name)
+        try values.encode(children, forKey: .children)
+        try values.encode(layout, forKey: .layout)
+        try values.encodeIfPresent(text, forKey: .text)
+        try values.encodeIfPresent(textBinding, forKey: .textBinding)
+        try values.encodeIfPresent(emittedEvent, forKey: .emittedEvent)
+        try values.encodeIfPresent(assetID, forKey: .assetID)
+        try values.encodeIfPresent(component, forKey: .component)
+        try values.encodeIfPresent(interactionID, forKey: .interactionID)
+        try values.encodeIfPresent(accessibilityLabel, forKey: .accessibilityLabel)
+        try values.encodeIfPresent(nativeIntent, forKey: .nativeIntent)
+        try values.encode(targetOverrides, forKey: .targetOverrides)
     }
 }
 

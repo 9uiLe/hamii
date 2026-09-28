@@ -107,7 +107,7 @@ public enum MutationEngine {
             patches.append(SemanticPatch(entityID: scope.id, path: "scopes", oldValue: nil, newValue: name))
         case .createScreen(let name, let scopeID):
             guard document.scopes.contains(where: { $0.id == scopeID }) else { throw AuthoringError.notFound(scopeID.rawValue) }
-            let root = Layer(id: .new("layer"), kind: .stack, name: "Root", layout: Layout(axis: .vertical))
+            let root = Layer(id: .new("layer"), name: "Root", payload: .stack, layout: Layout(axis: .vertical))
             let screen = Screen(id: .new("screen"), name: name, scopeID: scopeID, root: root)
             document.screens.append(screen)
             patches.append(SemanticPatch(entityID: screen.id, path: "screens", oldValue: nil, newValue: name))
@@ -147,7 +147,7 @@ public enum MutationEngine {
             patches.append(SemanticPatch(entityID: layer.id, path: "children", oldValue: nil, newValue: kind.rawValue))
         case .addImageLayer(let screenID, let parentID, let assetID, let name):
             guard let screenIndex = document.screens.firstIndex(where: { $0.id == screenID }) else { throw AuthoringError.notFound(screenID.rawValue) }
-            let layer = Layer(id: .new("layer"), kind: .image, name: name, assetID: assetID)
+            let layer = Layer(id: .new("layer"), name: name, payload: .image(ImageLayerPayload(assetID: assetID)))
             guard append(layer, to: &document.screens[screenIndex].root, parentID: parentID) else { throw AuthoringError.notFound(parentID.rawValue) }
             patches.append(SemanticPatch(entityID: layer.id, path: "assetID", oldValue: nil, newValue: assetID.rawValue))
         case .createRepositoryAsset(let name, let scopeID, let mediaType, let path, let contentHash):
@@ -172,14 +172,14 @@ public enum MutationEngine {
             patches.append(SemanticPatch(entityID: layerID, path: "layout.\(property.rawValue)TokenID", oldValue: old?.rawValue, newValue: tokenID?.rawValue))
         case .createComponent(let name, let scopeID):
             guard document.scopes.contains(where: { $0.id == scopeID }) else { throw AuthoringError.notFound(scopeID.rawValue) }
-            let root = Layer(id: .new("layer"), kind: .stack, name: "Root", layout: Layout(axis: .vertical))
+            let root = Layer(id: .new("layer"), name: "Root", payload: .stack, layout: Layout(axis: .vertical))
             let definition = ComponentDefinition(id: .new("component"), name: name, ownerScopeID: scopeID, root: root)
             document.components.append(definition)
             patches.append(SemanticPatch(entityID: definition.id, path: "components", oldValue: nil, newValue: name))
         case .instantiate(let screenID, let parentID, let definitionID):
             guard let screenIndex = document.screens.firstIndex(where: { $0.id == screenID }) else { throw AuthoringError.notFound(screenID.rawValue) }
             guard let definition = document.components.first(where: { $0.id == definitionID }) else { throw AuthoringError.notFound(definitionID.rawValue) }
-            let layer = Layer(id: .new("layer"), kind: .componentInstance, name: definition.name, component: ComponentInstance(definitionID: definitionID))
+            let layer = Layer(id: .new("layer"), name: definition.name, payload: .componentInstance(ComponentInstanceLayerPayload(instance: ComponentInstance(definitionID: definitionID))))
             guard append(layer, to: &document.screens[screenIndex].root, parentID: parentID) else { throw AuthoringError.notFound(parentID.rawValue) }
             patches.append(SemanticPatch(entityID: layer.id, path: "component.definitionID", oldValue: nil, newValue: definitionID.rawValue))
         case .promoteComponent(let definitionID, let newOwnerID):
@@ -213,10 +213,19 @@ public enum MutationEngine {
 
     private static func setText(_ value: String, in root: inout Layer, id: EntityID) -> String? {
         if root.id == id {
-            guard root.kind == .text || root.kind == .button else { return nil }
-            let old = root.text ?? ""
-            root.text = value
-            return old
+            switch root.payload {
+            case .text(var payload):
+                let old = payload.value ?? ""
+                payload.value = value
+                root.payload = .text(payload)
+                return old
+            case .button(var payload):
+                let old = payload.label ?? ""
+                payload.label = value
+                root.payload = .button(payload)
+                return old
+            default: return nil
+            }
         }
         for index in root.children.indices {
             if let old = setText(value, in: &root.children[index], id: id) { return old }
@@ -226,10 +235,13 @@ public enum MutationEngine {
 
     private static func setLayoutToken(_ tokenID: EntityID?, property: LayoutTokenProperty, in root: inout Layer, id: EntityID) -> EntityID?? {
         if root.id == id {
-            guard [.stack, .overlay, .scroll].contains(root.kind) else { return nil }
+            switch root.payload {
+            case .stack, .overlay, .scroll: break
+            default: return nil
+            }
             switch property {
             case .spacing:
-                guard root.kind == .stack else { return nil }
+                guard case .stack = root.payload else { return nil }
                 let old = root.layout.spacingTokenID
                 root.layout.spacingTokenID = tokenID
                 return .some(old)

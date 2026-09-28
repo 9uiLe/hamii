@@ -103,14 +103,16 @@ public enum DocumentValidator {
 
         func checkLayer(_ layer: Layer, consumer: EntityID) {
             checkID(layer.id)
-            if (layer.kind == .text || layer.kind == .button) && layer.text == nil {
+            switch layer.payload {
+            case .text(let payload) where payload.value == nil:
                 errors.append(Diagnostic("layer.textRequired", "Text and button layers require text", entityID: layer.id))
-            }
-            if layer.kind == .image && layer.assetID == nil {
+            case .button(let payload) where payload.label == nil:
+                errors.append(Diagnostic("layer.textRequired", "Text and button layers require text", entityID: layer.id))
+            case .image(let payload) where payload.assetID == nil:
                 errors.append(Diagnostic("layer.assetRequired", "Image layers require an asset reference", entityID: layer.id))
-            }
-            if layer.kind == .componentInstance && layer.component == nil {
+            case .componentInstance(let payload) where payload.instance == nil:
                 errors.append(Diagnostic("component.instanceRequired", "Component instance data is required", entityID: layer.id))
+            default: break
             }
             if layer.textBinding == "" { errors.append(Diagnostic("binding.empty", "Text binding path is empty", entityID: layer.id)) }
             if layer.emittedEvent == "" { errors.append(Diagnostic("event.empty", "Emitted event name is empty", entityID: layer.id)) }

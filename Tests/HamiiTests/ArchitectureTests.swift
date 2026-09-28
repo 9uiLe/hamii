@@ -513,10 +513,14 @@ final class ArchitectureTests: XCTestCase {
         let screen = Screen(id: EntityID("screen_profile"), name: "Profile", scopeID: scopeID, root: root)
         document.screens = [screen]
         let generated = try SwiftUIGenerator.generate(document: document, screenID: screen.id, targetID: target.id)
-        XCTAssertTrue(generated.source.contains("Text(\"Preview\")"))
+        XCTAssertEqual(generated.source, "import SwiftUI\n\nstruct HamiiScreen_screen_profile: View {\n    var body: some View {\n        VStack {\n            Text(\"Preview\")\n        }\n    }\n}\n")
         label.textBinding = "user.name"
         document.screens[0].root.children[0] = label
-        XCTAssertThrowsError(try SwiftUIGenerator.generate(document: document, screenID: screen.id, targetID: target.id))
+        XCTAssertThrowsError(try SwiftUIGenerator.generate(document: document, screenID: screen.id, targetID: target.id)) { error in
+            guard case GenerationError.unsupported(let id, let reason) = error else { return XCTFail("Unexpected generator error: \(error)") }
+            XCTAssertEqual(id, label.id)
+            XCTAssertEqual(reason, "Runtime binding requires product integration")
+        }
         let contract = try IntegrationContracts.make(screenID: screen.id, document: document)
         XCTAssertEqual(contract.inputs, ["user.name"])
         let plan = IntegrationContracts.plan(contract, profile: IntegrationProfile(repositoryName: "Product"))
@@ -694,12 +698,14 @@ final class ArchitectureTests: XCTestCase {
         let screenFile = path.appendingPathComponent("screens/\(screen.id.rawValue).json")
         let before = try Data(contentsOf: manifest)
         let screenBefore = try Data(contentsOf: screenFile)
+        let snapshotBefore = try repository.withCoordinatedSnapshot { $0.identity }
         let result = try service.mutate(.setText(screenID: screen.id, layerID: layerID, text: "Hello"), expectedState: try XCTUnwrap(inserted.statePrecondition), author: .human)
         XCTAssertEqual(result.revision, inserted.revision)
         XCTAssertEqual(result.statePrecondition, inserted.statePrecondition)
         XCTAssertTrue(result.patches.isEmpty)
         XCTAssertEqual(try Data(contentsOf: manifest), before)
         XCTAssertEqual(try Data(contentsOf: screenFile), screenBefore)
+        XCTAssertEqual(try repository.withCoordinatedSnapshot { $0.identity }, snapshotBefore)
         XCTAssertEqual(try service.document().revision, inserted.revision)
     }
 

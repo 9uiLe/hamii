@@ -88,8 +88,11 @@ public final class NativePreviewSession {
 
     private func setText(_ value: String, id: EntityID, in layer: inout Layer) -> Bool {
         if layer.id == id {
-            guard layer.kind == .text || layer.kind == .button else { return false }
-            layer.text = value
+            switch layer.payload {
+            case .text(var payload): payload.value = value; layer.payload = .text(payload)
+            case .button(var payload): payload.label = value; layer.payload = .button(payload)
+            default: return false
+            }
             return true
         }
         for index in layer.children.indices {
@@ -130,7 +133,7 @@ private struct NativeLayerView: View {
 
     var body: some View {
         Group {
-            switch layer.kind {
+            switch layer.payload {
             case .stack:
                 if layer.layout.axis == .horizontal { HStack(spacing: spacing) { children } }
                 else { VStack(alignment: .leading, spacing: spacing) { children } }
@@ -144,15 +147,15 @@ private struct NativeLayerView: View {
                     if let event = layer.emittedEvent { session.recordEvent(event) }
                 }
                 .accessibilityLabel(layer.accessibilityLabel ?? displayText)
-            case .image:
-                if let id = layer.assetID,
+            case .image(let payload):
+                if let id = payload.assetID,
                    let asset = session.document.assets.first(where: { $0.id == id }),
                    case .system(let name) = asset.source {
                     Image(systemName: name)
                         .accessibilityLabel(layer.accessibilityLabel ?? asset.name)
                 }
-            case .componentInstance:
-                if let instance = layer.component,
+            case .componentInstance(let payload):
+                if let instance = payload.instance,
                    let definition = session.document.components.first(where: { $0.id == instance.definitionID }),
                    let resolved = try? ComponentResolver.resolve(instance, definition: definition) {
                     NativeLayerView(layer: resolved, session: session)

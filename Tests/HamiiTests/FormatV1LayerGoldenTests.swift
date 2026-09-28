@@ -42,6 +42,17 @@ final class FormatV1LayerGoldenTests: XCTestCase {
         let decoded = try JSONDecoder().decode(Layer.self, from: original)
         XCTAssertEqual(try encoded(decoded), original)
         XCTAssertEqual(decoded, example())
+        XCTAssertEqual(decoded.payload, .stack)
+        guard case .scroll = decoded.children[0].payload,
+              case .text(let bound) = decoded.children[0].children[0].payload,
+              case .componentInstance(let component) = decoded.children[1].payload else {
+            return XCTFail("The Format v1 node kinds must decode to their typed payloads")
+        }
+        XCTAssertEqual(decoded.children[0].children.count, 2)
+        XCTAssertEqual(bound.value, "Guest")
+        XCTAssertEqual(bound.binding, "user.name")
+        XCTAssertEqual(decoded.children[0].children[0].assetID, EntityID("asset_cross_kind"))
+        XCTAssertEqual(component.instance?.slotContent["detail"]?.first?.text, "Nested")
     }
 
     func testStarterScreenShardBytesRemainUnchanged() throws {
@@ -58,5 +69,30 @@ final class FormatV1LayerGoldenTests: XCTestCase {
             actual.append(0x0A)
             XCTAssertEqual(actual, original, file.lastPathComponent)
         }
+    }
+
+    func testFormatV1ValidationRulesKeepTheirEntityAndSeverity() throws {
+        var document = Document(name: "Format v1 diagnostics")
+        let scope = try XCTUnwrap(document.scopes.first?.id)
+        var text = Layer(id: EntityID("layer_missing_text"), name: "Text", payload: .text(TextLayerPayload(binding: "")))
+        text.assetID = EntityID("asset_missing")
+        var button = Layer(id: EntityID("layer_missing_button"), name: "Button", payload: .button(ButtonLayerPayload(emittedEvent: "")))
+        button.accessibilityLabel = nil
+        let image = Layer(id: EntityID("layer_missing_image"), name: "Image", payload: .image(ImageLayerPayload()))
+        let instance = Layer(id: EntityID("layer_missing_instance"), name: "Instance", payload: .componentInstance(ComponentInstanceLayerPayload()))
+        let root = Layer(id: EntityID("layer_root"), name: "Root", payload: .scroll, children: [text, button, image, instance])
+        document.screens = [Screen(id: EntityID("screen_probe"), name: "Probe", scopeID: scope, root: root)]
+
+        let actual = DocumentValidator.validate(document).map { "\($0.rule):\($0.severity.rawValue):\($0.entityID?.rawValue ?? "none")" }
+        XCTAssertEqual(actual, [
+            "layer.textRequired:error:layer_missing_text",
+            "binding.empty:error:layer_missing_text",
+            "asset.missing:error:layer_missing_text",
+            "layer.textRequired:error:layer_missing_button",
+            "event.empty:error:layer_missing_button",
+            "accessibility.controlLabel:error:layer_missing_button",
+            "layer.assetRequired:error:layer_missing_image",
+            "component.instanceRequired:error:layer_missing_instance"
+        ])
     }
 }

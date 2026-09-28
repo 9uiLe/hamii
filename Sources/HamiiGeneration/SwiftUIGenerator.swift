@@ -45,25 +45,25 @@ public enum SwiftUIGenerator {
         if layer.interactionID != nil || layer.emittedEvent != nil { throw GenerationError.unsupported(layer.id, "Interaction lowering is not available") }
         if layer.layout.spacingTokenID != nil || layer.layout.paddingTokenID != nil { throw GenerationError.unsupported(layer.id, "Token lowering is not available") }
         if layer.nativeIntent != nil || !layer.targetOverrides.isEmpty { throw GenerationError.unsupported(layer.id, "Native semantics or target override is not mapped") }
-        switch layer.kind {
-        case .text:
-            return prefix + "Text(\(String(reflecting: layer.text ?? "")))"
-        case .button:
-            return prefix + "Button(\(String(reflecting: layer.text ?? "Button"))) { }"
-        case .image:
-            guard let id = layer.assetID, let asset = document.assets.first(where: { $0.id == id }), case .system(let name) = asset.source else {
+        switch layer.payload {
+        case .text(let payload):
+            return prefix + "Text(\(String(reflecting: payload.value ?? "")))"
+        case .button(let payload):
+            return prefix + "Button(\(String(reflecting: payload.label ?? "Button"))) { }"
+        case .image(let payload):
+            guard let id = payload.assetID, let asset = document.assets.first(where: { $0.id == id }), case .system(let name) = asset.source else {
                 throw GenerationError.unsupported(layer.id, "Only system image assets can be generated")
             }
             return prefix + "Image(systemName: \(String(reflecting: name)))"
         case .stack, .overlay, .scroll:
             let open: String
-            if layer.kind == .overlay { open = "ZStack {" }
-            else if layer.kind == .scroll { open = "ScrollView {" }
+            if case .overlay = layer.payload { open = "ZStack {" }
+            else if case .scroll = layer.payload { open = "ScrollView {" }
             else { open = layer.layout.axis == .horizontal ? "HStack {" : "VStack {" }
             let children = try layer.children.map { try render($0, document: document, indent: indent + 1) }.joined(separator: "\n")
             return prefix + open + "\n" + children + "\n" + prefix + "}"
-        case .componentInstance:
-            guard let instance = layer.component, let definition = document.components.first(where: { $0.id == instance.definitionID }) else {
+        case .componentInstance(let payload):
+            guard let instance = payload.instance, let definition = document.components.first(where: { $0.id == instance.definitionID }) else {
                 throw GenerationError.unsupported(layer.id, "Component definition is missing")
             }
             let resolved = try ComponentResolver.resolve(instance, definition: definition)

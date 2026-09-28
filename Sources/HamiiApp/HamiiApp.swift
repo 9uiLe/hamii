@@ -175,24 +175,24 @@ struct LayerCanvas: View {
 
     var body: some View {
         Group {
-            switch layer.kind {
+            switch layer.payload {
             case .stack:
                 if layer.layout.axis == .horizontal {
                     HStack(alignment: .top, spacing: layer.layout.spacingTokenID.flatMap { TokenResolver.spacing($0, in: document.tokens) }.map { CGFloat($0) }) { children }
                 } else { VStack(alignment: .leading, spacing: layer.layout.spacingTokenID.flatMap { TokenResolver.spacing($0, in: document.tokens) }.map { CGFloat($0) }) { children } }
             case .overlay: ZStack { children }
             case .scroll: ScrollView { children }
-            case .text:
-                Button { select(layer.id) } label: { Text(layer.text ?? "") }
+            case .text(let payload):
+                Button { select(layer.id) } label: { Text(payload.value ?? "") }
                     .buttonStyle(.plain)
                     .accessibilityLabel("Select \(layer.name)")
-            case .button: Button(layer.text ?? "Button") { select(layer.id) }
+            case .button(let payload): Button(payload.label ?? "Button") { select(layer.id) }
             case .image:
                 Button { select(layer.id) } label: { imageContent }
                     .buttonStyle(.plain)
                     .accessibilityLabel("Select \(layer.name)")
-            case .componentInstance:
-                if let instance = layer.component,
+            case .componentInstance(let payload):
+                if let instance = payload.instance,
                    let definition = document.components.first(where: { $0.id == instance.definitionID }),
                    let resolved = try? ComponentResolver.resolve(instance, definition: definition) {
                     LayerCanvas(layer: resolved, document: document, projectRoot: projectRoot) { _ in select(layer.id) }
@@ -205,7 +205,8 @@ struct LayerCanvas: View {
     }
 
     @ViewBuilder private var imageContent: some View {
-        if let id = layer.assetID, let asset = document.assets.first(where: { $0.id == id }) {
+        if case .image(let payload) = layer.payload,
+           let id = payload.assetID, let asset = document.assets.first(where: { $0.id == id }) {
             switch asset.source {
             case .system(let name):
                 Image(systemName: name).accessibilityLabel(layer.accessibilityLabel ?? asset.name)
