@@ -47,12 +47,17 @@ Core / Format / Index の historical dependency が必要、source tree の変�
 
 ## Result
 
-Not yet validated。実測値と成果物 link を記録する。
+Test-only `HamiiMigrationBoundarySpike` target は Foundation のみを import し、raw Canonical map を変換した。Fixture は manifest、Page/AppSurface、Screen/nested Layer、padding token、nested ComponentInstance/slotContent、Scope、Token、Asset、capability declaration、agent profile の計10 JSON paths。`EntityID` が v1 で `rawValue` object として encode されることを fixture で確認し、edge はその実 bytes を保って移動した。
+
+1→2、2→3、1→3、3→3、unknown target、downgrade の matrix を検証。1→3 の intermediate versions は `[1, 2, 3]`、3回の candidate digest と direct/stepwise bytes は一致。Source digest は before/after で一致し、非対象 path は byte-for-byte passthrough。edge 2/3 の失敗注入、および v2 validator failure では partial candidate が返らず、v3 validator へ進まなかった。Marker mismatch も拒否。Result の digest と matrix は [migration-matrix.json](artifacts/migration-matrix.json)。
+
+外側の test harness は v2/v3 candidate を test-only current-v1 adapter に通し、Current `CanonicalRepository.load()` で元 `Document` 全体と一致することを各 edge 後に検証した。別の一時 Git Repository の同一 adapted candidate から fresh `LocalIndex.rebuild` を実行し、`Outer` の usage count 1 を取得した。[dependency-boundary.md](artifacts/dependency-boundary.md) に target graph と証明範囲を記録した。
 
 ## Conclusion
 
-Not yet validated。ADR の判断への影響を記録し、削除前に commit する。
+Historical edge parser/registry を Current Core の外の独立 target に置き、候補 bytes を各 edge 後に検証してから外側の Current-system validation/index handoff に渡す module boundary は、この fixture と test-only graph で成立した。製品 Format v2、ordered effects、実 migration executor、配布方式の完成証明ではない。ADR の dependency decision はこの evidence と gate/CI 結果を確認した後に別 commit で判断する。
 
 ## Artifacts
 
-未作成。必要になった場合だけこの Spike の `artifacts/` を作る。
+- [migration-matrix.json](artifacts/migration-matrix.json)
+- [dependency-boundary.md](artifacts/dependency-boundary.md)

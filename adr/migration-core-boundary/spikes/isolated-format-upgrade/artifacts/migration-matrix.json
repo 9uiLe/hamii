@@ -1,0 +1,69 @@
+{
+  "agentProfileBytePassthrough" : true,
+  "candidateDigest" : "f497a1dd7f85a55d98652ad4c29c804fac7c36b380ece7666919b151df2430d8",
+  "candidatePathCount" : 10,
+  "cases" : [
+    {
+      "from" : 1,
+      "result" : "passed; v1-to-v2; lossless",
+      "to" : 2
+    },
+    {
+      "from" : 2,
+      "result" : "passed; v2-to-v3; losslessWithNormalization",
+      "to" : 3
+    },
+    {
+      "from" : 1,
+      "result" : "passed; both edges; v1,v2,v3 validated",
+      "to" : 3
+    },
+    {
+      "from" : 3,
+      "result" : "passed; no-op",
+      "to" : 3
+    },
+    {
+      "from" : 1,
+      "result" : "noPath",
+      "to" : 4
+    },
+    {
+      "from" : 3,
+      "result" : "downgrade rejected",
+      "to" : 1
+    }
+  ],
+  "classification" : "losslessWithNormalization",
+  "downgrade" : "rejected",
+  "finalValidation" : "passed via v1 test adapter",
+  "freshIndexRebuild" : "passed; Outer usage=1",
+  "injectedFailures" : [
+    2,
+    3
+  ],
+  "intermediateValidation" : [
+    1,
+    2,
+    3
+  ],
+  "referencePreservation" : "current semantic Document equality",
+  "repeatDigests" : [
+    "f497a1dd7f85a55d98652ad4c29c804fac7c36b380ece7666919b151df2430d8",
+    "f497a1dd7f85a55d98652ad4c29c804fac7c36b380ece7666919b151df2430d8",
+    "f497a1dd7f85a55d98652ad4c29c804fac7c36b380ece7666919b151df2430d8"
+  ],
+  "resolvedEdges" : [
+    "1->2",
+    "2->3"
+  ],
+  "scope" : "test-only edge graph; current-format adapter used only in outer oracle",
+  "sourceDigestAfter" : "d3d2256afad19ece0c2d94f54301b231f5dc765022c59877b5e0eb6238d7ae42",
+  "sourceDigestBefore" : "d3d2256afad19ece0c2d94f54301b231f5dc765022c59877b5e0eb6238d7ae42",
+  "sourcePathCount" : 10,
+  "sourceVersion" : 1,
+  "stepwiseDigest" : "f497a1dd7f85a55d98652ad4c29c804fac7c36b380ece7666919b151df2430d8",
+  "targetVersion" : 3,
+  "unsupportedTarget" : "noPath",
+  "versionMarkerMismatch" : "rejected"
+}
