@@ -275,6 +275,10 @@ final class CapabilityGranularitySpikeTests: XCTestCase {
         XCTAssertEqual(oracle.schemaVersion, 1)
         XCTAssertTrue(oracle.frozenBeforeCandidateImplementation)
         XCTAssertEqual(oracle.cases.count, 14)
+        // The archived matrix records the pre-migration production TargetPlanner baseline.
+        // Candidate comparison remains executable without rewriting that historical evidence.
+        let archived = try JSONDecoder().decode(Matrix.self, from: Data(contentsOf: artifact.appendingPathComponent("capability-matrix.json")))
+        XCTAssertEqual(archived.measuredOracleSHA256, oracleSHA256)
         var rows: [MatrixRow] = []
         for scenario in oracle.cases {
             let fixture = SpikeFixtureFactory.make(scenario.scenario, profile: scenario.profile)
@@ -301,11 +305,8 @@ final class CapabilityGranularitySpikeTests: XCTestCase {
                 }
                 return CandidateResult(allowed: primary.allowed, items: primary.items, falsePositives: falsePositives, falseNegatives: falseNegatives, silentApproximations: silent, consumerDivergences: reports.dropFirst().filter { $0 != primary }.count)
             }
-            var plannerDocument = fixture.document
-            let plannerKeys: [String] = ["layout.stack", "layout.overlay", "component.text", "component.button", "component.image", "navigation.system", "token.spacing"]
-            plannerDocument.capabilityDeclarations = plannerKeys.map { CapabilityDeclaration(targetID: fixture.surface.targetID, key: CapabilityKey($0), support: scenario.scenario.hasPrefix("G-") && $0 == "layout.overlay" ? .approximate : .exact) }
-            let plan = TargetPlanner.plan(surface: fixture.surface, document: plannerDocument, approvedApproximationKeys: scenario.approval ? [CapabilityKey("layout.overlay")] : [])
-            rows.append(MatrixRow(scenario: scenario.scenario, profile: scenario.profile, approval: scenario.approval, semanticRequirements: scenario.semanticRequirements.map { OracleRequirementRecord(key: $0.key, support: $0.support) }, oracleAllowed: oracleAllowed, nodeCandidate: result(.node), propertyCandidate: result(.property), contractCandidate: result(.contract), currentPlanner: PlannerResult(allowed: plan.canPreview, diagnosticRules: plan.diagnostics.map(\.rule))))
+            let archivedPlanner = try XCTUnwrap(archived.rows.first(where: { $0.scenario == scenario.scenario }))
+            rows.append(MatrixRow(scenario: scenario.scenario, profile: scenario.profile, approval: scenario.approval, semanticRequirements: scenario.semanticRequirements.map { OracleRequirementRecord(key: $0.key, support: $0.support) }, oracleAllowed: oracleAllowed, nodeCandidate: result(.node), propertyCandidate: result(.property), contractCandidate: result(.contract), currentPlanner: archivedPlanner.currentPlanner))
         }
         func metrics(_ candidate: RegistryCandidate) -> CandidateMetrics {
             let results = rows.map { row in
@@ -320,9 +321,6 @@ final class CapabilityGranularitySpikeTests: XCTestCase {
             XCTAssertEqual(row.contractCandidate.items.map(\.support), source.semanticRequirements.map(\.support), row.scenario)
             XCTAssertEqual(row.contractCandidate.allowed, row.oracleAllowed, row.scenario)
         }
-        let plannerUnexpectedPasses = Set(["B-button", "C-binding", "D-navigation", "E-system-compose", "H-ios15", "I-ordered-effects", "J-extension-macos"])
-        XCTAssertTrue(plannerUnexpectedPasses.allSatisfy { scenario in rows.first(where: { $0.scenario == scenario })?.currentPlanner.allowed == true })
-        XCTAssertEqual(rows.first(where: { $0.scenario == "F-remote" })?.currentPlanner.diagnosticRules, ["preview.asset"])
         XCTAssertEqual(matrix.metrics["contract"]?.falsePositives, 0)
         XCTAssertEqual(matrix.metrics["contract"]?.falseNegatives, 0)
         XCTAssertEqual(matrix.metrics["contract"]?.consumerDivergences, 0)
@@ -330,10 +328,5 @@ final class CapabilityGranularitySpikeTests: XCTestCase {
         XCTAssertGreaterThan(matrix.metrics["node"]?.falsePositives ?? 0, 0)
         XCTAssertGreaterThan(matrix.metrics["property"]?.falsePositives ?? 0, 0)
         XCTAssertEqual(rows.first(where: { $0.scenario == "G-approx-approved" })?.contractCandidate.items[0].loss, "approvedApproximation")
-        if ProcessInfo.processInfo.environment["HAMII_CAPABILITY_SPIKE_OUTPUT"] == "1" {
-            let encoder = JSONEncoder()
-            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-            try encoder.encode(matrix).write(to: artifact.appendingPathComponent("capability-matrix.json"))
-        }
     }
 }

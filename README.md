@@ -68,7 +68,7 @@ Document Format v1 が唯一の Canonical Format です。`hamii migrate plan --
 
 ## Capability / Preview
 
-Layer の実装済み kind は Stack、Text、Image、Button、Scroll、Overlay、Component Instance です。Support coverage を追加するときは IR、validation、Canvas、Native Preview、generator、CLI の契約を揃え、target 別の support state を明示します。[Capability ADR](adr/capability-contract/ADR.md) は semantic requirement 粒度を決定しました。現行 Planner の共通 loss evaluator への接続と framework coverage 検証は残っています。Unsupported な意味を暗黙に近似しません。
+Layer の実装済み kind は Stack、Text、Image、Button、Scroll、Overlay、Component Instance です。Support coverage を追加するときは IR、validation、Canvas、Native Preview、generator、CLI の契約を揃え、target 別の support state を明示します。Current IR の意味は Core の requirement extractor と evaluator で評価し、`TargetPlanner` は loss report を diagnostic に変換します。未宣言の event、binding、asset source、toolbar 意味は拒否され、node 宣言から暗黙に継承しません。[Capability ADR](adr/capability-contract/ADR.md) は他 consumer への接続と framework coverage 検証を残しています。Unsupported な意味を暗黙に近似しません。
 
 `HamiiPreviewProtocol` は state precondition 付き snapshot、base/new state と revision を分けた patch、ack と build boundary を定義します。`HamiiNativeRuntime` は macOS の supported SwiftUI subset を実 OS の SwiftUI で描き、Text patch を compile なしで適用します。欠番 patch は拒否し、snapshot で再同期できます。iOS Simulator Host transport、frame/input、structure reconciliation と state preservation は個別 ADR/Spike の検証対象です。OS-dependent system UI は対象 OS の Host が描画します。
 
