@@ -76,7 +76,7 @@ The 5000-file result shows that fewer Git executions did not imply lower total w
 
 ## Conclusion
 
-The tested `ls-files -v --eol` consolidation fails clean-filter rejection and is slower at 1000/5000 Components in this harness. It is not a production candidate. The four-execution calculator remains unchanged. The decision remains unresolved because other command/plumbing or in-process evidence approaches have not been validated; the ADR stays `Spike Required`.
+The tested `ls-files -v --eol` consolidation fails clean-filter rejection and is slower at 1000/5000 Components in this harness. It is not a production candidate. The four-execution calculator remains unchanged. At the time of this Spike, the decision remained unresolved and the ADR stayed `Spike Required`. The later [CLI capability closure Spike](../cli-capability-closure/SPIKE.md) bounded the documented one-shot Git command surface; the subsequent ADR decision retained the four-call protocol.
 
 ## Artifacts
 

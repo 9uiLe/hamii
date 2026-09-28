@@ -60,7 +60,7 @@ Both prerequisite Verify runs succeeded: `18bc791` (run `36370347685`) and `38b1
 
 ## Conclusion
 
-Within the surveyed documented one-shot Git CLI on production's Apple Git 2.54.0, Option 2 has no confirmed baseline-equivalent three-call composition. The prior concrete three-call candidate loses clean-filter rejection. Option 3 has substantial unvalidated semantic cost and is not required to make a bounded retain-or-replace decision. This evidence supports a decision to retain the four-call production protocol for now, without claiming theoretical minimality or arbitrary external-writer atomicity. The parent ADR remains `Spike Required` until that decision is recorded separately.
+Within the surveyed documented one-shot Git CLI on production's Apple Git 2.54.0, Option 2 has no confirmed baseline-equivalent three-call composition. The prior concrete three-call candidate loses clean-filter rejection. Option 3 has substantial unvalidated semantic cost and is not required to make a bounded retain-or-replace decision. This evidence supports a decision to retain the four-call production protocol for now, without claiming theoretical minimality or arbitrary external-writer atomicity. At the time this Spike's evidence was committed, the parent ADR remained `Spike Required`; the subsequent ADR decision retained the four-call protocol.
 
 ## Artifacts
 
