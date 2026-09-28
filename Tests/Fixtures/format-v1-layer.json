@@ -1,0 +1,165 @@
+{
+  "children" : [
+    {
+      "children" : [
+        {
+          "accessibilityLabel" : "User name",
+          "assetID" : {
+            "rawValue" : "asset_cross_kind"
+          },
+          "children" : [
+
+          ],
+          "id" : {
+            "rawValue" : "layer_text"
+          },
+          "kind" : "text",
+          "layout" : {
+
+          },
+          "name" : "Title",
+          "targetOverrides" : {
+
+          },
+          "text" : "Guest",
+          "textBinding" : "user.name"
+        },
+        {
+          "children" : [
+            {
+              "assetID" : {
+                "rawValue" : "asset_avatar"
+              },
+              "children" : [
+
+              ],
+              "id" : {
+                "rawValue" : "layer_image"
+              },
+              "kind" : "image",
+              "layout" : {
+
+              },
+              "name" : "Avatar",
+              "targetOverrides" : {
+
+              }
+            },
+            {
+              "children" : [
+
+              ],
+              "emittedEvent" : "editTapped",
+              "id" : {
+                "rawValue" : "layer_button"
+              },
+              "interactionID" : {
+                "rawValue" : "interaction_edit"
+              },
+              "kind" : "button",
+              "layout" : {
+
+              },
+              "name" : "Edit",
+              "targetOverrides" : {
+
+              },
+              "text" : "Edit"
+            }
+          ],
+          "id" : {
+            "rawValue" : "layer_overlay"
+          },
+          "kind" : "overlay",
+          "layout" : {
+
+          },
+          "name" : "Overlay",
+          "nativeIntent" : "system.overlay",
+          "targetOverrides" : {
+            "swiftUI" : "native"
+          }
+        }
+      ],
+      "id" : {
+        "rawValue" : "layer_scroll"
+      },
+      "kind" : "scroll",
+      "layout" : {
+
+      },
+      "name" : "Scroll",
+      "targetOverrides" : {
+
+      }
+    },
+    {
+      "children" : [
+
+      ],
+      "component" : {
+        "allowedOverrides" : {
+          "layer_slot.text" : "Override"
+        },
+        "definitionID" : {
+          "rawValue" : "component_card"
+        },
+        "propertyValues" : {
+          "title" : "Card"
+        },
+        "slotContent" : {
+          "detail" : [
+            {
+              "children" : [
+
+              ],
+              "id" : {
+                "rawValue" : "layer_slot"
+              },
+              "kind" : "text",
+              "layout" : {
+
+              },
+              "name" : "Detail",
+              "targetOverrides" : {
+
+              },
+              "text" : "Nested"
+            }
+          ]
+        },
+        "variantSelection" : {
+          "size" : "large"
+        }
+      },
+      "id" : {
+        "rawValue" : "layer_component"
+      },
+      "kind" : "componentInstance",
+      "layout" : {
+
+      },
+      "name" : "Card",
+      "targetOverrides" : {
+
+      }
+    }
+  ],
+  "id" : {
+    "rawValue" : "layer_root"
+  },
+  "kind" : "stack",
+  "layout" : {
+    "axis" : "vertical",
+    "paddingTokenID" : {
+      "rawValue" : "token_padding"
+    },
+    "spacingTokenID" : {
+      "rawValue" : "token_spacing"
+    }
+  },
+  "name" : "Root",
+  "targetOverrides" : {
+
+  }
+}
