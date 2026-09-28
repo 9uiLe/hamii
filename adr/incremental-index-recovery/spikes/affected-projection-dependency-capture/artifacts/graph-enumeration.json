@@ -1,7 +1,0 @@
-{
-  "actualAvailabilityChangedComponentsAcrossPairs" : 228,
-  "falseNegatives" : 0,
-  "maximumCurrentImpactedComponents" : 3,
-  "unionOnlyImpactedComponentsAcrossPairs" : 0,
-  "validOldNewPairs" : 384
-}
