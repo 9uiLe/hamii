@@ -1,0 +1,21 @@
+{
+  "authoringHarness" : {
+    "maximumMutationNodes" : 100,
+    "requireAccessibleControls" : true,
+    "requireTokenSpacing" : false
+  },
+  "capabilityDeclarations" : [
+
+  ],
+  "formatVersion" : 1,
+  "id" : {
+    "rawValue" : "doc_format_v1"
+  },
+  "name" : "Format v1 project",
+  "revision" : 1,
+  "versions" : {
+    "authoringHarness" : 1,
+    "document" : 1,
+    "integrationProfile" : 1
+  }
+}

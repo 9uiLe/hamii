@@ -494,6 +494,7 @@ final class ArchitectureTests: XCTestCase {
         let instance = ComponentInstance(definitionID: definition.id, variantSelection: ["size": "large"], propertyValues: ["label": "Property"], slotContent: ["trailing": [slotContent]], allowedOverrides: ["layer_label.text": "Continue"])
         let resolved = try ComponentResolver.resolve(instance, definition: definition)
         XCTAssertEqual(resolved.children.first?.text, "Continue")
+        XCTAssertEqual(resolved.children.first?.payload, .text(TextLayerPayload(value: "Continue")))
         XCTAssertEqual(resolved.children.last?.children.first?.text, "→")
         XCTAssertEqual(definition.root.children.first?.text, "Default")
         var conflict = definition

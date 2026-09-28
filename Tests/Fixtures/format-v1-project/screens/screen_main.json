@@ -1,0 +1,127 @@
+{
+  "id" : {
+    "rawValue" : "screen_main"
+  },
+  "name" : "Main",
+  "root" : {
+    "children" : [
+      {
+        "children" : [
+          {
+            "children" : [
+
+            ],
+            "id" : {
+              "rawValue" : "layer_title"
+            },
+            "kind" : "text",
+            "layout" : {
+
+            },
+            "name" : "Title",
+            "targetOverrides" : {
+
+            },
+            "text" : "Welcome",
+            "textBinding" : "user.title"
+          },
+          {
+            "assetID" : {
+              "rawValue" : "asset_symbol"
+            },
+            "children" : [
+
+            ],
+            "id" : {
+              "rawValue" : "layer_image"
+            },
+            "kind" : "image",
+            "layout" : {
+
+            },
+            "name" : "Image",
+            "targetOverrides" : {
+
+            }
+          }
+        ],
+        "id" : {
+          "rawValue" : "layer_scroll"
+        },
+        "kind" : "scroll",
+        "layout" : {
+
+        },
+        "name" : "Scroll",
+        "targetOverrides" : {
+
+        }
+      },
+      {
+        "children" : [
+
+        ],
+        "emittedEvent" : "continueTapped",
+        "id" : {
+          "rawValue" : "layer_button"
+        },
+        "kind" : "button",
+        "layout" : {
+
+        },
+        "name" : "Button",
+        "targetOverrides" : {
+
+        },
+        "text" : "Continue"
+      },
+      {
+        "children" : [
+
+        ],
+        "component" : {
+          "allowedOverrides" : {
+
+          },
+          "definitionID" : {
+            "rawValue" : "component_badge"
+          },
+          "propertyValues" : {
+
+          },
+          "slotContent" : {
+
+          },
+          "variantSelection" : {
+
+          }
+        },
+        "id" : {
+          "rawValue" : "layer_instance"
+        },
+        "kind" : "componentInstance",
+        "layout" : {
+
+        },
+        "name" : "Badge",
+        "targetOverrides" : {
+
+        }
+      }
+    ],
+    "id" : {
+      "rawValue" : "layer_root"
+    },
+    "kind" : "stack",
+    "layout" : {
+      "axis" : "vertical"
+    },
+    "name" : "Root",
+    "targetOverrides" : {
+
+    }
+  },
+  "scopeID" : {
+    "rawValue" : "scope_app"
+  }
+}

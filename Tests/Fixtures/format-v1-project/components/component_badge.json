@@ -1,0 +1,58 @@
+{
+  "api" : {
+    "bindings" : [
+
+    ],
+    "events" : [
+
+    ],
+    "overridablePaths" : [
+
+    ],
+    "properties" : [
+
+    ],
+    "slots" : [
+
+    ]
+  },
+  "availability" : {
+    "allowOnlyScopeIDs" : [
+
+    ],
+    "denyScopeIDs" : [
+
+    ]
+  },
+  "id" : {
+    "rawValue" : "component_badge"
+  },
+  "name" : "Badge",
+  "nativeSemantics" : {
+
+  },
+  "ownerScopeID" : {
+    "rawValue" : "scope_app"
+  },
+  "root" : {
+    "children" : [
+
+    ],
+    "id" : {
+      "rawValue" : "layer_badge_text"
+    },
+    "kind" : "text",
+    "layout" : {
+
+    },
+    "name" : "Badge Text",
+    "targetOverrides" : {
+
+    },
+    "text" : "Ready"
+  },
+  "variants" : [
+
+  ],
+  "visibility" : "public"
+}

@@ -1,6 +1,9 @@
 import Foundation
 import XCTest
 import HamiiCore
+import HamiiApplication
+import HamiiFormat
+import HamiiGeneration
 
 final class FormatV1LayerGoldenTests: XCTestCase {
     private func example() -> Layer {
@@ -94,5 +97,75 @@ final class FormatV1LayerGoldenTests: XCTestCase {
             "layer.assetRequired:error:layer_missing_image",
             "component.instanceRequired:error:layer_missing_instance"
         ])
+    }
+
+    func testPreRefactorProjectKeepsCanonicalBytesIdentityAndNoOpObservation() throws {
+        let fixture = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("Fixtures/format-v1-project")
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try FileManager.default.copyItem(at: fixture, to: root)
+        let paths = [
+            "hamii.json", "hamii-agent-profiles.json", "scopes/scope_app.json",
+            "screens/screen_main.json", "components/component_badge.json", "assets/asset_symbol.json"
+        ]
+        func bytes() throws -> [String: Data] {
+            try Dictionary(uniqueKeysWithValues: paths.map { ($0, try Data(contentsOf: root.appendingPathComponent($0))) })
+        }
+        let original = try bytes()
+        let repository = CanonicalRepository(root: root)
+        let service = ProjectService(repository: repository)
+        let observed = try service.observe()
+        let snapshot = try repository.withCoordinatedSnapshot { $0 }
+        XCTAssertEqual(snapshot.identity.rawValue, "02196c93723e3fc19c1eb19253079993d44888a8a545c8469b728390e8334f0a")
+        XCTAssertEqual(snapshot.document, observed.document)
+
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys, .prettyPrinted, .withoutEscapingSlashes]
+        func encoded<T: Encodable>(_ value: T) throws -> Data {
+            var data = try encoder.encode(value)
+            data.append(0x0A)
+            return data
+        }
+        XCTAssertEqual(try encoded(snapshot.document.screens[0]), original["screens/screen_main.json"])
+        XCTAssertEqual(try encoded(snapshot.document.components[0]), original["components/component_badge.json"])
+
+        let generationBefore = try CanonicalGenerationStore(root: root).readStable()
+        let result = try service.mutate(
+            .setText(screenID: EntityID("screen_main"), layerID: EntityID("layer_title"), text: "Welcome"),
+            expectedState: observed.statePrecondition, author: .human
+        )
+        XCTAssertTrue(result.patches.isEmpty)
+        XCTAssertEqual(result.statePrecondition, observed.statePrecondition)
+        XCTAssertEqual(try bytes(), original)
+        XCTAssertEqual(try repository.withCoordinatedSnapshot { $0.identity }, snapshot.identity)
+        XCTAssertEqual(try CanonicalGenerationStore(root: root).readStable(), generationBefore)
+    }
+
+    func testGeneratorOutputForAllSupportedFormatV1LayerKinds() throws {
+        var document = Document(name: "Generator parity")
+        let scope = try XCTUnwrap(document.scopes.first?.id)
+        let target = Target(id: EntityID("target_swiftui"), platform: .macOS, framework: .swiftUI)
+        document.targets = [target]
+        let asset = Asset(id: EntityID("asset_star"), name: "Star", ownerScopeID: scope,
+            mediaType: "image/system", source: .system(name: "star"))
+        document.assets = [asset]
+        let definition = ComponentDefinition(id: EntityID("component_badge"), name: "Badge", ownerScopeID: scope,
+            root: Layer(id: EntityID("layer_badge"), name: "Badge", payload: .text(TextLayerPayload(value: "Badge"))))
+        document.components = [definition]
+        let overlay = Layer(id: EntityID("layer_overlay"), name: "Overlay", payload: .overlay,
+            children: [Layer(id: EntityID("layer_overlay_text"), name: "Text", payload: .text(TextLayerPayload(value: "Overlay")))])
+        let scroll = Layer(id: EntityID("layer_scroll"), name: "Scroll", payload: .scroll, children: [
+            Layer(id: EntityID("layer_button"), name: "Button", payload: .button(ButtonLayerPayload(label: "Go"))),
+            Layer(id: EntityID("layer_image"), name: "Image", payload: .image(ImageLayerPayload(assetID: asset.id)))
+        ])
+        let instance = Layer(id: EntityID("layer_instance"), name: "Instance",
+            payload: .componentInstance(ComponentInstanceLayerPayload(instance: ComponentInstance(definitionID: definition.id))))
+        let root = Layer(id: EntityID("layer_root"), name: "Root", payload: .stack,
+            children: [overlay, scroll, instance])
+        let screen = Screen(id: EntityID("screen_generation"), name: "Generation", scopeID: scope, root: root)
+        document.screens = [screen]
+
+        let source = try SwiftUIGenerator.generate(document: document, screenID: screen.id, targetID: target.id).source
+        XCTAssertEqual(source, "import SwiftUI\n\nstruct HamiiScreen_screen_generation: View {\n    var body: some View {\n        VStack {\n            ZStack {\n                Text(\"Overlay\")\n            }\n            ScrollView {\n                Button(\"Go\") { }\n                Image(systemName: \"star\")\n            }\n            Text(\"Badge\")\n        }\n    }\n}\n")
     }
 }
