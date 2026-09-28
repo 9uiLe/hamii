@@ -18,11 +18,19 @@ Core は Current Format のみ理解する。Migration は旧 tree を元の場�
 
 ## Current Hypothesis
 
-**未確定:** historical parsers と edge migrators を Core 外の別 target に置き、Current Format を出力する方式が有力。
+解決済み。採用した境界は以下の Decision に記録する。
+
+## Decision
+
+Historical parser、versioned transformation edge、edge registry は `HamiiMigrations` の独立 target に置く。`HamiiMigrations` は `HamiiCore`、`HamiiFormat`、`HamiiIndex` を import せず、元の Canonical file bytes を受け取り、candidate file bytes と edge path / classification / diagnostics を返す。Current `Document` を historical edge の入力・出力型にしない。各 edge の後にその version の candidate を検証し、失敗時には candidate を公開せず元の Repository を変更しない。
+
+Current Core は Current Format の意味だけを持つ。Migration orchestration は独立 target の候補を隔離領域で組み立て、Current Format に到達した後で Current Format / Core の semantic validation、fresh Index rebuild、review/publication を呼ぶ。Current Format の version gate を historical fallback に緩めない。Document、Authoring Harness、Integration Profile の version は独立して扱う。
+
+この Decision は dependency と data-flow の境界である。Ordered effects の production Format v2、実際の v1→v2 edge、migration distribution、隔離 worktree の review/publication 方式は決定・実装したものと扱わない。
 
 ## Unknowns
 
-edge graph の version 組合せ、historical type と current type の dependency 漏れ、途中 edge 失敗時の扱い、module 配布の単位。
+実際の historical edge graph と配布単位、Current Format v2 の schema、production executor、candidate の review/publication integration は未実装。Review/publication の判断は [migration-review-protocol](../migration-review-protocol/ADR.md) で扱う。今回の test-only v3 は製品 version の提案ではない。
 
 ## Required Evidence
 
@@ -30,7 +38,9 @@ edge graph の version 組合せ、historical type と current type の dependen
 
 ## Decision Criteria
 
-v1→v2→v3 の変換と検証を通し、Core の依存 graph に historical type が存在しないことを確認する。判断と結果を先に commit し、実装・検証と Current Architecture への反映を終えるまで削除しない。
+Test-only v1→v2→v3 の各 edge 検証、決定性、元データの byte 不変、独立 target の依存方向、外側 harness の semantic oracle / fresh Index handoff は [Spike](spikes/isolated-format-upgrade/SPIKE.md) と [matrix](spikes/isolated-format-upgrade/artifacts/migration-matrix.json) で確認した。Full gate は 14 checks 成功、Swift test 243 実行・失敗 0・skip 56。Release `HamiiMigrations` build 成功。Evidence commit `6abeb2c90fa2ad4f846209260f77f1fcba71f9c2` の [exact-SHA CI](https://github.com/9uiLe/hamii/actions/runs/36498011848) は成功。これは production migration の完成証明ではない。
+
+Decision と Evidence は先に Git history に残す。Production 実装・validation・Current Architecture への反映を終えるまで ADR は削除しない。
 
 ## Related Decisions
 
@@ -39,4 +49,4 @@ v1→v2→v3 の変換と検証を通し、Core の依存 graph に historical t
 
 ## Status
 
-Spike Required
+Implementation Required
