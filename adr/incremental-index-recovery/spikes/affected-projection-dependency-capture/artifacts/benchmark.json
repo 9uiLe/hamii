@@ -1,0 +1,220 @@
+{
+  "environment" : "Swift 6.4 debug XCTest, macOS, in-process; no Canonical acquisition, Git, CLI, targeted projector, or publication",
+  "fixtures" : [
+    {
+      "actualChangedRows" : 3,
+      "components" : 1000,
+      "fixture" : "independent-1000",
+      "impactedAllComponents" : 1000,
+      "impactedCurrentComponents" : 3,
+      "plannedAffectedRows" : 13,
+      "runs" : 5,
+      "timings" : {
+        "combinedPlanner" : {
+          "p50Ms" : 2.3380000056931749,
+          "p95Ms" : 2.3653333337279037
+        },
+        "currentGraphExtraction" : {
+          "p50Ms" : 0.74650000897236168,
+          "p95Ms" : 0.76541666931007057
+        },
+        "currentReverseClosure" : {
+          "p50Ms" : 0.79741666559129953,
+          "p95Ms" : 0.79933332744985819
+        },
+        "fullProjection" : {
+          "p50Ms" : 9.4694583385717124,
+          "p95Ms" : 9.494666664977558
+        },
+        "screenSummaryDerivation" : {
+          "p50Ms" : 0.010166666470468044,
+          "p95Ms" : 0.010583331459201872
+        },
+        "summarySQLiteRead" : {
+          "p50Ms" : 43.194750003749505,
+          "p95Ms" : 44.386208333889954
+        },
+        "summarySQLiteWrite" : {
+          "p50Ms" : 47.215666665579192,
+          "p95Ms" : 48.185833336901851
+        },
+        "usageSummarySQLiteReadOnly" : {
+          "p50Ms" : 0.097541662398725748,
+          "p95Ms" : 0.15445833560079336
+        }
+      }
+    },
+    {
+      "actualChangedRows" : 3,
+      "components" : 5000,
+      "fixture" : "independent-5000",
+      "impactedAllComponents" : 5000,
+      "impactedCurrentComponents" : 3,
+      "plannedAffectedRows" : 13,
+      "runs" : 5,
+      "timings" : {
+        "combinedPlanner" : {
+          "p50Ms" : 11.767874995712191,
+          "p95Ms" : 13.404500001342967
+        },
+        "currentGraphExtraction" : {
+          "p50Ms" : 3.7285833386704326,
+          "p95Ms" : 3.989874996477738
+        },
+        "currentReverseClosure" : {
+          "p50Ms" : 3.9788750000298023,
+          "p95Ms" : 4.2618333391146734
+        },
+        "fullProjection" : {
+          "p50Ms" : 47.448041674215347,
+          "p95Ms" : 50.479208322940394
+        },
+        "screenSummaryDerivation" : {
+          "p50Ms" : 0.012500007869675756,
+          "p95Ms" : 0.014083343558013439
+        },
+        "summarySQLiteRead" : {
+          "p50Ms" : 244.511708340724,
+          "p95Ms" : 263.67258334357757
+        },
+        "summarySQLiteWrite" : {
+          "p50Ms" : 285.59975000098348,
+          "p95Ms" : 286.99979165685363
+        },
+        "usageSummarySQLiteReadOnly" : {
+          "p50Ms" : 0.19600000814534724,
+          "p95Ms" : 0.26054166664835066
+        }
+      }
+    },
+    {
+      "actualChangedRows" : 3,
+      "components" : 100,
+      "fixture" : "mixed",
+      "impactedAllComponents" : 100,
+      "impactedCurrentComponents" : 3,
+      "plannedAffectedRows" : 37,
+      "runs" : 5,
+      "timings" : {
+        "combinedPlanner" : {
+          "p50Ms" : 0.48433334450237453,
+          "p95Ms" : 0.49345832667313516
+        },
+        "currentGraphExtraction" : {
+          "p50Ms" : 0.082375001511536539,
+          "p95Ms" : 0.087041669758036733
+        },
+        "currentReverseClosure" : {
+          "p50Ms" : 0.088541666627861559,
+          "p95Ms" : 0.095416675321757793
+        },
+        "fullProjection" : {
+          "p50Ms" : 2.5123333325609565,
+          "p95Ms" : 2.5631250027799979
+        },
+        "screenSummaryDerivation" : {
+          "p50Ms" : 0.02166666672565043,
+          "p95Ms" : 0.022499996703118086
+        },
+        "summarySQLiteRead" : {
+          "p50Ms" : 11.058208343456499,
+          "p95Ms" : 11.159625006257556
+        },
+        "summarySQLiteWrite" : {
+          "p50Ms" : 12.292791667277925,
+          "p95Ms" : 12.387750000925735
+        },
+        "usageSummarySQLiteReadOnly" : {
+          "p50Ms" : 0.090833331341855228,
+          "p95Ms" : 0.095833325758576393
+        }
+      }
+    },
+    {
+      "actualChangedRows" : 99,
+      "components" : 100,
+      "fixture" : "chain",
+      "impactedAllComponents" : 100,
+      "impactedCurrentComponents" : 99,
+      "plannedAffectedRows" : 397,
+      "runs" : 5,
+      "timings" : {
+        "combinedPlanner" : {
+          "p50Ms" : 0.87791666737757623,
+          "p95Ms" : 0.88595833221916109
+        },
+        "currentGraphExtraction" : {
+          "p50Ms" : 0.21683334489353001,
+          "p95Ms" : 0.21812500199303031
+        },
+        "currentReverseClosure" : {
+          "p50Ms" : 0.29099998937454075,
+          "p95Ms" : 0.29395833553280681
+        },
+        "fullProjection" : {
+          "p50Ms" : 73.748208335018717,
+          "p95Ms" : 73.900916671846062
+        },
+        "screenSummaryDerivation" : {
+          "p50Ms" : 0.0058333389461040497,
+          "p95Ms" : 0.0086666696006432176
+        },
+        "summarySQLiteRead" : {
+          "p50Ms" : 4.8500416742172092,
+          "p95Ms" : 4.918500009807758
+        },
+        "summarySQLiteWrite" : {
+          "p50Ms" : 5.8890000073006377,
+          "p95Ms" : 6.0479166713776067
+        },
+        "usageSummarySQLiteReadOnly" : {
+          "p50Ms" : 0.087208332843147218,
+          "p95Ms" : 0.08779167546890676
+        }
+      }
+    },
+    {
+      "actualChangedRows" : 499,
+      "components" : 500,
+      "fixture" : "fanout",
+      "impactedAllComponents" : 500,
+      "impactedCurrentComponents" : 499,
+      "plannedAffectedRows" : 1997,
+      "runs" : 5,
+      "timings" : {
+        "combinedPlanner" : {
+          "p50Ms" : 3.9430833276128396,
+          "p95Ms" : 3.9653333369642496
+        },
+        "currentGraphExtraction" : {
+          "p50Ms" : 1.0657499951776117,
+          "p95Ms" : 1.0757916752481833
+        },
+        "currentReverseClosure" : {
+          "p50Ms" : 1.3833749981131405,
+          "p95Ms" : 1.4085000002523884
+        },
+        "fullProjection" : {
+          "p50Ms" : 11.767874995712191,
+          "p95Ms" : 11.822999993455596
+        },
+        "screenSummaryDerivation" : {
+          "p50Ms" : 0.0070000096457079053,
+          "p95Ms" : 0.0095833238447085023
+        },
+        "summarySQLiteRead" : {
+          "p50Ms" : 21.090583337354474,
+          "p95Ms" : 21.131625006091781
+        },
+        "summarySQLiteWrite" : {
+          "p50Ms" : 23.379874997772276,
+          "p95Ms" : 23.475458321627229
+        },
+        "usageSummarySQLiteReadOnly" : {
+          "p50Ms" : 0.092083340859971941,
+          "p95Ms" : 0.10483333608135581
+        }
+      }
+    }
+  ]
+}

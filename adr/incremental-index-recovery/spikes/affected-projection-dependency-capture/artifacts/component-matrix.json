@@ -1,0 +1,362 @@
+[
+  {
+    "actualRows" : 3,
+    "changedComponents" : [
+      "component_b"
+    ],
+    "impactedAll" : [
+      "component_a",
+      "component_b",
+      "component_other",
+      "component_x"
+    ],
+    "impactedCurrent" : [
+      "component_a",
+      "component_b",
+      "component_x"
+    ],
+    "impactedUnion" : [
+      "component_a",
+      "component_b",
+      "component_x"
+    ],
+    "missingRows" : [
+
+    ],
+    "plannedRows" : 13,
+    "scenario" : "basePolicy"
+  },
+  {
+    "actualRows" : 12,
+    "changedComponents" : [
+      "component_a",
+      "component_b",
+      "component_x"
+    ],
+    "impactedAll" : [
+      "component_a",
+      "component_b",
+      "component_other",
+      "component_x"
+    ],
+    "impactedCurrent" : [
+      "component_a",
+      "component_b",
+      "component_x"
+    ],
+    "impactedUnion" : [
+      "component_a",
+      "component_b",
+      "component_x"
+    ],
+    "missingRows" : [
+
+    ],
+    "plannedRows" : 15,
+    "scenario" : "baseOwner"
+  },
+  {
+    "actualRows" : 2,
+    "changedComponents" : [
+      "component_a"
+    ],
+    "impactedAll" : [
+      "component_a",
+      "component_b",
+      "component_other",
+      "component_x"
+    ],
+    "impactedCurrent" : [
+      "component_a",
+      "component_x"
+    ],
+    "impactedUnion" : [
+      "component_a",
+      "component_x"
+    ],
+    "missingRows" : [
+
+    ],
+    "plannedRows" : 9,
+    "scenario" : "oldEdgeRemoval"
+  },
+  {
+    "actualRows" : 1,
+    "changedComponents" : [
+      "component_other"
+    ],
+    "impactedAll" : [
+      "component_a",
+      "component_b",
+      "component_other",
+      "component_x"
+    ],
+    "impactedCurrent" : [
+      "component_other"
+    ],
+    "impactedUnion" : [
+      "component_other"
+    ],
+    "missingRows" : [
+
+    ],
+    "plannedRows" : 5,
+    "scenario" : "newEdgeAddition"
+  },
+  {
+    "actualRows" : 2,
+    "changedComponents" : [
+      "component_a"
+    ],
+    "impactedAll" : [
+      "component_a",
+      "component_b",
+      "component_other",
+      "component_x"
+    ],
+    "impactedCurrent" : [
+      "component_a",
+      "component_x"
+    ],
+    "impactedUnion" : [
+      "component_a",
+      "component_x"
+    ],
+    "missingRows" : [
+
+    ],
+    "plannedRows" : 9,
+    "scenario" : "transitiveRemoval"
+  },
+  {
+    "actualRows" : 4,
+    "changedComponents" : [
+      "component_b",
+      "component_other"
+    ],
+    "impactedAll" : [
+      "component_a",
+      "component_b",
+      "component_other",
+      "component_x"
+    ],
+    "impactedCurrent" : [
+      "component_a",
+      "component_b",
+      "component_other",
+      "component_x"
+    ],
+    "impactedUnion" : [
+      "component_a",
+      "component_b",
+      "component_other",
+      "component_x"
+    ],
+    "missingRows" : [
+
+    ],
+    "plannedRows" : 18,
+    "scenario" : "transitiveAddition"
+  },
+  {
+    "actualRows" : 5,
+    "changedComponents" : [
+      "component_a",
+      "component_b"
+    ],
+    "impactedAll" : [
+      "component_a",
+      "component_b",
+      "component_other",
+      "component_x"
+    ],
+    "impactedCurrent" : [
+      "component_a",
+      "component_b",
+      "component_x"
+    ],
+    "impactedUnion" : [
+      "component_a",
+      "component_b",
+      "component_x"
+    ],
+    "missingRows" : [
+
+    ],
+    "plannedRows" : 14,
+    "scenario" : "deleteBase"
+  },
+  {
+    "actualRows" : 5,
+    "changedComponents" : [
+      "component_a",
+      "component_new"
+    ],
+    "impactedAll" : [
+      "component_a",
+      "component_b",
+      "component_new",
+      "component_other",
+      "component_x"
+    ],
+    "impactedCurrent" : [
+      "component_a",
+      "component_new",
+      "component_x"
+    ],
+    "impactedUnion" : [
+      "component_a",
+      "component_new",
+      "component_x"
+    ],
+    "missingRows" : [
+
+    ],
+    "plannedRows" : 14,
+    "scenario" : "addBase"
+  },
+  {
+    "actualRows" : 10,
+    "changedComponents" : [
+      "component_a",
+      "component_b",
+      "component_b_new"
+    ],
+    "impactedAll" : [
+      "component_a",
+      "component_b",
+      "component_b_new",
+      "component_other",
+      "component_x"
+    ],
+    "impactedCurrent" : [
+      "component_a",
+      "component_b",
+      "component_b_new",
+      "component_x"
+    ],
+    "impactedUnion" : [
+      "component_a",
+      "component_b",
+      "component_b_new",
+      "component_x"
+    ],
+    "missingRows" : [
+
+    ],
+    "plannedRows" : 19,
+    "scenario" : "renameBase"
+  },
+  {
+    "actualRows" : 3,
+    "changedComponents" : [
+      "component_a",
+      "component_b"
+    ],
+    "impactedAll" : [
+      "component_a",
+      "component_b",
+      "component_other",
+      "component_x"
+    ],
+    "impactedCurrent" : [
+      "component_a",
+      "component_b",
+      "component_x"
+    ],
+    "impactedUnion" : [
+      "component_a",
+      "component_b",
+      "component_x"
+    ],
+    "missingRows" : [
+
+    ],
+    "plannedRows" : 14,
+    "scenario" : "nestedChild"
+  },
+  {
+    "actualRows" : 4,
+    "changedComponents" : [
+      "component_b",
+      "component_other"
+    ],
+    "impactedAll" : [
+      "component_a",
+      "component_b",
+      "component_other",
+      "component_x"
+    ],
+    "impactedCurrent" : [
+      "component_a",
+      "component_b",
+      "component_other",
+      "component_x"
+    ],
+    "impactedUnion" : [
+      "component_a",
+      "component_b",
+      "component_other",
+      "component_x"
+    ],
+    "missingRows" : [
+
+    ],
+    "plannedRows" : 18,
+    "scenario" : "slotContent"
+  },
+  {
+    "actualRows" : 1,
+    "changedComponents" : [
+      "component_b"
+    ],
+    "impactedAll" : [
+      "component_a",
+      "component_b",
+      "component_other",
+      "component_x"
+    ],
+    "impactedCurrent" : [
+      "component_a",
+      "component_b",
+      "component_x"
+    ],
+    "impactedUnion" : [
+      "component_a",
+      "component_b",
+      "component_x"
+    ],
+    "missingRows" : [
+
+    ],
+    "plannedRows" : 13,
+    "scenario" : "nameOnly"
+  },
+  {
+    "actualRows" : 0,
+    "changedComponents" : [
+      "component_b"
+    ],
+    "impactedAll" : [
+      "component_a",
+      "component_b",
+      "component_other",
+      "component_x"
+    ],
+    "impactedCurrent" : [
+      "component_a",
+      "component_b",
+      "component_x"
+    ],
+    "impactedUnion" : [
+      "component_a",
+      "component_b",
+      "component_x"
+    ],
+    "missingRows" : [
+
+    ],
+    "plannedRows" : 13,
+    "scenario" : "nativeOnly"
+  }
+]
