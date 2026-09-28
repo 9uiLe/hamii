@@ -151,6 +151,11 @@ final class FormatV1LayerGoldenTests: XCTestCase {
         let scope = try XCTUnwrap(document.scopes.first?.id)
         let target = Target(id: EntityID("target_swiftui"), platform: .macOS, framework: .swiftUI)
         document.targets = [target]
+        document.capabilityDeclarations = [
+            CapabilityKeys.legacyStack, CapabilityKeys.legacyOverlay, CapabilityKeys.legacyScroll,
+            CapabilityKeys.legacyText, CapabilityKeys.legacyButton, CapabilityKeys.legacyImage,
+            CapabilityKeys.legacyInstance, CapabilityKeys.systemAssetMapping
+        ].map { CapabilityDeclaration(targetID: target.id, key: $0, support: .exact) }
         let asset = Asset(id: EntityID("asset_star"), name: "Star", ownerScopeID: scope,
             mediaType: "image/system", source: .system(name: "star"))
         document.assets = [asset]

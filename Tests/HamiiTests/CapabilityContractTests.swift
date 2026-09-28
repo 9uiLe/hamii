@@ -37,7 +37,7 @@ final class CapabilityContractTests: XCTestCase {
         document.assets = [Asset(id: assetID, name: "person", ownerScopeID: scope, mediaType: "image/system", source: .system(name: "person"))]
         document.components = [ComponentDefinition(id: componentID, name: "Badge", ownerScopeID: scope, root: Layer(id: EntityID("component_text"), name: "Text", payload: .text(TextLayerPayload(value: "VIP"))))]
         XCTAssertEqual(DocumentValidator.validate(document), [])
-        let extracted = SemanticRequirementExtractor.extract(screen: document.screens[0], document: document, surface: surface)
+        let extracted = SemanticRequirementExtractor.extract(screen: document.screens[0], document: document)
         XCTAssertEqual(extracted.diagnostics, [])
         XCTAssertEqual(extracted.requirements.map(\.key), [
             CapabilityKeys.stackContainer, CapabilityKeys.spacingToken, CapabilityKeys.paddingToken,
@@ -58,7 +58,7 @@ final class CapabilityContractTests: XCTestCase {
         ], in: &document)
         XCTAssertTrue(TargetPlanner.plan(surface: surface, document: document).canPreview)
         surface.runtime = "macOS 26"
-        XCTAssertEqual(SemanticRequirementExtractor.extract(screen: document.screens[0], document: document, surface: surface).requirements, extracted.requirements)
+        XCTAssertEqual(SemanticRequirementExtractor.extract(screen: document.screens[0], document: document).requirements, extracted.requirements)
     }
 
     func testEvaluatorFailsClosedAndRetainsApprovedApproximationLoss() throws {
@@ -165,6 +165,26 @@ final class CapabilityContractTests: XCTestCase {
         XCTAssertTrue(TargetPlanner.plan(surface: surface, document: document).canPreview)
         surface.runtime = "macOS 26"
         XCTAssertTrue(TargetPlanner.plan(surface: surface, document: document).canPreview)
+    }
+
+    func testPreviewFixtureAvailabilityRemainsContextSpecific() throws {
+        let root = Layer(id: EntityID("layer_text"), name: "Name", payload: .text(TextLayerPayload(binding: "user.name")))
+        var (document, surface) = fixture(root: root)
+        declare([CapabilityKeys.legacyText, CapabilityKeys.fixtureBinding], in: &document)
+        let extraction = SemanticRequirementExtractor.extract(screen: document.screens[0], document: document)
+        XCTAssertFalse(extraction.diagnostics.contains { $0.rule == "preview.fixture" })
+        XCTAssertEqual(extraction.bindings.map(\.path), ["user.name"])
+        XCTAssertTrue(TargetPlanner.plan(surface: surface, document: document).diagnostics.contains { $0.rule == "preview.fixture" })
+
+        let fixtureJSON = #"{"id":{"rawValue":"fixture_user"},"name":"User","values":{"user.name":"Alice"},"assetBindings":{}}"#
+        let fixture = try JSONDecoder().decode(PreviewFixture.self, from: Data(fixtureJSON.utf8))
+        document.fixtures = [fixture]
+        surface.fixtureID = fixture.id
+        XCTAssertFalse(TargetPlanner.plan(surface: surface, document: document).diagnostics.contains { $0.rule == "preview.fixture" })
+
+        document.screens[0].root.text = "Guest"
+        surface.fixtureID = nil
+        XCTAssertFalse(TargetPlanner.plan(surface: surface, document: document).diagnostics.contains { $0.rule == "preview.fixture" })
     }
 
     func testTargetPlanJSONShapeRemainsUnchanged() throws {

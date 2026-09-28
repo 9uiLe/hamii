@@ -509,6 +509,10 @@ final class ArchitectureTests: XCTestCase {
         let scopeID = try XCTUnwrap(document.scopes.first?.id)
         let target = Target(id: EntityID("target_swiftui"), platform: .iOS, framework: .swiftUI)
         document.targets = [target]
+        document.capabilityDeclarations = [
+            CapabilityDeclaration(targetID: target.id, key: CapabilityKeys.legacyStack, support: .portable),
+            CapabilityDeclaration(targetID: target.id, key: CapabilityKeys.legacyText, support: .exact)
+        ]
         var label = Layer(id: EntityID("layer_name"), kind: .text, name: "Name", text: "Preview")
         let root = Layer(id: EntityID("layer_profile_root"), kind: .stack, name: "Root", children: [label], layout: Layout(axis: .vertical))
         let screen = Screen(id: EntityID("screen_profile"), name: "Profile", scopeID: scopeID, root: root)

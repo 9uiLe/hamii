@@ -69,14 +69,17 @@ public struct SemanticRequirement: Codable, Equatable {
     }
 }
 
-/// Runtime is carried for future version-specific support; Format v1 declarations remain target-scoped.
+/// A generator has no AppSurface and therefore no observed runtime.
 public struct CapabilityProfile: Codable, Equatable {
     public var targetID: EntityID
     public var platform: Platform
     public var framework: Framework
-    public var runtime: String
+    public var runtime: String?
     public init(target: Target, surface: AppSurface) {
         targetID = target.id; platform = target.platform; framework = target.framework; runtime = surface.runtime
+    }
+    public init(target: Target) {
+        targetID = target.id; platform = target.platform; framework = target.framework; runtime = nil
     }
 }
 
@@ -121,16 +124,23 @@ public struct CapabilityLossReport: Codable, Equatable {
 public struct SemanticExtraction {
     public var requirements: [SemanticRequirement]
     public var diagnostics: [Diagnostic]
+    public var bindings: [SemanticBinding]
+}
+
+public struct SemanticBinding {
+    public var sourceEntityID: EntityID
+    public var path: String
+    public var hasFallback: Bool
 }
 
 /// Reads current IR meaning only. Framework and target support decisions belong to the evaluator.
 public enum SemanticRequirementExtractor {
-    public static func extract(screen: Screen, document: Document, surface: AppSurface) -> SemanticExtraction {
+    public static func extract(screen: Screen, document: Document) -> SemanticExtraction {
         var requirements: [SemanticRequirement] = []
         var diagnostics: [Diagnostic] = []
+        var bindings: [SemanticBinding] = []
         let assets = Dictionary(document.assets.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         let components = Dictionary(document.components.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
-        let fixture = document.fixtures.first { $0.id == surface.fixtureID }
 
         func append(_ key: CapabilityKey, _ id: EntityID) {
             requirements.append(SemanticRequirement(key: key, sourceEntityID: id))
@@ -161,10 +171,10 @@ public enum SemanticRequirementExtractor {
                     if let resolved = try? ComponentResolver.resolve(instance, definition: definition) {
                         visit(resolved)
                     } else {
-                        diagnostics.append(Diagnostic("preview.component", "Component cannot be resolved", entityID: layer.id))
+                        diagnostics.append(Diagnostic("semantic.component", "Component cannot be resolved", entityID: layer.id))
                     }
                 } else {
-                    diagnostics.append(Diagnostic("preview.component", "Component cannot be resolved", entityID: layer.id))
+                    diagnostics.append(Diagnostic("semantic.component", "Component cannot be resolved", entityID: layer.id))
                 }
             }
             if layer.layout.spacingTokenID != nil { append(CapabilityKeys.spacingToken, layer.id) }
@@ -173,15 +183,13 @@ public enum SemanticRequirementExtractor {
                 if layer.kind == .text || layer.kind == .button {
                     append(CapabilityKeys.fixtureBinding, layer.id)
                     if layer.text != nil { append(CapabilityKeys.bindingFallback, layer.id) }
-                    if fixture?.values[binding] == nil && layer.text == nil {
-                        diagnostics.append(Diagnostic("preview.fixture", "Text binding has no fixture value or fallback", entityID: layer.id))
-                    }
+                    bindings.append(SemanticBinding(sourceEntityID: layer.id, path: binding, hasFallback: layer.text != nil))
                 } else {
-                    diagnostics.append(Diagnostic("preview.binding", "Binding is unavailable for this Layer kind", entityID: layer.id))
+                    diagnostics.append(Diagnostic("semantic.binding", "Binding is unavailable for this Layer kind", entityID: layer.id))
                 }
             }
             if layer.emittedEvent != nil && layer.kind != .button {
-                diagnostics.append(Diagnostic("preview.event", "Event emission is unavailable for this Layer kind", entityID: layer.id))
+                diagnostics.append(Diagnostic("semantic.event", "Event emission is unavailable for this Layer kind", entityID: layer.id))
             }
             if layer.interactionID != nil { append(CapabilityKeys.interactionRuntime, layer.id) }
             if layer.nativeIntent != nil { append(CapabilityKeys.nativeIntent, layer.id) }
@@ -202,7 +210,7 @@ public enum SemanticRequirementExtractor {
                 append(CapabilityKeys.customNavigation, screen.id)
             }
         }
-        return SemanticExtraction(requirements: requirements, diagnostics: diagnostics)
+        return SemanticExtraction(requirements: requirements, diagnostics: diagnostics, bindings: bindings)
     }
 }
 
@@ -210,10 +218,30 @@ public enum SemanticRequirementExtractor {
 public struct CapabilityCatalog: Sendable {
     public var supportedKeys: Set<CapabilityKey>
     public var legacyAliases: [CapabilityKey: CapabilityKey]
-    public init(supportedKeys: Set<CapabilityKey>, legacyAliases: [CapabilityKey: CapabilityKey] = [:]) {
+    /// A runtime-sensitive requirement is never allowed by a profile without an observed runtime.
+    public var runtimeSensitiveKeys: Set<CapabilityKey>
+    public init(supportedKeys: Set<CapabilityKey>, legacyAliases: [CapabilityKey: CapabilityKey] = [:], runtimeSensitiveKeys: Set<CapabilityKey> = []) {
         self.supportedKeys = supportedKeys
         self.legacyAliases = legacyAliases
+        self.runtimeSensitiveKeys = runtimeSensitiveKeys
     }
+}
+
+/// Format v1 node declarations cover only the corresponding basic visual meaning.
+public enum BasicCapabilityAliases {
+    public static let map: [CapabilityKey: CapabilityKey] = [
+        CapabilityKeys.stackContainer: CapabilityKeys.legacyStack,
+        CapabilityKeys.overlayVisual: CapabilityKeys.legacyOverlay,
+        CapabilityKeys.scrollContainer: CapabilityKeys.legacyScroll,
+        CapabilityKeys.textVisual: CapabilityKeys.legacyText,
+        CapabilityKeys.buttonVisual: CapabilityKeys.legacyButton,
+        CapabilityKeys.imageVisual: CapabilityKeys.legacyImage,
+        CapabilityKeys.componentInstance: CapabilityKeys.legacyInstance,
+        CapabilityKeys.spacingToken: CapabilityKeys.legacySpacing,
+        CapabilityKeys.paddingToken: CapabilityKeys.legacySpacing,
+        CapabilityKeys.systemNavigation: CapabilityKeys.legacySystemNavigation,
+        CapabilityKeys.customNavigation: CapabilityKeys.legacyCustomNavigation
+    ]
 }
 
 /// This subset describes the implemented Preview semantics. It is not an API coverage claim for every target OS.
@@ -227,19 +255,7 @@ public enum NativePreviewCapabilityCatalog {
         CapabilityKeys.systemToolbar, CapabilityKeys.toolbarEventEmit, CapabilityKeys.customNavigation
     ]
 
-    public static let catalog = CapabilityCatalog(supportedKeys: supportedKeys, legacyAliases: [
-        CapabilityKeys.stackContainer: CapabilityKeys.legacyStack,
-        CapabilityKeys.overlayVisual: CapabilityKeys.legacyOverlay,
-        CapabilityKeys.scrollContainer: CapabilityKeys.legacyScroll,
-        CapabilityKeys.textVisual: CapabilityKeys.legacyText,
-        CapabilityKeys.buttonVisual: CapabilityKeys.legacyButton,
-        CapabilityKeys.imageVisual: CapabilityKeys.legacyImage,
-        CapabilityKeys.componentInstance: CapabilityKeys.legacyInstance,
-        CapabilityKeys.spacingToken: CapabilityKeys.legacySpacing,
-        CapabilityKeys.paddingToken: CapabilityKeys.legacySpacing,
-        CapabilityKeys.systemNavigation: CapabilityKeys.legacySystemNavigation,
-        CapabilityKeys.customNavigation: CapabilityKeys.legacyCustomNavigation
-    ])
+    public static let catalog = CapabilityCatalog(supportedKeys: supportedKeys, legacyAliases: BasicCapabilityAliases.map)
 }
 
 /// Evaluates requirements without inspecting a Layer tree. Missing and ambiguous declarations fail closed.
@@ -251,14 +267,18 @@ public enum CapabilityEvaluator {
     ) -> CapabilityLossReport {
         let targetDeclarations = Dictionary(grouping: declarations.filter { $0.targetID == profile.targetID }, by: \.key)
         let items = requirements.map { requirement -> CapabilityLoss in
+            // An exact semantic declaration takes precedence over its basic Format v1 alias.
             let aliases = [requirement.key, catalog.legacyAliases[requirement.key]].compactMap { $0 }
             let matching = aliases.lazy.compactMap { targetDeclarations[$0] }.first ?? []
             let declaration = matching.count == 1 ? matching[0] : nil
             let support: CapabilitySupport
             let reason: String
-            if !catalog.supportedKeys.contains(requirement.key) {
+            if catalog.runtimeSensitiveKeys.contains(requirement.key) && (profile.runtime?.isEmpty != false) {
                 support = .unsupported
-                reason = "Preview runtime does not implement this semantic requirement"
+                reason = "An observed runtime is required for this semantic capability"
+            } else if !catalog.supportedKeys.contains(requirement.key) {
+                support = .unsupported
+                reason = "This consumer does not implement this semantic requirement"
             } else if matching.count > 1 {
                 support = .unsupported
                 reason = "Ambiguous capability declarations"
@@ -296,7 +316,7 @@ public enum CapabilityEvaluator {
 
 public enum NativePreviewCapabilityAnalysis {
     public static func report(screen: Screen, document: Document, surface: AppSurface, target: Target, approvedApproximationKeys: Set<CapabilityKey> = []) -> CapabilityLossReport {
-        let extraction = SemanticRequirementExtractor.extract(screen: screen, document: document, surface: surface)
+        let extraction = SemanticRequirementExtractor.extract(screen: screen, document: document)
         return CapabilityEvaluator.evaluate(
             requirements: extraction.requirements,
             profile: CapabilityProfile(target: target, surface: surface),
@@ -324,8 +344,15 @@ public enum TargetPlanner {
         guard let target = document.targets.first(where: { $0.id == surface.targetID }) else {
             return TargetPlan(surfaceID: surface.id, targetID: surface.targetID, screenID: surface.screenID, diagnostics: [Diagnostic("surface.target", "Target is missing", entityID: surface.id)])
         }
-        let extraction = SemanticRequirementExtractor.extract(screen: screen, document: document, surface: surface)
-        diagnostics += extraction.diagnostics
+        let extraction = SemanticRequirementExtractor.extract(screen: screen, document: document)
+        diagnostics += extraction.diagnostics.map { diagnostic in
+            Diagnostic(diagnostic.rule.replacingOccurrences(of: "semantic.", with: "preview."),
+                       diagnostic.message, entityID: diagnostic.entityID, severity: diagnostic.severity)
+        }
+        let fixture = document.fixtures.first { $0.id == surface.fixtureID }
+        diagnostics += extraction.bindings.filter { !$0.hasFallback && fixture?.values[$0.path] == nil }.map {
+            Diagnostic("preview.fixture", "Text binding has no fixture value or fallback", entityID: $0.sourceEntityID)
+        }
         let report = CapabilityEvaluator.evaluate(
             requirements: extraction.requirements,
             profile: CapabilityProfile(target: target, surface: surface),
