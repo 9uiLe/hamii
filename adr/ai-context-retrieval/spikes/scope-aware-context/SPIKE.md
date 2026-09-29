@@ -64,12 +64,15 @@ Missing required facts, wrong intent, Scope mismatch, stale overwrite, full Docu
 
 ## Result
 
-Not run. Preserve failed, interrupted, and incomplete trials. Report payload bytes separately from unmeasured AI total tokens; do not extrapolate solver results to LLM success.
+The test-only prototype produced 30 rows across 1k/10k, five tasks, and three strategies. All rows were oracle-complete, verified the expected ProjectService behavior, exposed zero unavailable resources as usable, and recorded zero stale overwrites. A separate real CanonicalRepository two-client test rejected an old precondition after a coordinated mutation. Current-format raw shards loaded through the actual reader. Three repeated matrix builds produced identical sorted-key bytes.
+
+The 10k FULL envelope measured 1,535,023 bytes. STAGED measured 2,138 bytes for T1/S, 2,968 for T2, 2,977 for T3, and 2,673 for N, using two to four responses. The 10k summary was 1,820 bytes. These STAGED task bytes were identical at 1k. RAW used 22,698–27,027 bytes and seven to twelve responses. The precommitted byte, query, Scope, stale, and deterministic criteria passed for the tested task set. The [comparison](artifacts/strategy-comparison.md) records conditions, exact rows, two failed preliminary attempts, and limits. AI total tokens remain **unmeasured**. The local full gate passed 14/14 checks, with 276 Swift tests executed, 58 skipped, and no failures in 861.036 seconds (local untracked log: .build/verify-logs/20260929-084341-677618-79244-full.log). Exact-SHA CI is pending.
 
 ## Conclusion
 
-Not decided. Compare FULL, STAGED, and RAW against these criteria before updating the ADR.
+The measured semantic tasks support STAGED as a context-sufficient, bounded-payload candidate. This does not establish production query performance, visual-context sufficiency, or LLM task success. Keep the ADR at Spike Required until the full gate, exact-SHA CI, and decision review are complete; do not add production Query APIs in this Evidence commit.
 
 ## Artifacts
 
-Create artifacts/context-matrix.json and artifacts/strategy-comparison.md only when results exist. Do not commit generated builds or large fixture dumps.
+- [Machine-readable context matrix](artifacts/context-matrix.json)
+- [Strategy comparison and limits](artifacts/strategy-comparison.md)
