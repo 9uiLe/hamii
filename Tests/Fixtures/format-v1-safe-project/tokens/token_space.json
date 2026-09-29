@@ -1,0 +1,15 @@
+{
+  "id" : {
+    "rawValue" : "token_space"
+  },
+  "kind" : "spacing",
+  "name" : "Spacing",
+  "ownerScopeID" : {
+    "rawValue" : "scope_app"
+  },
+  "value" : {
+    "literal" : {
+      "_0" : "12"
+    }
+  }
+}

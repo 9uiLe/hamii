@@ -1,0 +1,7 @@
+{
+  "framework" : "swiftUI",
+  "id" : {
+    "rawValue" : "target_ios"
+  },
+  "platform" : "iOS"
+}

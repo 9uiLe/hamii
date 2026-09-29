@@ -1,0 +1,31 @@
+{
+  "id" : {
+    "rawValue" : "page_main"
+  },
+  "name" : "Main page",
+  "surfaces" : [
+    {
+      "architectureScopeID" : {
+        "rawValue" : "scope_app"
+      },
+      "buildEnvironment" : "iOS SDK",
+      "device" : "iPhone",
+      "environment" : {
+
+      },
+      "id" : {
+        "rawValue" : "surface_main"
+      },
+      "previewConfiguration" : {
+
+      },
+      "runtime" : "iOS 18",
+      "screenID" : {
+        "rawValue" : "screen_main"
+      },
+      "targetID" : {
+        "rawValue" : "target_ios"
+      }
+    }
+  ]
+}

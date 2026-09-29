@@ -1,0 +1,18 @@
+{
+  "id" : {
+    "rawValue" : "asset_symbol"
+  },
+  "mediaType" : "image/system",
+  "metadata" : {
+
+  },
+  "name" : "Symbol",
+  "ownerScopeID" : {
+    "rawValue" : "scope_app"
+  },
+  "source" : {
+    "system" : {
+      "name" : "star"
+    }
+  }
+}

@@ -28,7 +28,7 @@ First-class ordered effects を永続化する際、Canonical Format v1 の addi
 
 ## Unknowns
 
-- 全 Canonical entity を対象にする v1→v2 migration edge の分類、曖昧さの有無。
+- Production v1→v2 edge が分類した manual blocker の解決と review/publication workflow。
 - Current Format v2 の他 effect taxonomy と残る consumer の lowering。
 - v2 publication / review / power-loss durability と既存 user repository の安全な移行手順。
 
@@ -54,9 +54,9 @@ Test-only candidate は padding/background の順序を round-trip で保ち、v
 
 ## Remaining Implementation
 
-- [migration-core-boundary](../migration-core-boundary/ADR.md) で決定した historical edge 隔離境界を production edge に適用する。
+- [migration-core-boundary](../migration-core-boundary/ADR.md) で決定した独立 target に v1→v2 edge を実装済み。Padded Layer の全階層と capability declaration を変換し、cross-kind residual 等を manual blocker とする。
 - [migration-review-protocol](../migration-review-protocol/ADR.md) で決定した review / publication 手順を production executor に適用する。
-- Current Format v2 の ordered padding effect、validation、serialization、Canvas / Native Preview lowering、Generator の拒否は production に接続済み。v1→v2 transformation は未実装。
+- Current Format v2 の ordered padding effect、validation、serialization、Canvas / Native Preview lowering、Generator の拒否は production に接続済み。v1→v2 transformation edge は実装済みだが、元 repository から reviewable candidate を作り公開する executor は未実装。
 - 他 effect の consumer coverage と migration/review path が完了するまで、この ADR は削除しない。
 
 ## Status

@@ -26,11 +26,11 @@ Historical parser、versioned transformation edge、edge registry は `HamiiMigr
 
 Current Core は Current Format の意味だけを持つ。Migration orchestration は独立 target の候補を隔離領域で組み立て、Current Format に到達した後で Current Format / Core の semantic validation、fresh Index rebuild、review/publication を呼ぶ。Current Format の version gate を historical fallback に緩めない。Document、Authoring Harness、Integration Profile の version は独立して扱う。
 
-この Decision は dependency と data-flow の境界である。Ordered effects の production Format v2 は Current reader/writer に実装済み。実際の v1→v2 edge、migration distribution、隔離 worktree の review/publication は未実装である。
+この Decision は dependency と data-flow の境界である。Ordered effects の production Format v2 は Current reader/writer に実装済み。Foundation-only の production v1→v2 edge は `HamiiMigrations` に実装済みで、raw Canonical bytes を入力として返す。Migration executor、隔離 worktree の review/publication は未実装である。
 
 ## Unknowns
 
-実際の historical edge graph と配布単位、production executor、candidate の review/publication integration は未実装。Review/publication の判断は [migration-review-protocol](../migration-review-protocol/ADR.md) で扱う。今回の test-only v3 は製品 version の提案ではない。
+Installed historical edge は v1→v2 のみ。長期的な edge 配布単位、production executor、candidate の review/publication integration は未実装。Review/publication の判断は [migration-review-protocol](../migration-review-protocol/ADR.md) で扱う。Spike の test-only v3 は製品 version の提案ではない。
 
 ## Required Evidence
 

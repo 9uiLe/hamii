@@ -1,0 +1,75 @@
+{
+  "api": {
+    "bindings": [],
+    "events": [],
+    "overridablePaths": [],
+    "properties": [],
+    "slots": [
+      {
+        "name": "content",
+        "targetLayerID": {
+          "rawValue": "layer_badge_root"
+        }
+      }
+    ]
+  },
+  "availability": {
+    "allowOnlyScopeIDs": [],
+    "denyScopeIDs": []
+  },
+  "id": {
+    "rawValue": "component_badge"
+  },
+  "name": "Badge",
+  "nativeSemantics": {},
+  "ownerScopeID": {
+    "rawValue": "scope_app"
+  },
+  "root": {
+    "children": [
+      {
+        "children": [],
+        "id": {
+          "rawValue": "layer_badge_text"
+        },
+        "kind": "text",
+        "layout": {},
+        "name": "Badge Text",
+        "targetOverrides": {},
+        "text": "Ready"
+      },
+      {
+        "children": [],
+        "component": {
+          "allowedOverrides": {},
+          "definitionID": {
+            "rawValue": "component_leaf"
+          },
+          "propertyValues": {},
+          "slotContent": {},
+          "variantSelection": {}
+        },
+        "id": {
+          "rawValue": "layer_nested_leaf"
+        },
+        "kind": "componentInstance",
+        "layout": {},
+        "name": "Nested Leaf",
+        "targetOverrides": {}
+      }
+    ],
+    "id": {
+      "rawValue": "layer_badge_root"
+    },
+    "kind": "stack",
+    "layout": {
+      "paddingTokenID": {
+        "rawValue": "token_space"
+      }
+    },
+    "name": "Badge Root",
+    "targetOverrides": {}
+  },
+  "variants": [],
+  "visibility": "public"
+}

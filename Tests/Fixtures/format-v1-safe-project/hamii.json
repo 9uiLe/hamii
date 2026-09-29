@@ -1,0 +1,40 @@
+{
+  "authoringHarness": {
+    "maximumMutationNodes": 100,
+    "requireAccessibleControls": true,
+    "requireTokenSpacing": false
+  },
+  "capabilityDeclarations": [
+    {
+      "targetID": {
+        "rawValue": "target_ios"
+      },
+      "key": {
+        "rawValue": "token.spacing"
+      },
+      "support": "exact",
+      "reason": "v1 spacing support"
+    },
+    {
+      "targetID": {
+        "rawValue": "target_ios"
+      },
+      "key": {
+        "rawValue": "component.text"
+      },
+      "support": "exact",
+      "reason": ""
+    }
+  ],
+  "formatVersion": 1,
+  "id": {
+    "rawValue": "doc_format_v1"
+  },
+  "name": "Format v1 project",
+  "revision": 1,
+  "versions": {
+    "authoringHarness": 1,
+    "document": 1,
+    "integrationProfile": 1
+  }
+}

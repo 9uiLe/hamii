@@ -91,7 +91,8 @@ final class CurrentFormatV2Tests: XCTestCase {
             XCTAssertThrowsError(try ProjectService(repository: repository).observe())
             if format == documentVersion {
                 let plan = try MigrationPreflight.plan(repository: root)
-                XCTAssertEqual(plan.state, "noMigrationEdge")
+                XCTAssertEqual(plan.state, "requiresResolution")
+                XCTAssertEqual(plan.classification, .manual)
             } else {
                 XCTAssertThrowsError(try MigrationPreflight.plan(repository: root))
             }

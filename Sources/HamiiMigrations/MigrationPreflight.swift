@@ -10,6 +10,7 @@ public struct MigrationPlan: Codable {
     public var classification: MigrationClassification?
     public var state: String
     public var blockers: [String]
+    public var notes: [String] = []
     public var canonicalFileCount: Int
     public var originalRepositoryUntouched: Bool
 }
@@ -36,14 +37,51 @@ public enum MigrationPreflight {
               let versions = object["versions"] as? [String: Any],
               let documentVersion = versions["document"] as? Int,
               version == documentVersion else { throw MigrationPreflightError.invalidManifest }
-        let count = (FileManager.default.enumerator(at: repository, includingPropertiesForKeys: nil)?
-            .allObjects as? [URL])?.filter { $0.pathExtension == "json" && !$0.path.contains("/.hamii/") }.count ?? 0
+        let files = try canonicalFiles(at: repository)
+        let count = files.count
         if FileManager.default.fileExists(atPath: repository.appendingPathComponent(".hamii/transaction.ready").path) {
             return MigrationPlan(sourceDocumentFormatVersion: version, targetDocumentFormatVersion: currentDocumentFormatVersion, classification: nil, state: "pendingCanonicalTransaction", blockers: ["Recover the pending Canonical save before migration"], canonicalFileCount: count, originalRepositoryUntouched: true)
         }
         if version == currentDocumentFormatVersion {
             return MigrationPlan(sourceDocumentFormatVersion: version, targetDocumentFormatVersion: version, classification: nil, state: "current", blockers: [], canonicalFileCount: count, originalRepositoryUntouched: true)
         }
+        if version == 1 {
+            do {
+                let analysis = try MigrationRegistry.analyze(MigrationFileSet(files: files))
+                return MigrationPlan(sourceDocumentFormatVersion: version, targetDocumentFormatVersion: currentDocumentFormatVersion,
+                                     classification: analysis.classification,
+                                     state: analysis.automaticCandidateEligible ? "migrationAvailable" : "requiresResolution",
+                                     blockers: analysis.diagnostics.map(\.blocker),
+                                     notes: analysis.automaticCandidateEligible ? ["The transformation edge is available; isolated candidate review and publication are not yet available"] : [],
+                                     canonicalFileCount: count,
+                                     originalRepositoryUntouched: true)
+            } catch {
+                return MigrationPlan(sourceDocumentFormatVersion: version, targetDocumentFormatVersion: currentDocumentFormatVersion,
+                                     classification: .manual, state: "requiresResolution", blockers: [String(describing: error)],
+                                     canonicalFileCount: count, originalRepositoryUntouched: true)
+            }
+        }
         return MigrationPlan(sourceDocumentFormatVersion: version, targetDocumentFormatVersion: currentDocumentFormatVersion, classification: .manual, state: "noMigrationEdge", blockers: ["No reviewed transformation edge is installed for format \(version)"], canonicalFileCount: count, originalRepositoryUntouched: true)
+    }
+
+    private static func canonicalFiles(at root: URL) throws -> [String: Data] {
+        let manager = FileManager.default
+        var files: [String: Data] = [:]
+        for name in ["hamii.json", "hamii-agent-profiles.json"] {
+            let url = root.appendingPathComponent(name)
+            if manager.fileExists(atPath: url.path) { files[name] = try Data(contentsOf: url) }
+        }
+        for folder in ["pages", "screens", "scopes", "components", "tokens", "assets", "interactions", "motions", "fixtures", "targets"] {
+            let directory = root.appendingPathComponent(folder, isDirectory: true)
+            guard manager.fileExists(atPath: directory.path) else { continue }
+            for url in try manager.contentsOfDirectory(at: directory, includingPropertiesForKeys: [.isSymbolicLinkKey])
+                where url.pathExtension == "json" {
+                guard try url.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink != true else {
+                    throw MigrationEdgeFailure.invalidInput("Canonical symlink is not a migration input: \(url.path)")
+                }
+                files["\(folder)/\(url.lastPathComponent)"] = try Data(contentsOf: url)
+            }
+        }
+        return files
     }
 }
