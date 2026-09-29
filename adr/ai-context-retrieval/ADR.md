@@ -44,7 +44,7 @@ Production implementation では bounded query の Current Snapshot / preconditi
 
 ## Remaining Implementation
 
-`ProjectContextService`、CLI `query context`、`skills get context`、共通 Scope availability、単一 observation と stale-state regression は production 経路に接続した。1k / 10k の production CLI payload・latency 計測、測定条件の恒久文書化、exact-SHA CI、および closure review は未完了。Spike の test-only payload 値を production 値として使わない。
+`ProjectContextService`、CLI `query context`、`skills get context`、共通 Scope availability、単一 observation と stale-state regression は production 経路に接続した。[Production measurement](../../docs/ai-context-query-performance.md) は 1k / 10k Layer の実 CLI payload と service / one-shot CLI timing を記録する。10k の T2 は staged 2,864 bytes / 4 responses、FULL 1,680,339 bytes / 1 response で、one-shot CLI workflow 中央値は 496.050 ms、FULL inspect は 196.819 ms だった。Query ごとの Canonical observation cost は残る。AI 総トークンと LLM task success は未計測。Measurement commit の exact-SHA CI と closure review は未完了。Spike の test-only payload 値を production 値として使わない。
 
 ## Status
 

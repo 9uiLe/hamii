@@ -1,0 +1,477 @@
+{
+  "aiTotalTokens": "unmeasured",
+  "cli": [
+    {
+      "fullInspectBytes": 168343,
+      "oneShotCLI": {
+        "inspect": {
+          "maxMs": 29.702,
+          "medianMs": 29.435,
+          "minMs": 28.813,
+          "runs": 5,
+          "samplesMs": [
+            28.813,
+            29.39,
+            29.435,
+            29.702,
+            29.47
+          ]
+        },
+        "workflows": {
+          "T1": {
+            "maxMs": 44.065,
+            "medianMs": 43.194,
+            "minMs": 43.109,
+            "runs": 5,
+            "samplesMs": [
+              44.065,
+              43.176,
+              43.194,
+              43.238,
+              43.109
+            ]
+          },
+          "T2": {
+            "maxMs": 86.936,
+            "medianMs": 86.726,
+            "minMs": 86.294,
+            "runs": 5,
+            "samplesMs": [
+              86.571,
+              86.726,
+              86.294,
+              86.936,
+              86.916
+            ]
+          },
+          "T3": {
+            "maxMs": 87.21,
+            "medianMs": 86.172,
+            "minMs": 85.982,
+            "runs": 5,
+            "samplesMs": [
+              87.21,
+              85.982,
+              86.172,
+              86.16,
+              86.185
+            ]
+          }
+        }
+      },
+      "payload": {
+        "N": {
+          "cumulativeBytes": 1712,
+          "fractionOfFull": 0.01017,
+          "queryCount": 3,
+          "responseBytes": [
+            718,
+            567,
+            427
+          ]
+        },
+        "S": {
+          "cumulativeBytes": 840,
+          "queryCount": 2,
+          "responseBytes": [
+            718,
+            122
+          ],
+          "staleRejected": true
+        },
+        "T1": {
+          "cumulativeBytes": 1284,
+          "fractionOfFull": 0.007627,
+          "queryCount": 2,
+          "responseBytes": [
+            718,
+            566
+          ]
+        },
+        "T2": {
+          "cumulativeBytes": 2863,
+          "fractionOfFull": 0.017007,
+          "queryCount": 4,
+          "responseBytes": [
+            718,
+            567,
+            629,
+            949
+          ]
+        },
+        "T3": {
+          "cumulativeBytes": 2386,
+          "fractionOfFull": 0.014173,
+          "queryCount": 4,
+          "responseBytes": [
+            718,
+            567,
+            623,
+            478
+          ]
+        }
+      },
+      "scale": 1000
+    },
+    {
+      "fullInspectBytes": 1680339,
+      "oneShotCLI": {
+        "inspect": {
+          "maxMs": 200.381,
+          "medianMs": 196.819,
+          "minMs": 196.029,
+          "runs": 5,
+          "samplesMs": [
+            196.029,
+            200.381,
+            196.819,
+            197.202,
+            196.734
+          ]
+        },
+        "workflows": {
+          "T1": {
+            "maxMs": 248.545,
+            "medianMs": 247.372,
+            "minMs": 246.073,
+            "runs": 5,
+            "samplesMs": [
+              246.073,
+              247.696,
+              247.32,
+              248.545,
+              247.372
+            ]
+          },
+          "T2": {
+            "maxMs": 496.468,
+            "medianMs": 496.05,
+            "minMs": 493.518,
+            "runs": 5,
+            "samplesMs": [
+              496.05,
+              496.468,
+              493.518,
+              496.111,
+              494.964
+            ]
+          },
+          "T3": {
+            "maxMs": 494.259,
+            "medianMs": 491.846,
+            "minMs": 489.714,
+            "runs": 5,
+            "samplesMs": [
+              489.714,
+              494.013,
+              494.259,
+              491.383,
+              491.846
+            ]
+          }
+        }
+      },
+      "payload": {
+        "N": {
+          "cumulativeBytes": 1713,
+          "fractionOfFull": 0.001019,
+          "queryCount": 3,
+          "responseBytes": [
+            718,
+            568,
+            427
+          ]
+        },
+        "S": {
+          "cumulativeBytes": 840,
+          "queryCount": 2,
+          "responseBytes": [
+            718,
+            122
+          ],
+          "staleRejected": true
+        },
+        "T1": {
+          "cumulativeBytes": 1284,
+          "fractionOfFull": 0.000764,
+          "queryCount": 2,
+          "responseBytes": [
+            718,
+            566
+          ]
+        },
+        "T2": {
+          "cumulativeBytes": 2864,
+          "fractionOfFull": 0.001704,
+          "queryCount": 4,
+          "responseBytes": [
+            718,
+            568,
+            629,
+            949
+          ]
+        },
+        "T3": {
+          "cumulativeBytes": 2387,
+          "fractionOfFull": 0.001421,
+          "queryCount": 4,
+          "responseBytes": [
+            718,
+            568,
+            623,
+            478
+          ]
+        }
+      },
+      "scale": 10000
+    }
+  ],
+  "cliRunsPerWorkflow": 5,
+  "environment": {
+    "binary": ".build/debug/hamii",
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "swift": "Apple Swift version 6.4 (swift-6.4-RELEASE)"
+  },
+  "fixture": {
+    "components": "Commerce PriceBadge and sibling Account PrivateBadge",
+    "scales": [
+      1000,
+      10000
+    ],
+    "selectedLayer": "first Text child",
+    "source": "disposable projects built by hamii CLI, committed Git, then deterministic Text siblings",
+    "tokens": "Checkout spacing literal",
+    "unrelatedLayers": "additional Text siblings inside the same Screen"
+  },
+  "llmTaskSuccess": "unmeasured",
+  "service": [
+    {
+      "operations": {
+        "componentDetail": {
+          "maxMs": 12.703,
+          "medianMs": 12.431,
+          "minMs": 12.345,
+          "runs": 10,
+          "samplesMs": [
+            12.52,
+            12.425,
+            12.399,
+            12.703,
+            12.437,
+            12.417,
+            12.468,
+            12.364,
+            12.345,
+            12.627
+          ]
+        },
+        "layer": {
+          "maxMs": 12.989,
+          "medianMs": 12.383,
+          "minMs": 12.291,
+          "runs": 10,
+          "samplesMs": [
+            12.5,
+            12.373,
+            12.366,
+            12.291,
+            12.433,
+            12.373,
+            12.319,
+            12.393,
+            12.744,
+            12.989
+          ]
+        },
+        "resourcesComponent": {
+          "maxMs": 13.299,
+          "medianMs": 12.666,
+          "minMs": 12.397,
+          "runs": 10,
+          "samplesMs": [
+            13.293,
+            13.299,
+            12.794,
+            12.409,
+            12.49,
+            12.66,
+            12.864,
+            12.397,
+            12.673,
+            12.459
+          ]
+        },
+        "resourcesToken": {
+          "maxMs": 12.463,
+          "medianMs": 12.361,
+          "minMs": 12.302,
+          "runs": 10,
+          "samplesMs": [
+            12.384,
+            12.366,
+            12.398,
+            12.306,
+            12.348,
+            12.463,
+            12.4,
+            12.357,
+            12.302,
+            12.335
+          ]
+        },
+        "summary": {
+          "maxMs": 12.631,
+          "medianMs": 12.334,
+          "minMs": 12.258,
+          "runs": 10,
+          "samplesMs": [
+            12.631,
+            12.34,
+            12.324,
+            12.387,
+            12.331,
+            12.335,
+            12.334,
+            12.303,
+            12.258,
+            12.597
+          ]
+        },
+        "tokenDetail": {
+          "maxMs": 13.545,
+          "medianMs": 12.953,
+          "minMs": 12.382,
+          "runs": 10,
+          "samplesMs": [
+            12.662,
+            12.425,
+            13.244,
+            13.328,
+            13.545,
+            13.483,
+            13.27,
+            12.382,
+            12.652,
+            12.435
+          ]
+        }
+      },
+      "scale": 1000
+    },
+    {
+      "operations": {
+        "componentDetail": {
+          "maxMs": 112.017,
+          "medianMs": 110.163,
+          "minMs": 109.797,
+          "runs": 10,
+          "samplesMs": [
+            111.378,
+            110.944,
+            110.112,
+            110.214,
+            109.846,
+            109.858,
+            110.032,
+            110.93,
+            112.017,
+            109.797
+          ]
+        },
+        "layer": {
+          "maxMs": 112.111,
+          "medianMs": 109.881,
+          "minMs": 109.536,
+          "runs": 10,
+          "samplesMs": [
+            109.728,
+            109.536,
+            112.111,
+            111.898,
+            110.031,
+            109.579,
+            109.962,
+            109.686,
+            110.401,
+            109.8
+          ]
+        },
+        "resourcesComponent": {
+          "maxMs": 111.854,
+          "medianMs": 110.055,
+          "minMs": 109.706,
+          "runs": 10,
+          "samplesMs": [
+            109.883,
+            111.854,
+            110.513,
+            110.072,
+            109.985,
+            109.706,
+            110.134,
+            110.037,
+            110.258,
+            109.973
+          ]
+        },
+        "resourcesToken": {
+          "maxMs": 111.715,
+          "medianMs": 110.133,
+          "minMs": 109.765,
+          "runs": 10,
+          "samplesMs": [
+            109.783,
+            109.884,
+            109.765,
+            110.29,
+            109.919,
+            110.106,
+            110.217,
+            110.16,
+            111.715,
+            110.677
+          ]
+        },
+        "summary": {
+          "maxMs": 112.664,
+          "medianMs": 109.982,
+          "minMs": 109.597,
+          "runs": 10,
+          "samplesMs": [
+            110.205,
+            110.457,
+            110.436,
+            112.664,
+            109.597,
+            109.797,
+            109.818,
+            109.634,
+            109.889,
+            110.074
+          ]
+        },
+        "tokenDetail": {
+          "maxMs": 111.064,
+          "medianMs": 110.067,
+          "minMs": 109.689,
+          "runs": 10,
+          "samplesMs": [
+            109.689,
+            109.717,
+            110.008,
+            109.791,
+            110.47,
+            110.23,
+            109.886,
+            110.933,
+            111.064,
+            110.125
+          ]
+        }
+      },
+      "scale": 10000
+    }
+  ],
+  "serviceRunsPerOperation": 10,
+  "sourceCommit": "25225798c9c5e16a99edb15d88345aad1e208ebe"
+}
