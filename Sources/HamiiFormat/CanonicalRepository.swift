@@ -183,7 +183,7 @@ func sortCanonicalPaths(_ paths: [URL]) -> [URL] {
     return keyed.sorted(by: { $0.key < $1.key }).map(\.url)
 }
 
-public final class CanonicalRepository: ProjectRepository {
+public final class CanonicalRepository: ProjectRepository, ProjectObservationVerifying {
     public let root: URL
     private let manager = FileManager.default
     private let transaction: CanonicalTransaction
@@ -256,19 +256,21 @@ public final class CanonicalRepository: ProjectRepository {
         try withCoordinatedObservation(onObservation: recorder) { $0 }
     }
 
-    /// Candidate read-session verifier. It shares the production token
-    /// algorithm and coordination gate, but is unavailable to release callers.
-    /// A stable generation takes the cheap path; interrupted transitions may
-    /// require recovery and remain fail closed until that succeeds.
-    func verifyClientPreconditionForMeasurement(_ expected: ClientPrecondition) throws {
+    #endif
+
+    /// Checks the exact production client-state identity without decoding or
+    /// validating a second Document. The coordinator lock covers recovery,
+    /// the Ready gate, and the complete byte-based comparison.
+    public func verifyCurrent(_ expected: ClientPrecondition) throws {
         try coordinator.withExclusive {
             try transaction.recoverIfNeeded()
             try coordinator.requireReady()
-            try recoverGenerationIfNeeded()
+            // Require a stable record, but never treat generation equality as
+            // proof of freshness or bootstrap/reconcile it in this read path.
+            _ = try generations.readStable()
             guard try clientPreconditionUnlocked() == expected else { throw AuthoringError.staleState }
         }
     }
-    #endif
 
     public func withCoordinatedDocument<T>(_ operation: (Document) throws -> T) throws -> T {
         try coordinator.withExclusive {

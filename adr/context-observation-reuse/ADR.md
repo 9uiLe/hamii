@@ -32,7 +32,11 @@ The [adaptive-read Spike](spikes/adaptive-read/SPIKE.md) met the precommitted co
 
 ## Unknowns
 
-Production session lifetime and memory bounds, Application Service and CLI entry points, multi-process contention, process restart behavior, release end-to-end performance, and structured invalidation/resync UX remain implementation and validation work. The test-only verifier is not a production API. Power-loss durability remains with its separate ADR. Session ID encoding and CLI command spelling are implementation details unless they expose a new decision boundary.
+Production external entry point and lifecycle/close, real process restart behavior at that entry point, release end-to-end performance, and structured invalidation/resync UX remain implementation and validation work. The Application core has a production verifier; the original Spike measurements remain test-only evidence. Power-loss durability remains with its separate ADR. Session ID encoding and CLI command spelling are implementation details unless they expose a new decision boundary.
+
+## Implementation Progress
+
+`ProjectContextReadSession` holds one immutable validated S0 and generates its initial summary at start. Each follow-up verifies S0 under the coordinated Ready boundary, then calls the same pure projection as `ProjectContextService`. `CanonicalRepository.verifyCurrent` performs transaction recovery and the existing exact client-precondition calculation without a full Document decode. Failure permanently invalidates the session. The one-shot CLI keeps independent observations; no session transport, registry, or persistent cache exists. Focused production regression tests cover payload equivalence, observation counts, coordinated transitions, pending gates, epoch and generation corruption, journal recovery, and mutation revalidation. The production external entry point and end-to-end validation remain open, so this ADR stays `Implementation Required`.
 
 ## Required Evidence
 

@@ -15,10 +15,12 @@ final class ProjectContextServiceTests: XCTestCase {
     private static let component = ID("component_price_badge")
     private static let token = ID("token_spacing_checkout")
 
-    private final class CountingRepository: ProjectRepository {
+    private final class CountingRepository: ProjectRepository, ProjectObservationVerifying {
         var document: Document
         var generation = 0
         var observations = 0
+        var verifications = 0
+        var verificationFailure: Error?
         init(_ document: Document) { self.document = document }
 
         func observe() throws -> ProjectObservation {
@@ -36,8 +38,40 @@ final class ProjectContextServiceTests: XCTestCase {
             return try observe()
         }
 
+        func verifyCurrent(_ expected: ClientPrecondition) throws {
+            verifications += 1
+            if let verificationFailure { throw verificationFailure }
+            guard expected == ClientPrecondition("context-state-\(generation)") else {
+                throw AuthoringError.staleState
+            }
+        }
+
         func transitionWithoutRevisionChange() {
             generation += 1
+        }
+    }
+
+    private final class ConcurrentSessionBox: @unchecked Sendable {
+        let session: ProjectContextReadSession
+        let scopeID: EntityID
+        let lock = NSLock()
+        var stale = 0
+        var invalidated = 0
+        var unexpected = 0
+
+        init(session: ProjectContextReadSession, scopeID: EntityID) {
+            self.session = session
+            self.scopeID = scopeID
+        }
+
+        func record(_ error: Error?) {
+            lock.lock()
+            defer { lock.unlock() }
+            if let error {
+                if case AuthoringError.staleState = error { stale += 1 }
+                else if error as? ProjectContextSessionError == .invalidated { invalidated += 1 }
+                else { unexpected += 1 }
+            } else { unexpected += 1 }
         }
     }
 
@@ -85,6 +119,88 @@ final class ProjectContextServiceTests: XCTestCase {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.sortedKeys]
         return try encoder.encode(value)
+    }
+
+    func testReadSessionSharesProjectionAndObservesOnlyOnce() throws {
+        let currentRepository = CountingRepository(fixture())
+        let current = ProjectContextService(repository: currentRepository)
+        let selection = ContextSelection(screenID: Self.screen, layerID: Self.parent)
+        let summary = try current.projectSummary(selection: selection)
+        let state = summary.observation.statePrecondition
+        let layer = try current.layerDetail(screenID: Self.screen, layerID: Self.parent, expectedState: state)
+        let components = try current.resources(consumerScopeID: Self.checkout, kind: .component,
+            expectedState: state)
+        let tokens = try current.resources(consumerScopeID: Self.checkout, kind: .token, expectedState: state)
+        let assets = try current.resources(consumerScopeID: Self.checkout, kind: .asset, expectedState: state)
+        let component = try current.componentDetail(componentID: Self.component,
+            consumerScopeID: Self.checkout, expectedState: state)
+        let token = try current.tokenDetail(tokenID: Self.token, consumerScopeID: Self.checkout, expectedState: state)
+        let denied = try current.resources(consumerScopeID: Self.checkout, kind: .component,
+            matching: "AccountBadge", expectedState: state)
+        XCTAssertEqual(currentRepository.observations, 8)
+
+        let repository = CountingRepository(fixture())
+        let started = try ProjectContextReadSession.start(repository: repository, selection: selection)
+        let session = started.session
+        XCTAssertEqual(try encoded(started.initialSummary), try encoded(summary))
+        XCTAssertEqual(try encoded(session.layerDetail(screenID: Self.screen, layerID: Self.parent)), try encoded(layer))
+        XCTAssertEqual(try encoded(session.resources(consumerScopeID: Self.checkout, kind: .component)), try encoded(components))
+        XCTAssertEqual(try encoded(session.resources(consumerScopeID: Self.checkout, kind: .token)), try encoded(tokens))
+        XCTAssertEqual(try encoded(session.resources(consumerScopeID: Self.checkout, kind: .asset)), try encoded(assets))
+        XCTAssertEqual(try encoded(session.componentDetail(componentID: Self.component,
+            consumerScopeID: Self.checkout)), try encoded(component))
+        XCTAssertEqual(try encoded(session.tokenDetail(tokenID: Self.token,
+            consumerScopeID: Self.checkout)), try encoded(token))
+        let deniedSession = try session.resources(consumerScopeID: Self.checkout, kind: .component,
+            matching: "AccountBadge")
+        XCTAssertEqual(try encoded(deniedSession), try encoded(denied))
+        XCTAssertTrue(deniedSession.payload.items.isEmpty)
+        XCTAssertEqual(repository.observations, 1)
+        XCTAssertEqual(repository.verifications, 7)
+    }
+
+    func testReadSessionInvalidationIsPermanentAndMutationStillRevalidates() throws {
+        let repository = CountingRepository(fixture())
+        let started = try ProjectContextReadSession.start(repository: repository)
+        let state = started.initialSummary.observation.statePrecondition
+        XCTAssertEqual(repository.observations, 1)
+        _ = try started.session.layerDetail(screenID: Self.screen, layerID: Self.text)
+        XCTAssertEqual(repository.verifications, 1)
+        let service = ProjectService(repository: repository)
+        _ = try service.mutate(.createPage(name: "Changed"), expectedState: state, author: .human)
+        XCTAssertThrowsError(try started.session.layerDetail(screenID: Self.screen, layerID: Self.text)) { error in
+            guard case AuthoringError.staleState = error else { return XCTFail("Wrong error: \(error)") }
+        }
+        repository.generation = 0 // Simulates bytes/token returning to an old state.
+        XCTAssertThrowsError(try started.session.layerDetail(screenID: Self.screen, layerID: Self.text)) { error in
+            XCTAssertEqual(error as? ProjectContextSessionError, .invalidated)
+        }
+        XCTAssertEqual(repository.verifications, 2, "An invalidated session must not retry verification")
+        repository.generation = 1
+        XCTAssertThrowsError(try service.mutate(.createPage(name: "Stale"),
+            expectedState: state, author: .human)) { error in
+            guard case AuthoringError.staleState = error else { return XCTFail("Wrong error: \(error)") }
+        }
+    }
+
+    func testConcurrentFollowUpsSerializePermanentInvalidation() throws {
+        let repository = CountingRepository(fixture())
+        let session = try ProjectContextReadSession.start(repository: repository).session
+        repository.verificationFailure = AuthoringError.staleState
+        let box = ConcurrentSessionBox(session: session, scopeID: Self.checkout)
+        DispatchQueue.concurrentPerform(iterations: 16) { _ in
+            do {
+                _ = try box.session.resources(consumerScopeID: box.scopeID, kind: .component)
+                box.record(nil)
+            } catch {
+                box.record(error)
+            }
+        }
+        XCTAssertEqual(box.stale, 1)
+        XCTAssertEqual(box.invalidated, 15)
+        XCTAssertEqual(box.unexpected, 0)
+        XCTAssertEqual(repository.verifications, 1)
+        XCTAssertEqual(repository.observations, 1)
     }
 
     func testSingleObservationScopeAndEndToEndSemanticMutations() throws {

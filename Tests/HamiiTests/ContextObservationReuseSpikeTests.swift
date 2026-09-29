@@ -75,7 +75,7 @@ final class ContextObservationReuseSpikeTests: XCTestCase {
             guard let observation else { throw SessionError.invalidated }
             do {
                 verificationCount += 1
-                try repository.verifyClientPreconditionForMeasurement(observation.statePrecondition)
+                try repository.verifyCurrent(observation.statePrecondition)
             } catch {
                 self.observation = nil
                 throw error
@@ -347,7 +347,7 @@ final class ContextObservationReuseSpikeTests: XCTestCase {
             var verifierMs: [Double] = []
             for _ in 0..<50 {
                 let started = DispatchTime.now().uptimeNanoseconds
-                try repository.verifyClientPreconditionForMeasurement(state)
+                try repository.verifyCurrent(state)
                 verifierMs.append(Double(DispatchTime.now().uptimeNanoseconds - started) / 1_000_000)
             }
             var batchMs: [String: [Double]] = [:]

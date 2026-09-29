@@ -89,6 +89,8 @@ macOS Canvas は編集用 SwiftUI view です。Native Preview は対象 OS が�
 
 `HamiiApplication.ProjectContextService` は semantic AI context の read projection です。Project summary、選択 Layer detail、Scope-aware な Component / Token / Asset summary と必要な Component / Token detail を段階的に返します。各呼出しは一つの `ProjectObservation` から投影し、`ClientPrecondition` と `DocumentRevision` を別々に返します。後続の `query context ... --state TOKEN` が現在の observation と一致しない場合、payload を返さず `conflict` とします。利用可否は `ProjectService` と同じ `ScopeEvaluator` / `ComponentAvailability` に従い、Resource list は Scope filtering の後に name と stable ID で整列して上限を適用します。Index row は利用可否の正本ではありません。Mutation は引き続き `ProjectService` を使います。`skills get context` は staged retrieval を案内します。[Production Query measurement](ai-context-query-performance.md) は payload と service / CLI 待ち時間を別々に示し、AI 総トークンは未計測です。
 
+`ProjectContextReadSession` は process-local な Application core です。開始時に完全に検証された一つの `ProjectObservation` S0 から初回 summary を生成します。後続の Layer / Resource / Component / Token 応答は、`CanonicalRepository.verifyCurrent` が coordinated Ready boundary 内で journal を回復し、既存の exact `ClientPrecondition` 計算で S0 を検証した場合だけ、同じ純粋 projection から生成します。検証不能・不一致・pending では payload を返さず session を永久に失効させます。Session は request 間に worktree lock を保持せず、再起動時に残りません。Mutation は常に `ProjectService` が `expectedState` を再検証します。one-shot CLI はこの session をまだ利用せず、各応答で Canonical observation を行います。
+
 `preview plan SURFACE_ID --json` は Target capability と Screen semantics の適合を確認します。Plan の成功は対象 OS の Host が利用可能であることを意味しません。Starter sample の macOS Surface は sample validation で plan を検査します。
 
 `bash scripts/check.sh` が Swift 6.4 build/test、dependency check、ADR schema、CLI smoke test を実行します。CI はこの入口を使います。未解決の設計判断と検証結果は ADR queue に示します。

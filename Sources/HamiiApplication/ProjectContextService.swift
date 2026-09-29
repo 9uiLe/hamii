@@ -212,7 +212,111 @@ public enum ContextQueryError: Error, Equatable {
     case invalidLimit
 }
 
-/// Bounded semantic read projections. Every call derives one response from one observation.
+/// Pure projections shared by one-shot reads and a validated read session.
+enum ProjectContextProjection {
+    static func projectSummary(_ observed: ProjectObservation,
+                               selection: ContextSelection?) throws -> ContextResponse<ContextProjectSummary> {
+        let document = observed.document
+        let selected: ContextScreenSummary?
+        if let selection {
+            guard let screen = document.screens.first(where: { $0.id == selection.screenID }) else {
+                throw AuthoringError.notFound(selection.screenID.rawValue)
+            }
+            if let layerID = selection.layerID, Self.layer(layerID, in: screen.root) == nil {
+                throw AuthoringError.notFound(layerID.rawValue)
+            }
+            selected = ContextScreenSummary(id: screen.id, name: screen.name, scopeID: screen.scopeID)
+        } else {
+            selected = nil
+        }
+        return ContextResponse(observation: ContextObservation(observed), payload: ContextProjectSummary(
+            documentID: document.id, documentName: document.name, documentRevision: document.revision,
+            counts: ContextProjectCounts(pages: document.pages.count, screens: document.screens.count,
+                scopes: document.scopes.count, components: document.components.count,
+                tokens: document.tokens.count, assets: document.assets.count),
+            selectedScreen: selected, selectedLayerID: selection?.layerID))
+    }
+
+    static func layerDetail(_ observed: ProjectObservation, screenID: EntityID,
+                            layerID: EntityID) throws -> ContextResponse<ContextLayerDetail> {
+        guard let screen = observed.document.screens.first(where: { $0.id == screenID }) else {
+            throw AuthoringError.notFound(screenID.rawValue)
+        }
+        guard let layer = Self.layer(layerID, in: screen.root) else {
+            throw AuthoringError.notFound(layerID.rawValue)
+        }
+        return ContextResponse(observation: ContextObservation(observed),
+            payload: ContextLayerDetail(screenID: screen.id, screenScopeID: screen.scopeID,
+                                        layer: ContextLayerSummary(layer)))
+    }
+
+    static func resources(_ observed: ProjectObservation, consumerScopeID: EntityID,
+                          kind: ContextResourceKind, matching: String?, limit: Int) throws -> ContextResponse<ContextResourceList> {
+        guard (1...100).contains(limit) else { throw ContextQueryError.invalidLimit }
+        let document = observed.document
+        try Self.requireScope(consumerScopeID, in: document)
+        let available: [ContextResourceSummary]
+        switch kind {
+        case .component:
+            available = ProjectResourceAvailability.components(in: document, consumer: consumerScopeID)
+                .map(ContextResourceSummary.init)
+        case .token:
+            available = ProjectResourceAvailability.tokens(in: document, consumer: consumerScopeID)
+                .map(ContextResourceSummary.init)
+        case .asset:
+            available = ProjectResourceAvailability.assets(in: document, consumer: consumerScopeID)
+                .map(ContextResourceSummary.init)
+        }
+        let term = matching?.lowercased() ?? ""
+        let filtered = available.filter { term.isEmpty || $0.name.lowercased().contains(term) }
+            .sorted { left, right in
+                left.name == right.name ? left.id.rawValue < right.id.rawValue : left.name < right.name
+            }
+        let items = Array(filtered.prefix(limit))
+        return ContextResponse(observation: ContextObservation(observed), payload: ContextResourceList(
+            consumerScopeID: consumerScopeID, kind: kind, items: items,
+            returnedCount: items.count, matchingCount: filtered.count,
+            truncated: filtered.count > limit))
+    }
+
+    static func componentDetail(_ observed: ProjectObservation, componentID: EntityID,
+                                consumerScopeID: EntityID) throws -> ContextResponse<ContextComponentDetail> {
+        try Self.requireScope(consumerScopeID, in: observed.document)
+        guard let component = ProjectResourceAvailability.components(in: observed.document,
+            consumer: consumerScopeID).first(where: { $0.id == componentID }) else {
+            throw AuthoringError.notFound(componentID.rawValue)
+        }
+        return ContextResponse(observation: ContextObservation(observed),
+            payload: ContextComponentDetail(component))
+    }
+
+    static func tokenDetail(_ observed: ProjectObservation, tokenID: EntityID,
+                            consumerScopeID: EntityID) throws -> ContextResponse<ContextTokenDetail> {
+        try Self.requireScope(consumerScopeID, in: observed.document)
+        guard let token = ProjectResourceAvailability.tokens(in: observed.document,
+            consumer: consumerScopeID).first(where: { $0.id == tokenID }) else {
+            throw AuthoringError.notFound(tokenID.rawValue)
+        }
+        return ContextResponse(observation: ContextObservation(observed), payload: ContextTokenDetail(token))
+    }
+
+    private static func requireScope(_ scopeID: EntityID, in document: Document) throws {
+        guard document.scopes.contains(where: { $0.id == scopeID }) else {
+            throw AuthoringError.notFound(scopeID.rawValue)
+        }
+    }
+
+    private static func layer(_ id: EntityID, in root: Layer) -> Layer? {
+        if root.id == id { return root }
+        for child in root.children {
+            if let match = layer(id, in: child) { return match }
+        }
+        return nil
+    }
+}
+
+/// Bounded semantic reads. Each one-shot call derives its response from a new
+/// Canonical observation; this remains the CLI's safe baseline.
 public final class ProjectContextService {
     private let repository: any ProjectRepository
     public init(repository: any ProjectRepository) { self.repository = repository }
@@ -228,41 +332,15 @@ public final class ProjectContextService {
 
     public func projectSummary(selection: ContextSelection? = nil,
                                expectedState: ClientPrecondition? = nil) throws -> ContextResponse<ContextProjectSummary> {
-        try withObservation(expectedState: expectedState) { observed in
-            let document = observed.document
-            let selected: ContextScreenSummary?
-            if let selection {
-                guard let screen = document.screens.first(where: { $0.id == selection.screenID }) else {
-                    throw AuthoringError.notFound(selection.screenID.rawValue)
-                }
-                if let layerID = selection.layerID, Self.layer(layerID, in: screen.root) == nil {
-                    throw AuthoringError.notFound(layerID.rawValue)
-                }
-                selected = ContextScreenSummary(id: screen.id, name: screen.name, scopeID: screen.scopeID)
-            } else {
-                selected = nil
-            }
-            return ContextResponse(observation: ContextObservation(observed), payload: ContextProjectSummary(
-                documentID: document.id, documentName: document.name, documentRevision: document.revision,
-                counts: ContextProjectCounts(pages: document.pages.count, screens: document.screens.count,
-                    scopes: document.scopes.count, components: document.components.count,
-                    tokens: document.tokens.count, assets: document.assets.count),
-                selectedScreen: selected, selectedLayerID: selection?.layerID))
+        try withObservation(expectedState: expectedState) {
+            try ProjectContextProjection.projectSummary($0, selection: selection)
         }
     }
 
     public func layerDetail(screenID: EntityID, layerID: EntityID,
                             expectedState: ClientPrecondition) throws -> ContextResponse<ContextLayerDetail> {
-        try withObservation(expectedState: expectedState) { observed in
-            guard let screen = observed.document.screens.first(where: { $0.id == screenID }) else {
-                throw AuthoringError.notFound(screenID.rawValue)
-            }
-            guard let layer = Self.layer(layerID, in: screen.root) else {
-                throw AuthoringError.notFound(layerID.rawValue)
-            }
-            return ContextResponse(observation: ContextObservation(observed),
-                payload: ContextLayerDetail(screenID: screen.id, screenScopeID: screen.scopeID,
-                                            layer: ContextLayerSummary(layer)))
+        try withObservation(expectedState: expectedState) {
+            try ProjectContextProjection.layerDetail($0, screenID: screenID, layerID: layerID)
         }
     }
 
@@ -270,70 +348,25 @@ public final class ProjectContextService {
                           matching: String? = nil, limit: Int = 32,
                           expectedState: ClientPrecondition) throws -> ContextResponse<ContextResourceList> {
         guard (1...100).contains(limit) else { throw ContextQueryError.invalidLimit }
-        return try withObservation(expectedState: expectedState) { observed in
-            let document = observed.document
-            try Self.requireScope(consumerScopeID, in: document)
-            let available: [ContextResourceSummary]
-            switch kind {
-            case .component:
-                available = ProjectResourceAvailability.components(in: document, consumer: consumerScopeID)
-                    .map(ContextResourceSummary.init)
-            case .token:
-                available = ProjectResourceAvailability.tokens(in: document, consumer: consumerScopeID)
-                    .map(ContextResourceSummary.init)
-            case .asset:
-                available = ProjectResourceAvailability.assets(in: document, consumer: consumerScopeID)
-                    .map(ContextResourceSummary.init)
-            }
-            let term = matching?.lowercased() ?? ""
-            let filtered = available.filter { term.isEmpty || $0.name.lowercased().contains(term) }
-                .sorted { left, right in
-                    left.name == right.name ? left.id.rawValue < right.id.rawValue : left.name < right.name
-                }
-            let items = Array(filtered.prefix(limit))
-            return ContextResponse(observation: ContextObservation(observed), payload: ContextResourceList(
-                consumerScopeID: consumerScopeID, kind: kind, items: items,
-                returnedCount: items.count, matchingCount: filtered.count,
-                truncated: filtered.count > limit))
+        return try withObservation(expectedState: expectedState) {
+            try ProjectContextProjection.resources($0, consumerScopeID: consumerScopeID,
+                kind: kind, matching: matching, limit: limit)
         }
     }
 
     public func componentDetail(componentID: EntityID, consumerScopeID: EntityID,
                                 expectedState: ClientPrecondition) throws -> ContextResponse<ContextComponentDetail> {
-        try withObservation(expectedState: expectedState) { observed in
-            try Self.requireScope(consumerScopeID, in: observed.document)
-            guard let component = ProjectResourceAvailability.components(in: observed.document,
-                consumer: consumerScopeID).first(where: { $0.id == componentID }) else {
-                throw AuthoringError.notFound(componentID.rawValue)
-            }
-            return ContextResponse(observation: ContextObservation(observed),
-                payload: ContextComponentDetail(component))
+        try withObservation(expectedState: expectedState) {
+            try ProjectContextProjection.componentDetail($0, componentID: componentID,
+                consumerScopeID: consumerScopeID)
         }
     }
 
     public func tokenDetail(tokenID: EntityID, consumerScopeID: EntityID,
                             expectedState: ClientPrecondition) throws -> ContextResponse<ContextTokenDetail> {
-        try withObservation(expectedState: expectedState) { observed in
-            try Self.requireScope(consumerScopeID, in: observed.document)
-            guard let token = ProjectResourceAvailability.tokens(in: observed.document,
-                consumer: consumerScopeID).first(where: { $0.id == tokenID }) else {
-                throw AuthoringError.notFound(tokenID.rawValue)
-            }
-            return ContextResponse(observation: ContextObservation(observed), payload: ContextTokenDetail(token))
+        try withObservation(expectedState: expectedState) {
+            try ProjectContextProjection.tokenDetail($0, tokenID: tokenID,
+                consumerScopeID: consumerScopeID)
         }
-    }
-
-    private static func requireScope(_ scopeID: EntityID, in document: Document) throws {
-        guard document.scopes.contains(where: { $0.id == scopeID }) else {
-            throw AuthoringError.notFound(scopeID.rawValue)
-        }
-    }
-
-    private static func layer(_ id: EntityID, in root: Layer) -> Layer? {
-        if root.id == id { return root }
-        for child in root.children {
-            if let match = layer(id, in: child) { return match }
-        }
-        return nil
     }
 }

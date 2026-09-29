@@ -6,6 +6,12 @@ public protocol ProjectRepository {
     func commit(_ document: Document, expected: ProjectObservation) throws -> ProjectObservation
 }
 
+/// Verifies that an already validated observation is still the current
+/// coordinated Canonical state. It does not create a new observation.
+public protocol ProjectObservationVerifying {
+    func verifyCurrent(_ expected: ClientPrecondition) throws
+}
+
 public struct ProjectObservation {
     public let document: Document
     public let statePrecondition: ClientPrecondition
