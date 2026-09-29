@@ -105,7 +105,9 @@ public final class ManagedGit {
     public func recover() throws -> ProjectObservation {
         try coordinator.withExclusive {
             try requireWorktreeRoot()
-            guard !coordinator.mergePublicationPending() else { throw CanonicalError.managedGitPending }
+            guard !coordinator.mergePublicationPending(), !coordinator.migrationPublicationPending() else {
+                throw CanonicalError.managedGitPending
+            }
             guard let pending = try coordinator.pendingGitTransition() else {
                 let snapshot = try repository.snapshotDuringManagedGitTransition()
                 _ = try stableGeneration(for: snapshot)

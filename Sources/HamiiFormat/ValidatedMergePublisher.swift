@@ -56,10 +56,10 @@ public final class ValidatedMergePublisher {
     private let coordinator: WorktreeCoordinator
     private let repository: CanonicalRepository
     private let generations: CanonicalGenerationStore
-    private let index: any MergeIndexPublishing
+    private let index: any CanonicalIndexPublishing
     private let hook: ((MergePublicationStep) throws -> Void)?
 
-    public init(root: URL, index: any MergeIndexPublishing) {
+    public init(root: URL, index: any CanonicalIndexPublishing) {
         self.root = root.standardizedFileURL
         coordinator = WorktreeCoordinator(root: self.root)
         repository = CanonicalRepository(root: self.root)
@@ -68,7 +68,7 @@ public final class ValidatedMergePublisher {
         hook = nil
     }
 
-    init(root: URL, index: any MergeIndexPublishing, hook: @escaping (MergePublicationStep) throws -> Void) {
+    init(root: URL, index: any CanonicalIndexPublishing, hook: @escaping (MergePublicationStep) throws -> Void) {
         self.root = root.standardizedFileURL
         coordinator = WorktreeCoordinator(root: self.root)
         repository = CanonicalRepository(root: self.root)
@@ -264,15 +264,7 @@ public final class ValidatedMergePublisher {
     }
 
     private func requireGitLocksAbsent(_ record: MergePublicationRecord) throws {
-        // A pending hamii record does not identify a Git lock's owner. A live
-        // raw Git process may have created either path after hamii stopped.
-        for path in ["index.lock", "\(record.sourceRef).lock"] {
-            let result = try git("rev-parse", "--git-path", path)
-            let url = result.hasPrefix("/") ? URL(fileURLWithPath: result) : root.appendingPathComponent(result)
-            var info = stat()
-            if lstat(url.path, &info) == 0 { throw MergePublicationError.gitLockOwnershipUnknown(url.path) }
-            guard errno == ENOENT else { throw CocoaError(.fileReadUnknown) }
-        }
+        try GitLockGuard.requireAbsent(root: root, sourceRef: record.sourceRef)
     }
 
     private func requireWorktreeRoot() throws {

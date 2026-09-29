@@ -136,6 +136,17 @@ final class MigrationCandidatePreparationTests: XCTestCase {
         }
     }
 
+    func testReviewRecordFailureRemovesRetentionRef() throws {
+        let root = try fixture()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let local = root.appendingPathComponent(".hamii")
+        try FileManager.default.createDirectory(at: local, withIntermediateDirectories: true)
+        try Data("not a directory".utf8).write(to: local.appendingPathComponent("migration-reviews"))
+        XCTAssertThrowsError(try MigrationCandidatePreparer().prepare(repository: root))
+        XCTAssertTrue(try retentionRefs(root).isEmpty)
+        XCTAssertEqual(try git(root, "status", "--porcelain=v1", "--untracked-files=all"), "")
+    }
+
     func testHiddenGitIndexFlagsDoNotPassCleanSourceGate() throws {
         let root = try fixture()
         defer { try? FileManager.default.removeItem(at: root) }

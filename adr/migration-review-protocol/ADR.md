@@ -30,11 +30,13 @@ Publication は merge や source worktree 上での変換再実行を行わな�
 
 Recovery は source ref が expected old OID なら old state を維持して abort、candidate OID なら candidate へ roll-forwardして再検証・Index 再構築、どちらでもなければ Unknown として gate を維持する。`ValidatedMergePublisher` に historical parser を追加せず、Git / coordination / Index の既存 primitive を別 orchestration から利用する。Pending record の durable write と power-loss guarantee は [canonical-power-loss-durability](../canonical-power-loss-durability/ADR.md) の primitive に従う。
 
-この Decision は review/publication workflow の Product Contract である。Current Format v2 の ordered padding effect、v1→v2 edge、clean committed source からの隔離 candidate preparation は production に接続済み。LFS transport と ambiguity resolution はここで決めない。
+この Decision は review/publication workflow の Product Contract である。Current Format v2 の ordered padding effect、v1→v2 edge、clean committed source からの隔離 candidate preparation、durable local review record、exact OID acceptance、migration-specific pending gate、ref CAS、Current v2 と full Index の再検証、old/candidate/neither recovery は production に接続済み。LFS transport と ambiguity resolution はここで決めない。
 
 ## Unknowns
 
-`hamii migrate prepare --json` は actual Current Format validator と一時 fresh Index check を通した immutable candidate OID を返す。Production migration-specific pending gate / record、source ref CAS、published Index generation、CLI review/accept、restart recovery、actual LFS transfer、power-loss primitive との接続は未実装。Git LFS transfer は必要 object の fail-closed 検証とは別に確認する。
+`hamii migrate prepare --json` は actual Current Format validator と一時 fresh Index check を通した immutable candidate OID を durable local review record として保存する。`migrate publish` は明示された review/source/candidate OID だけを受け、retained candidate の再検証後に pending gate、ref CAS、Current v2 と full Index を順に公開する。`migrate recover` は old/candidate/neither を区別する。残る確認は exact-SHA CI、process-stop 回復の範囲評価、power-loss primitive との接続、および ADR closure criteria のレビュー。Actual LFS transfer はこの Decision の外で扱う。Git LFS transfer は必要 object の fail-closed 検証とは別に確認する。
+
+Production regression は review record failure 時の retention cleanup、source/ref/OID/tree/diff/Index identity の再照合、source journal / hidden Git state の拒否、old/candidate/neither recovery、post-CAS Index failure、CLI structured output を含む。別 OS process の writer を pending、ref CAS 後、SQLite transaction 中、Index publication 直前、Index publication 後の5地点で SIGKILL し、reader lock 競合と pending gate、restart recovery を確認した。これは process-stop evidence であり、fsync / APFS power-loss の証明ではない。Local full gate は 14/14、Swift 263件実行・失敗0・skip58、756秒。Release HamiiMigrationRuntime / HamiiFormat / HamiiIndex / hamii は成功。Exact-SHA CI と ADR closure criteria は commit/push 後に確認する。
 
 ## Required Evidence
 

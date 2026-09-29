@@ -48,10 +48,10 @@ final class ProductionGenerationShadowSpikeTests: XCTestCase {
         let initialIdentity: String
     }
 
-    private struct ShadowMergeIndex: MergeIndexPublishing {
+    private struct ShadowMergeIndex: CanonicalIndexPublishing {
         let sourceGeneration: (URL) throws -> Int
         let attach: (Int, URL) throws -> Void
-        let delegate = PublishedMergeIndex()
+        let delegate = PublishedCanonicalIndex()
 
         func validateCandidate(at root: URL, snapshot: CanonicalSnapshot) throws {
             try delegate.validateCandidate(at: root, snapshot: snapshot)

@@ -30,6 +30,12 @@ public enum MigrationPreflight {
     public static let currentDocumentFormatVersion = 2
 
     public static func plan(repository: URL) throws -> MigrationPlan {
+        if FileManager.default.fileExists(atPath: repository.appendingPathComponent(".hamii/migration-publication.pending.json").path) {
+            return MigrationPlan(sourceDocumentFormatVersion: 0, targetDocumentFormatVersion: currentDocumentFormatVersion,
+                                 classification: nil, state: "pendingMigrationPublication",
+                                 blockers: ["Recover the pending migration publication before inspecting a Ready project"],
+                                 canonicalFileCount: 0, originalRepositoryUntouched: true)
+        }
         let manifest = repository.appendingPathComponent("hamii.json")
         guard FileManager.default.fileExists(atPath: manifest.path) else { throw MigrationPreflightError.missingManifest }
         guard let object = try JSONSerialization.jsonObject(with: Data(contentsOf: manifest)) as? [String: Any],
@@ -54,7 +60,7 @@ public enum MigrationPreflight {
                                      classification: analysis.classification,
                                      state: analysis.automaticCandidateEligible ? "migrationAvailable" : "requiresResolution",
                                      blockers: analysis.diagnostics.map(\.blocker),
-                                     notes: analysis.automaticCandidateEligible ? ["The transformation edge is available; isolated candidate review and publication are not yet available"] : [],
+                                     notes: analysis.automaticCandidateEligible ? ["The transformation edge is available; prepare an isolated review candidate before explicit publication"] : [],
                                      canonicalFileCount: count,
                                      originalRepositoryUntouched: true)
             } catch {

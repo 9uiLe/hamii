@@ -62,7 +62,7 @@ public struct IndexGenerationDescriptor: Equatable {
 
 /// Infrastructure port used only while the publisher owns worktree coordination.
 /// Implementations must not reacquire the source worktree lock.
-public protocol MergeIndexPublishing {
+public protocol CanonicalIndexPublishing {
     func validateCandidate(at root: URL, snapshot: CanonicalSnapshot) throws
     func rebuildPublished(at root: URL, snapshot: CanonicalSnapshot) throws -> IndexGenerationDescriptor
     func verifyPublished(at root: URL, snapshot: CanonicalSnapshot) throws -> IndexGenerationDescriptor

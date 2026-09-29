@@ -41,6 +41,7 @@ public struct WorktreeCoordinator {
     var epochURL: URL { root.appendingPathComponent(".hamii/client-observation-epoch") }
     private var transitionURL: URL { root.appendingPathComponent(".hamii/managed-git-transition.json") }
     var mergePublicationURL: URL { root.appendingPathComponent(".hamii/merge-publication.pending.json") }
+    package var migrationPublicationURL: URL { root.appendingPathComponent(".hamii/migration-publication.pending.json") }
 
     // These methods are called only while withExclusive holds the lock.
     func clientEpoch() throws -> String {
@@ -50,15 +51,42 @@ public struct WorktreeCoordinator {
         return value
     }
 
-    func invalidateClientObservations() throws {
+    package func invalidateClientObservations() throws {
         try Data((UUID().uuidString + "\n").utf8).write(to: epochURL, options: .atomic)
     }
 
-    func requireReady() throws {
+    package func requireReady() throws {
         guard !FileManager.default.fileExists(atPath: transitionURL.path),
-              !mergePublicationPending() else {
+              !mergePublicationPending(), !migrationPublicationPending() else {
             throw CanonicalError.managedGitPending
         }
+    }
+
+    public func migrationPublicationPending() -> Bool {
+        FileManager.default.fileExists(atPath: migrationPublicationURL.path)
+    }
+
+    package func migrationPublicationRecord() throws -> Data? {
+        guard migrationPublicationPending() else { return nil }
+        return try Data(contentsOf: migrationPublicationURL)
+    }
+
+    package func beginMigrationPublication(_ record: Data) throws {
+        try requireReady()
+        try invalidateClientObservations()
+        try sync(epochURL)
+        try writeMigrationPublicationRecord(record)
+    }
+
+    package func writeMigrationPublicationRecord(_ record: Data) throws {
+        try record.write(to: migrationPublicationURL, options: .atomic)
+        try sync(migrationPublicationURL)
+        try sync(migrationPublicationURL.deletingLastPathComponent())
+    }
+
+    package func finishMigrationPublication() throws {
+        try FileManager.default.removeItem(at: migrationPublicationURL)
+        try sync(migrationPublicationURL.deletingLastPathComponent())
     }
 
     func mergePublicationPending() -> Bool {

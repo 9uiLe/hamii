@@ -139,7 +139,7 @@ extension CanonicalRepository {
                 milliseconds: (ProcessInfo.processInfo.systemUptime - readStart) * 1_000,
                 bytes: bytesRead))
         }
-        let identity = measureCanonical(.identityHash, recorder: onObservation) { hashIdentity(files) }
+        let identity = measureCanonical(.identityHash, recorder: onObservation) { CanonicalByteIdentity.compute(files: files) }
         return CanonicalSnapshot(document: document, identity: identity)
     }
 
@@ -422,6 +422,12 @@ public final class CanonicalRepository: ProjectRepository {
     // The caller holds WorktreeCoordinator across the entire observation.
     // Captured bytes are the sole decode, validation, and identity input for
     // Canonical JSON. The lock supplies coherence for hamii-managed writers.
+    package func snapshotDuringMigrationPublication(
+        validationHook: (() throws -> Void)? = nil
+    ) throws -> CanonicalSnapshot {
+        try snapshotDuringManagedGitTransition(validationHook: validationHook)
+    }
+
     func snapshotDuringManagedGitTransition(
         validationHook: (() throws -> Void)? = nil,
         onObservation: CanonicalObservationRecorder? = nil,
@@ -476,7 +482,7 @@ public final class CanonicalRepository: ProjectRepository {
         _ = try measureCanonical(.agentProfilesValidation, recorder: onObservation) {
             try AgentProfilesRepository.decodeProfiles(from: profileBytes)
         }
-        let identity = measureCanonical(.identityHash, recorder: onObservation) { hashIdentity(files) }
+        let identity = measureCanonical(.identityHash, recorder: onObservation) { CanonicalByteIdentity.compute(files: files) }
         return CanonicalSnapshot(document: document, identity: identity)
     }
 
@@ -535,7 +541,7 @@ public final class CanonicalRepository: ProjectRepository {
             let old = try generations.requireMatchingStable(snapshotDuringManagedGitTransition())
             var proposed = files
             proposed["hamii-agent-profiles.json"] = try Data(contentsOf: root.appendingPathComponent("hamii-agent-profiles.json"))
-            operationID = try generations.beginPending(old: old, expectedNewIdentity: hashIdentity(proposed))
+            operationID = try generations.beginPending(old: old, expectedNewIdentity: CanonicalByteIdentity.compute(files: proposed))
         } else {
             operationID = nil
         }
@@ -554,15 +560,6 @@ public final class CanonicalRepository: ProjectRepository {
         } catch CanonicalGenerationError.pending {
             _ = try generations.reconcile(snapshotDuringManagedGitTransition())
         }
-    }
-
-    private func hashIdentity(_ files: [String: Data]) -> CanonicalSnapshotIdentity {
-        var hash = SHA256()
-        for path in files.keys.sorted() {
-            appendHash(Data(path.utf8), to: &hash)
-            appendHash(files[path]!, to: &hash)
-        }
-        return CanonicalSnapshotIdentity(rawValue: hash.finalize().map { String(format: "%02x", $0) }.joined())!
     }
 
     private func encodedFiles(_ document: Document) throws -> [String: Data] {

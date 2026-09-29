@@ -28,14 +28,14 @@ public enum MigrationPreparationError: Error, CustomStringConvertible {
     }
 }
 
-public struct MigrationValidationResult: Encodable {
+public struct MigrationValidationResult: Codable {
     public let currentFormat: Int
     public let canonicalSnapshotIdentity: String
     public let documentID: String
     public let documentRevision: Int
 }
 
-public struct MigrationIndexValidationResult: Encodable {
+public struct MigrationIndexValidationResult: Codable {
     public let sourceCanonicalIdentity: String
     public let indexGenerationID: String
     public let canonicalRevision: String
@@ -43,11 +43,14 @@ public struct MigrationIndexValidationResult: Encodable {
 
 /// Exact OIDs identify the reviewed source and immutable candidate. This is
 /// preparation evidence, not authorization to publish either Git ref or Index.
-public struct MigrationReviewPackage: Encodable {
+public struct MigrationReviewPackage: Codable {
+    public let recordFormatVersion: Int
     public let reviewID: String
     public let sourceRef: String
     public let sourceOID: String
     public let sourceTreeOID: String
+    public let sourceCanonicalRevision: String
+    public let sourceCanonicalIdentity: String
     public let sourceFormatVersion: Int
     public let targetFormatVersion: Int
     public let sourceDocumentRevision: Int
@@ -170,11 +173,13 @@ public final class MigrationCandidatePreparer {
             }
             let nameStatus = try git(sourceRoot, "diff", "--name-status", source.oid, candidateOID)
             let stat = try git(sourceRoot, "diff", "--stat", source.oid, candidateOID)
-            _ = try git(sourceRoot, "update-ref", retentionRef, candidateOID, String(repeating: "0", count: source.oid.count))
             return (nameStatus, stat)
         }
-        return MigrationReviewPackage(reviewID: reviewID, sourceRef: source.ref, sourceOID: source.oid,
-            sourceTreeOID: source.treeOID, sourceFormatVersion: 1, targetFormatVersion: 2,
+        let package = MigrationReviewPackage(recordFormatVersion: 1, reviewID: reviewID,
+            sourceRef: source.ref, sourceOID: source.oid,
+            sourceTreeOID: source.treeOID, sourceCanonicalRevision: source.canonicalRevision.rawValue,
+            sourceCanonicalIdentity: source.identity.rawValue,
+            sourceFormatVersion: 1, targetFormatVersion: 2,
             sourceDocumentRevision: source.documentRevision, candidateDocumentRevision: committed.document.revision,
             classification: .losslessWithNormalization, edgePath: candidate.edgePath,
             candidateOID: candidateOID, candidateTreeOID: candidateTreeOID, retentionRef: retentionRef,
@@ -185,6 +190,22 @@ public final class MigrationCandidatePreparer {
                 documentID: committed.document.id.rawValue, documentRevision: committed.document.revision),
             indexValidation: MigrationIndexValidationResult(sourceCanonicalIdentity: generation.sourceCanonicalIdentity.rawValue,
                 indexGenerationID: generation.id.rawValue, canonicalRevision: canonicalRevision.rawValue))
+        try coordinator.withReadyExclusive {
+            try requireClean(sourceRoot)
+            guard try git(sourceRoot, "symbolic-ref", "--quiet", "HEAD") == source.ref,
+                  try git(sourceRoot, "rev-parse", "HEAD") == source.oid,
+                  try GitCanonicalRevisionCalculator().current(at: sourceRoot) == source.canonicalRevision,
+                  CanonicalByteIdentity.compute(files: try MigrationRepositoryInput.load(from: sourceRoot).files) == source.identity else {
+                throw MigrationPreparationError.staleSource
+            }
+            _ = try git(sourceRoot, "update-ref", retentionRef, candidateOID, String(repeating: "0", count: source.oid.count))
+            do { try MigrationReviewStore(root: sourceRoot).write(package) }
+            catch {
+                _ = try? git(sourceRoot, "update-ref", "-d", retentionRef, candidateOID)
+                throw error
+            }
+        }
+        return package
     }
 
     private struct SourceObservation {
@@ -193,6 +214,7 @@ public final class MigrationCandidatePreparer {
         let treeOID: String
         let documentRevision: Int
         let canonicalRevision: CanonicalRevision
+        let identity: CanonicalSnapshotIdentity
     }
 
     private func sourceObservation(at root: URL) throws -> SourceObservation {
@@ -212,12 +234,14 @@ public final class MigrationCandidatePreparer {
             throw MigrationPreparationError.migrationUnavailable(plan.blockers)
         }
         let files = try MigrationRepositoryInput.load(from: root)
+        let identity = CanonicalByteIdentity.compute(files: files.files)
         let manifest = try JSONSerialization.jsonObject(with: files.files["hamii.json"]!) as? [String: Any]
         guard let revision = manifest?["revision"] as? Int else {
             throw MigrationPreparationError.invalidCandidate("Historical manifest has no DocumentRevision")
         }
         return SourceObservation(ref: ref, oid: oid, treeOID: tree,
-                                 documentRevision: revision, canonicalRevision: canonicalRevision)
+                                 documentRevision: revision, canonicalRevision: canonicalRevision,
+                                 identity: identity)
     }
 
     private func requireClean(_ root: URL) throws {

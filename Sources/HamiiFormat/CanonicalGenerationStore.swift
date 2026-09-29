@@ -67,6 +67,47 @@ public struct CanonicalGenerationStore {
         return stable
     }
 
+    /// Historical migration seam. Caller holds WorktreeCoordinator and has
+    /// independently validated the exact raw Canonical bytes and source OID.
+    package func bootstrapVerified(validatedIdentity: CanonicalSnapshotIdentity) throws -> StableCanonicalGeneration {
+        if FileManager.default.fileExists(atPath: recordURL.path) {
+            return try requireMatchingStable(validatedIdentity: validatedIdentity)
+        }
+        let stable = StableCanonicalGeneration(generation: CanonicalGeneration(lineage: UUID(), value: 1), snapshotIdentity: validatedIdentity)
+        try write(Record.stable(generation: stable.generation, identity: validatedIdentity.rawValue))
+        return stable
+    }
+
+    package func requireMatchingStable(validatedIdentity: CanonicalSnapshotIdentity) throws -> StableCanonicalGeneration {
+        let stable = try readStable()
+        guard stable.snapshotIdentity == validatedIdentity else { throw CanonicalGenerationError.unknownState }
+        return stable
+    }
+
+    /// Used only after old/new ref and exact bytes have been validated under
+    /// the coordinated migration boundary.
+    package func reconcile(validatedIdentity: CanonicalSnapshotIdentity,
+                           expectedOperationID: UUID) throws -> StableCanonicalGeneration {
+        let record = try read()
+        if record.phase == .stable {
+            return try requireMatchingStable(validatedIdentity: validatedIdentity)
+        }
+        guard record.phase == .pending, record.operationID == expectedOperationID,
+              let lineage = record.lineageID,
+              let old = CanonicalSnapshotIdentity(rawValue: record.oldSnapshotIdentity ?? ""),
+              let proposed = record.proposedGeneration, proposed == record.generation + 1 else {
+            throw CanonicalGenerationError.unknownState
+        }
+        let next: UInt64
+        if validatedIdentity == old { next = record.generation }
+        else if validatedIdentity == CanonicalSnapshotIdentity(rawValue: record.expectedNewIdentity ?? "") {
+            next = proposed
+        } else { throw CanonicalGenerationError.unknownState }
+        let stable = StableCanonicalGeneration(generation: CanonicalGeneration(lineage: lineage, value: next), snapshotIdentity: validatedIdentity)
+        try write(Record.stable(generation: stable.generation, identity: validatedIdentity.rawValue))
+        return stable
+    }
+
     @discardableResult
     public func beginPending(old: StableCanonicalGeneration, expectedNewIdentity: CanonicalSnapshotIdentity?,
                              operationID: UUID = UUID()) throws -> UUID {

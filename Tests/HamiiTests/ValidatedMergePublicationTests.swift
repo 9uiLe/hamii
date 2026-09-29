@@ -11,8 +11,8 @@ import HamiiCore
 final class ValidatedMergePublicationTests: XCTestCase {
     private struct Stopped: Error {}
 
-    private struct FailingIndex: MergeIndexPublishing {
-        let delegate = PublishedMergeIndex()
+    private struct FailingIndex: CanonicalIndexPublishing {
+        let delegate = PublishedCanonicalIndex()
         func validateCandidate(at root: URL, snapshot: CanonicalSnapshot) throws { try delegate.validateCandidate(at: root, snapshot: snapshot) }
         func rebuildPublished(at root: URL, snapshot: CanonicalSnapshot) throws -> IndexGenerationDescriptor { throw IndexError.stale }
         func verifyPublished(at root: URL, snapshot: CanonicalSnapshot) throws -> IndexGenerationDescriptor {
@@ -52,7 +52,7 @@ final class ValidatedMergePublicationTests: XCTestCase {
         _ = try service.mutate(.createPage(name: "Main"), expectedState: service.observe().statePrecondition, author: .human)
         try commit(root, "main page")
         let observed = try service.observe()
-        _ = try PublishedMergeIndex().rebuildPublished(at: root,
+        _ = try PublishedCanonicalIndex().rebuildPublished(at: root,
             snapshot: repository.withCoordinatedSnapshot { $0 })
         return Fixture(root: root, main: main, oldHead: try git(root, "rev-parse", "HEAD"),
                        otherHead: otherHead, oldState: observed.statePrecondition,
@@ -65,7 +65,7 @@ final class ValidatedMergePublicationTests: XCTestCase {
         for phase in phases {
             let f = try fixture()
             defer { cleanupTestCandidates(f.root); try? FileManager.default.removeItem(at: f.root) }
-            let publisher = ValidatedMergePublisher(root: f.root, index: PublishedMergeIndex()) { reached in
+            let publisher = ValidatedMergePublisher(root: f.root, index: PublishedCanonicalIndex()) { reached in
                 if reached == phase { throw Stopped() }
             }
             XCTAssertThrowsError(try publisher.publish("other", expectedState: f.oldState), "\(phase)")
@@ -82,10 +82,10 @@ final class ValidatedMergePublicationTests: XCTestCase {
                 XCTAssertThrowsError(try ProjectService(repository: repository).mutate(.createPage(name: "Blocked"),
                     expectedState: f.oldState, author: .human), "\(phase)")
             }
-            let recovered = try ValidatedMergePublisher(root: f.root, index: PublishedMergeIndex()).recover()
+            let recovered = try ValidatedMergePublisher(root: f.root, index: PublishedCanonicalIndex()).recover()
             XCTAssertEqual(recovered.document.pages.contains(where: { $0.name == "Other" }), !beforeCommit, "\(phase)")
             XCTAssertNotEqual(recovered.statePrecondition, f.oldState, "\(phase)")
-            XCTAssertEqual(try ValidatedMergePublisher(root: f.root, index: PublishedMergeIndex()).recover().statePrecondition,
+            XCTAssertEqual(try ValidatedMergePublisher(root: f.root, index: PublishedCanonicalIndex()).recover().statePrecondition,
                            recovered.statePrecondition, "\(phase)")
             XCTAssertThrowsError(try ProjectService(repository: repository).mutate(.createPage(name: "Stale"),
                 expectedState: f.oldState, author: .human), "\(phase)") { error in
@@ -109,7 +109,7 @@ final class ValidatedMergePublicationTests: XCTestCase {
             .publish("other", expectedState: f.oldState))
         XCTAssertNotEqual(try git(f.root, "rev-parse", "HEAD"), f.oldHead)
         XCTAssertThrowsError(try CanonicalRepository(root: f.root).observe())
-        let recovered = try ValidatedMergePublisher(root: f.root, index: PublishedMergeIndex()).recover()
+        let recovered = try ValidatedMergePublisher(root: f.root, index: PublishedCanonicalIndex()).recover()
         XCTAssertTrue(recovered.document.pages.contains(where: { $0.name == "Other" }))
         XCTAssertFalse(FileManager.default.fileExists(atPath: f.root.appendingPathComponent(".hamii/merge-publication.pending.json").path))
     }
@@ -118,7 +118,7 @@ final class ValidatedMergePublicationTests: XCTestCase {
         let f = try fixture()
         defer { cleanupTestCandidates(f.root); try? FileManager.default.removeItem(at: f.root) }
         let indexURL = LocalIndexLocation.url(projectRoot: f.root, documentID: f.documentID)
-        let corrupting = PublishedMergeIndex { step in
+        let corrupting = PublishedCanonicalIndex { step in
             guard step == .published else { return }
             var db: OpaquePointer?
             XCTAssertEqual(sqlite3_open(indexURL.path, &db), SQLITE_OK)
@@ -133,9 +133,9 @@ final class ValidatedMergePublicationTests: XCTestCase {
         XCTAssertTrue(FileManager.default.fileExists(atPath:
             f.root.appendingPathComponent(".hamii/merge-publication.pending.json").path))
         XCTAssertThrowsError(try CanonicalRepository(root: f.root).observe())
-        let recovered = try ValidatedMergePublisher(root: f.root, index: PublishedMergeIndex()).recover()
+        let recovered = try ValidatedMergePublisher(root: f.root, index: PublishedCanonicalIndex()).recover()
         let snapshot = try CanonicalRepository(root: f.root).withCoordinatedSnapshot { $0 }
-        let generation = try PublishedMergeIndex().verifyPublished(at: f.root, snapshot: snapshot)
+        let generation = try PublishedCanonicalIndex().verifyPublished(at: f.root, snapshot: snapshot)
         XCTAssertEqual(generation.sourceCanonicalIdentity, snapshot.identity)
         XCTAssertEqual(generation.documentRevision, recovered.document.revision)
         XCTAssertThrowsError(try ProjectService(repository: CanonicalRepository(root: f.root))
@@ -145,17 +145,17 @@ final class ValidatedMergePublicationTests: XCTestCase {
     func testReadyRecoveryKeepsPublishedGenerationAndSnapshotBinding() throws {
         let f = try fixture()
         defer { cleanupTestCandidates(f.root); try? FileManager.default.removeItem(at: f.root) }
-        let publisher = ValidatedMergePublisher(root: f.root, index: PublishedMergeIndex())
+        let publisher = ValidatedMergePublisher(root: f.root, index: PublishedCanonicalIndex())
         let published = try publisher.publish("other", expectedState: f.oldState)
         let repository = CanonicalRepository(root: f.root)
         let snapshot = try repository.withCoordinatedSnapshot { $0 }
-        let generation = try PublishedMergeIndex().verifyPublished(at: f.root, snapshot: snapshot)
+        let generation = try PublishedCanonicalIndex().verifyPublished(at: f.root, snapshot: snapshot)
         XCTAssertEqual(generation.sourceCanonicalIdentity, snapshot.identity)
         XCTAssertEqual(generation.documentID, published.document.id)
         XCTAssertEqual(generation.documentRevision, published.document.revision)
         let recovered = try publisher.recover()
         XCTAssertEqual(recovered.document.revision, published.document.revision)
-        let after = try PublishedMergeIndex().verifyPublished(at: f.root,
+        let after = try PublishedCanonicalIndex().verifyPublished(at: f.root,
             snapshot: repository.withCoordinatedSnapshot { $0 })
         XCTAssertEqual(after, generation)
     }
@@ -163,12 +163,12 @@ final class ValidatedMergePublicationTests: XCTestCase {
     func testUnknownRefRemainsGated() throws {
         let f = try fixture()
         defer { try? FileManager.default.removeItem(at: f.root) }
-        let publisher = ValidatedMergePublisher(root: f.root, index: PublishedMergeIndex()) { step in
+        let publisher = ValidatedMergePublisher(root: f.root, index: PublishedCanonicalIndex()) { step in
             if step == .pending { throw Stopped() }
         }
         XCTAssertThrowsError(try publisher.publish("other", expectedState: f.oldState))
         try git(f.root, "update-ref", "refs/heads/\(f.main)", f.otherHead, f.oldHead)
-        XCTAssertThrowsError(try ValidatedMergePublisher(root: f.root, index: PublishedMergeIndex()).recover()) { error in
+        XCTAssertThrowsError(try ValidatedMergePublisher(root: f.root, index: PublishedCanonicalIndex()).recover()) { error in
             guard case MergePublicationError.unknownSourceState = error else { return XCTFail("Wrong error: \(error)") }
         }
         XCTAssertTrue(FileManager.default.fileExists(atPath: f.root.appendingPathComponent(".hamii/merge-publication.pending.json").path))
@@ -178,7 +178,7 @@ final class ValidatedMergePublicationTests: XCTestCase {
     func testRecoveryPreservesLiveExternalRefLock() throws {
         let f = try fixture()
         defer { cleanupTestCandidates(f.root); try? FileManager.default.removeItem(at: f.root) }
-        let publisher = ValidatedMergePublisher(root: f.root, index: PublishedMergeIndex()) { step in
+        let publisher = ValidatedMergePublisher(root: f.root, index: PublishedCanonicalIndex()) { step in
             if step == .pending { throw Stopped() }
         }
         XCTAssertThrowsError(try publisher.publish("other", expectedState: f.oldState))
@@ -190,7 +190,7 @@ final class ValidatedMergePublicationTests: XCTestCase {
         try awaitFile(marker, process: external)
         XCTAssertTrue(external.isRunning)
         XCTAssertTrue(FileManager.default.fileExists(atPath: lock.path))
-        XCTAssertThrowsError(try ValidatedMergePublisher(root: f.root, index: PublishedMergeIndex()).recover()) { error in
+        XCTAssertThrowsError(try ValidatedMergePublisher(root: f.root, index: PublishedCanonicalIndex()).recover()) { error in
             guard case MergePublicationError.gitLockOwnershipUnknown = error else { return XCTFail("Wrong error: \(error)") }
         }
         XCTAssertTrue(external.isRunning)
@@ -200,7 +200,7 @@ final class ValidatedMergePublicationTests: XCTestCase {
         stopProcessTree(external)
         try FileManager.default.removeItem(at: lock)
         try git(f.root, "config", "--unset", "core.hooksPath")
-        let recovered = try ValidatedMergePublisher(root: f.root, index: PublishedMergeIndex()).recover()
+        let recovered = try ValidatedMergePublisher(root: f.root, index: PublishedCanonicalIndex()).recover()
         XCTAssertEqual(try git(f.root, "rev-parse", "HEAD"), f.oldHead)
         XCTAssertNotEqual(recovered.statePrecondition, f.oldState)
     }
@@ -208,7 +208,7 @@ final class ValidatedMergePublicationTests: XCTestCase {
     func testRecoveryPreservesLiveExternalIndexLock() throws {
         let f = try fixture()
         defer { cleanupTestCandidates(f.root); try? FileManager.default.removeItem(at: f.root) }
-        let publisher = ValidatedMergePublisher(root: f.root, index: PublishedMergeIndex()) { step in
+        let publisher = ValidatedMergePublisher(root: f.root, index: PublishedCanonicalIndex()) { step in
             if step == .afterRefCAS { throw Stopped() }
         }
         XCTAssertThrowsError(try publisher.publish("other", expectedState: f.oldState))
@@ -227,7 +227,7 @@ final class ValidatedMergePublicationTests: XCTestCase {
         try awaitFile(marker, process: external)
         XCTAssertTrue(external.isRunning)
         XCTAssertTrue(FileManager.default.fileExists(atPath: lock.path))
-        XCTAssertThrowsError(try ValidatedMergePublisher(root: f.root, index: PublishedMergeIndex()).recover()) { error in
+        XCTAssertThrowsError(try ValidatedMergePublisher(root: f.root, index: PublishedCanonicalIndex()).recover()) { error in
             guard case MergePublicationError.gitLockOwnershipUnknown = error else { return XCTFail("Wrong error: \(error)") }
         }
         XCTAssertTrue(external.isRunning)
@@ -238,7 +238,7 @@ final class ValidatedMergePublicationTests: XCTestCase {
         try FileManager.default.removeItem(at: lock)
         try FileManager.default.removeItem(at: probe)
         try git(f.root, "config", "--unset", "filter.hamii-pause.clean")
-        let recovered = try ValidatedMergePublisher(root: f.root, index: PublishedMergeIndex()).recover()
+        let recovered = try ValidatedMergePublisher(root: f.root, index: PublishedCanonicalIndex()).recover()
         XCTAssertTrue(recovered.document.pages.contains(where: { $0.name == "Other" }))
         XCTAssertNotEqual(recovered.statePrecondition, f.oldState)
     }
@@ -315,7 +315,7 @@ final class ValidatedMergePublicationTests: XCTestCase {
             if stage == "refCASPrepared" || stage == "refCASCommitted" {
                 try git(f.root, "config", "--unset", "core.hooksPath")
             }
-            let reopened = ValidatedMergePublisher(root: f.root, index: PublishedMergeIndex())
+            let reopened = ValidatedMergePublisher(root: f.root, index: PublishedCanonicalIndex())
             if stage == "materializationInternal" || stage == "refCASPrepared" {
                 let lock = stage == "materializationInternal"
                     ? f.root.appendingPathComponent(".git/index.lock")
@@ -439,7 +439,7 @@ final class ValidatedMergePublicationTests: XCTestCase {
             try! Data(name.utf8).write(to: root.appendingPathComponent(".hamii/test-writer-paused"))
             while true { Thread.sleep(forTimeInterval: 1) }
         }
-        let index = PublishedMergeIndex { step in
+        let index = PublishedCanonicalIndex { step in
             let name: String
             switch step {
             case .beforeBuild: name = "indexBeforeBuild"

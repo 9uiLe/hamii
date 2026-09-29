@@ -52,7 +52,7 @@ final class FormatV1MigrationEdgeTests: XCTestCase {
         let planRoot = fixtures.appendingPathComponent("format-v1-safe-project")
         let plan = try MigrationPreflight.plan(repository: planRoot)
         XCTAssertEqual(plan.state, "migrationAvailable")
-        XCTAssertTrue(plan.notes.contains { $0.contains("not yet available") })
+        XCTAssertTrue(plan.notes.contains { $0.contains("explicit publication") })
         let candidate = try MigrationRegistry.transform(MigrationFileSet(files: source))
         XCTAssertEqual(candidate.edgePath, ["1->2"])
         XCTAssertEqual(source, original)

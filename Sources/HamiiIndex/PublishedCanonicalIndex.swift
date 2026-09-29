@@ -3,15 +3,15 @@ import Foundation
 import HamiiCore
 import HamiiFormat
 
-/// Full rebuild path for validated merge publication. The source gate remains
+/// Full rebuild path for validated Canonical publication. The source gate remains
 /// pending until a separately built database replaces the published one and
 /// its Canonical revision has been checked again.
-enum MergeIndexStep { case beforeBuild, duringTransaction, built, beforePublish, published }
+enum CanonicalIndexStep: Equatable { case beforeBuild, duringTransaction, built, beforePublish, published }
 
-public struct PublishedMergeIndex: MergeIndexPublishing {
-    private let hook: ((MergeIndexStep) -> Void)?
+public struct PublishedCanonicalIndex: CanonicalIndexPublishing {
+    private let hook: ((CanonicalIndexStep) -> Void)?
     public init() { hook = nil }
-    init(hook: @escaping (MergeIndexStep) -> Void) { self.hook = hook }
+    init(hook: @escaping (CanonicalIndexStep) -> Void) { self.hook = hook }
 
     public func validateCandidate(at root: URL, snapshot: CanonicalSnapshot) throws {
         let temporary = FileManager.default.temporaryDirectory.appendingPathComponent("hamii-candidate-index-\(UUID().uuidString)", isDirectory: true)
