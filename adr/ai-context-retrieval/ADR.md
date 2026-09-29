@@ -18,11 +18,11 @@ semantic staged query、raw Canonical shard retrieval、full Document dump。
 
 ## Current Hypothesis
 
-**実装仮説・未確定:** Scope-aware な bounded Query を既存の Canonical observation と Query infrastructure 上に実装すれば、Spike で確認した semantic information sufficiency を production CLI でも保てる。Production Query の計算時間と実際の AI 総トークンへの効果は未検証である。
+**当初の暫定仮説:** Scope-aware な bounded Query を既存の Canonical observation 上に実装すれば、Spike で確認した semantic information sufficiency を production CLI でも保てる。Production の correctness と payload は実装・検証済み。AI 総トークンへの効果は未計測であり、この Decision Boundary の完了条件にはしない。
 
 ## Unknowns
 
-Production Query の計算・I/O cost、selected Screen 内の大規模化、Scope / Component / Token 数の増加、実際の LLM task success と総トークン、visual context が必要な条件。これらを Spike の payload 結果から推定しない。
+Selected Screen 内の 1k / 10k Layer の payload と service / CLI 時間は production で測定済み。さらに大きい Scope / Component / Token 集合、visual context、実際の LLM task success と総トークンは対象外。Canonical observation の内部 cost は独立した performance 調査で分解する。これらを Spike の payload 結果から推定しない。
 
 ## Required Evidence
 
@@ -42,9 +42,19 @@ Spike の precommitted 成功/失敗基準、local full gate、Evidence commit �
 
 Production implementation では bounded query の Current Snapshot / precondition binding、Scope-aware summary/detail、CLI structured output、複数 response 間の stale handling、semantic mutation までの end-to-end validation が必要である。Visual authoring context と具体的な CLI command taxonomy はこの Decision の対象外とする。
 
-## Remaining Implementation
+## Implementation Evidence
 
-`ProjectContextService`、CLI `query context`、`skills get context`、共通 Scope availability、単一 observation と stale-state regression は production 経路に接続した。[Production measurement](../../docs/ai-context-query-performance.md) は 1k / 10k Layer の実 CLI payload と service / one-shot CLI timing を記録する。10k の T2 は staged 2,864 bytes / 4 responses、FULL 1,680,339 bytes / 1 response で、one-shot CLI workflow 中央値は 496.050 ms、FULL inspect は 196.819 ms だった。Query ごとの Canonical observation cost は残る。AI 総トークンと LLM task success は未計測。Measurement commit の exact-SHA CI と closure review は未完了。Spike の test-only payload 値を production 値として使わない。
+`ProjectContextService`、CLI `query context`、`skills get context`、共通 Scope availability、単一 observation と stale-state regression は production 経路に接続した。[Production measurement](../../docs/ai-context-query-performance.md) は 1k / 10k Layer の実 CLI payload と service / one-shot CLI timing を記録する。10k の T2 は staged 2,864 bytes / 4 responses、FULL 1,680,339 bytes / 1 response で、one-shot CLI workflow 中央値は 496.050 ms、FULL inspect は 196.819 ms だった。Spike の test-only payload 値を production 値として使わない。
+
+## Closure Review
+
+- Decision commit: `06aeb2ca78bfb592cf8f9b899fec8716cb713f0b`。STAGED と exact observation contract を選択した。
+- Production implementation commit: `25225798c9c5e16a99edb15d88345aad1e208ebe`。Exact-SHA [CI run 36553487936](https://github.com/9uiLe/hamii/actions/runs/36553487936) success。Semantic T1/T2/T3 mutation、Scope / Availability、single-observation、same-revision stale-state rejection、bounded output、structured CLI、skill を確認した。
+- Production measurement commit: `3a5e2483da0f43f35733f4b8bb6bc443e82e2843`。Exact-SHA [CI run 36556523786](https://github.com/9uiLe/hamii/actions/runs/36556523786) success。Production payload と service / one-shot CLI 時間を測定した。AI 総トークンと LLM task success は未計測と明記した。
+- Current contract は `ProjectContextService`、CLI / skill、tests、[Current Architecture](../../docs/final-architecture.md)、[README](../../README.md)、[Implementation Status](../../docs/implementation-status.md) だけで理解できる。ADR は runtime の依存先ではない。
+- Visual context、LLM/provider task success、実 AI 総トークンはこの semantic retrieval Decision Boundary の外側に残す。One-shot staged CLI の latency は測定した独立性能課題であり、STAGED / FULL / RAW の semantic correctness 判断を再開しない。Canonical observation の内訳を測ってから最適化方針を検討する。
+
+Decision、Spike、production implementation、validation、現行文書への反映は完了した。Closure Evidence を独立 commit として Git history に残し、その exact-SHA CI 成功後の別 commit で ADR を削除する。
 
 ## Status
 
