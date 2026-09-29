@@ -14,7 +14,7 @@ hamii で現在実行できる範囲を示します。製品境界と依存規�
 
 `HamiiNativeRuntime` は iOS 26.5 Simulator SDK 向けに Swift 6.4 で compile できます。iOS Host の session protocol は [Host Session Spike](../adr/preview-host-transport/spikes/session-recovery/SPIKE.md) で検証中です。現在の環境では Simulator boot 中の audio/AV capture 初期化が XPC reply 待ちで timeout し、Host install より前に `simctl boot` が失敗します。これは transport validation の blocker です。Host の runtime behavior、画面、transport latency / recovery は未測定・未確認です。
 
-Spacing Token は GUI と CLI から作成・参照・Stack spacing / container padding へ指定できます。Canvas と macOS Native Preview は alias を解決して同じ値を適用します。その他の Token kind の解決と Inspector は未実装です。
+Spacing Token は GUI と CLI から作成・参照・Stack spacing / Layer の順序付き padding effect へ指定できます。Canvas と macOS Native Preview は padding effect の順序を保持して spacing Token の値を適用します。その他の Token kind の解決と Inspector は未実装です。
 
 `bash scripts/check.sh` は実装済み契約を検証します。この検証だけでは Native Preview parity、次の format change に対する migration safety、production integration の品質は証明できません。これらは [Technical Spikes](spikes.md) に紐づく実験で測定します。
 

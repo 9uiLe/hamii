@@ -52,7 +52,7 @@ Production Format / IR / migration / capability / Preview / Generator の変更�
 
 ## Result
 
-Environment: macOS 27 / Swift 6.4、旧/current-v1 production module は baseline `878cf929cd90c9c85a92e743d63af96f3dcd4bf7` と同一。計画 commit `1945c88ed1fe1381fdb69e937e673ae7340b5596` 後に test-only [4 cases](../../../../Tests/HamiiTests/OrderedEffectsFormatCompatibilitySpikeTests.swift) を実装・実行した。Project copy は CanonicalRepository が作った有効な Format v1 project で、実験では JSON bytes だけを test-only に編集した。4 tests は全件通過した。詳細な条件別結果は [compatibility-matrix.json](artifacts/compatibility-matrix.json)。
+Environment: macOS 27 / Swift 6.4、旧/current-v1 production module は baseline `878cf929cd90c9c85a92e743d63af96f3dcd4bf7` と同一。計画 commit `1945c88ed1fe1381fdb69e937e673ae7340b5596` 後に test-only [4 cases](artifacts/OrderedEffectsFormatCompatibilitySpikeTests.swift) を実装・実行した。Project copy は CanonicalRepository が作った有効な Format v1 project で、実験では JSON bytes だけを test-only に編集した。4 tests は全件通過した。詳細な条件別結果は [compatibility-matrix.json](artifacts/compatibility-matrix.json)。
 
 **v1 additive read-side:** `formatVersion=1` / `versions.document=1` の Screen root へ `effects=[padding,background]` を加えると、旧 `CanonicalRepository.load` と `observe` は成功した。Decoder が作った Layer とその再 encode には `effects` がなく、`TargetPlanner.plan` は `canPreview=true`、`SwiftUIGenerator` は追加前と完全に同じ source を返した。旧 consumer は新しい meaning を観測せずに成功できる。これは read-side silent semantic loss の実例であり、v1 additive 案の failure criterion に該当する。
 
@@ -73,4 +73,4 @@ Spike の時点で v1 additive は旧 consumer が effect を落として成功�
 ## Artifacts
 
 - [Machine-readable compatibility matrix](artifacts/compatibility-matrix.json)
-- [Test-only legacy reader and candidate probes](../../../../Tests/HamiiTests/OrderedEffectsFormatCompatibilitySpikeTests.swift)
+- [Test-only legacy reader and candidate probes](artifacts/OrderedEffectsFormatCompatibilitySpikeTests.swift)（historical source。Current Format v2 の test target には含めない）

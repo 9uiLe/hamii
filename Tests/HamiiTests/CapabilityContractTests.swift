@@ -29,7 +29,7 @@ final class CapabilityContractTests: XCTestCase {
             Layer(id: EntityID("layer_button"), name: "Edit", payload: .button(ButtonLayerPayload(label: "Edit", emittedEvent: "edit"))),
             Layer(id: EntityID("layer_image"), name: "Avatar", payload: .image(ImageLayerPayload(assetID: assetID))),
             Layer(id: EntityID("layer_instance"), name: "Badge", payload: .componentInstance(ComponentInstanceLayerPayload(instance: ComponentInstance(definitionID: componentID))))
-        ], layout: Layout(axis: .vertical, spacingTokenID: tokenID, paddingTokenID: tokenID))
+        ], layout: Layout(axis: .vertical, spacingTokenID: tokenID), effects: [.padding(tokenID: tokenID)])
         let navigation = NavigationConfiguration.system(SystemNavigation(title: "Profile", toolbarItems: [SystemToolbarItem(id: EntityID("toolbar_edit"), title: "Edit", emittedEvent: "edit")]))
         var (document, surface) = fixture(root: root, navigation: navigation)
         let scope = document.scopes[0].id
@@ -40,7 +40,7 @@ final class CapabilityContractTests: XCTestCase {
         let extracted = SemanticRequirementExtractor.extract(screen: document.screens[0], document: document)
         XCTAssertEqual(extracted.diagnostics, [])
         XCTAssertEqual(extracted.requirements.map(\.key), [
-            CapabilityKeys.stackContainer, CapabilityKeys.spacingToken, CapabilityKeys.paddingToken,
+            CapabilityKeys.stackContainer, CapabilityKeys.spacingToken, CapabilityKeys.paddingEffect,
             CapabilityKeys.textVisual, CapabilityKeys.fixtureBinding, CapabilityKeys.bindingFallback,
             CapabilityKeys.buttonVisual, CapabilityKeys.buttonEventEmit, CapabilityKeys.imageVisual, CapabilityKeys.systemAssetMapping,
             CapabilityKeys.componentInstance, CapabilityKeys.textVisual,
@@ -51,7 +51,7 @@ final class CapabilityContractTests: XCTestCase {
         XCTAssertEqual(CapabilityProfile(target: document.targets[0], surface: surface).runtime, "macOS 27")
         declare([
             CapabilityKeys.legacyStack, CapabilityKeys.legacyText, CapabilityKeys.legacyButton,
-            CapabilityKeys.legacyImage, CapabilityKeys.legacyInstance, CapabilityKeys.legacySpacing,
+            CapabilityKeys.legacyImage, CapabilityKeys.legacyInstance, CapabilityKeys.legacySpacing, CapabilityKeys.paddingEffect,
             CapabilityKeys.buttonEventEmit, CapabilityKeys.fixtureBinding, CapabilityKeys.bindingFallback,
             CapabilityKeys.systemAssetMapping, CapabilityKeys.legacySystemNavigation,
             CapabilityKeys.navigationTitle, CapabilityKeys.systemToolbar, CapabilityKeys.toolbarEventEmit

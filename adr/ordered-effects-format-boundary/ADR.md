@@ -2,7 +2,7 @@
 
 ## Context
 
-[Native-semantic IR](../native-semantic-ir/ADR.md) は順序に意味がある typed effects を Current IR の設計境界として採用した。現行 Format v1 の Layer JSON にはその永続表現がない。新しい意味を旧 reader が知らないまま受理すると、保存時の安全性とは別に Preview や Source Generator が意味を落として成功する可能性がある。
+[Native-semantic IR](../native-semantic-ir/ADR.md) は順序に意味がある typed effects を Current IR の設計境界として採用した。Spike 実施時の Format v1 の Layer JSON にはその永続表現がなかった。新しい意味を旧 reader が知らないまま受理すると、保存時の安全性とは別に Preview や Source Generator が意味を落として成功する可能性がある。
 
 ## Decision to Make
 
@@ -14,7 +14,7 @@ First-class ordered effects を永続化する際、Canonical Format v1 の addi
 - 未知の effect を旧 consumer が黙って落として Preview / Source / mutation を成功させない。
 - 既存 v1 Canonical user data を破壊せず、移行分類と review が可能であること。
 - `nativeIntent` や `targetOverrides` を通常の ordered semantic の property bag としない。
-- 今回は production Format、effect taxonomy、Preview / Generator lowering、migration implementation を変更しない。
+- Historical Spike は production Format、effect taxonomy、Preview / Generator lowering、migration implementation を変更せず測定した。
 
 ## Options
 
@@ -28,8 +28,8 @@ First-class ordered effects を永続化する際、Canonical Format v1 の addi
 
 ## Unknowns
 
-- 全 Canonical entity を対象にする v1→v2 migration edge の分類、曖昧さの有無、Core と historical parser の依存境界。
-- Current Format v2 の typed effect schema、validation、全 consumer の未対応意味に対する fail-closed behavior。
+- 全 Canonical entity を対象にする v1→v2 migration edge の分類、曖昧さの有無。
+- Current Format v2 の他 effect taxonomy と残る consumer の lowering。
 - v2 publication / review / power-loss durability と既存 user repository の安全な移行手順。
 
 ## Required Evidence
@@ -54,10 +54,10 @@ Test-only candidate は padding/background の順序を round-trip で保ち、v
 
 ## Remaining Implementation
 
-- [migration-core-boundary](../migration-core-boundary/ADR.md) で v1 historical parser と v1→v2 edge の隔離境界を検証・決定する。
-- [migration-review-protocol](../migration-review-protocol/ADR.md) で元 user data を保つ review / publication 手順を決める。
-- Current Format v2 の typed ordered-effect representation、validation、serialization と v1→v2 transformation を実装・検証する。新しい v2 meaning は consumer catalog が未対応なら fail closed にする。
-- Current Architecture、samples、CLI、Preview、Generator の必要な契約を production 実装に合わせて更新する。この ADR は実装・検証・migration/review path 完了まで削除しない。
+- [migration-core-boundary](../migration-core-boundary/ADR.md) で決定した historical edge 隔離境界を production edge に適用する。
+- [migration-review-protocol](../migration-review-protocol/ADR.md) で決定した review / publication 手順を production executor に適用する。
+- Current Format v2 の ordered padding effect、validation、serialization、Canvas / Native Preview lowering、Generator の拒否は production に接続済み。v1→v2 transformation は未実装。
+- 他 effect の consumer coverage と migration/review path が完了するまで、この ADR は削除しない。
 
 ## Status
 

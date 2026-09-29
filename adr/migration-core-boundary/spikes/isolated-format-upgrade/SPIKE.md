@@ -61,3 +61,4 @@ Historical edge parser/registry を Current Core の外の独立 target に置�
 
 - [migration-matrix.json](artifacts/migration-matrix.json)
 - [dependency-boundary.md](artifacts/dependency-boundary.md)
+- [Frozen edge probe](artifacts/RawFormatUpgradeProbe.swift) and [test harness](artifacts/IsolatedFormatUpgradeSpikeTests.swift). These are the historical test sources; they are not compiled against Current Format v2.

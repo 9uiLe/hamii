@@ -122,7 +122,8 @@ public enum DocumentValidator {
             if document.authoringHarness.requireTokenSpacing && layer.layout.axis != nil && layer.layout.spacingTokenID == nil {
                 errors.append(Diagnostic("token.spacingRequired", "Stack spacing must reference a token", entityID: layer.id))
             }
-            for tokenID in [layer.layout.spacingTokenID, layer.layout.paddingTokenID].compactMap({ $0 }) {
+            let effectTokenIDs = layer.effects.map(\.tokenID)
+            for tokenID in [layer.layout.spacingTokenID].compactMap({ $0 }) + effectTokenIDs {
                 guard let token = tokenMap[tokenID] else {
                     errors.append(Diagnostic("token.missing", "Token reference is missing", entityID: layer.id)); continue
                 }

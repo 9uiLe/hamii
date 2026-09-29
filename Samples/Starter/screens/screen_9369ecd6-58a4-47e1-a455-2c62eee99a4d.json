@@ -9,6 +9,9 @@
         "children" : [
 
         ],
+        "effects" : [
+
+        ],
         "id" : {
           "rawValue" : "layer_1843a334-b6b0-4bf8-9d01-c20610e3f49b"
         },
@@ -26,6 +29,9 @@
         "children" : [
 
         ],
+        "effects" : [
+
+        ],
         "id" : {
           "rawValue" : "layer_e863987f-932d-4031-9f73-37bf40948360"
         },
@@ -38,6 +44,14 @@
 
         },
         "text" : "Continue"
+      }
+    ],
+    "effects" : [
+      {
+        "kind" : "padding",
+        "tokenID" : {
+          "rawValue" : "token_8af3340c-ee6e-4a55-b230-0dcfb0ecaac0"
+        }
       }
     ],
     "id" : {

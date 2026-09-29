@@ -19,7 +19,7 @@ public enum CapabilityKeys {
     public static let fixtureBinding = CapabilityKey("content.fixtureBinding")
     public static let bindingFallback = CapabilityKey("content.bindingFallback")
     public static let spacingToken = CapabilityKey("layout.spacingToken")
-    public static let paddingToken = CapabilityKey("layout.paddingToken")
+    public static let paddingEffect = CapabilityKey("effect.padding")
     public static let systemAssetMapping = CapabilityKey("asset.systemMapping")
     public static let repositoryAssetRendering = CapabilityKey("asset.repositoryRendering")
     public static let remoteAssetFetch = CapabilityKey("asset.remoteFetch")
@@ -34,7 +34,7 @@ public enum CapabilityKeys {
     public static let nativeIntent = CapabilityKey("native.intent")
     public static let targetOverride = CapabilityKey("native.targetOverride")
 
-    // Existing Format v1 declarations continue to cover their original basic meaning only.
+    // Basic node declarations cover their original visual meaning only.
     public static let legacyStack = CapabilityKey("layout.stack")
     public static let legacyOverlay = CapabilityKey("layout.overlay")
     public static let legacyScroll = CapabilityKey("layout.scroll")
@@ -178,7 +178,9 @@ public enum SemanticRequirementExtractor {
                 }
             }
             if layer.layout.spacingTokenID != nil { append(CapabilityKeys.spacingToken, layer.id) }
-            if layer.layout.paddingTokenID != nil { append(CapabilityKeys.paddingToken, layer.id) }
+            for effect in layer.effects {
+                switch effect { case .padding: append(CapabilityKeys.paddingEffect, layer.id) }
+            }
             if let binding = layer.textBinding {
                 if layer.kind == .text || layer.kind == .button {
                     append(CapabilityKeys.fixtureBinding, layer.id)
@@ -227,7 +229,7 @@ public struct CapabilityCatalog: Sendable {
     }
 }
 
-/// Format v1 node declarations cover only the corresponding basic visual meaning.
+/// Basic node declarations cover only the corresponding visual meaning.
 public enum BasicCapabilityAliases {
     public static let map: [CapabilityKey: CapabilityKey] = [
         CapabilityKeys.stackContainer: CapabilityKeys.legacyStack,
@@ -238,7 +240,6 @@ public enum BasicCapabilityAliases {
         CapabilityKeys.imageVisual: CapabilityKeys.legacyImage,
         CapabilityKeys.componentInstance: CapabilityKeys.legacyInstance,
         CapabilityKeys.spacingToken: CapabilityKeys.legacySpacing,
-        CapabilityKeys.paddingToken: CapabilityKeys.legacySpacing,
         CapabilityKeys.systemNavigation: CapabilityKeys.legacySystemNavigation,
         CapabilityKeys.customNavigation: CapabilityKeys.legacyCustomNavigation
     ]
@@ -250,7 +251,7 @@ public enum NativePreviewCapabilityCatalog {
         CapabilityKeys.stackContainer, CapabilityKeys.overlayVisual, CapabilityKeys.scrollContainer,
         CapabilityKeys.textVisual, CapabilityKeys.buttonVisual, CapabilityKeys.buttonEventEmit,
         CapabilityKeys.imageVisual, CapabilityKeys.componentInstance, CapabilityKeys.fixtureBinding,
-        CapabilityKeys.bindingFallback, CapabilityKeys.spacingToken, CapabilityKeys.paddingToken,
+        CapabilityKeys.bindingFallback, CapabilityKeys.spacingToken, CapabilityKeys.paddingEffect,
         CapabilityKeys.systemAssetMapping, CapabilityKeys.systemNavigation, CapabilityKeys.navigationTitle,
         CapabilityKeys.systemToolbar, CapabilityKeys.toolbarEventEmit, CapabilityKeys.customNavigation
     ]
@@ -267,7 +268,7 @@ public enum CapabilityEvaluator {
     ) -> CapabilityLossReport {
         let targetDeclarations = Dictionary(grouping: declarations.filter { $0.targetID == profile.targetID }, by: \.key)
         let items = requirements.map { requirement -> CapabilityLoss in
-            // An exact semantic declaration takes precedence over its basic Format v1 alias.
+            // An exact semantic declaration takes precedence over its basic node alias.
             let aliases = [requirement.key, catalog.legacyAliases[requirement.key]].compactMap { $0 }
             let matching = aliases.lazy.compactMap { targetDeclarations[$0] }.first ?? []
             let declaration = matching.count == 1 ? matching[0] : nil

@@ -141,6 +141,9 @@ public enum MutationEngine {
             patches.append(SemanticPatch(entityID: targetID, path: "capabilities.\(key.rawValue)", oldValue: old, newValue: support.rawValue))
         case .addLayer(let screenID, let parentID, let kind, let name, let text):
             guard let screenIndex = document.screens.firstIndex(where: { $0.id == screenID }) else { throw AuthoringError.notFound(screenID.rawValue) }
+            guard text == nil || kind == .text || kind == .button else {
+                throw AuthoringError.validation([Diagnostic("layer.textKind", "Text is unavailable for this Layer kind")])
+            }
             var layer = Layer(id: .new("layer"), kind: kind, name: name, text: text)
             if kind == .stack { layer.layout.axis = .vertical }
             guard append(layer, to: &document.screens[screenIndex].root, parentID: parentID) else { throw AuthoringError.notFound(parentID.rawValue) }
@@ -166,7 +169,7 @@ public enum MutationEngine {
             patches.append(SemanticPatch(entityID: token.id, path: "tokens", oldValue: nil, newValue: name))
         case .setLayoutToken(let screenID, let layerID, let property, let tokenID):
             guard let screenIndex = document.screens.firstIndex(where: { $0.id == screenID }) else { throw AuthoringError.notFound(screenID.rawValue) }
-            guard let old = setLayoutToken(tokenID, property: property, in: &document.screens[screenIndex].root, id: layerID) else {
+            guard let old = try setLayoutToken(tokenID, property: property, in: &document.screens[screenIndex].root, id: layerID) else {
                 throw AuthoringError.notFound(layerID.rawValue)
             }
             patches.append(SemanticPatch(entityID: layerID, path: "layout.\(property.rawValue)TokenID", oldValue: old?.rawValue, newValue: tokenID?.rawValue))
@@ -233,12 +236,8 @@ public enum MutationEngine {
         return nil
     }
 
-    private static func setLayoutToken(_ tokenID: EntityID?, property: LayoutTokenProperty, in root: inout Layer, id: EntityID) -> EntityID?? {
+    private static func setLayoutToken(_ tokenID: EntityID?, property: LayoutTokenProperty, in root: inout Layer, id: EntityID) throws -> EntityID?? {
         if root.id == id {
-            switch root.payload {
-            case .stack, .overlay, .scroll: break
-            default: return nil
-            }
             switch property {
             case .spacing:
                 guard case .stack = root.payload else { return nil }
@@ -246,13 +245,21 @@ public enum MutationEngine {
                 root.layout.spacingTokenID = tokenID
                 return .some(old)
             case .padding:
-                let old = root.layout.paddingTokenID
-                root.layout.paddingTokenID = tokenID
+                let existing = root.effects.compactMap { effect -> EntityID? in
+                    if case .padding(let token) = effect { return token }
+                    return nil
+                }
+                guard existing.count <= 1 else {
+                    throw AuthoringError.validation([Diagnostic("effect.ambiguousPadding", "Choose a specific padding effect before replacing it", entityID: root.id)])
+                }
+                let old = existing.first
+                root.effects.removeAll { if case .padding = $0 { return true }; return false }
+                if let tokenID { root.effects.append(.padding(tokenID: tokenID)) }
                 return .some(old)
             }
         }
         for index in root.children.indices {
-            if let old = setLayoutToken(tokenID, property: property, in: &root.children[index], id: id) { return old }
+            if let old = try setLayoutToken(tokenID, property: property, in: &root.children[index], id: id) { return old }
         }
         return nil
     }

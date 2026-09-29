@@ -53,7 +53,7 @@ public enum IntegrationContracts {
             if let value = layer.textBinding { inputs.insert(value) }
             if let value = layer.emittedEvent { events.insert(value) }
             if let value = layer.layout.spacingTokenID { tokens.insert(value) }
-            if let value = layer.layout.paddingTokenID { tokens.insert(value) }
+            for effect in layer.effects { tokens.insert(effect.tokenID) }
             if let value = layer.assetID { assets.insert(value) }
             if let value = layer.nativeIntent { native.insert(value) }
             if let value = layer.accessibilityLabel { labels.insert(value) }

@@ -64,11 +64,11 @@ Canonical collaboration の Product Contract は「1 worktree = 1 coordinated wr
 
 Repository Asset は `asset import SCOPE_ID NAME MEDIA_TYPE SOURCE_PATH --storage git --state TOKEN` で明示的に取り込みます。バイナリは `assets/blobs/<sha256>` に一度だけ保存され、Asset の JSON は hash と参照を保持します。`validate` は blob の改ざんと欠落を検出します。大きなファイルの Git LFS 運用境界は [Asset ADR](adr/asset-storage-policy/ADR.md) で検証中です。Remote cache、thumbnail、decode 結果は Canonical Repository に含めません。
 
-Document Format v1 が唯一の Canonical Format です。`hamii migrate plan --json` は source version と利用可能な変換を preflight し、元 repository を変更しません。Historical transformation edge はまだありません。新形式の導入時は Current Core に旧型の分岐を追加せず、isolated migration と reviewable worktree 変換を実装します。
+Document Format v2 が唯一の Current Canonical Format です。v1 repository は runtime が拒否し、production の v1→v2 変換 edge は未実装です。`hamii migrate plan --json` は source version と利用可能な変換を preflight し、元 repository を変更しません。Historical transformation edge はまだありません。新形式の導入時は Current Core に旧型の分岐を追加せず、isolated migration と reviewable worktree 変換を実装します。
 
 ## Capability / Preview
 
-Layer の実装済み kind は Stack、Text、Image、Button、Scroll、Overlay、Component Instance です。Support coverage を追加するときは IR、validation、Canvas、Native Preview、generator、CLI の契約を揃え、target 別の support state を明示します。Current IR の意味は Core の requirement extractor と evaluator で評価し、`TargetPlanner` は loss report を diagnostic に変換します。`SwiftUIGenerator` も同じ requirement と evaluator を使い、実装済みの静的 subset を専用 catalog で判定します。未宣言の意味や Generator 未実装の意味は拒否されます。Format v1 の node 宣言は基本表示だけの fallback で、同じ意味の明示宣言が優先します。event、binding、asset source、toolbar は node 宣言から暗黙に継承しません。[Capability ADR](adr/capability-contract/ADR.md) は残る consumer 接続と framework coverage 検証を管理します。Unsupported な意味を暗黙に近似しません。
+Layer の実装済み kind は Stack、Text、Image、Button、Scroll、Overlay、Component Instance です。Support coverage を追加するときは IR、validation、Canvas、Native Preview、generator、CLI の契約を揃え、target 別の support state を明示します。Current IR の意味は Core の requirement extractor と evaluator で評価し、`TargetPlanner` は loss report を diagnostic に変換します。`SwiftUIGenerator` も同じ requirement と evaluator を使い、実装済みの静的 subset を専用 catalog で判定します。未宣言の意味や Generator 未実装の意味は拒否されます。既存の basic node 宣言は基本表示だけの fallback で、同じ意味の明示宣言が優先します。event、binding、asset source、toolbar は node 宣言から暗黙に継承しません。[Capability ADR](adr/capability-contract/ADR.md) は残る consumer 接続と framework coverage 検証を管理します。Unsupported な意味を暗黙に近似しません。
 
 `HamiiPreviewProtocol` は state precondition 付き snapshot、base/new state と revision を分けた patch、ack と build boundary を定義します。`HamiiNativeRuntime` は macOS の supported SwiftUI subset を実 OS の SwiftUI で描き、Text patch を compile なしで適用します。欠番 patch は拒否し、snapshot で再同期できます。iOS Simulator Host transport、frame/input、structure reconciliation と state preservation は個別 ADR/Spike の検証対象です。OS-dependent system UI は対象 OS の Host が描画します。
 

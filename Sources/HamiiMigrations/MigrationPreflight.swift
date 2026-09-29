@@ -20,19 +20,22 @@ public enum MigrationPreflightError: Error, CustomStringConvertible {
     public var description: String {
         switch self {
         case .missingManifest: return "hamii.json is missing"
-        case .invalidManifest: return "hamii.json has no numeric formatVersion"
+        case .invalidManifest: return "hamii.json must contain matching numeric formatVersion and versions.document markers"
         }
     }
 }
 
 public enum MigrationPreflight {
-    public static let currentDocumentFormatVersion = 1
+    public static let currentDocumentFormatVersion = 2
 
     public static func plan(repository: URL) throws -> MigrationPlan {
         let manifest = repository.appendingPathComponent("hamii.json")
         guard FileManager.default.fileExists(atPath: manifest.path) else { throw MigrationPreflightError.missingManifest }
         guard let object = try JSONSerialization.jsonObject(with: Data(contentsOf: manifest)) as? [String: Any],
-              let version = object["formatVersion"] as? Int else { throw MigrationPreflightError.invalidManifest }
+              let version = object["formatVersion"] as? Int,
+              let versions = object["versions"] as? [String: Any],
+              let documentVersion = versions["document"] as? Int,
+              version == documentVersion else { throw MigrationPreflightError.invalidManifest }
         let count = (FileManager.default.enumerator(at: repository, includingPropertiesForKeys: nil)?
             .allObjects as? [URL])?.filter { $0.pathExtension == "json" && !$0.path.contains("/.hamii/") }.count ?? 0
         if FileManager.default.fileExists(atPath: repository.appendingPathComponent(".hamii/transaction.ready").path) {

@@ -50,4 +50,4 @@ Selected corpusでは typed payload + ordered effects + separate graphs + explic
 
 - [corpus-matrix.json](artifacts/corpus-matrix.json): 17 intents × 4 targets、baseline/candidate representation と explicit loss。
 - [taxonomy-comparison.md](artifacts/taxonomy-comparison.md): current/candidate 比較、invalid-state pressure、system UI ownership と primary framework docs。
-- [MinimalIRSpikeTests.swift](../../../../Tests/HamiiTests/MinimalIRSpikeTests.swift): test-only prototype と5 focused XCTest。
+- [MinimalIRSpikeTests.swift](artifacts/MinimalIRSpikeTests.swift): historical test-only prototype と5 focused XCTest。Current Format v2 の test target には含めない。

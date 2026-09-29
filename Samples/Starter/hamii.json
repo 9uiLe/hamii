@@ -47,6 +47,16 @@
     },
     {
       "key" : {
+        "rawValue" : "effect.padding"
+      },
+      "reason" : "",
+      "support" : "exact",
+      "targetID" : {
+        "rawValue" : "target_e8fae6de-450d-438c-8d41-2c81a3b8f2ab"
+      }
+    },
+    {
+      "key" : {
         "rawValue" : "layout.stack"
       },
       "reason" : "",
@@ -84,9 +94,19 @@
       "targetID" : {
         "rawValue" : "target_c3ab7f87-fd18-44bb-94d4-b3d4f4484980"
       }
+    },
+    {
+      "key" : {
+        "rawValue" : "effect.padding"
+      },
+      "reason" : "",
+      "support" : "exact",
+      "targetID" : {
+        "rawValue" : "target_c3ab7f87-fd18-44bb-94d4-b3d4f4484980"
+      }
     }
   ],
-  "formatVersion" : 1,
+  "formatVersion" : 2,
   "id" : {
     "rawValue" : "doc_643c4446-1965-4c95-9bf3-81bcfebe815d"
   },
@@ -94,7 +114,7 @@
   "revision" : 19,
   "versions" : {
     "authoringHarness" : 1,
-    "document" : 1,
+    "document" : 2,
     "integrationProfile" : 1
   }
 }

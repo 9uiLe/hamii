@@ -16,7 +16,7 @@ public struct FormatVersions: Codable, Equatable {
     public var authoringHarness: Int
     public var integrationProfile: Int
 
-    public init(document: Int = 1, authoringHarness: Int = 1, integrationProfile: Int = 1) {
+    public init(document: Int = 2, authoringHarness: Int = 1, integrationProfile: Int = 1) {
         self.document = document
         self.authoringHarness = authoringHarness
         self.integrationProfile = integrationProfile
@@ -153,9 +153,50 @@ public enum LayoutAxis: String, Codable { case vertical, horizontal }
 public struct Layout: Codable, Equatable {
     public var axis: LayoutAxis?
     public var spacingTokenID: EntityID?
-    public var paddingTokenID: EntityID?
-    public init(axis: LayoutAxis? = nil, spacingTokenID: EntityID? = nil, paddingTokenID: EntityID? = nil) {
-        self.axis = axis; self.spacingTokenID = spacingTokenID; self.paddingTokenID = paddingTokenID
+    public init(axis: LayoutAxis? = nil, spacingTokenID: EntityID? = nil) {
+        self.axis = axis; self.spacingTokenID = spacingTokenID
+    }
+    private enum CodingKeys: String, CodingKey { case axis, spacingTokenID, paddingTokenID }
+    public init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        guard !values.contains(.paddingTokenID) else {
+            throw DecodingError.dataCorruptedError(forKey: .paddingTokenID, in: values, debugDescription: "Format v2 stores padding in ordered effects")
+        }
+        axis = try values.decodeIfPresent(LayoutAxis.self, forKey: .axis)
+        spacingTokenID = try values.decodeIfPresent(EntityID.self, forKey: .spacingTokenID)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var values = encoder.container(keyedBy: CodingKeys.self)
+        try values.encodeIfPresent(axis, forKey: .axis)
+        try values.encodeIfPresent(spacingTokenID, forKey: .spacingTokenID)
+    }
+}
+
+/// Effects are applied in array order. Unknown kinds fail decoding instead of losing meaning.
+public enum LayerEffect: Codable, Equatable {
+    case padding(tokenID: EntityID)
+
+    private enum CodingKeys: String, CodingKey { case kind, tokenID }
+    private enum Kind: String, Codable { case padding }
+
+    public var tokenID: EntityID {
+        switch self { case .padding(let tokenID): tokenID }
+    }
+
+    public init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        switch try values.decode(Kind.self, forKey: .kind) {
+        case .padding: self = .padding(tokenID: try values.decode(EntityID.self, forKey: .tokenID))
+        }
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var values = encoder.container(keyedBy: CodingKeys.self)
+        switch self {
+        case .padding(let tokenID):
+            try values.encode(Kind.padding, forKey: .kind)
+            try values.encode(tokenID, forKey: .tokenID)
+        }
     }
 }
 
@@ -199,7 +240,7 @@ public struct ComponentInstanceLayerPayload: Equatable {
     public init(instance: ComponentInstance? = nil) { self.instance = instance }
 }
 
-/// Runtime node meaning. Format v1 continues to encode the established flat Layer keys.
+/// Runtime node meaning. The current format encodes kind-specific values as flat Layer keys.
 public enum LayerPayload: Equatable {
     case stack
     case overlay
@@ -222,27 +263,17 @@ public enum LayerPayload: Equatable {
     }
 }
 
-/// Format v1 permits fields on unrelated kinds. Preserve those exact persisted values
-/// without treating them as supported semantics for the typed node.
-private struct FormatV1Residual: Equatable {
-    var text: String?
-    var textBinding: String?
-    var emittedEvent: String?
-    var assetID: EntityID?
-    var component: ComponentInstance?
-}
-
 public struct Layer: Codable, Equatable, Identifiable {
     public var id: EntityID
     public var name: String
     public var children: [Layer]
     public var layout: Layout
+    public var effects: [LayerEffect]
     public var payload: LayerPayload
     public var interactionID: EntityID?
     public var accessibilityLabel: String?
     public var nativeIntent: String?
     public var targetOverrides: [String: String]
-    private var formatV1Residual = FormatV1Residual()
 
     public var kind: LayerKind { payload.kind }
 
@@ -251,14 +282,14 @@ public struct Layer: Codable, Equatable, Identifiable {
             switch payload {
             case .text(let value): value.value
             case .button(let value): value.label
-            default: formatV1Residual.text
+            default: nil
             }
         }
         set {
             switch payload {
             case .text(var value): value.value = newValue; payload = .text(value)
             case .button(var value): value.label = newValue; payload = .button(value)
-            default: formatV1Residual.text = newValue
+            default: precondition(newValue == nil, "Text is unavailable for this Layer kind")
             }
         }
     }
@@ -268,14 +299,14 @@ public struct Layer: Codable, Equatable, Identifiable {
             switch payload {
             case .text(let value): value.binding
             case .button(let value): value.binding
-            default: formatV1Residual.textBinding
+            default: nil
             }
         }
         set {
             switch payload {
             case .text(var value): value.binding = newValue; payload = .text(value)
             case .button(var value): value.binding = newValue; payload = .button(value)
-            default: formatV1Residual.textBinding = newValue
+            default: precondition(newValue == nil, "Text binding is unavailable for this Layer kind")
             }
         }
     }
@@ -283,42 +314,45 @@ public struct Layer: Codable, Equatable, Identifiable {
     public var emittedEvent: String? {
         get {
             if case .button(let value) = payload { return value.emittedEvent }
-            return formatV1Residual.emittedEvent
+            return nil
         }
         set {
             if case .button(var value) = payload { value.emittedEvent = newValue; payload = .button(value) }
-            else { formatV1Residual.emittedEvent = newValue }
+            else { precondition(newValue == nil, "Event emission is unavailable for this Layer kind") }
         }
     }
 
     public var assetID: EntityID? {
         get {
             if case .image(let value) = payload { return value.assetID }
-            return formatV1Residual.assetID
+            return nil
         }
         set {
             if case .image(var value) = payload { value.assetID = newValue; payload = .image(value) }
-            else { formatV1Residual.assetID = newValue }
+            else { precondition(newValue == nil, "Asset reference is unavailable for this Layer kind") }
         }
     }
 
     public var component: ComponentInstance? {
         get {
             if case .componentInstance(let value) = payload { return value.instance }
-            return formatV1Residual.component
+            return nil
         }
         set {
             if case .componentInstance(var value) = payload { value.instance = newValue; payload = .componentInstance(value) }
-            else { formatV1Residual.component = newValue }
+            else { precondition(newValue == nil, "Component instance is unavailable for this Layer kind") }
         }
     }
 
-    public init(id: EntityID, name: String, payload: LayerPayload, children: [Layer] = [], layout: Layout = Layout()) {
-        self.id = id; self.name = name; self.payload = payload; self.children = children; self.layout = layout
+    public init(id: EntityID, name: String, payload: LayerPayload, children: [Layer] = [], layout: Layout = Layout(), effects: [LayerEffect] = []) {
+        self.id = id; self.name = name; self.payload = payload; self.children = children; self.layout = layout; self.effects = effects
         interactionID = nil; accessibilityLabel = nil; nativeIntent = nil; targetOverrides = [:]
     }
 
-    public init(id: EntityID, kind: LayerKind, name: String, children: [Layer] = [], layout: Layout = Layout(), text: String? = nil, assetID: EntityID? = nil, component: ComponentInstance? = nil) {
+    public init(id: EntityID, kind: LayerKind, name: String, children: [Layer] = [], layout: Layout = Layout(), effects: [LayerEffect] = [], text: String? = nil, assetID: EntityID? = nil, component: ComponentInstance? = nil) {
+        precondition(text == nil || kind == .text || kind == .button, "Text is unavailable for this Layer kind")
+        precondition(assetID == nil || kind == .image, "Asset reference is unavailable for this Layer kind")
+        precondition(component == nil || kind == .componentInstance, "Component instance is unavailable for this Layer kind")
         let payload: LayerPayload
         switch kind {
         case .stack: payload = .stack
@@ -329,22 +363,30 @@ public struct Layer: Codable, Equatable, Identifiable {
         case .button: payload = .button(ButtonLayerPayload(label: text))
         case .componentInstance: payload = .componentInstance(ComponentInstanceLayerPayload(instance: component))
         }
-        self.init(id: id, name: name, payload: payload, children: children, layout: layout)
-        if kind != .text && kind != .button { self.text = text }
-        if kind != .image { self.assetID = assetID }
-        if kind != .componentInstance { self.component = component }
+        self.init(id: id, name: name, payload: payload, children: children, layout: layout, effects: effects)
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, kind, name, children, layout, text, textBinding, emittedEvent, assetID
+        case id, kind, name, children, layout, effects, text, textBinding, emittedEvent, assetID
         case component, interactionID, accessibilityLabel, nativeIntent, targetOverrides
     }
 
     public init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
+        let kind = try values.decode(LayerKind.self, forKey: .kind)
+        let allowsText = kind == .text || kind == .button
+        let allowsBinding = allowsText
+        let allowsEvent = kind == .button
+        let allowsAsset = kind == .image
+        let allowsComponent = kind == .componentInstance
+        let kindFields: [(CodingKeys, Bool)] = [(.text, allowsText), (.textBinding, allowsBinding), (.emittedEvent, allowsEvent),
+                               (.assetID, allowsAsset), (.component, allowsComponent)]
+        for (key, allowed) in kindFields where !allowed && values.contains(key) {
+            throw DecodingError.dataCorruptedError(forKey: key, in: values, debugDescription: "Field does not belong to Layer kind \(kind)")
+        }
         self.init(
             id: try values.decode(EntityID.self, forKey: .id),
-            kind: try values.decode(LayerKind.self, forKey: .kind),
+            kind: kind,
             name: try values.decode(String.self, forKey: .name),
             children: try values.decode([Layer].self, forKey: .children),
             layout: try values.decode(Layout.self, forKey: .layout),
@@ -352,6 +394,7 @@ public struct Layer: Codable, Equatable, Identifiable {
             assetID: try values.decodeIfPresent(EntityID.self, forKey: .assetID),
             component: try values.decodeIfPresent(ComponentInstance.self, forKey: .component)
         )
+        effects = try values.decode([LayerEffect].self, forKey: .effects)
         textBinding = try values.decodeIfPresent(String.self, forKey: .textBinding)
         emittedEvent = try values.decodeIfPresent(String.self, forKey: .emittedEvent)
         interactionID = try values.decodeIfPresent(EntityID.self, forKey: .interactionID)
@@ -367,6 +410,7 @@ public struct Layer: Codable, Equatable, Identifiable {
         try values.encode(name, forKey: .name)
         try values.encode(children, forKey: .children)
         try values.encode(layout, forKey: .layout)
+        try values.encode(effects, forKey: .effects)
         try values.encodeIfPresent(text, forKey: .text)
         try values.encodeIfPresent(textBinding, forKey: .textBinding)
         try values.encodeIfPresent(emittedEvent, forKey: .emittedEvent)

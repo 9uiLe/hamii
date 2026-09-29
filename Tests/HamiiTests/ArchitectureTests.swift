@@ -598,6 +598,9 @@ final class ArchitectureTests: XCTestCase {
         let file = path.appendingPathComponent("hamii.json")
         var object = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
         object["formatVersion"] = 0
+        var versions = try XCTUnwrap(object["versions"] as? [String: Any])
+        versions["document"] = 0
+        object["versions"] = versions
         let original = try JSONSerialization.data(withJSONObject: object)
         try original.write(to: file)
         let plan = try MigrationPreflight.plan(repository: path)

@@ -4,6 +4,23 @@ import SwiftUI
 import HamiiCore
 import HamiiPreviewProtocol
 
+/// Applies the typed effect sequence without flattening modifier order.
+public struct OrderedLayerEffects: ViewModifier {
+    public let effects: [LayerEffect]
+    public let tokens: [DesignToken]
+    public init(effects: [LayerEffect], tokens: [DesignToken]) {
+        self.effects = effects; self.tokens = tokens
+    }
+    public func body(content: Content) -> some View {
+        effects.reduce(AnyView(content)) { view, effect in
+            switch effect {
+            case .padding(let tokenID):
+                return AnyView(view.padding(CGFloat(TokenResolver.spacing(tokenID, in: tokens) ?? 0)))
+            }
+        }
+    }
+}
+
 public enum NativePreviewError: Error {
     case unsupportedTarget
     case runtimeMismatch(expected: String, actualMajorVersion: Int)
@@ -162,7 +179,7 @@ private struct NativeLayerView: View {
                 }
             }
         }
-        .padding(layer.layout.paddingTokenID.flatMap { TokenResolver.spacing($0, in: session.document.tokens) }.map { CGFloat($0) } ?? 0)
+        .modifier(OrderedLayerEffects(effects: layer.effects, tokens: session.document.tokens))
     }
 
     private var spacing: CGFloat? {

@@ -201,7 +201,7 @@ struct LayerCanvas: View {
                 }
             }
         }
-        .padding(layer.layout.paddingTokenID.flatMap { TokenResolver.spacing($0, in: document.tokens) }.map { CGFloat($0) } ?? 0)
+        .modifier(CanvasLayerEffects(effects: layer.effects, tokens: document.tokens))
     }
 
     @ViewBuilder private var imageContent: some View {
@@ -227,6 +227,19 @@ struct LayerCanvas: View {
 
     @ViewBuilder private var children: some View {
         ForEach(layer.children) { child in LayerCanvas(layer: child, document: document, projectRoot: projectRoot, select: select) }
+    }
+}
+
+private struct CanvasLayerEffects: ViewModifier {
+    let effects: [LayerEffect]
+    let tokens: [DesignToken]
+    func body(content: Content) -> some View {
+        effects.reduce(AnyView(content)) { view, effect in
+            switch effect {
+            case .padding(let tokenID):
+                return AnyView(view.padding(CGFloat(TokenResolver.spacing(tokenID, in: tokens) ?? 0)))
+            }
+        }
     }
 }
 
@@ -346,7 +359,10 @@ struct EditorView: View {
                             tokenPicker("Spacing", selected: layer.layout.spacingTokenID, property: .spacing)
                         }
                         if [.stack, .overlay, .scroll].contains(layer.kind) {
-                            tokenPicker("Padding", selected: layer.layout.paddingTokenID, property: .padding)
+                            tokenPicker("Padding", selected: layer.effects.compactMap { effect -> EntityID? in
+                                if case .padding(let tokenID) = effect { return tokenID }
+                                return nil
+                            }.first, property: .padding)
                         }
                     }
                     Spacer()

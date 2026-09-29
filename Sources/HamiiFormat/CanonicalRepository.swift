@@ -361,7 +361,7 @@ public final class CanonicalRepository: ProjectRepository {
     private func loadUnlocked(validate: Bool, validationHook: (() throws -> Void)? = nil,
                               onObservation: CanonicalObservationRecorder? = nil) throws -> Document {
         let manifest = try measureCanonical(.manifestRead, recorder: onObservation) { try readManifest() }
-        guard manifest.formatVersion == 1, manifest.versions.document == 1, manifest.versions.authoringHarness == 1 else {
+        guard manifest.formatVersion == 2, manifest.versions.document == 2, manifest.versions.authoringHarness == 1 else {
             throw CanonicalError.unsupportedFormat(manifest.formatVersion)
         }
         var document = Document(name: manifest.name)
@@ -443,9 +443,9 @@ public final class CanonicalRepository: ProjectRepository {
             ?? Data(contentsOf: root.appendingPathComponent("hamii.json"))
         let manifest = try measureCanonical(.manifestDecode, recorder: onObservation) { () -> Manifest in
             let header = try JSONDecoder().decode(FormatHeader.self, from: manifestBytes)
-            guard header.formatVersion == 1 else { throw CanonicalError.unsupportedFormat(header.formatVersion) }
+            guard header.formatVersion == 2 else { throw CanonicalError.unsupportedFormat(header.formatVersion) }
             let value = try JSONDecoder().decode(Manifest.self, from: manifestBytes)
-            guard value.formatVersion == 1, value.versions.document == 1,
+            guard value.formatVersion == 2, value.versions.document == 2,
                   value.versions.authoringHarness == 1 else {
                 throw CanonicalError.unsupportedFormat(value.formatVersion)
             }
@@ -566,6 +566,7 @@ public final class CanonicalRepository: ProjectRepository {
     }
 
     private func encodedFiles(_ document: Document) throws -> [String: Data] {
+        guard document.versions.document == 2 else { throw CanonicalError.unsupportedFormat(document.versions.document) }
         var files: [String: Data] = [:]
         try encodeAll(document.pages, folder: "pages", into: &files)
         try encodeAll(document.screens, folder: "screens", into: &files)
@@ -577,7 +578,7 @@ public final class CanonicalRepository: ProjectRepository {
         try encodeAll(document.motions, folder: "motions", into: &files)
         try encodeAll(document.fixtures, folder: "fixtures", into: &files)
         try encodeAll(document.targets, folder: "targets", into: &files)
-        let manifest = Manifest(formatVersion: 1, id: document.id, name: document.name, revision: document.revision, versions: document.versions, authoringHarness: document.authoringHarness, capabilityDeclarations: document.capabilityDeclarations, tokenTemplate: document.tokenTemplate)
+        let manifest = Manifest(formatVersion: 2, id: document.id, name: document.name, revision: document.revision, versions: document.versions, authoringHarness: document.authoringHarness, capabilityDeclarations: document.capabilityDeclarations, tokenTemplate: document.tokenTemplate)
         files["hamii.json"] = try encode(manifest)
         return files
     }
@@ -683,8 +684,10 @@ public final class CanonicalRepository: ProjectRepository {
     private func readManifest() throws -> Manifest {
         let url = root.appendingPathComponent("hamii.json")
         let header: FormatHeader = try read(url)
-        guard header.formatVersion == 1 else { throw CanonicalError.unsupportedFormat(header.formatVersion) }
-        return try read(url)
+        guard header.formatVersion == 2 else { throw CanonicalError.unsupportedFormat(header.formatVersion) }
+        let manifest: Manifest = try read(url)
+        guard manifest.versions.document == 2 else { throw CanonicalError.unsupportedFormat(manifest.versions.document) }
+        return manifest
     }
 
     private func readAll<T: Decodable & Identifiable>(_ folder: String,

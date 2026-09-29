@@ -66,3 +66,4 @@ Clean committed source から isolated candidate を作り、target validation �
 
 - [review-publication-matrix.json](artifacts/review-publication-matrix.json)
 - [workflow-comparison.md](artifacts/workflow-comparison.md)
+- [Frozen test harness](artifacts/MigrationReviewProtocolSpikeTests.swift). This is the historical test source; it is not compiled against Current Format v2.

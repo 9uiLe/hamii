@@ -135,8 +135,8 @@ final class SwiftUIGeneratorCapabilityTests: XCTestCase {
         assertUnsupported(spacing, at: root.id)
 
         var padding = project
-        padding.screens[0].root.layout.paddingTokenID = tokenID
-        declare([CapabilityKeys.paddingToken], in: &padding)
+        padding.screens[0].root.effects = [.padding(tokenID: tokenID)]
+        declare([CapabilityKeys.paddingEffect], in: &padding)
         XCTAssertEqual(DocumentValidator.validate(padding), [])
         assertUnsupported(padding, at: root.id)
 

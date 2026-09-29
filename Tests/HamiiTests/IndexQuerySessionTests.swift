@@ -2198,7 +2198,7 @@ extension IndexQuerySessionTests {
             case "missingManifest":
                 try FileManager.default.removeItem(at: manifest)
             case "unsupportedManifest":
-                try changeJSON(manifest) { $0["formatVersion"] = 2 }
+                try changeJSON(manifest) { $0["formatVersion"] = 3 }
             case "malformedManifest":
                 try Data("{".utf8).write(to: manifest)
             case "malformedEntity":

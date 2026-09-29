@@ -50,7 +50,7 @@ Evidence commit `1a9ab4e874ecb35ac31ab2caaabdfec0dae3e0e0` では、4 fixtures /
 
 ## Remaining Implementation
 
-Production の `LayerPayload` は7種の現行 Layer kind を表し、Validator、TargetPlanner、Canvas、Native Preview、Generator と Mutation が利用する。Format v1 は既存の平坦な JSON とその受理範囲を維持する。残る実装は ordered effects、typed target extension と対応する lowering の範囲である。Screen-level system navigation は既存の別 graph に保持する。Capability の宣言粒度は [capability-contract ADR](../capability-contract/ADR.md) の責務とする。この ADR は残る production 実装と検証が完了するまで残す。
+Production の `LayerPayload` は7種の現行 Layer kind を表し、Validator、TargetPlanner、Canvas、Native Preview、Generator と Mutation が利用する。Current Format v2 は順序付き padding effect を保存し、Canvas / Native Preview は記載順に適用する。残る実装は他の ordered effects、typed target extension と対応する lowering の範囲である。Screen-level system navigation は既存の別 graph に保持する。Capability の宣言粒度は [capability-contract ADR](../capability-contract/ADR.md) の責務とする。この ADR は残る production 実装と検証が完了するまで残す。
 
 ## Status
 

@@ -1,6 +1,6 @@
 # Minimal IR corpus comparison
 
-Evidence scope: test-only Swift model in `Tests/HamiiTests/MinimalIRSpikeTests.swift`, five focused XCTest cases, and [corpus-matrix.json](corpus-matrix.json). The matrix is an **IR planning** loss report, not a claim that current Preview or generators implement these mappings. No framework source was generated or executed.
+Evidence scope: test-only Swift model in the frozen `MinimalIRSpikeTests.swift` source in this Spike artifact directory, five focused XCTest cases, and [corpus-matrix.json](corpus-matrix.json). The matrix is an **IR planning** loss report, not a claim that current Preview or generators implement these mappings. No framework source was generated or executed.
 
 ## Corpus and representation
 
