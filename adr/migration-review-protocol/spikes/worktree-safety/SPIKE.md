@@ -54,7 +54,7 @@ Dirty tracked/untracked は開始拒否。Token shard 欠落は `token.missing`�
 
 Pending 中の in-process failure 5地点と、別 OS process の SIGKILL 5地点（transform、pending、refPublished、currentValidated、indexPublished）を検証。Reader は writer 生存中の lock を越えず、kill 後に transform では Ready、publication stop では pending を観測。Old ref は old state 維持、candidate ref は validation / fresh Index の再実行後に roll-forward、neither ref は pending を維持。Index rebuild 注入失敗では candidate ref を rollback しなかった。Focused run は8 tests（worker entry point 2 skip）、失敗0、73.939秒。これは単一 run の所要時間で性能 benchmark ではない。[workflow-comparison.md](artifacts/workflow-comparison.md) に候補比較、exact diff、証明範囲を記録した。
 
-Full gate は 14 checks 成功、Swift test 251 実行・失敗0・skip 58、506.224秒。Release `HamiiMigrations` build は成功。Exact-SHA CI の結果は Evidence commit を push した後に追記する。
+Full gate は 14 checks 成功、Swift test 251 実行・失敗0・skip 58、506.224秒。Release `HamiiMigrations` build は成功。Evidence commit `328bee98bd794899ecd879bc6d8b29a78fa82792` の [exact-SHA CI](https://github.com/9uiLe/hamii/actions/runs/36503082850) は成功。
 
 初回の cleanup 試行では macOS の `/var` と `/private/var` の同一 main worktree path を別物と誤認した。実体 path の正規化へ修正し、最終 focused run は成功。Source-in-place cleanup は行っていない。
 
