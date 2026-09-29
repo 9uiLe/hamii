@@ -30,7 +30,7 @@ Current Core は Current Format の意味だけを持つ。Migration orchestrati
 
 ## Unknowns
 
-Installed historical edge は v1→v2 のみ。長期的な edge bundle distribution は独立の未解決事項として closure review で責務を整理する。Review/publication の実装検証と ADR closure criteria は [migration-review-protocol](../migration-review-protocol/ADR.md) で確認する。Spike の test-only v3 は製品 version の提案ではない。
+この Decision Boundary に残る未解決事項はない。Installed historical edge は v1→v2 のみ。長期的な edge bundle distribution は次の historical version が必要になった時点の独立判断であり、現在の v1→v2 boundary の必須作業ではない。Spike の test-only v3 は製品 version の提案ではない。
 
 ## Required Evidence
 
@@ -46,6 +46,10 @@ Decision と Evidence は先に Git history に残す。Production 実装・vali
 
 - [migration-review-protocol](../migration-review-protocol/ADR.md)
 - [migration-ambiguity-resolution](../migration-ambiguity-resolution/ADR.md)
+
+## Closure Review
+
+Historical parser / edge registry は Foundation-only の `HamiiMigrations`、Git / Current validation / Index / review-publication orchestration は `HamiiMigrationRuntime` に実装した。Current Core / Format / Index は historical parser を import しない。Required [Spike](spikes/isolated-format-upgrade/SPIKE.md) の Result と Decision は先行 commit に保存済みで、production implementation は `79e8b2cef2886c9305709891d771674c088f3359` までに完了した。[Exact-SHA Verify run](https://github.com/9uiLe/hamii/actions/runs/36520669881) は成功した。Current contract は code、architecture check、tests、README と `docs/final-architecture.md` が保持する。Manual / ambiguous input は [migration-ambiguity-resolution](../migration-ambiguity-resolution/ADR.md)、power-loss durability は [canonical-power-loss-durability](../canonical-power-loss-durability/ADR.md)、LFS object policy は [asset-storage-policy](../asset-storage-policy/ADR.md) に属する。この ADR の削除条件を満たす。
 
 ## Status
 

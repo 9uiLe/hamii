@@ -34,7 +34,7 @@ Recovery は source ref が expected old OID なら old state を維持して ab
 
 ## Unknowns
 
-`hamii migrate prepare --json` は actual Current Format validator と一時 fresh Index check を通した immutable candidate OID を durable local review record として保存する。`migrate publish` は明示された review/source/candidate OID だけを受け、retained candidate の再検証後に pending gate、ref CAS、Current v2 と full Index を順に公開する。`migrate recover` は old/candidate/neither を区別する。残る確認は exact-SHA CI、process-stop 回復の範囲評価、power-loss primitive との接続、および ADR closure criteria のレビュー。Actual LFS transfer はこの Decision の外で扱う。Git LFS transfer は必要 object の fail-closed 検証とは別に確認する。
+`hamii migrate prepare --json` は actual Current Format validator と一時 fresh Index check を通した immutable candidate OID を durable local review record として保存する。`migrate publish` は明示された review/source/candidate OID だけを受け、retained candidate の再検証後に pending gate、ref CAS、Current v2 と full Index を順に公開する。`migrate recover` は old/candidate/neither を区別する。この review/publication Decision Boundary に残る未実装事項はない。Actual LFS transfer、manual / ambiguous migration、power-loss durability はそれぞれ別の active ADR に属する。
 
 Production regression は review record failure 時の retention cleanup、source/ref/OID/tree/diff/Index identity の再照合、source journal / hidden Git state の拒否、old/candidate/neither recovery、post-CAS Index failure、CLI structured output を含む。別 OS process の writer を pending、ref CAS 後、SQLite transaction 中、Index publication 直前、Index publication 後の5地点で SIGKILL し、reader lock 競合と pending gate、restart recovery を確認した。これは process-stop evidence であり、fsync / APFS power-loss の証明ではない。Local full gate は 14/14、Swift 263件実行・失敗0・skip58、756秒。Release HamiiMigrationRuntime / HamiiFormat / HamiiIndex / hamii は成功。Exact-SHA CI と ADR closure criteria は commit/push 後に確認する。
 
@@ -52,6 +52,10 @@ Production regression は review record failure 時の retention cleanup、sourc
 
 - [migration-core-boundary](../migration-core-boundary/ADR.md)
 - [migration-ambiguity-resolution](../migration-ambiguity-resolution/ADR.md)
+
+## Closure Review
+
+Isolated candidate、exact OID review、CAS publication、fail-closed recovery の Product Contract は production に実装した。Required [Spike](spikes/worktree-safety/SPIKE.md) の Result と Decision は先行 commit に保存済み。Production implementation は `79e8b2cef2886c9305709891d771674c088f3359` に保存され、[Exact-SHA Verify run](https://github.com/9uiLe/hamii/actions/runs/36520669881) は成功した。Local full gate 14/14、Swift 263件実行・失敗0・skip58。別 OS process の5地点 SIGKILL と再起動復旧は process-stop evidence であり、power-loss proof ではない。Current contract は code、tests、README、`docs/final-architecture.md` が保持する。Manual / ambiguous input は [migration-ambiguity-resolution](../migration-ambiguity-resolution/ADR.md)、power-loss durability は [canonical-power-loss-durability](../canonical-power-loss-durability/ADR.md)、LFS object availability は [asset-storage-policy](../asset-storage-policy/ADR.md) に委譲した。この ADR の削除条件を満たす。
 
 ## Status
 

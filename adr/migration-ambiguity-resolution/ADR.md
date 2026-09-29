@@ -34,8 +34,7 @@ Requires Resolution report + editor、blocking migration、ユーザー指定 ma
 
 ## Related Decisions
 
-- [migration-core-boundary](../migration-core-boundary/ADR.md)
-- [migration-review-protocol](../migration-review-protocol/ADR.md)
+- [Current migration architecture](../../docs/final-architecture.md)
 
 ## Status
 

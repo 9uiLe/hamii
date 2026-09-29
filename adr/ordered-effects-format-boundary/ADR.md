@@ -28,9 +28,7 @@ First-class ordered effects を永続化する際、Canonical Format v1 の addi
 
 ## Unknowns
 
-- Production v1→v2 edge が分類した manual blocker の解決と review/publication workflow。
-- Current Format v2 の他 effect taxonomy と残る consumer の lowering。
-- v2 publication / review / power-loss durability と既存 user repository の安全な移行手順。
+この Format Boundary の判断に残る未解決事項はない。Manual historical input は [migration-ambiguity-resolution](../migration-ambiguity-resolution/ADR.md)、他 effect と typed target extension は [native-semantic-ir](../native-semantic-ir/ADR.md)、consumer / runtime coverage は [capability-contract](../capability-contract/ADR.md)、power-loss durability は [canonical-power-loss-durability](../canonical-power-loss-durability/ADR.md) の境界に属する。
 
 ## Required Evidence
 
@@ -52,12 +50,13 @@ First-class ordered effects を永続化する際、Canonical Format v1 の addi
 
 Test-only candidate は padding/background の順序を round-trip で保ち、v1 `paddingTokenID` を単一 padding effect へ局所的に写した。No-padding、single-padding、nested Component subtree で tested Layer 意味は復元可能だった。全 Document の移行分類は未確定であり、曖昧な既存意味が見つかれば [migration-ambiguity-resolution](../migration-ambiguity-resolution/ADR.md) で扱う。
 
-## Remaining Implementation
+## Production Integration
 
-- [migration-core-boundary](../migration-core-boundary/ADR.md) で決定した独立 target に v1→v2 edge を実装済み。Padded Layer の全階層と capability declaration を変換し、cross-kind residual 等を manual blocker とする。
-- [migration-review-protocol](../migration-review-protocol/ADR.md) で決定した review / publication 手順を production executor に適用する。
-- Current Format v2 の ordered padding effect、validation、serialization、Canvas / Native Preview lowering、Generator の拒否は production に接続済み。v1→v2 transformation edge は実装済みだが、元 repository から reviewable candidate を作り公開する executor は未実装。
-- 他 effect の consumer coverage と migration/review path が完了するまで、この ADR は削除しない。
+Current Format v2 の ordered padding effect、validation、serialization、Canvas / Native Preview lowering、Generator の拒否を production に接続した。Foundation-only v1→v2 edge は全 Layer tree と capability declaration を変換し、cross-kind residual 等を manual blocker とする。`migrate prepare` は隔離 candidate を作成し、`migrate publish` は review した exact OID を CAS で公開、`migrate recover` は old/candidate/neither を区別する。他 effect の taxonomy と consumer coverage はこの Format Boundary の削除条件ではない。
+
+## Closure Review
+
+v1 additive による silent semantic loss を防ぐ明示的 Format v2 Decision を Current code / schema / validation / tests / README / `docs/final-architecture.md` が表現する。Required [Spike](spikes/format-compatibility/SPIKE.md) の Result と Decision は先行 commit に保存済み。Production v1→v2 edge、isolated candidate、CAS publication / recovery は `79e8b2cef2886c9305709891d771674c088f3359` までに実装・検証した。[Exact-SHA Verify run](https://github.com/9uiLe/hamii/actions/runs/36520669881) は成功した。Manual input は [migration-ambiguity-resolution](../migration-ambiguity-resolution/ADR.md)、他 effect / typed extension は [native-semantic-ir](../native-semantic-ir/ADR.md)、runtime coverage は [capability-contract](../capability-contract/ADR.md)、power-loss は [canonical-power-loss-durability](../canonical-power-loss-durability/ADR.md)、LFS object policy は [asset-storage-policy](../asset-storage-policy/ADR.md) に属する。この ADR の削除条件を満たす。
 
 ## Status
 
