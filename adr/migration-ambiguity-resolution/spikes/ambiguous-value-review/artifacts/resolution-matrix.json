@@ -1,0 +1,530 @@
+[
+  {
+    "affectedPaths" : [
+      "hamii.json.capabilityDeclarations",
+      "hamii.json.capabilityDeclarations"
+    ],
+    "candidateCount" : 2,
+    "candidateIDs" : [
+      "spacing:0:1b21bad62331cb674b8ebe92919918ce140be8543ca3733ffd24650ff9149440",
+      "spacing:2:0f59108128641a050da6958277044f38ab0c21f4ebcdc1a15734f359492e6912"
+    ],
+    "candidateLossClasses" : [
+      "potentiallyLossy",
+      "potentiallyLossy"
+    ],
+    "candidateProduced" : true,
+    "candidateSemantics" : [
+      "v2 effect.padding and retained token.spacing declarations",
+      "v2 effect.padding and retained token.spacing declarations"
+    ],
+    "chosenCandidate" : "spacing:0:1b21bad62331cb674b8ebe92919918ce140be8543ca3733ffd24650ff9149440",
+    "classificationAfter" : "potentiallyLossy",
+    "classificationBefore" : "manual",
+    "currentV2Valid" : true,
+    "deterministic" : true,
+    "diagnosticCode" : "capability.ambiguousSpacing",
+    "entityID" : "target_ios",
+    "lossVisible" : true,
+    "losses" : [
+      {
+        "choiceID" : "spacing:0:1b21bad62331cb674b8ebe92919918ce140be8543ca3733ffd24650ff9149440",
+        "historicalValue" : "{\n  \"value\" : {\n    \"key\" : {\n      \"rawValue\" : \"token.spacing\"\n    },\n    \"reason\" : \"second v1 spacing support\",\n    \"support\" : \"portable\",\n    \"targetID\" : {\n      \"rawValue\" : \"target_ios\"\n    }\n  }\n}\n",
+        "path" : "hamii.json.capabilityDeclarations[2]"
+      }
+    ],
+    "path" : "hamii.json.capabilityDeclarations",
+    "remainingUnresolved" : 0,
+    "scenario" : "A",
+    "sourceBound" : true
+  },
+  {
+    "affectedPaths" : [
+      "hamii.json.capabilityDeclarations",
+      "hamii.json.capabilityDeclarations"
+    ],
+    "candidateCount" : 2,
+    "candidateIDs" : [
+      "spacing:0:1b21bad62331cb674b8ebe92919918ce140be8543ca3733ffd24650ff9149440",
+      "spacing:2:1b21bad62331cb674b8ebe92919918ce140be8543ca3733ffd24650ff9149440"
+    ],
+    "candidateLossClasses" : [
+      "losslessWithNormalization",
+      "losslessWithNormalization"
+    ],
+    "candidateProduced" : true,
+    "candidateSemantics" : [
+      "v2 effect.padding and retained token.spacing declarations",
+      "v2 effect.padding and retained token.spacing declarations"
+    ],
+    "chosenCandidate" : "spacing:0:1b21bad62331cb674b8ebe92919918ce140be8543ca3733ffd24650ff9149440",
+    "classificationAfter" : "losslessWithNormalization",
+    "classificationBefore" : "manual",
+    "currentV2Valid" : true,
+    "deterministic" : true,
+    "diagnosticCode" : "capability.ambiguousSpacing",
+    "entityID" : "target_ios",
+    "lossVisible" : false,
+    "losses" : [
+
+    ],
+    "path" : "hamii.json.capabilityDeclarations",
+    "remainingUnresolved" : 0,
+    "scenario" : "B",
+    "sourceBound" : true
+  },
+  {
+    "affectedPaths" : [
+
+    ],
+    "candidateCount" : 0,
+    "candidateIDs" : [
+
+    ],
+    "candidateLossClasses" : [
+
+    ],
+    "candidateProduced" : false,
+    "candidateSemantics" : [
+
+    ],
+    "classificationAfter" : "manual",
+    "classificationBefore" : "manual",
+    "currentV2Valid" : false,
+    "deterministic" : true,
+    "diagnosticCode" : "capability.ambiguousPadding",
+    "lossVisible" : false,
+    "losses" : [
+
+    ],
+    "path" : "hamii.json.capabilityDeclarations[2]",
+    "remainingUnresolved" : 1,
+    "scenario" : "C",
+    "sourceBound" : true
+  },
+  {
+    "affectedPaths" : [
+      "screens/screen_main.json.root.children[0].children[0].assetID"
+    ],
+    "candidateCount" : 1,
+    "candidateIDs" : [
+      "discard:10625b4932efed9b4679527691e71daa89a92494ec75d74680281e8d8cfa2910"
+    ],
+    "candidateLossClasses" : [
+      "potentiallyLossy"
+    ],
+    "candidateProduced" : true,
+    "candidateSemantics" : [
+      "historical cross-kind assetID residual"
+    ],
+    "chosenCandidate" : "discard:10625b4932efed9b4679527691e71daa89a92494ec75d74680281e8d8cfa2910",
+    "classificationAfter" : "potentiallyLossy",
+    "classificationBefore" : "manual",
+    "currentV2Valid" : true,
+    "deterministic" : true,
+    "diagnosticCode" : "layer.crossKindResidual",
+    "entityID" : "layer_title",
+    "lossVisible" : true,
+    "losses" : [
+      {
+        "choiceID" : "discard:10625b4932efed9b4679527691e71daa89a92494ec75d74680281e8d8cfa2910",
+        "historicalValue" : "{\n  \"value\" : {\n    \"rawValue\" : \"asset_symbol\"\n  }\n}\n",
+        "path" : "screens/screen_main.json.root.children[0].children[0].assetID"
+      }
+    ],
+    "path" : "screens/screen_main.json.root.children[0].children[0].assetID",
+    "remainingUnresolved" : 0,
+    "scenario" : "D",
+    "sourceBound" : true
+  },
+  {
+    "affectedPaths" : [
+      "screens/screen_main.json.root.children[0].children[0].assetID"
+    ],
+    "candidateCount" : 1,
+    "candidateIDs" : [
+      "discard:10625b4932efed9b4679527691e71daa89a92494ec75d74680281e8d8cfa2910"
+    ],
+    "candidateLossClasses" : [
+      "potentiallyLossy"
+    ],
+    "candidateProduced" : true,
+    "candidateSemantics" : [
+      "historical cross-kind assetID residual"
+    ],
+    "chosenCandidate" : "discard:10625b4932efed9b4679527691e71daa89a92494ec75d74680281e8d8cfa2910",
+    "classificationAfter" : "potentiallyLossy",
+    "classificationBefore" : "manual",
+    "currentV2Valid" : true,
+    "deterministic" : true,
+    "diagnosticCode" : "layer.crossKindResidual",
+    "entityID" : "layer_title",
+    "lossVisible" : true,
+    "losses" : [
+      {
+        "choiceID" : "discard:10625b4932efed9b4679527691e71daa89a92494ec75d74680281e8d8cfa2910",
+        "historicalValue" : "{\n  \"value\" : {\n    \"rawValue\" : \"asset_symbol\"\n  }\n}\n",
+        "path" : "screens/screen_main.json.root.children[0].children[0].assetID"
+      },
+      {
+        "choiceID" : "discard:10625b4932efed9b4679527691e71daa89a92494ec75d74680281e8d8cfa2910",
+        "historicalValue" : "{\n  \"value\" : {\n    \"rawValue\" : \"asset_symbol\"\n  }\n}\n",
+        "path" : "screens/screen_main.json.root.children[1].assetID"
+      }
+    ],
+    "path" : "screens/screen_main.json.root.children[0].children[0].assetID",
+    "remainingUnresolved" : 0,
+    "scenario" : "E",
+    "sourceBound" : true
+  },
+  {
+    "affectedPaths" : [
+      "screens/screen_main.json.root.children[1].assetID"
+    ],
+    "candidateCount" : 1,
+    "candidateIDs" : [
+      "discard:10625b4932efed9b4679527691e71daa89a92494ec75d74680281e8d8cfa2910"
+    ],
+    "candidateLossClasses" : [
+      "potentiallyLossy"
+    ],
+    "candidateProduced" : true,
+    "candidateSemantics" : [
+      "historical cross-kind assetID residual"
+    ],
+    "chosenCandidate" : "discard:10625b4932efed9b4679527691e71daa89a92494ec75d74680281e8d8cfa2910",
+    "classificationAfter" : "potentiallyLossy",
+    "classificationBefore" : "manual",
+    "currentV2Valid" : true,
+    "deterministic" : true,
+    "diagnosticCode" : "layer.crossKindResidual",
+    "entityID" : "layer_button",
+    "lossVisible" : true,
+    "losses" : [
+      {
+        "choiceID" : "discard:10625b4932efed9b4679527691e71daa89a92494ec75d74680281e8d8cfa2910",
+        "historicalValue" : "{\n  \"value\" : {\n    \"rawValue\" : \"asset_symbol\"\n  }\n}\n",
+        "path" : "screens/screen_main.json.root.children[0].children[0].assetID"
+      },
+      {
+        "choiceID" : "discard:10625b4932efed9b4679527691e71daa89a92494ec75d74680281e8d8cfa2910",
+        "historicalValue" : "{\n  \"value\" : {\n    \"rawValue\" : \"asset_symbol\"\n  }\n}\n",
+        "path" : "screens/screen_main.json.root.children[1].assetID"
+      }
+    ],
+    "path" : "screens/screen_main.json.root.children[1].assetID",
+    "remainingUnresolved" : 0,
+    "scenario" : "E",
+    "sourceBound" : true
+  },
+  {
+    "affectedPaths" : [
+
+    ],
+    "candidateCount" : 0,
+    "candidateIDs" : [
+
+    ],
+    "candidateLossClasses" : [
+
+    ],
+    "candidateProduced" : false,
+    "candidateSemantics" : [
+
+    ],
+    "classificationAfter" : "manual",
+    "classificationBefore" : "manual",
+    "currentV2Valid" : false,
+    "deterministic" : true,
+    "diagnosticCode" : "capability.unknown",
+    "lossVisible" : false,
+    "losses" : [
+
+    ],
+    "path" : "hamii.json.capabilityDeclarations[2]",
+    "remainingUnresolved" : 1,
+    "scenario" : "F",
+    "sourceBound" : true
+  },
+  {
+    "affectedPaths" : [
+
+    ],
+    "candidateCount" : 0,
+    "candidateIDs" : [
+
+    ],
+    "candidateLossClasses" : [
+
+    ],
+    "candidateProduced" : false,
+    "candidateSemantics" : [
+
+    ],
+    "classificationAfter" : "manual",
+    "classificationBefore" : "manual",
+    "currentV2Valid" : false,
+    "deterministic" : true,
+    "diagnosticCode" : "schema.unknownField",
+    "entityID" : "layer_root",
+    "lossVisible" : false,
+    "losses" : [
+
+    ],
+    "path" : "screens/screen_main.json.root.futureLayerField",
+    "remainingUnresolved" : 1,
+    "scenario" : "G",
+    "sourceBound" : true
+  },
+  {
+    "affectedPaths" : [
+
+    ],
+    "candidateCount" : 0,
+    "candidateIDs" : [
+
+    ],
+    "candidateLossClasses" : [
+
+    ],
+    "candidateProduced" : false,
+    "candidateSemantics" : [
+
+    ],
+    "classificationAfter" : "manual",
+    "classificationBefore" : "manual",
+    "currentV2Valid" : false,
+    "deterministic" : true,
+    "diagnosticCode" : "schema.unknownCase",
+    "lossVisible" : false,
+    "losses" : [
+
+    ],
+    "path" : "assets/asset_symbol.json.source",
+    "remainingUnresolved" : 1,
+    "scenario" : "H",
+    "sourceBound" : true
+  },
+  {
+    "affectedPaths" : [
+
+    ],
+    "candidateCount" : 0,
+    "candidateIDs" : [
+
+    ],
+    "candidateLossClasses" : [
+
+    ],
+    "candidateProduced" : false,
+    "candidateSemantics" : [
+
+    ],
+    "classificationAfter" : "manual",
+    "classificationBefore" : "manual",
+    "currentV2Valid" : false,
+    "deterministic" : true,
+    "diagnosticCode" : "layer.unknownKind",
+    "entityID" : "layer_root",
+    "lossVisible" : false,
+    "losses" : [
+
+    ],
+    "path" : "screens/screen_main.json.root",
+    "remainingUnresolved" : 1,
+    "scenario" : "I",
+    "sourceBound" : true
+  },
+  {
+    "affectedPaths" : [
+
+    ],
+    "candidateCount" : 0,
+    "candidateIDs" : [
+
+    ],
+    "candidateLossClasses" : [
+
+    ],
+    "candidateProduced" : false,
+    "candidateSemantics" : [
+
+    ],
+    "classificationAfter" : "manual",
+    "classificationBefore" : "manual",
+    "currentV2Valid" : false,
+    "deterministic" : true,
+    "diagnosticCode" : "path.unknown",
+    "lossVisible" : false,
+    "losses" : [
+
+    ],
+    "path" : "future/unknown.json",
+    "remainingUnresolved" : 1,
+    "scenario" : "J",
+    "sourceBound" : true
+  },
+  {
+    "affectedPaths" : [
+      "hamii.json.capabilityDeclarations",
+      "hamii.json.capabilityDeclarations"
+    ],
+    "candidateCount" : 2,
+    "candidateIDs" : [
+      "spacing:0:1b21bad62331cb674b8ebe92919918ce140be8543ca3733ffd24650ff9149440",
+      "spacing:2:0f59108128641a050da6958277044f38ab0c21f4ebcdc1a15734f359492e6912"
+    ],
+    "candidateLossClasses" : [
+      "potentiallyLossy",
+      "potentiallyLossy"
+    ],
+    "candidateProduced" : false,
+    "candidateSemantics" : [
+      "v2 effect.padding and retained token.spacing declarations",
+      "v2 effect.padding and retained token.spacing declarations"
+    ],
+    "chosenCandidate" : "spacing:0:1b21bad62331cb674b8ebe92919918ce140be8543ca3733ffd24650ff9149440",
+    "classificationAfter" : "manual",
+    "classificationBefore" : "manual",
+    "currentV2Valid" : false,
+    "deterministic" : true,
+    "diagnosticCode" : "capability.ambiguousSpacing",
+    "entityID" : "target_ios",
+    "lossVisible" : false,
+    "losses" : [
+
+    ],
+    "path" : "hamii.json.capabilityDeclarations",
+    "remainingUnresolved" : 2,
+    "scenario" : "K",
+    "sourceBound" : true
+  },
+  {
+    "affectedPaths" : [
+
+    ],
+    "candidateCount" : 0,
+    "candidateIDs" : [
+
+    ],
+    "candidateLossClasses" : [
+
+    ],
+    "candidateProduced" : false,
+    "candidateSemantics" : [
+
+    ],
+    "classificationAfter" : "manual",
+    "classificationBefore" : "manual",
+    "currentV2Valid" : false,
+    "deterministic" : true,
+    "diagnosticCode" : "capability.unknown",
+    "lossVisible" : false,
+    "losses" : [
+
+    ],
+    "path" : "hamii.json.capabilityDeclarations[3]",
+    "remainingUnresolved" : 2,
+    "scenario" : "K",
+    "sourceBound" : true
+  },
+  {
+    "affectedPaths" : [
+      "screens/screen_main.json.root.children[0].children[0].assetID"
+    ],
+    "candidateCount" : 1,
+    "candidateIDs" : [
+      "discard:10625b4932efed9b4679527691e71daa89a92494ec75d74680281e8d8cfa2910"
+    ],
+    "candidateLossClasses" : [
+      "potentiallyLossy"
+    ],
+    "candidateProduced" : false,
+    "candidateSemantics" : [
+      "historical cross-kind assetID residual"
+    ],
+    "classificationAfter" : "manual",
+    "classificationBefore" : "manual",
+    "currentV2Valid" : false,
+    "deterministic" : true,
+    "diagnosticCode" : "layer.crossKindResidual",
+    "entityID" : "layer_title",
+    "lossVisible" : false,
+    "losses" : [
+
+    ],
+    "path" : "screens/screen_main.json.root.children[0].children[0].assetID",
+    "remainingUnresolved" : 2,
+    "scenario" : "K",
+    "sourceBound" : true
+  },
+  {
+    "affectedPaths" : [
+      "hamii.json.capabilityDeclarations",
+      "hamii.json.capabilityDeclarations"
+    ],
+    "candidateCount" : 2,
+    "candidateIDs" : [
+      "spacing:0:1b21bad62331cb674b8ebe92919918ce140be8543ca3733ffd24650ff9149440",
+      "spacing:2:0f59108128641a050da6958277044f38ab0c21f4ebcdc1a15734f359492e6912"
+    ],
+    "candidateLossClasses" : [
+      "potentiallyLossy",
+      "potentiallyLossy"
+    ],
+    "candidateProduced" : true,
+    "candidateSemantics" : [
+      "v2 effect.padding and retained token.spacing declarations",
+      "v2 effect.padding and retained token.spacing declarations"
+    ],
+    "chosenCandidate" : "spacing:0:1b21bad62331cb674b8ebe92919918ce140be8543ca3733ffd24650ff9149440",
+    "classificationAfter" : "potentiallyLossy",
+    "classificationBefore" : "manual",
+    "currentV2Valid" : true,
+    "deterministic" : true,
+    "diagnosticCode" : "capability.ambiguousSpacing",
+    "entityID" : "target_ios",
+    "lossVisible" : true,
+    "losses" : [
+      {
+        "choiceID" : "spacing:0:1b21bad62331cb674b8ebe92919918ce140be8543ca3733ffd24650ff9149440",
+        "historicalValue" : "{\n  \"value\" : {\n    \"key\" : {\n      \"rawValue\" : \"token.spacing\"\n    },\n    \"reason\" : \"second v1 spacing support\",\n    \"support\" : \"portable\",\n    \"targetID\" : {\n      \"rawValue\" : \"target_ios\"\n    }\n  }\n}\n",
+        "path" : "hamii.json.capabilityDeclarations[2]"
+      }
+    ],
+    "path" : "hamii.json.capabilityDeclarations",
+    "remainingUnresolved" : 0,
+    "scenario" : "L",
+    "sourceBound" : true,
+    "staleResolutionRejected" : true
+  },
+  {
+    "affectedPaths" : [
+
+    ],
+    "candidateCount" : 0,
+    "candidateIDs" : [
+
+    ],
+    "candidateLossClasses" : [
+
+    ],
+    "candidateProduced" : true,
+    "candidateSemantics" : [
+
+    ],
+    "classificationAfter" : "losslessWithNormalization",
+    "classificationBefore" : "losslessWithNormalization",
+    "currentV2Valid" : true,
+    "deterministic" : true,
+    "diagnosticCode" : "none",
+    "lossVisible" : false,
+    "losses" : [
+
+    ],
+    "path" : "",
+    "remainingUnresolved" : 0,
+    "scenario" : "M",
+    "sourceBound" : true
+  }
+]

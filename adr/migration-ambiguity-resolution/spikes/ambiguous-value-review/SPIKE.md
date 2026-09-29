@@ -54,15 +54,16 @@ GUI editor; production CLI/API or migration schema; `MigrationCandidatePreparer`
 
 ## Success Criteria
 
-- [ ] Production-derived A–M cases are covered; no blocker is silently guessed.
-- [ ] Safe choices are explicit and finite; unknown meanings can remain unresolvable.
-- [ ] Resolution is bound to exact source identity; stale and nonexistent choices are rejected.
-- [ ] Partial resolution remains partial and cannot produce a review-ready candidate.
-- [ ] Same source and resolution produce identical bytes and reports in at least three runs.
-- [ ] Explicit Human-approved loss remains observable and is never promoted to lossless.
-- [ ] Produced candidates parse and validate as Current v2; the safe automatic v1 path is unchanged.
-- [ ] Production migration/publication source is unchanged; comparison and machine-readable matrix artifacts exist.
-- [ ] Full local gate and exact pushed-SHA CI succeed.
+- [x] Production-derived A–M cases are covered; no blocker is silently guessed.
+- [x] Safe choices are explicit and finite; unknown meanings can remain unresolvable.
+- [x] Resolution is bound to exact source identity; stale and nonexistent choices are rejected.
+- [x] Partial resolution remains partial and cannot produce a review-ready candidate.
+- [x] Same source and resolution produce identical bytes and reports in at least three runs.
+- [x] Explicit Human-approved loss remains observable and is never promoted to lossless.
+- [x] Produced candidates parse and validate as Current v2; the safe automatic v1 path is unchanged.
+- [x] Production migration/publication source is unchanged; comparison and machine-readable matrix artifacts exist.
+- [x] Full local gate succeeds.
+- [ ] Exact pushed-SHA CI succeeds (pending evidence commit).
 
 ## Failure Criteria
 
@@ -70,12 +71,17 @@ Stop if safe resolution requires arbitrary free-form JSON patching; unknown sema
 
 ## Result
 
-Not yet validated. Record observations, failed cases, raw machine-readable matrix, and links to artifacts here after the precommitted oracle is in Git history.
+The precommitted oracle was recorded in `7cd7ff2368037e685818dc34a3607eb270beea4b` before the evidence run. Its exact-SHA CI run `36525898343` succeeded. The [test-only prototype](../../../../Tests/HamiiTests/AmbiguousMigrationResolutionSpikeTests.swift) exercised A–M against actual production `MigrationRegistry.analyze` diagnostics. The final focused local XCTest run executed 3 tests with 0 failures in 0.246 seconds; this is test execution time, not a product performance measurement. The first artifact-writing run failed because the output directory did not exist; creating the Spike artifact directory and rerunning succeeded. Two initial full-gate runs were cancelled after the build stage to add alternative-choice and machine-readable choice metadata assertions. A redundant full-gate start after the successful run was cancelled when only this Markdown report had changed. None of these cancelled attempts is counted as validation.
+
+[The matrix](artifacts/resolution-matrix.json) records every observed diagnostic, candidate set with affected semantic/path/loss class, classification, unresolved count, Current v2 validation, three-run determinism, and exact loss details. A/L produced a valid candidate only by selecting one distinct spacing declaration and visibly discarding the conflicting duplicate (`potentiallyLossy`). Both A choices were tested; each selected support/reason reached the Current v2 padding declaration and the discarded declaration remained reported. B normalized a fully equivalent duplicate (`losslessWithNormalization`). D/E produced valid candidates after explicit residual discard while preserving `potentiallyLossy` and exact historical path/value. C and F–J remained hard blocked with zero choices. K remained blocked after partial resolution. L rejected a manifest after unrelated historical Canonical bytes changed even though the relevant diagnostic item identity remained the same. M preserved the existing automatic result and exact output bytes. Invalid candidate IDs, duplicate decisions, and source OID mismatch were rejected.
+
+The candidate manifest was JSON round-tripped before application. Produced candidates were parsed by the actual Current v2 reader and passed `DocumentValidator`. Production migration/publication sources were not changed. [The workflow comparison](artifacts/resolution-comparison.md) records tradeoffs and the prototype's limits. The local full gate passed all 14 checks in 753.235 seconds: 266 Swift tests executed, 58 skipped, 0 failures. Detailed log: `.build/verify-logs/20260929-053118-397816-36179-full.log` (local, untracked). Exact-SHA CI for the evidence commit is pending.
 
 ## Conclusion
 
-Not yet validated. Compare the three approaches and state what evidence supports, what remains blocked, and whether the ADR can move to a decision.
+The tested evidence supports a bounded typed resolution contract for **known** choices, provided exact source binding, partial-blocker rejection, deterministic candidate generation, and persistent loss reporting remain mandatory. It does not support a universal Human mapping path: historical `effect.padding` and unknown semantics still have zero safe choices. Distinct duplicate spacing declarations and cross-kind residuals demonstrate that a Human choice can be intentionally lossy; approval must not relabel such a result lossless. These results justify comparing the typed contract with hard block at the ADR decision stage after full-gate/CI validation; they do not make this prototype production code.
 
 ## Artifacts
 
-Planned: `artifacts/resolution-matrix.json` and `artifacts/resolution-comparison.md`. Create them only with the evidence commit.
+- [Machine-readable resolution matrix](artifacts/resolution-matrix.json)
+- [Workflow comparison and limitations](artifacts/resolution-comparison.md)
