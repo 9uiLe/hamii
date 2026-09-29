@@ -20,20 +20,30 @@ When supplying multiple STAGED semantic context responses, should hamii keep one
 
 ## Current Hypothesis
 
-**Tentative:** bounded batch has the smaller failure surface because it holds no state between requests. A process-local session may justify its lifecycle only if the exact freshness verifier is both correct and materially faster on all measured shapes. Neither is a production decision yet.
+Before the Spike, bounded batch appeared to have the smaller failure surface, while a process-local session needed to justify its lifecycle with exact freshness verification and material savings across all measured shapes. The Decision below supersedes that hypothesis.
+
+## Decision
+
+Adopt a **process-local read session** as the production implementation target for multiple STAGED semantic context responses. Retain one immutable, fully validated Canonical observation S0. Before every follow-up response, reacquire the coordinated worktree boundary, recover the Canonical journal, require Ready state, and compare the current `ClientPrecondition` with S0 using the existing production algorithm. Only an exact match permits projection from S0. Mismatch, pending publication, missing or corrupt coordination state, or failed verification invalidates the session and returns a structured failure before producing a payload. A process restart discards the session. No lock spans AI thinking, transport, or time between requests. Every response identifies S0 as its observation; mutations continue to use `ProjectService` with S0 as `expectedState` and revalidate there.
+
+Do not add a second production bounded-batch path. The current independent-observation path remains the safe production behavior until the session contract is implemented and validated. A context response can become stale after verification; its state token is a mutation precondition, not a promise that the worktree remains unchanged.
+
+The [adaptive-read Spike](spikes/adaptive-read/SPIKE.md) met the precommitted correctness and timing criteria in the tested L/S/C shapes. Same-process T2 service medians were 440.202/485.699/503.137 ms for CURRENT, 219.911/242.451/257.947 ms for BATCH, and 117.113/142.161/156.343 ms for SESSION. SESSION/BATCH ratios were 0.533/0.586/0.606. T1 SESSION was slightly slower than BATCH, so the decision applies to multi-response reuse. These are test-only prototype measurements, not production performance or AI-token savings. Separate CLI timings are not used as the qualification denominator.
 
 ## Unknowns
 
-Whether a lightweight verifier can reuse the exact production precondition algorithm without a full Document decode/validation; its behavior under coordinated and detectable external transitions; candidate payload/Scope equivalence; L/S/C timing and byte costs; the additional failure modes of a process-local session. Session ID encoding, transport, and CLI command spelling are not decided here.
+Production session lifetime and memory bounds, Application Service and CLI entry points, multi-process contention, process restart behavior, release end-to-end performance, and structured invalidation/resync UX remain implementation and validation work. The test-only verifier is not a production API. Power-loss durability remains with its separate ADR. Session ID encoding and CLI command spelling are implementation details unless they expose a new decision boundary.
 
 ## Required Evidence
 
-- [Adaptive read Spike](spikes/adaptive-read/SPIKE.md): precommitted CURRENT/BATCH/SESSION correctness and timing matrix on the same L/S/C fixtures as the sharding observation phase. Its prototypes are not production APIs.
+- [Adaptive read Spike](spikes/adaptive-read/SPIKE.md), [comparison](spikes/adaptive-read/artifacts/candidate-comparison.md), and [raw matrix](spikes/adaptive-read/artifacts/candidate-matrix.json): precommitted CURRENT/BATCH/SESSION correctness and timing on the same L/S/C fixtures as the sharding observation phase. Evidence commit `8cd17d0a8ebd620d806949cdd2597e5cfcbd58ec` passed exact-SHA CI run `36583193339`. The prototypes are not production APIs.
 
 ## Decision Criteria
 
 False current, Scope violations, mixed `ContextObservation`, or stale mutation acceptance disqualify a candidate regardless of speed. Apply the Spike's precommitted payload, observation-count, median-ratio, and complexity thresholds without changing them after results. If neither reuse candidate qualifies, retain independent observations. A decision must name its freshness guarantee and failure behavior before implementation.
 
+SESSION qualified in all measured shapes, with no additional failure in the tested correctness matrix and T2 median at most 75% of BATCH. Production adoption still requires the implementation and validation listed above; the Spike does not prove arbitrary external-writer safety, OS restart recovery, production end-to-end latency, or AI-token reduction.
+
 ## Status
 
-Spike Required
+Implementation Required
