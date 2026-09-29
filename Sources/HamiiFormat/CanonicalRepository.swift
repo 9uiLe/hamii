@@ -233,15 +233,29 @@ public final class CanonicalRepository: ProjectRepository {
     }
 
     public func withCoordinatedObservation<T>(_ operation: (ProjectObservation) throws -> T) throws -> T {
+        try withCoordinatedObservation(onObservation: nil, operation)
+    }
+
+    private func withCoordinatedObservation<T>(onObservation: CanonicalObservationRecorder?,
+                                               _ operation: (ProjectObservation) throws -> T) throws -> T {
         try coordinator.withExclusive {
-            try transaction.recoverIfNeeded()
-            try coordinator.requireReady()
-            try recoverGenerationIfNeeded()
-            let document = try loadUnlocked(validate: true)
-            let observed = ProjectObservation(document: document, statePrecondition: try clientPreconditionUnlocked())
+            try measureCanonical(.transactionRecovery, recorder: onObservation) { try transaction.recoverIfNeeded() }
+            try measureCanonical(.readyGate, recorder: onObservation) { try coordinator.requireReady() }
+            try measureCanonical(.generationRecovery, recorder: onObservation) { try recoverGenerationIfNeeded() }
+            let document = try loadUnlocked(validate: true, onObservation: onObservation)
+            let observed = ProjectObservation(document: document,
+                statePrecondition: try clientPreconditionUnlocked(onObservation: onObservation))
             return try operation(observed)
         }
     }
+
+    #if DEBUG
+    /// The exact production observation path with optional timing only. Tests
+    /// never use these measurements as a freshness or mutation decision.
+    func observeForMeasurement(_ recorder: @escaping CanonicalObservationRecorder) throws -> ProjectObservation {
+        try withCoordinatedObservation(onObservation: recorder) { $0 }
+    }
+    #endif
 
     public func withCoordinatedDocument<T>(_ operation: (Document) throws -> T) throws -> T {
         try coordinator.withExclusive {
@@ -599,21 +613,46 @@ public final class CanonicalRepository: ProjectRepository {
         return diagnostics
     }
 
-    private func clientPreconditionUnlocked() throws -> ClientPrecondition {
-        try clientPreconditionForCanonicalPaths(canonicalJSONPaths())
+    private func clientPreconditionUnlocked(onObservation: CanonicalObservationRecorder? = nil) throws -> ClientPrecondition {
+        let paths = try measureCanonical(.canonicalPathEnumerationAndSymlinkCheck, recorder: onObservation) {
+            try canonicalJSONPaths(onObservation: onObservation)
+        }
+        return try clientPreconditionForCanonicalPaths(paths, onObservation: onObservation)
     }
 
     // Hash the supplied ordered paths as the client's exact observation.
-    func clientPreconditionForCanonicalPaths(_ paths: [URL]) throws -> ClientPrecondition {
+    func clientPreconditionForCanonicalPaths(_ paths: [URL],
+                                            onObservation: CanonicalObservationRecorder? = nil) throws -> ClientPrecondition {
         var hash = SHA256()
-        appendHash(Data("hamii-client-state-v1".utf8), to: &hash)
-        appendHash(Data(root.resolvingSymlinksInPath().standardizedFileURL.path.utf8), to: &hash)
-        appendHash(Data(try coordinator.clientEpoch().utf8), to: &hash)
-        for path in paths {
-            appendHash(Data(path.path.replacingOccurrences(of: root.path + "/", with: "").utf8), to: &hash)
-            appendHash(try Data(contentsOf: path), to: &hash)
+        var hashMilliseconds = 0.0
+        var readMilliseconds = 0.0
+        var bytesRead = 0
+        func add(_ bytes: Data) {
+            let started = onObservation == nil ? 0 : ProcessInfo.processInfo.systemUptime
+            appendHash(bytes, to: &hash)
+            if onObservation != nil { hashMilliseconds += (ProcessInfo.processInfo.systemUptime - started) * 1_000 }
         }
-        return ClientPrecondition(hash.finalize().map { String(format: "%02x", $0) }.joined())
+        add(Data("hamii-client-state-v1".utf8))
+        add(Data(root.resolvingSymlinksInPath().standardizedFileURL.path.utf8))
+        add(Data(try coordinator.clientEpoch().utf8))
+        for path in paths {
+            add(Data(path.path.replacingOccurrences(of: root.path + "/", with: "").utf8))
+            let started = onObservation == nil ? 0 : ProcessInfo.processInfo.systemUptime
+            let data = try Data(contentsOf: path)
+            if onObservation != nil {
+                readMilliseconds += (ProcessInfo.processInfo.systemUptime - started) * 1_000
+                bytesRead += data.count
+            }
+            add(data)
+        }
+        let result = ClientPrecondition(hash.finalize().map { String(format: "%02x", $0) }.joined())
+        if let onObservation {
+            onObservation(CanonicalObservationMeasurement(stage: .clientPreconditionBytesRead,
+                milliseconds: readMilliseconds, bytes: bytesRead, pathCount: paths.count))
+            onObservation(CanonicalObservationMeasurement(stage: .clientPreconditionHash,
+                milliseconds: hashMilliseconds, bytes: bytesRead, pathCount: paths.count))
+        }
+        return result
     }
 
     func canonicalJSONPaths(onObservation: CanonicalObservationRecorder? = nil,
@@ -701,7 +740,8 @@ public final class CanonicalRepository: ProjectRepository {
         }
         if let onObservation {
             onObservation(CanonicalObservationMeasurement(stage: .directoryEnumeration, detail: folder,
-                milliseconds: (ProcessInfo.processInfo.systemUptime - enumerationStart) * 1_000))
+                milliseconds: (ProcessInfo.processInfo.systemUptime - enumerationStart) * 1_000,
+                pathCount: paths.count, folderCount: 1))
         }
         var readMilliseconds = 0.0
         var decodeMilliseconds = 0.0

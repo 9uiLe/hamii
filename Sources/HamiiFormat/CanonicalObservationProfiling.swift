@@ -6,6 +6,7 @@ package enum CanonicalObservationStage: String, Codable {
     case transactionRecovery
     case readyGate
     case stableGenerationRead
+    case generationRecovery
     case snapshotAcquisition
     case manifestRead
     case directoryEnumeration
@@ -20,6 +21,8 @@ package enum CanonicalObservationStage: String, Codable {
     case canonicalPathEnumerationAndSymlinkCheck
     case identityBytesRead
     case identityHash
+    case clientPreconditionBytesRead
+    case clientPreconditionHash
     case canonicalRootFileChecks
     case folderExistenceChecks
     case contentsOfDirectory
