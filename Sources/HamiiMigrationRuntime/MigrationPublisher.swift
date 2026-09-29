@@ -197,9 +197,12 @@ public final class MigrationPublisher {
     }
 
     private func validateRetainedCandidate(_ review: MigrationReviewPackage) throws {
-        guard review.recordFormatVersion == 1, review.sourceFormatVersion == 1,
+        guard [1, 2].contains(review.recordFormatVersion), review.sourceFormatVersion == 1,
               review.targetFormatVersion == 2,
-              review.classification == .losslessWithNormalization,
+              (review.recordFormatVersion == 1 && review.resolutionAudit == nil &&
+               review.classification == .losslessWithNormalization ||
+               review.recordFormatVersion == 2 && review.resolutionAudit != nil &&
+               [MigrationClassification.losslessWithNormalization, .potentiallyLossy].contains(review.classification)),
               review.edgePath == ["1->2"],
               review.validation.currentFormat == 2,
               review.validation.documentRevision == review.candidateDocumentRevision,
@@ -234,7 +237,37 @@ public final class MigrationPublisher {
               snapshot.document.revision == review.validation.documentRevision else {
             throw MigrationPublicationError.candidateMismatch
         }
+        if review.recordFormatVersion == 2 {
+            try validateResolutionAudit(review, candidateRoot: candidateRoot)
+        }
         try index.validateCandidate(at: candidateRoot, snapshot: snapshot)
+    }
+
+    private func validateResolutionAudit(_ review: MigrationReviewPackage, candidateRoot: URL) throws {
+        guard let audit = review.resolutionAudit,
+              audit.manifest.sourceOID == review.sourceOID,
+              audit.manifest.sourceCanonicalIdentity == review.sourceCanonicalIdentity,
+              audit.manifest.sourceFormatVersion == review.sourceFormatVersion,
+              audit.manifest.targetFormatVersion == review.targetFormatVersion,
+              audit.decisions == audit.manifest.decisions else {
+            throw MigrationPublicationError.candidateMismatch
+        }
+        let historical = try MigrationRepositoryInput.load(from: root)
+        guard CanonicalByteIdentity.compute(files: historical.files).rawValue == review.sourceCanonicalIdentity else {
+            throw MigrationPublicationError.sourceChanged
+        }
+        let binding = MigrationResolutionSourceBinding(sourceOID: review.sourceOID,
+            sourceCanonicalIdentity: review.sourceCanonicalIdentity,
+            sourceFormatVersion: review.sourceFormatVersion, targetFormatVersion: review.targetFormatVersion)
+        let resolved = try MigrationRegistry.transform(historical, applying: audit.manifest,
+            actualSourceBinding: binding)
+        guard resolved.classification == review.classification,
+              resolved.losses == audit.losses,
+              resolved.resolutionDecisions == audit.decisions,
+              resolved.remainingUnresolved.isEmpty,
+              resolved.files.files == (try MigrationRepositoryInput.load(from: candidateRoot)).files else {
+            throw MigrationPublicationError.candidateMismatch
+        }
     }
 
     private func validateSource(_ review: MigrationReviewPackage) throws {
@@ -248,11 +281,27 @@ public final class MigrationPublisher {
         try requireClean()
         let historical = try MigrationRepositoryInput.load(from: root)
         let analysis = try MigrationRegistry.analyze(historical)
-        guard analysis.automaticCandidateEligible,
-              analysis.classification == .losslessWithNormalization,
-              CanonicalByteIdentity.compute(files: historical.files) == (try identity(review.sourceCanonicalIdentity)),
+        guard CanonicalByteIdentity.compute(files: historical.files) == (try identity(review.sourceCanonicalIdentity)),
               try historicalRevision(historical) == review.sourceDocumentRevision else {
             throw MigrationPublicationError.sourceChanged
+        }
+        if let audit = review.resolutionAudit {
+            let binding = MigrationResolutionSourceBinding(sourceOID: review.sourceOID,
+                sourceCanonicalIdentity: review.sourceCanonicalIdentity,
+                sourceFormatVersion: review.sourceFormatVersion, targetFormatVersion: review.targetFormatVersion)
+            guard let resolved = try? MigrationRegistry.transform(historical, applying: audit.manifest,
+                      actualSourceBinding: binding),
+                  resolved.classification == review.classification,
+                  resolved.losses == audit.losses,
+                  resolved.resolutionDecisions == audit.decisions,
+                  resolved.remainingUnresolved.isEmpty else {
+                throw MigrationPublicationError.sourceChanged
+            }
+        } else {
+            guard analysis.automaticCandidateEligible,
+                  analysis.classification == .losslessWithNormalization else {
+                throw MigrationPublicationError.sourceChanged
+            }
         }
     }
 
@@ -349,7 +398,9 @@ public final class MigrationPublisher {
 
     private func cleanup(reviewID: String, retentionRef: String, candidateOID: String) {
         _ = try? git("update-ref", "-d", retentionRef, candidateOID)
-        try? reviews.remove(reviewID)
+        if (try? reviews.load(reviewID))?.recordFormatVersion == 1 {
+            try? reviews.remove(reviewID)
+        }
     }
 
     private func requireWorktreeRoot() throws {

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import json
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -179,3 +180,49 @@ with tempfile.TemporaryDirectory(prefix="hamii-cli-") as directory:
     )
     assert filtered_rebuild.returncode == 8 and json.loads(filtered_rebuild.stdout)["category"] == "staleIndex"
 print("CLI contract valid")
+
+with tempfile.TemporaryDirectory(prefix="hamii-resolution-cli-") as directory:
+    source = root / "Tests" / "Fixtures" / "format-v1-safe-project"
+    shutil.copytree(source, directory, dirs_exist_ok=True)
+    project = Path(directory)
+    (project / ".gitignore").write_text(".hamii/\n")
+    manifest_path = project / "hamii.json"
+    historical = json.loads(manifest_path.read_text())
+    alternate = dict(historical["capabilityDeclarations"][0])
+    alternate["support"] = "portable"
+    alternate["reason"] = "second historical support"
+    historical["capabilityDeclarations"].append(alternate)
+    manifest_path.write_text(json.dumps(historical, sort_keys=True, indent=2) + "\n")
+    for args in [
+        ["init", "-q"], ["checkout", "-q", "-b", "main"], ["add", "."],
+        ["-c", "user.name=Smoke", "-c", "user.email=smoke@example.invalid", "commit", "-qm", "v1"],
+    ]:
+        subprocess.run(["git", "-C", directory, *args], check=True, capture_output=True)
+
+    def migrate(*args):
+        result = subprocess.run([str(binary), "--project", directory, "--json", "migrate", *args],
+                                capture_output=True, text=True, timeout=30)
+        assert result.returncode == 0, (result.returncode, result.stdout, result.stderr)
+        return json.loads(result.stdout)
+
+    report = migrate("resolution")["migrationResolution"]
+    assert report["source"]["sourceOID"] == subprocess.run(
+        ["git", "-C", directory, "rev-parse", "HEAD"], check=True, capture_output=True, text=True,
+    ).stdout.strip()
+    assert len(report["items"]) == 1 and len(report["items"][0]["choices"]) == 2
+    choice = report["items"][0]
+    resolution = {"formatVersion": 1, **report["source"], "decisions": [
+        {"item": choice["id"], "selectedCandidateID": choice["choices"][0]["id"]},
+    ]}
+    local = project / ".hamii"
+    local.mkdir(exist_ok=True)
+    resolution_path = local / "resolution.json"
+    resolution_path.write_text(json.dumps(resolution))
+    review = migrate("prepare", "--resolution", str(resolution_path))["migrationReview"]
+    assert review["recordFormatVersion"] == 2 and review["classification"] == "potentiallyLossy"
+    assert len(review["resolutionAudit"]["losses"]) == 1
+    assert "historicalValue" in review["resolutionAudit"]["losses"][0]
+    published = migrate("publish", review["reviewID"], review["sourceOID"], review["candidateOID"])
+    assert published["migrationPublication"]["candidateOID"] == review["candidateOID"]
+    assert (local / "migration-reviews" / f"{review['reviewID']}.json").exists()
+print("Migration resolution CLI contract valid")

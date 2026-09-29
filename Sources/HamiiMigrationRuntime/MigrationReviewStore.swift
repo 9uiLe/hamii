@@ -1,5 +1,6 @@
 import Darwin
 import Foundation
+import HamiiMigrations
 
 enum MigrationReviewStoreError: Error { case invalidID, invalidRecord }
 
@@ -25,9 +26,23 @@ struct MigrationReviewStore {
     }
 
     func load(_ reviewID: String) throws -> MigrationReviewPackage {
-        let result = try JSONDecoder().decode(MigrationReviewPackage.self, from: Data(contentsOf: url(reviewID)))
-        guard result.recordFormatVersion == 1, result.reviewID == reviewID else {
+        let bytes = try Data(contentsOf: url(reviewID))
+        let result = try JSONDecoder().decode(MigrationReviewPackage.self, from: bytes)
+        guard result.reviewID == reviewID,
+              (result.recordFormatVersion == 1 && result.resolutionAudit == nil ||
+               result.recordFormatVersion == 2 && result.resolutionAudit != nil) else {
             throw MigrationReviewStoreError.invalidRecord
+        }
+        if result.recordFormatVersion == 2 {
+            guard let raw = try JSONSerialization.jsonObject(with: bytes) as? [String: Any],
+                  let audit = raw["resolutionAudit"] as? [String: Any],
+                  Set(audit.keys) == ["manifest", "decisions", "losses"],
+                  let manifest = audit["manifest"],
+                  let strict = try? MigrationResolutionManifest.decodeStrict(
+                    JSONSerialization.data(withJSONObject: manifest)),
+                  strict == result.resolutionAudit?.manifest else {
+                throw MigrationReviewStoreError.invalidRecord
+            }
         }
         return result
     }

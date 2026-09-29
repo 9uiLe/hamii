@@ -29,7 +29,7 @@ For historical input classified `requiresResolution` or `manual`, can hamii reco
 
 ## Unknowns
 
-The decision boundary is resolved. Production work remains for resolution schema and candidate enumeration, exact Git source binding, resolution-aware transformation and review package, CLI integration, loss reporting, and end-to-end validation. The Spike's test-only helper is evidence, not a production implementation. GUI review is a separate product task. A diagnostic with no safe enumerated choice continues to require an externally prepared and independently validated source; this ADR does not invent a meaning for it.
+The decision boundary is resolved. The production implementation is under validation. Closure review must confirm the full gate, exact-SHA CI, release builds, current documentation, and absence of remaining work inside this decision boundary. The Spike's test-only helper is evidence, not the production implementation. GUI review is a separate product task. A diagnostic with no safe enumerated choice continues to require an externally prepared and independently validated source; this ADR does not invent a meaning for it.
 
 ## Required Evidence
 
@@ -51,6 +51,10 @@ A `MigrationResolutionManifest` is a versioned, machine-readable set of decision
 No candidate is generated while any blocker is unresolved. A stale source, absent candidate ID, or conflicting/duplicate decision is rejected. Identical source plus resolution must yield identical transformed bytes, diagnostics, unresolved set, decisions, classification, and loss report. A known lossy choice records the exact historical path/value in candidate/review metadata and remains `potentiallyLossy`; approval does not erase loss. Exact semantic duplicate normalization may remain `losslessWithNormalization` if Current validation succeeds. Every produced candidate still passes the actual Current v2 reader, schema/reference/Authoring validation, and migration review workflow before publication.
 
 The [Spike](spikes/ambiguous-value-review/SPIKE.md) demonstrates the contract for tested cases only. In particular, distinct duplicate spacing declarations cannot all be preserved because Current v2 rejects duplicate target/key declarations. Selecting one and discarding another is therefore a visible lossy action. Cross-kind residual discard is an explicit known-loss candidate, not an automatic behavior or a general permission to drop unknown data. Production must implement and validate these rules without importing the test-only prototype wholesale.
+
+## Implementation Progress
+
+`HamiiMigrations` now contains Foundation-only typed resolution schema, finite choice enumeration, strict manifest decoding, and a resolution-aware path that reuses the installed v1→v2 transformer. `HamiiMigrationRuntime` binds reports to clean committed Git source OID and exact Canonical bytes, prepares Current v2 candidates, and persists version 2 review records with decisions and exact losses. Publication revalidates the source, manifest, loss report, and retained candidate bytes before the existing pending/CAS protocol; successful resolved publication retains the local audit. CLI exposes `migrate resolution --json` and `migrate prepare --resolution PATH --json`. The safe automatic path and version 1 review record remain supported. Production domain/runtime tests and CLI smoke cover the new contract. The local full gate passed 14/14 checks, with 276 Swift tests executed, 58 skipped, and no failures in 855.293 seconds (`.build/verify-logs/20260929-064733-426694-91410-full.log`, local untracked log). Exact-SHA CI remains pending; keep this ADR until closure criteria are satisfied.
 
 ## Status
 

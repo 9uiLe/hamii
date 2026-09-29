@@ -35,6 +35,9 @@ public struct MigrationCandidate {
     public let edgePath: [String]
     public let classification: MigrationClassification?
     public let diagnostics: [MigrationDiagnostic]
+    public let resolutionDecisions: [MigrationResolutionDecision]
+    public let losses: [MigrationResolutionLoss]
+    public let remainingUnresolved: [MigrationResolutionItemID]
 }
 
 public enum MigrationEdgeFailure: Error, CustomStringConvertible {
@@ -76,12 +79,14 @@ public enum MigrationRegistry {
         guard analysis.diagnostics.isEmpty else { throw MigrationEdgeFailure.requiresResolution(analysis.diagnostics) }
         guard analysis.sourceVersion != target else {
             return MigrationCandidate(files: source, sourceVersion: target, targetVersion: target,
-                                      edgePath: [], classification: nil, diagnostics: [])
+                                      edgePath: [], classification: nil, diagnostics: [],
+                                      resolutionDecisions: [], losses: [], remainingUnresolved: [])
         }
         let files = try FormatV1.upgrade(source.files)
         return MigrationCandidate(files: MigrationFileSet(files: files), sourceVersion: analysis.sourceVersion,
                                   targetVersion: target, edgePath: ["1->2"],
-                                  classification: .losslessWithNormalization, diagnostics: [])
+                                  classification: .losslessWithNormalization, diagnostics: [],
+                                  resolutionDecisions: [], losses: [], remainingUnresolved: [])
     }
 }
 

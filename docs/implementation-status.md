@@ -4,9 +4,9 @@ hamii で現在実行できる範囲を示します。製品境界と依存規�
 
 | 分類 | 現在の状態 |
 |---|---|
-| Aligned | Native-semantic IR が編集の正本です。GUI と CLI は `ProjectService` と同じ検証 pipeline を使います。ArchitectureScope ownership、component reference、target capability declaration、Git の分割 JSON、使い捨て SQLite query index、CLI skills、独立した v1→v2 migration edge、隔離 review candidate preparation、exact-OID CAS による migration publication と restart recovery、検証済み CanonicalSnapshot からの Index full rebuild 自動復旧を実装しています。 |
+| Aligned | Native-semantic IR が編集の正本です。GUI と CLI は `ProjectService` と同じ検証 pipeline を使います。ArchitectureScope ownership、component reference、target capability declaration、Git の分割 JSON、使い捨て SQLite query index、CLI skills、独立した v1→v2 migration edge、有限候補の typed Human resolution、隔離 review candidate preparation、exact-OID CAS による migration publication と restart recovery、検証済み CanonicalSnapshot からの Index full rebuild 自動復旧を実装しています。 |
 | Needs Refactor | Canvas は小さな SwiftUI editor です。IR が扱う意味を落とさず、描画と Inspector を拡張する必要があります。Canonical save の process-crash recovery は実装済みですが、停電耐久性は未確立です。同じ worktree の非協調 writer は Product Contract 外です。 |
-| Missing | iOS Simulator / Android Preview Host、product repository integration adapter、manual / ambiguous migration resolution と LFS transfer、semantic merge、state を保持する runtime reconciliation、custom native component build、remote asset cache、Interaction と Token の全種別の編集機能。 |
+| Missing | iOS Simulator / Android Preview Host、product repository integration adapter、migration resolution の GUI editor と LFS transfer、semantic merge、state を保持する runtime reconciliation、custom native component build、remote asset cache、Interaction と Token の全種別の編集機能。 |
 | Obsolete | Runtime の legacy format parser、MCP adapter、GUI/CLI 別々の mutation engine は package に含めません。 |
 | Unresolved | 狭い決定境界と必要な調査・計測は ADR queue にあります。 |
 

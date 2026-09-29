@@ -41,6 +41,12 @@ public struct MigrationIndexValidationResult: Codable {
     public let canonicalRevision: String
 }
 
+public struct MigrationResolutionAudit: Codable {
+    public let manifest: MigrationResolutionManifest
+    public let decisions: [MigrationResolutionDecision]
+    public let losses: [MigrationResolutionLoss]
+}
+
 /// Exact OIDs identify the reviewed source and immutable candidate. This is
 /// preparation evidence, not authorization to publish either Git ref or Index.
 public struct MigrationReviewPackage: Codable {
@@ -65,6 +71,7 @@ public struct MigrationReviewPackage: Codable {
     public let diffStat: String
     public let validation: MigrationValidationResult
     public let indexValidation: MigrationIndexValidationResult
+    public let resolutionAudit: MigrationResolutionAudit?
 }
 
 enum MigrationPreparationStep {
@@ -79,10 +86,28 @@ public final class MigrationCandidatePreparer {
     public init() { hook = nil }
     init(hook: @escaping (MigrationPreparationStep) throws -> Void) { self.hook = hook }
 
-    public func prepare(repository sourceRoot: URL) throws -> MigrationReviewPackage {
+    public func resolutionReport(repository sourceRoot: URL) throws -> MigrationResolutionReport {
+        let root = sourceRoot.standardizedFileURL
+        return try WorktreeCoordinator(root: root).withReadyExclusive {
+            let source = try sourceObservation(at: root, allowResolution: true)
+            let files = try MigrationRepositoryInput.load(from: root)
+            guard CanonicalByteIdentity.compute(files: files.files) == source.identity else {
+                throw MigrationPreparationError.staleSource
+            }
+            return try MigrationRegistry.resolutionReport(files, sourceBinding: binding(source))
+        }
+    }
+
+    public func prepare(repository sourceRoot: URL,
+                        resolution: MigrationResolutionManifest? = nil) throws -> MigrationReviewPackage {
         let sourceRoot = sourceRoot.standardizedFileURL
         let coordinator = WorktreeCoordinator(root: sourceRoot)
-        let source = try coordinator.withReadyExclusive { try sourceObservation(at: sourceRoot) }
+        let source = try coordinator.withReadyExclusive {
+            try sourceObservation(at: sourceRoot, allowResolution: resolution != nil)
+        }
+        if let resolution, resolution.sourceBinding != binding(source) {
+            throw MigrationResolutionFailure.staleSource
+        }
         let container = FileManager.default.temporaryDirectory.appendingPathComponent("hamii-migration-candidate-\(UUID().uuidString)", isDirectory: true)
         let candidateRoot = container.appendingPathComponent("worktree", isDirectory: true)
         try FileManager.default.createDirectory(at: container, withIntermediateDirectories: true)
@@ -99,11 +124,21 @@ public final class MigrationCandidatePreparer {
 
         let historical = try MigrationRepositoryInput.load(from: candidateRoot)
         let analysis = try MigrationRegistry.analyze(historical)
-        guard analysis.automaticCandidateEligible, analysis.classification == .losslessWithNormalization else {
-            throw MigrationPreparationError.migrationUnavailable(analysis.diagnostics.map(\.blocker))
+        guard CanonicalByteIdentity.compute(files: historical.files) == source.identity else {
+            throw MigrationPreparationError.staleSource
         }
-        let candidate = try MigrationRegistry.transform(historical)
-        guard candidate.classification == .losslessWithNormalization else {
+        let candidate: MigrationCandidate
+        if let resolution {
+            candidate = try MigrationRegistry.transform(historical, applying: resolution,
+                actualSourceBinding: binding(source))
+        } else {
+            guard analysis.automaticCandidateEligible, analysis.classification == .losslessWithNormalization else {
+                throw MigrationPreparationError.migrationUnavailable(analysis.diagnostics.map(\.blocker))
+            }
+            candidate = try MigrationRegistry.transform(historical)
+        }
+        guard candidate.remainingUnresolved.isEmpty,
+              candidate.classification == .losslessWithNormalization || candidate.classification == .potentiallyLossy else {
             throw MigrationPreparationError.migrationUnavailable(candidate.diagnostics.map(\.blocker))
         }
         let expected = changedPaths(before: historical.files, after: candidate.files.files)
@@ -175,13 +210,16 @@ public final class MigrationCandidatePreparer {
             let stat = try git(sourceRoot, "diff", "--stat", source.oid, candidateOID)
             return (nameStatus, stat)
         }
-        let package = MigrationReviewPackage(recordFormatVersion: 1, reviewID: reviewID,
+        let audit = resolution.map {
+            MigrationResolutionAudit(manifest: $0, decisions: candidate.resolutionDecisions, losses: candidate.losses)
+        }
+        let package = MigrationReviewPackage(recordFormatVersion: audit == nil ? 1 : 2, reviewID: reviewID,
             sourceRef: source.ref, sourceOID: source.oid,
             sourceTreeOID: source.treeOID, sourceCanonicalRevision: source.canonicalRevision.rawValue,
             sourceCanonicalIdentity: source.identity.rawValue,
             sourceFormatVersion: 1, targetFormatVersion: 2,
             sourceDocumentRevision: source.documentRevision, candidateDocumentRevision: committed.document.revision,
-            classification: .losslessWithNormalization, edgePath: candidate.edgePath,
+            classification: candidate.classification ?? .manual, edgePath: candidate.edgePath,
             candidateOID: candidateOID, candidateTreeOID: candidateTreeOID, retentionRef: retentionRef,
             changedPaths: expected,
             diffNameStatus: nameStatus, diffStat: stat,
@@ -189,7 +227,8 @@ public final class MigrationCandidatePreparer {
                 canonicalSnapshotIdentity: committed.identity.rawValue,
                 documentID: committed.document.id.rawValue, documentRevision: committed.document.revision),
             indexValidation: MigrationIndexValidationResult(sourceCanonicalIdentity: generation.sourceCanonicalIdentity.rawValue,
-                indexGenerationID: generation.id.rawValue, canonicalRevision: canonicalRevision.rawValue))
+                indexGenerationID: generation.id.rawValue, canonicalRevision: canonicalRevision.rawValue),
+            resolutionAudit: audit)
         try coordinator.withReadyExclusive {
             try requireClean(sourceRoot)
             guard try git(sourceRoot, "symbolic-ref", "--quiet", "HEAD") == source.ref,
@@ -217,7 +256,7 @@ public final class MigrationCandidatePreparer {
         let identity: CanonicalSnapshotIdentity
     }
 
-    private func sourceObservation(at root: URL) throws -> SourceObservation {
+    private func sourceObservation(at root: URL, allowResolution: Bool = false) throws -> SourceObservation {
         guard let topLevel = try? git(root, "rev-parse", "--show-toplevel"),
               URL(fileURLWithPath: topLevel).resolvingSymlinksInPath().standardizedFileURL
                 == root.resolvingSymlinksInPath().standardizedFileURL else { throw MigrationPreparationError.invalidWorktree }
@@ -230,7 +269,9 @@ public final class MigrationCandidatePreparer {
         let canonicalRevision = try GitCanonicalRevisionCalculator().current(at: root)
         let plan = try MigrationPreflight.plan(repository: root)
         if plan.state == "current" { throw MigrationPreparationError.alreadyCurrent }
-        guard plan.state == "migrationAvailable", plan.classification == .losslessWithNormalization else {
+        guard plan.sourceDocumentFormatVersion == 1,
+              (plan.state == "migrationAvailable" && plan.classification == .losslessWithNormalization ||
+               allowResolution && plan.state == "requiresResolution") else {
             throw MigrationPreparationError.migrationUnavailable(plan.blockers)
         }
         let files = try MigrationRepositoryInput.load(from: root)
@@ -242,6 +283,11 @@ public final class MigrationCandidatePreparer {
         return SourceObservation(ref: ref, oid: oid, treeOID: tree,
                                  documentRevision: revision, canonicalRevision: canonicalRevision,
                                  identity: identity)
+    }
+
+    private func binding(_ source: SourceObservation) -> MigrationResolutionSourceBinding {
+        MigrationResolutionSourceBinding(sourceOID: source.oid,
+            sourceCanonicalIdentity: source.identity.rawValue)
     }
 
     private func requireClean(_ root: URL) throws {

@@ -16,13 +16,28 @@ public enum MigrationRepositoryInput {
             guard try directory.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink != true else {
                 throw MigrationEdgeFailure.invalidInput("Canonical directory is a symlink: \(folder)")
             }
-            for url in try manager.contentsOfDirectory(at: directory, includingPropertiesForKeys: [.isSymbolicLinkKey])
-                where url.pathExtension == "json" {
-                let path = "\(folder)/\(url.lastPathComponent)"
+            try collect(at: directory, relativePath: folder, into: &files)
+        }
+        return MigrationFileSet(files: files)
+    }
+
+    private static func collect(at directory: URL, relativePath: String,
+                                into files: inout [String: Data]) throws {
+        for url in try FileManager.default.contentsOfDirectory(at: directory,
+            includingPropertiesForKeys: [.isSymbolicLinkKey, .isDirectoryKey]).sorted(by: { $0.lastPathComponent < $1.lastPathComponent }) {
+            let path = "\(relativePath)/\(url.lastPathComponent)"
+            let values = try url.resourceValues(forKeys: [.isSymbolicLinkKey, .isDirectoryKey])
+            guard values.isSymbolicLink != true else {
+                throw MigrationEdgeFailure.invalidInput("Canonical symlink is not a migration input: \(path)")
+            }
+            // Blob bytes are Asset data, not JSON inputs to the historical edge.
+            if path == "assets/blobs" { continue }
+            if values.isDirectory == true {
+                try collect(at: url, relativePath: path, into: &files)
+            } else {
                 files[path] = try checkedBytes(at: url, relativePath: path)
             }
         }
-        return MigrationFileSet(files: files)
     }
 
     private static func checkedBytes(at url: URL, relativePath: String) throws -> Data {
