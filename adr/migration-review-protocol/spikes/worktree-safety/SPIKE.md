@@ -48,12 +48,21 @@ Review accept 前に source を変更する、dirty user edit を auto stash/com
 
 ## Result
 
-Not yet validated。Fixture、matrix、process-stop、failure/cleanup と gate/CI の結果を記録する。
+Test-only orchestration は Starter の clean Git source commit から detached worktree を作り、raw v1→test-only v2→synthetic v3 edge、各中間の semantic oracle、fresh LocalIndex rebuild、candidate commit と retention ref、exact diff を生成した。21 case の source/candidate OID、tree OID、phase、CAS、gate、recovery は [review-publication-matrix.json](artifacts/review-publication-matrix.json)。同じ source tree から同じ candidate tree が得られ、review は source/candidate の exact OID pair に固定された。Commit OID の再実行一致は要求・主張しない。
+
+Dirty tracked/untracked は開始拒否。Token shard 欠落は `token.missing`、Repository asset blob 欠落は `asset.integrity` で review-ready 前に拒否。Review reject は source を変更せず候補を明示 cleanup。Review 後に candidate worktree を編集しても retention ref は元 OID を保ち、新 OID の publish は拒否。Source が動いた場合は preflight 拒否し、pending 後の raw ref 変更では expected-OID CAS 自体が拒否した。別 detached worktree で text merge が成功する negative control でも migration publisher は cross-format merge を使わなかった。
+
+Pending 中の in-process failure 5地点と、別 OS process の SIGKILL 5地点（transform、pending、refPublished、currentValidated、indexPublished）を検証。Reader は writer 生存中の lock を越えず、kill 後に transform では Ready、publication stop では pending を観測。Old ref は old state 維持、candidate ref は validation / fresh Index の再実行後に roll-forward、neither ref は pending を維持。Index rebuild 注入失敗では candidate ref を rollback しなかった。Focused run は8 tests（worker entry point 2 skip）、失敗0、73.939秒。これは単一 run の所要時間で性能 benchmark ではない。[workflow-comparison.md](artifacts/workflow-comparison.md) に候補比較、exact diff、証明範囲を記録した。
+
+Full gate は 14 checks 成功、Swift test 251 実行・失敗0・skip 58、506.224秒。Release `HamiiMigrations` build は成功。Exact-SHA CI の結果は Evidence commit を push した後に追記する。
+
+初回の cleanup 試行では macOS の `/var` と `/private/var` の同一 main worktree path を別物と誤認した。実体 path の正規化へ修正し、最終 focused run は成功。Source-in-place cleanup は行っていない。
 
 ## Conclusion
 
-Not yet validated。Evidence に基づく ADR 判断まで仮説のまま扱う。
+Clean committed source から isolated candidate を作り、target validation と fresh Index check を先行させ、exact OID review 後に ref CAS で公開する workflow は、この test-only fixture と停止点で成立した。Pending gate と old/candidate/neither recovery は source の無断変更や historical ref への自動 rollback を必要としなかった。これは production migration executor、v2/v3 reader、production Index generation publication、Git LFS transfer、power-loss durability の完成証明ではない。ADR Decision は full gate・Release build・exact-SHA CI の結果確認後、別 commit で判断する。
 
 ## Artifacts
 
-未作成。Evidence が得られたときのみ `artifacts/` に置く。
+- [review-publication-matrix.json](artifacts/review-publication-matrix.json)
+- [workflow-comparison.md](artifacts/workflow-comparison.md)
