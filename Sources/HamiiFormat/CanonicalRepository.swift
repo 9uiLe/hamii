@@ -255,6 +255,19 @@ public final class CanonicalRepository: ProjectRepository {
     func observeForMeasurement(_ recorder: @escaping CanonicalObservationRecorder) throws -> ProjectObservation {
         try withCoordinatedObservation(onObservation: recorder) { $0 }
     }
+
+    /// Candidate read-session verifier. It shares the production token
+    /// algorithm and coordination gate, but is unavailable to release callers.
+    /// A stable generation takes the cheap path; interrupted transitions may
+    /// require recovery and remain fail closed until that succeeds.
+    func verifyClientPreconditionForMeasurement(_ expected: ClientPrecondition) throws {
+        try coordinator.withExclusive {
+            try transaction.recoverIfNeeded()
+            try coordinator.requireReady()
+            try recoverGenerationIfNeeded()
+            guard try clientPreconditionUnlocked() == expected else { throw AuthoringError.staleState }
+        }
+    }
     #endif
 
     public func withCoordinatedDocument<T>(_ operation: (Document) throws -> T) throws -> T {

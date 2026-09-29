@@ -51,12 +51,13 @@ Any correctness hard-gate failure disqualifies that candidate even if it is fast
 
 ## Result
 
-Not yet measured. Record raw candidate matrix, failed cases, and run conditions under this Spike's `artifacts/` only.
+[Candidate comparison and conditions](artifacts/candidate-comparison.md) and [raw matrix](artifacts/candidate-matrix.json) record the L/S/C results. CURRENT same-process T2 medians were 440.202/485.699/503.137 ms; BATCH 219.911/242.451/257.947 ms; SESSION 117.113/142.161/156.343 ms. Stable verifier median was 2.288/6.824/7.047 ms. All measured payloads and ContextObservations matched production CURRENT; the precommitted stale, pending, epoch, profile, external-edit, and Scope cases rejected or matched as required. An initial comparison using current one-shot CLI as denominator mixed process startup with candidates; the final matrix adds same-process CURRENT service timings and uses those for qualification, retaining CLI timings separately.
 
 ## Conclusion
 
-Not yet decided. A qualifying test-only candidate is decision input, not production implementation or a transport contract.
+Both reuse candidates qualify under the precommitted gates. SESSION is at most 75% of BATCH T2 median in all shapes and had zero additional correctness failures in the tested cases, so the rule selects **SESSION as Decision candidate**. This is test-only Evidence, not a production API or completed concurrency/power-loss proof. The ADR remains `Spike Required` until its separate Decision commit.
 
 ## Artifacts
 
-Not yet created. Planned: `artifacts/candidate-matrix.json` and `artifacts/candidate-comparison.md`.
+- [Candidate matrix](artifacts/candidate-matrix.json)
+- [Candidate comparison](artifacts/candidate-comparison.md)
