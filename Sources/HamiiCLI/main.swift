@@ -7,6 +7,7 @@ import HamiiIndex
 import HamiiGeneration
 import HamiiIntegration
 import HamiiMigrations
+import HamiiMigrationRuntime
 
 private struct CLIError: Error, CustomStringConvertible {
     var category: String
@@ -27,6 +28,7 @@ private struct Output: Encodable {
     var ok: Bool
     var category: String?
     var message: String?
+    var blockers: [String]?
     var document: Document?
     var statePrecondition: ClientPrecondition?
     var mutation: MutationResult?
@@ -38,14 +40,15 @@ private struct Output: Encodable {
     var generated: GeneratedSource?
     var contract: IntegrationContract?
     var migration: MigrationPlan?
+    var migrationReview: MigrationReviewPackage?
     var previewPlan: TargetPlan?
     var mergeCheck: MergeCheck?
-    init(ok: Bool, category: String? = nil, message: String? = nil, document: Document? = nil, statePrecondition: ClientPrecondition? = nil, mutation: MutationResult? = nil, components: [ComponentDefinition]? = nil, skills: [String]? = nil, skill: String? = nil, diagnostics: [Diagnostic]? = nil, hits: [ComponentHit]? = nil, generated: GeneratedSource? = nil, contract: IntegrationContract? = nil, migration: MigrationPlan? = nil, previewPlan: TargetPlan? = nil, mergeCheck: MergeCheck? = nil) {
-        self.ok = ok; self.category = category; self.message = message; self.document = document
+    init(ok: Bool, category: String? = nil, message: String? = nil, blockers: [String]? = nil, document: Document? = nil, statePrecondition: ClientPrecondition? = nil, mutation: MutationResult? = nil, components: [ComponentDefinition]? = nil, skills: [String]? = nil, skill: String? = nil, diagnostics: [Diagnostic]? = nil, hits: [ComponentHit]? = nil, generated: GeneratedSource? = nil, contract: IntegrationContract? = nil, migration: MigrationPlan? = nil, migrationReview: MigrationReviewPackage? = nil, previewPlan: TargetPlan? = nil, mergeCheck: MergeCheck? = nil) {
+        self.ok = ok; self.category = category; self.message = message; self.blockers = blockers; self.document = document
         self.statePrecondition = statePrecondition
         self.mutation = mutation; self.components = components; self.skills = skills
         self.skill = skill; self.diagnostics = diagnostics; self.hits = hits
-        self.generated = generated; self.contract = contract; self.migration = migration
+        self.generated = generated; self.contract = contract; self.migration = migration; self.migrationReview = migrationReview
         self.previewPlan = previewPlan
         self.mergeCheck = mergeCheck
     }
@@ -58,7 +61,7 @@ private enum CLI {
         "authoring": "hamii \(version)\nGlobal options: --project PATH --profile NAME --json. Inspect: hamii inspect. Mutations require --state TOKEN from inspect or the previous mutation. Commands: page create NAME; scope create PARENT_ID NAME; screen create SCOPE_ID NAME; target add PLATFORM FRAMEWORK; surface add PAGE_ID SCREEN_ID TARGET_ID DEVICE RUNTIME BUILD_ENVIRONMENT; surface target SURFACE_ID TARGET_ID; capability set TARGET_ID KEY SUPPORT; layer add SCREEN_ID PARENT_ID KIND NAME TEXT; layer text SCREEN_ID LAYER_ID TEXT. Managed git switch BRANCH requires a clean worktree and --state TOKEN; git recover validates an interrupted switch or merge publication. git merge check BRANCH --state TOKEN validates an isolated candidate without publishing. git merge publish BRANCH --state TOKEN validates and publishes a candidate through the coordinated pending gate. Use - for no text. Read the tokens, components or assets skill when needed. All mutations use the same Authoring Harness validation as GUI.",
         "tokens": "hamii \(version)\ntoken create OWNER_SCOPE_ID NAME KIND LITERAL --state TOKEN creates a primitive token; token alias OWNER_SCOPE_ID NAME KIND TARGET_TOKEN_ID --state TOKEN creates a semantic alias. KIND is color|typography|spacing|radius|border|shadow|opacity|motion. Spacing literals are nonnegative finite numbers. layer token SCREEN_ID LAYER_ID spacing|padding TOKEN_ID|- --state TOKEN sets or clears a layout token. ArchitectureScope ownership and token references are validated before save.",
         "components": "hamii \(version)\ncomponent list CONSUMER_SCOPE_ID; component create OWNER_SCOPE_ID NAME --state TOKEN; component instantiate SCREEN_ID PARENT_LAYER_ID DEFINITION_ID --state TOKEN; component promote DEFINITION_ID ANCESTOR_SCOPE_ID --state TOKEN. Promotion requires an Agent profile with explicit mayPromoteScope permission. Definition tree is referenced by instances; scope and availability are enforced by the mutation service.",
-        "validation": "hamii \(version)\nvalidate --project PATH --json returns diagnostics with rule, severity, entityID and message. query components CONSUMER_SCOPE_ID TERM automatically rebuilds a missing or stale derived index only from a verified coordinated Canonical generation. External edits, pending transitions, unverifiable Git state, and storage failures remain fail closed; use index rebuild explicitly after supported external edits. If canonical Git files are marked assume-unchanged or skip-worktree or use Git filters, clear those settings before rebuilding. migrate plan --json preflights a format without changing it. Format v1→v2 has an isolated transformation edge; candidate review/publication is not yet available through CLI.",
+        "validation": "hamii \(version)\nvalidate --project PATH --json returns diagnostics with rule, severity, entityID and message. query components CONSUMER_SCOPE_ID TERM automatically rebuilds a missing or stale derived index only from a verified coordinated Canonical generation. External edits, pending transitions, unverifiable Git state, and storage failures remain fail closed; use index rebuild explicitly after supported external edits. If canonical Git files are marked assume-unchanged or skip-worktree or use Git filters, clear those settings before rebuilding. migrate plan --json preflights a format without changing it. migrate prepare --json creates an immutable, validated Format v1→v2 review candidate from a clean committed source; it does not publish or update the source branch.",
         "integration": "hamii \(version)\nintegration contract SCREEN_ID --json returns semantic inputs, events, token/asset references, native and accessibility intent. Unknown product mappings require review. generate swiftui SCREEN_ID TARGET_ID --json is a separate deterministic path for the supported static subset and returns an error for unsupported semantics.",
         "assets": "hamii \(version)\nasset import SCOPE_ID NAME MEDIA_TYPE SOURCE_PATH --storage git --state TOKEN writes a SHA-256 addressed repository blob and Asset metadata. Large binary Git/LFS policy is unresolved; choose Git storage explicitly. layer image SCREEN_ID PARENT_ID ASSET_ID NAME --state TOKEN adds an image reference. Run validate --json to check blob integrity. Remote caches and thumbnails are not canonical data.",
         "preview": "hamii \(version)\npreview plan SURFACE_ID --json checks declared target capabilities and semantic support for one AppSurface. A successful plan reports that the IR is supported; an installed and running Native Preview Host is a separate requirement. macOS SwiftUI supports the current in-process subset. iOS Simulator and Android Hosts are not yet implemented."
@@ -84,6 +87,9 @@ private enum CLI {
         if args == ["migrate", "plan"] {
             let plan = try MigrationPreflight.plan(repository: path)
             return Output(ok: plan.blockers.isEmpty, category: plan.blockers.isEmpty ? nil : "migrationRequired", migration: plan)
+        }
+        if args == ["migrate", "prepare"] {
+            return Output(ok: true, migrationReview: try MigrationCandidatePreparer().prepare(repository: path))
         }
         if verb == "init" {
             guard args.count == 2 else { throw CLIError(category: "usage", message: "init NAME") }
@@ -254,7 +260,7 @@ private enum CLI {
         return Output(ok: true, mutation: result)
     }
 
-    static let usage = "hamii [--project PATH] [--profile NAME] [--json] <version|init NAME|inspect|validate|git switch BRANCH|git recover|git merge check BRANCH|git merge publish BRANCH|preview plan SURFACE_ID|migrate plan|skills list|get NAME|index rebuild|query components SCOPE_ID TERM|generate swiftui SCREEN_ID TARGET_ID|integration contract SCREEN_ID|page create NAME|scope create PARENT_ID NAME|screen create SCOPE_ID NAME|target add PLATFORM FRAMEWORK|surface add PAGE_ID SCREEN_ID TARGET_ID DEVICE RUNTIME BUILD_ENVIRONMENT|surface target SURFACE_ID TARGET_ID|capability set TARGET_ID KEY SUPPORT|asset import SCOPE_ID NAME MEDIA_TYPE SOURCE_PATH --storage git|layer add SCREEN_ID PARENT_ID KIND NAME TEXT|layer text SCREEN_ID LAYER_ID TEXT|layer token SCREEN_ID LAYER_ID spacing|padding TOKEN_ID|-|token create SCOPE_ID NAME KIND VALUE|token alias SCOPE_ID NAME KIND TOKEN_ID|layer image SCREEN_ID PARENT_ID ASSET_ID NAME|component create SCOPE_ID NAME|component list SCOPE_ID|component instantiate SCREEN_ID PARENT_ID DEFINITION_ID|component promote DEFINITION_ID ANCESTOR_SCOPE_ID> [--state TOKEN]"
+    static let usage = "hamii [--project PATH] [--profile NAME] [--json] <version|init NAME|inspect|validate|git switch BRANCH|git recover|git merge check BRANCH|git merge publish BRANCH|preview plan SURFACE_ID|migrate plan|migrate prepare|skills list|get NAME|index rebuild|query components SCOPE_ID TERM|generate swiftui SCREEN_ID TARGET_ID|integration contract SCREEN_ID|page create NAME|scope create PARENT_ID NAME|screen create SCOPE_ID NAME|target add PLATFORM FRAMEWORK|surface add PAGE_ID SCREEN_ID TARGET_ID DEVICE RUNTIME BUILD_ENVIRONMENT|surface target SURFACE_ID TARGET_ID|capability set TARGET_ID KEY SUPPORT|asset import SCOPE_ID NAME MEDIA_TYPE SOURCE_PATH --storage git|layer add SCREEN_ID PARENT_ID KIND NAME TEXT|layer text SCREEN_ID LAYER_ID TEXT|layer token SCREEN_ID LAYER_ID spacing|padding TOKEN_ID|-|token create SCOPE_ID NAME KIND VALUE|token alias SCOPE_ID NAME KIND TOKEN_ID|layer image SCREEN_ID PARENT_ID ASSET_ID NAME|component create SCOPE_ID NAME|component list SCOPE_ID|component instantiate SCREEN_ID PARENT_ID DEFINITION_ID|component promote DEFINITION_ID ANCESTOR_SCOPE_ID> [--state TOKEN]"
 
     static func takeOption(_ name: String, from args: inout [String]) -> String? {
         guard let index = args.firstIndex(of: name), args.indices.contains(index + 1) else { return nil }
@@ -312,6 +318,8 @@ do {
         print("\(contract.name): \(contract.inputs.count) inputs, \(contract.events.count) events")
     } else if let migration = output.migration {
         print("Document format \(migration.sourceDocumentFormatVersion): \(migration.state)")
+    } else if let review = output.migrationReview {
+        print("Validated migration candidate \(review.sourceOID) → \(review.candidateOID); source branch unchanged")
     } else if let plan = output.previewPlan {
         print(plan.canPreview ? "Preview plan supported" : plan.diagnostics.map { "\($0.rule): \($0.message)" }.joined(separator: "\n"))
     } else if let check = output.mergeCheck {
@@ -345,11 +353,21 @@ do {
     case is GenerationError: category = "unsupportedCapability"; code = 9
     case is ContractError: category = "contract"; code = 5
     case is MigrationPreflightError: category = "migration"; code = 6
+    case let value as MigrationPreparationError:
+        switch value {
+        case .dirtySource, .staleSource: category = "conflict"; code = 3
+        case .alreadyCurrent: category = "alreadyCurrent"; code = 6
+        default: category = "migration"; code = 6
+        }
+    case is MigrationEdgeFailure: category = "migration"; code = 6
     case is AgentProfileError: category = "profile"; code = 4
     case is BlobError: category = "assetIntegrity"; code = 5
     default: category = "internal"; code = 1
     }
-    let output = Output(ok: false, category: category, message: String(describing: error))
+    let blockers: [String]?
+    if case MigrationPreparationError.migrationUnavailable(let reasons) = error { blockers = reasons }
+    else { blockers = nil }
+    let output = Output(ok: false, category: category, message: String(describing: error), blockers: blockers)
     if json, let data = try? JSONEncoder().encode(output) { FileHandle.standardOutput.write(data + Data([0x0A])) }
     else { FileHandle.standardError.write(Data("\(category): \(error)\n".utf8)) }
     exit(code)

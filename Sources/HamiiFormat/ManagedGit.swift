@@ -211,8 +211,13 @@ public final class ManagedGit {
     }
 }
 
-enum GitCommand {
-    static func run(at worktree: URL, _ arguments: [String]) throws -> String {
+package enum GitCommand {
+    package static func run(at worktree: URL, _ arguments: [String]) throws -> String {
+        String(decoding: try runData(at: worktree, arguments), as: UTF8.self)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    package static func runData(at worktree: URL, _ arguments: [String]) throws -> Data {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/git")
         process.arguments = ["-C", worktree.path] + arguments
@@ -224,6 +229,6 @@ enum GitCommand {
         process.waitUntilExit()
         let message = String(decoding: bytes, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
         guard process.terminationStatus == 0 else { throw ManagedGitError.commandFailed(message) }
-        return message
+        return bytes
     }
 }

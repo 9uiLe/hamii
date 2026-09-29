@@ -10,12 +10,15 @@ check_imports() {
   fi
 }
 
-check_imports Sources/HamiiCore 'AppKit|SwiftUI|UIKit|SQLite3|HamiiApplication|HamiiFormat|HamiiIndex|HamiiCLI|HamiiApp|HamiiMigrations'
+check_imports Sources/HamiiCore 'AppKit|SwiftUI|UIKit|SQLite3|HamiiApplication|HamiiFormat|HamiiIndex|HamiiCLI|HamiiApp|HamiiMigrations|HamiiMigrationRuntime'
 check_imports Sources/HamiiApplication 'AppKit|SwiftUI|UIKit|SQLite3|HamiiFormat|HamiiIndex|HamiiCLI|HamiiApp|HamiiMigrations'
 check_imports Sources/HamiiPreviewProtocol 'AppKit|SQLite3|HamiiFormat|HamiiIndex|HamiiCLI|HamiiApp|HamiiMigrations'
 check_imports Sources/HamiiGeneration 'AppKit|SQLite3|HamiiApplication|HamiiFormat|HamiiIndex|HamiiCLI|HamiiApp|HamiiMigrations'
 check_imports Sources/HamiiIntegration 'AppKit|SQLite3|HamiiApplication|HamiiFormat|HamiiIndex|HamiiCLI|HamiiApp|HamiiMigrations'
-check_imports Sources/HamiiMigrations 'AppKit|SwiftUI|UIKit|SQLite3|HamiiCore|HamiiApplication|HamiiFormat|HamiiIndex|HamiiCLI|HamiiApp'
+check_imports Sources/HamiiMigrations 'AppKit|SwiftUI|UIKit|SQLite3|HamiiCore|HamiiApplication|HamiiFormat|HamiiIndex|HamiiCLI|HamiiApp|HamiiMigrationRuntime'
+check_imports Sources/HamiiMigrationRuntime 'AppKit|SwiftUI|UIKit|HamiiCLI|HamiiApp'
+check_imports Sources/HamiiFormat 'HamiiMigrationRuntime'
+check_imports Sources/HamiiIndex 'HamiiMigrationRuntime'
 check_imports Sources/HamiiNativeRuntime 'AppKit|SQLite3|HamiiApplication|HamiiFormat|HamiiIndex|HamiiCLI|HamiiApp|HamiiMigrations'
 
 if grep -n -E 'GitCanonicalRevisionCalculator|git[[:space:]]*\(|Process\(' Sources/HamiiIndex/LocalIndex.swift; then

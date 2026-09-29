@@ -64,7 +64,7 @@ Canonical collaboration の Product Contract は「1 worktree = 1 coordinated wr
 
 Repository Asset は `asset import SCOPE_ID NAME MEDIA_TYPE SOURCE_PATH --storage git --state TOKEN` で明示的に取り込みます。バイナリは `assets/blobs/<sha256>` に一度だけ保存され、Asset の JSON は hash と参照を保持します。`validate` は blob の改ざんと欠落を検出します。大きなファイルの Git LFS 運用境界は [Asset ADR](adr/asset-storage-policy/ADR.md) で検証中です。Remote cache、thumbnail、decode 結果は Canonical Repository に含めません。
 
-Document Format v2 が唯一の Current Canonical Format です。v1 repository は runtime が拒否します。`HamiiMigrations` は独立した v1→v2 raw-byte transformation edge を持ち、`hamii migrate plan --json` は安全な自動候補の可否と手動対応が必要な blocker を元 repository を変更せず報告します。Candidate の隔離生成、review、publication を行う CLI workflow はまだ提供していません。Current Core に旧形式の parser はありません。
+Document Format v2 が唯一の Current Canonical Format です。v1 repository は runtime が拒否します。`HamiiMigrations` は独立した v1→v2 raw-byte transformation edge を持ち、`hamii migrate plan --json` は安全な自動候補の可否と手動対応が必要な blocker を元 repository を変更せず報告します。Clean かつ committed な v1 branch では `hamii migrate prepare --json` が detached worktree で Current v2 validation と一時 Index rebuild を行い、retention ref で保持した candidate commit の exact OID・diff・検証結果を返します。Source branch は変更しません。Review acceptance、source への publication、restart recovery は未実装です。Current Core に旧形式の parser はありません。
 
 ## Capability / Preview
 

@@ -30,11 +30,11 @@ Publication は merge や source worktree 上での変換再実行を行わな�
 
 Recovery は source ref が expected old OID なら old state を維持して abort、candidate OID なら candidate へ roll-forwardして再検証・Index 再構築、どちらでもなければ Unknown として gate を維持する。`ValidatedMergePublisher` に historical parser を追加せず、Git / coordination / Index の既存 primitive を別 orchestration から利用する。Pending record の durable write と power-loss guarantee は [canonical-power-loss-durability](../canonical-power-loss-durability/ADR.md) の primitive に従う。
 
-この Decision は review/publication workflow の Product Contract であり、test-only prototype を production executor とみなさない。Current Format v2 の ordered padding effect は実装済み。v1→v2 edge、LFS transport、ambiguity resolution はここで決めない。
+この Decision は review/publication workflow の Product Contract である。Current Format v2 の ordered padding effect、v1→v2 edge、clean committed source からの隔離 candidate preparation は production に接続済み。LFS transport と ambiguity resolution はここで決めない。
 
 ## Unknowns
 
-Production migration-specific pending gate / record、target Current Format validator、published Index generation、CLI review/accept、restart recovery、actual LFS transfer、power-loss primitive との接続は未実装。今回の test-only adapter は production migration executor ではない。Git LFS transfer は必要 object の fail-closed 検証とは別に確認する。
+`hamii migrate prepare --json` は actual Current Format validator と一時 fresh Index check を通した immutable candidate OID を返す。Production migration-specific pending gate / record、source ref CAS、published Index generation、CLI review/accept、restart recovery、actual LFS transfer、power-loss primitive との接続は未実装。Git LFS transfer は必要 object の fail-closed 検証とは別に確認する。
 
 ## Required Evidence
 

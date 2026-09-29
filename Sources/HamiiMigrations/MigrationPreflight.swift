@@ -37,9 +37,11 @@ public enum MigrationPreflight {
               let versions = object["versions"] as? [String: Any],
               let documentVersion = versions["document"] as? Int,
               version == documentVersion else { throw MigrationPreflightError.invalidManifest }
-        let files = try canonicalFiles(at: repository)
-        let count = files.count
-        if FileManager.default.fileExists(atPath: repository.appendingPathComponent(".hamii/transaction.ready").path) {
+        let files = try MigrationRepositoryInput.load(from: repository)
+        let count = files.files.count
+        if ["transaction.prepare", "transaction.ready", "transaction.complete"].contains(where: {
+            FileManager.default.fileExists(atPath: repository.appendingPathComponent(".hamii/\($0)").path)
+        }) {
             return MigrationPlan(sourceDocumentFormatVersion: version, targetDocumentFormatVersion: currentDocumentFormatVersion, classification: nil, state: "pendingCanonicalTransaction", blockers: ["Recover the pending Canonical save before migration"], canonicalFileCount: count, originalRepositoryUntouched: true)
         }
         if version == currentDocumentFormatVersion {
@@ -47,7 +49,7 @@ public enum MigrationPreflight {
         }
         if version == 1 {
             do {
-                let analysis = try MigrationRegistry.analyze(MigrationFileSet(files: files))
+                let analysis = try MigrationRegistry.analyze(files)
                 return MigrationPlan(sourceDocumentFormatVersion: version, targetDocumentFormatVersion: currentDocumentFormatVersion,
                                      classification: analysis.classification,
                                      state: analysis.automaticCandidateEligible ? "migrationAvailable" : "requiresResolution",
@@ -64,24 +66,4 @@ public enum MigrationPreflight {
         return MigrationPlan(sourceDocumentFormatVersion: version, targetDocumentFormatVersion: currentDocumentFormatVersion, classification: .manual, state: "noMigrationEdge", blockers: ["No reviewed transformation edge is installed for format \(version)"], canonicalFileCount: count, originalRepositoryUntouched: true)
     }
 
-    private static func canonicalFiles(at root: URL) throws -> [String: Data] {
-        let manager = FileManager.default
-        var files: [String: Data] = [:]
-        for name in ["hamii.json", "hamii-agent-profiles.json"] {
-            let url = root.appendingPathComponent(name)
-            if manager.fileExists(atPath: url.path) { files[name] = try Data(contentsOf: url) }
-        }
-        for folder in ["pages", "screens", "scopes", "components", "tokens", "assets", "interactions", "motions", "fixtures", "targets"] {
-            let directory = root.appendingPathComponent(folder, isDirectory: true)
-            guard manager.fileExists(atPath: directory.path) else { continue }
-            for url in try manager.contentsOfDirectory(at: directory, includingPropertiesForKeys: [.isSymbolicLinkKey])
-                where url.pathExtension == "json" {
-                guard try url.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink != true else {
-                    throw MigrationEdgeFailure.invalidInput("Canonical symlink is not a migration input: \(url.path)")
-                }
-                files["\(folder)/\(url.lastPathComponent)"] = try Data(contentsOf: url)
-            }
-        }
-        return files
-    }
 }

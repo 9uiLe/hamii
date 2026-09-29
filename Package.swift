@@ -25,10 +25,11 @@ let package = Package(
         .target(name: "HamiiGeneration", dependencies: ["HamiiCore"]),
         .target(name: "HamiiIntegration", dependencies: ["HamiiCore"]),
         .target(name: "HamiiMigrations"),
+        .target(name: "HamiiMigrationRuntime", dependencies: ["HamiiMigrations", "HamiiCore", "HamiiFormat", "HamiiIndex"]),
         .target(name: "HamiiPreviewProtocol", dependencies: ["HamiiCore"]),
         .target(name: "HamiiNativeRuntime", dependencies: ["HamiiCore", "HamiiPreviewProtocol"]),
-        .executableTarget(name: "HamiiCLI", dependencies: ["HamiiCore", "HamiiApplication", "HamiiFormat", "HamiiIndex", "HamiiGeneration", "HamiiIntegration", "HamiiMigrations"]),
+        .executableTarget(name: "HamiiCLI", dependencies: ["HamiiCore", "HamiiApplication", "HamiiFormat", "HamiiIndex", "HamiiGeneration", "HamiiIntegration", "HamiiMigrations", "HamiiMigrationRuntime"]),
         .executableTarget(name: "HamiiApp", dependencies: ["HamiiCore", "HamiiApplication", "HamiiFormat", "HamiiPreviewProtocol", "HamiiNativeRuntime"]),
-        .testTarget(name: "HamiiTests", dependencies: ["HamiiCore", "HamiiApplication", "HamiiFormat", "HamiiIndex", "HamiiGeneration", "HamiiIntegration", "HamiiMigrations", "HamiiPreviewProtocol", "HamiiNativeRuntime"])
+        .testTarget(name: "HamiiTests", dependencies: ["HamiiCore", "HamiiApplication", "HamiiFormat", "HamiiIndex", "HamiiGeneration", "HamiiIntegration", "HamiiMigrations", "HamiiMigrationRuntime", "HamiiPreviewProtocol", "HamiiNativeRuntime"])
     ]
 )
