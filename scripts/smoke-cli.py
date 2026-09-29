@@ -38,6 +38,7 @@ with tempfile.TemporaryDirectory(prefix="hamii-cli-") as directory:
     assert "screen create SCOPE_ID NAME" in run("skills", "get", "authoring")["skill"]
     assert "component promote DEFINITION_ID ANCESTOR_SCOPE_ID" in run("skills", "get", "components")["skill"]
     assert "layer token SCREEN_ID LAYER_ID" in run("skills", "get", "tokens")["skill"]
+    assert "query context summary" in run("skills", "get", "context")["skill"]
     scope = created["document"]["scopes"][0]["id"]["rawValue"]
     added = mutate("screen", "create", scope, "Profile")
     assert added["mutation"]["revision"] == 1
@@ -79,6 +80,33 @@ with tempfile.TemporaryDirectory(prefix="hamii-cli-") as directory:
     assert denied.returncode == 4 and json.loads(denied.stdout)["category"] == "permission"
     component_result = mutate("component", "create", scope, "Button")
     component_id = component_result["mutation"]["patches"][0]["entityID"]["rawValue"]
+    screen_id = screen["id"]["rawValue"]
+    root_id = screen["root"]["id"]["rawValue"]
+    context_summary = run("query", "context", "summary", "--screen", screen_id, "--layer", root_id)["context"]
+    context_state = context_summary["observation"]["statePrecondition"]["rawValue"]
+    assert context_summary["contextSchemaVersion"] == 1
+    assert context_summary["payload"]["selectedLayerID"]["rawValue"] == root_id
+    assert "screens" not in context_summary["payload"]
+    layer_context = run("query", "context", "layer", screen_id, root_id, "--state", context_state)["context"]
+    assert layer_context["observation"] == context_summary["observation"]
+    assert "children" not in layer_context["payload"]["layer"]
+    components_context = run("query", "context", "resources", scope, "component", "Button",
+                             "--limit", "32", "--state", context_state)["context"]
+    assert components_context["payload"]["items"][0]["id"]["rawValue"] == component_id
+    assert components_context["payload"]["matchingCount"] == 1
+    component_context = run("query", "context", "component", scope, component_id,
+                            "--state", context_state)["context"]
+    assert component_context["payload"]["id"]["rawValue"] == component_id
+    assert "children" not in component_context["payload"]["root"]
+    tokens_context = run("query", "context", "resources", scope, "token", "spacing.card",
+                         "--state", context_state)["context"]
+    assert tokens_context["payload"]["items"][0]["id"]["rawValue"] == alias_id
+    token_context = run("query", "context", "token", scope, alias_id,
+                        "--state", context_state)["context"]
+    assert token_context["payload"]["id"]["rawValue"] == alias_id
+    assets_context = run("query", "context", "resources", scope, "asset", "Avatar",
+                         "--state", context_state)["context"]
+    assert assets_context["payload"]["items"][0]["id"]["rawValue"] == asset["id"]["rawValue"]
     subprocess.run(["git", "-C", directory, "add", "-A"], check=True, capture_output=True)
     subprocess.run(["git", "-C", directory, "-c", "user.name=Smoke", "-c", "user.email=smoke@example.invalid", "commit", "-qm", "baseline"], check=True, capture_output=True)
     # A missing disposable Index is rebuilt during a coordinated Query.
@@ -88,6 +116,11 @@ with tempfile.TemporaryDirectory(prefix="hamii-cli-") as directory:
     source_branch = subprocess.run(["git", "-C", directory, "branch", "--show-current"], check=True, capture_output=True, text=True).stdout.strip()
     subprocess.run(["git", "-C", directory, "branch", "alternate"], check=True, capture_output=True)
     state[0] = run("git", "switch", "alternate", "--state", state[0])["statePrecondition"]["rawValue"]
+    stale_context = subprocess.run(
+        [str(binary), "--project", directory, "--json", "query", "context", "layer",
+         screen_id, root_id, "--state", context_state], capture_output=True, text=True, timeout=15,
+    )
+    assert stale_context.returncode == 3 and json.loads(stale_context.stdout)["category"] == "conflict"
     mutate("page", "create", "Alternate")
     subprocess.run(["git", "-C", directory, "add", "-A"], check=True, capture_output=True)
     subprocess.run(["git", "-C", directory, "-c", "user.name=Smoke", "-c", "user.email=smoke@example.invalid", "commit", "-qm", "alternate"], check=True, capture_output=True)

@@ -42,6 +42,10 @@ Spike の precommitted 成功/失敗基準、local full gate、Evidence commit �
 
 Production implementation では bounded query の Current Snapshot / precondition binding、Scope-aware summary/detail、CLI structured output、複数 response 間の stale handling、semantic mutation までの end-to-end validation が必要である。Visual authoring context と具体的な CLI command taxonomy はこの Decision の対象外とする。
 
+## Remaining Implementation
+
+`ProjectContextService`、CLI `query context`、`skills get context`、共通 Scope availability、単一 observation と stale-state regression は production 経路に接続した。1k / 10k の production CLI payload・latency 計測、測定条件の恒久文書化、exact-SHA CI、および closure review は未完了。Spike の test-only payload 値を production 値として使わない。
+
 ## Status
 
 Implementation Required

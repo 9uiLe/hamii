@@ -24,6 +24,34 @@ private struct MergeCheck: Encodable {
     let published: Bool
 }
 
+private enum ContextCLIOutput: Encodable {
+    case summary(ContextResponse<ContextProjectSummary>)
+    case layer(ContextResponse<ContextLayerDetail>)
+    case resources(ContextResponse<ContextResourceList>)
+    case component(ContextResponse<ContextComponentDetail>)
+    case token(ContextResponse<ContextTokenDetail>)
+
+    func encode(to encoder: Encoder) throws {
+        switch self {
+        case .summary(let value): try value.encode(to: encoder)
+        case .layer(let value): try value.encode(to: encoder)
+        case .resources(let value): try value.encode(to: encoder)
+        case .component(let value): try value.encode(to: encoder)
+        case .token(let value): try value.encode(to: encoder)
+        }
+    }
+
+    var description: String {
+        switch self {
+        case .summary(let value): "\(value.payload.documentName) (revision \(value.observation.documentRevision))"
+        case .layer(let value): "\(value.payload.layer.id.rawValue) \(value.payload.layer.name)"
+        case .resources(let value): "\(value.payload.returnedCount) of \(value.payload.matchingCount) resources\(value.payload.truncated ? " (truncated)" : "")"
+        case .component(let value): "\(value.payload.id.rawValue) \(value.payload.name)"
+        case .token(let value): "\(value.payload.id.rawValue) \(value.payload.name)"
+        }
+    }
+}
+
 private struct Output: Encodable {
     var ok: Bool
     var category: String?
@@ -45,7 +73,8 @@ private struct Output: Encodable {
     var migrationPublication: MigrationPublicationResult?
     var previewPlan: TargetPlan?
     var mergeCheck: MergeCheck?
-    init(ok: Bool, category: String? = nil, message: String? = nil, blockers: [String]? = nil, document: Document? = nil, statePrecondition: ClientPrecondition? = nil, mutation: MutationResult? = nil, components: [ComponentDefinition]? = nil, skills: [String]? = nil, skill: String? = nil, diagnostics: [Diagnostic]? = nil, hits: [ComponentHit]? = nil, generated: GeneratedSource? = nil, contract: IntegrationContract? = nil, migration: MigrationPlan? = nil, migrationResolution: MigrationResolutionReport? = nil, migrationReview: MigrationReviewPackage? = nil, migrationPublication: MigrationPublicationResult? = nil, previewPlan: TargetPlan? = nil, mergeCheck: MergeCheck? = nil) {
+    var context: ContextCLIOutput?
+    init(ok: Bool, category: String? = nil, message: String? = nil, blockers: [String]? = nil, document: Document? = nil, statePrecondition: ClientPrecondition? = nil, mutation: MutationResult? = nil, components: [ComponentDefinition]? = nil, skills: [String]? = nil, skill: String? = nil, diagnostics: [Diagnostic]? = nil, hits: [ComponentHit]? = nil, generated: GeneratedSource? = nil, contract: IntegrationContract? = nil, migration: MigrationPlan? = nil, migrationResolution: MigrationResolutionReport? = nil, migrationReview: MigrationReviewPackage? = nil, migrationPublication: MigrationPublicationResult? = nil, previewPlan: TargetPlan? = nil, mergeCheck: MergeCheck? = nil, context: ContextCLIOutput? = nil) {
         self.ok = ok; self.category = category; self.message = message; self.blockers = blockers; self.document = document
         self.statePrecondition = statePrecondition
         self.mutation = mutation; self.components = components; self.skills = skills
@@ -55,6 +84,7 @@ private struct Output: Encodable {
         self.migrationPublication = migrationPublication
         self.previewPlan = previewPlan
         self.mergeCheck = mergeCheck
+        self.context = context
     }
 }
 
@@ -68,7 +98,8 @@ private enum CLI {
         "validation": "hamii \(version)\nvalidate --project PATH --json returns diagnostics with rule, severity, entityID and message. query components CONSUMER_SCOPE_ID TERM automatically rebuilds a missing or stale derived index only from a verified coordinated Canonical generation. External edits, pending transitions, unverifiable Git state, and storage failures remain fail closed; use index rebuild explicitly after supported external edits. If canonical Git files are marked assume-unchanged or skip-worktree or use Git filters, clear those settings before rebuilding. migrate plan --json preflights a format without changing it. migrate resolution --json lists finite, source-bound choices for clean committed historical input; zero-choice items stay blocked. Save a typed manifest outside Canonical data, then migrate prepare --resolution PATH --json creates a reviewed candidate and reports exact losses. Safe automatic sources still use migrate prepare --json. After reviewing exact IDs and losses, migrate publish REVIEW_ID SOURCE_OID CANDIDATE_OID --json publishes only that candidate; migrate recover --json reconciles an interrupted publication.",
         "integration": "hamii \(version)\nintegration contract SCREEN_ID --json returns semantic inputs, events, token/asset references, native and accessibility intent. Unknown product mappings require review. generate swiftui SCREEN_ID TARGET_ID --json is a separate deterministic path for the supported static subset and returns an error for unsupported semantics.",
         "assets": "hamii \(version)\nasset import SCOPE_ID NAME MEDIA_TYPE SOURCE_PATH --storage git --state TOKEN writes a SHA-256 addressed repository blob and Asset metadata. Large binary Git/LFS policy is unresolved; choose Git storage explicitly. layer image SCREEN_ID PARENT_ID ASSET_ID NAME --state TOKEN adds an image reference. Run validate --json to check blob integrity. Remote caches and thumbnails are not canonical data.",
-        "preview": "hamii \(version)\npreview plan SURFACE_ID --json checks declared target capabilities and semantic support for one AppSurface. A successful plan reports that the IR is supported; an installed and running Native Preview Host is a separate requirement. macOS SwiftUI supports the current in-process subset. iOS Simulator and Android Hosts are not yet implemented."
+        "preview": "hamii \(version)\npreview plan SURFACE_ID --json checks declared target capabilities and semantic support for one AppSurface. A successful plan reports that the IR is supported; an installed and running Native Preview Host is a separate requirement. macOS SwiftUI supports the current in-process subset. iOS Simulator and Android Hosts are not yet implemented.",
+        "context": "hamii \(version)\nUse --json. Start with query context summary [--screen SCREEN_ID --layer LAYER_ID]. Use its observation.statePrecondition as --state TOKEN for every follow-up: query context layer SCREEN_ID LAYER_ID; query context resources SCOPE_ID component|token|asset [MATCH] [--limit N]; query context component SCOPE_ID COMPONENT_ID; query context token SCOPE_ID TOKEN_ID. Resource results are Scope-filtered and bounded. Never combine responses with different statePrecondition values. Request selected detail only when needed. Mutate through existing commands with the same --state TOKEN. On conflict, restart from summary. Do not edit Canonical files directly or use full inspect as the routine AI context."
     ]
 
     static func run(_ raw: [String]) throws -> Output {
@@ -78,9 +109,16 @@ private enum CLI {
         let stateText = takeOption("--state", from: &args)
         let storage = takeOption("--storage", from: &args)
         let resolutionPath = takeOption("--resolution", from: &args)
+        let limitText = takeOption("--limit", from: &args)
+        let selectedScreenText = takeOption("--screen", from: &args)
+        let selectedLayerText = takeOption("--layer", from: &args)
         guard let verb = args.first else { throw CLIError(category: "usage", message: usage) }
         guard resolutionPath == nil || args == ["migrate", "prepare"] else {
             throw CLIError(category: "usage", message: "--resolution is valid only for migrate prepare")
+        }
+        let isContextQuery = args.count >= 2 && args[0] == "query" && args[1] == "context"
+        guard isContextQuery || (limitText == nil && selectedScreenText == nil && selectedLayerText == nil) else {
+            throw CLIError(category: "usage", message: "--limit, --screen and --layer are context query options")
         }
         let path = URL(fileURLWithPath: project, isDirectory: true)
         let repository = CanonicalRepository(root: path)
@@ -130,6 +168,48 @@ private enum CLI {
         if verb == "inspect" {
             let observed = try service.observe()
             return Output(ok: true, document: observed.document, statePrecondition: observed.statePrecondition)
+        }
+        if isContextQuery {
+            let context = ProjectContextService(repository: repository)
+            if args == ["query", "context", "summary"] {
+                guard limitText == nil, selectedLayerText == nil || selectedScreenText != nil else {
+                    throw CLIError(category: "usage", message: "Summary requires --screen with --layer and does not accept --limit")
+                }
+                let selection = selectedScreenText.map {
+                    ContextSelection(screenID: EntityID($0), layerID: selectedLayerText.map(EntityID.init))
+                }
+                return Output(ok: true, context: .summary(try context.projectSummary(
+                    selection: selection, expectedState: stateText.map(ClientPrecondition.init))))
+            }
+            guard selectedScreenText == nil, selectedLayerText == nil,
+                  let stateText, !stateText.isEmpty else {
+                throw CLIError(category: "usage", message: "Context detail queries require --state TOKEN from summary")
+            }
+            let expected = ClientPrecondition(stateText)
+            if args.count == 5 && args[2] == "layer" {
+                guard limitText == nil else { throw CLIError(category: "usage", message: "--limit applies only to resources") }
+                return Output(ok: true, context: .layer(try context.layerDetail(
+                    screenID: EntityID(args[3]), layerID: EntityID(args[4]), expectedState: expected)))
+            }
+            if (args.count == 5 || args.count == 6) && args[2] == "resources" {
+                guard let kind = ContextResourceKind(rawValue: args[4]),
+                      let limit = limitText == nil ? 32 : Int(limitText!), (1...100).contains(limit) else {
+                    throw CLIError(category: "usage", message: "Resources require component|token|asset and --limit 1...100")
+                }
+                return Output(ok: true, context: .resources(try context.resources(
+                    consumerScopeID: EntityID(args[3]), kind: kind,
+                    matching: args.count == 6 ? args[5] : nil, limit: limit, expectedState: expected)))
+            }
+            guard limitText == nil else { throw CLIError(category: "usage", message: "--limit applies only to resources") }
+            if args.count == 5 && args[2] == "component" {
+                return Output(ok: true, context: .component(try context.componentDetail(
+                    componentID: EntityID(args[4]), consumerScopeID: EntityID(args[3]), expectedState: expected)))
+            }
+            if args.count == 5 && args[2] == "token" {
+                return Output(ok: true, context: .token(try context.tokenDetail(
+                    tokenID: EntityID(args[4]), consumerScopeID: EntityID(args[3]), expectedState: expected)))
+            }
+            throw CLIError(category: "usage", message: "Unknown query context command")
         }
         if args == ["git", "recover"] {
             guard !WorktreeCoordinator(root: path).migrationPublicationPending() else {
@@ -290,7 +370,7 @@ private enum CLI {
         return Output(ok: true, mutation: result)
     }
 
-    static let usage = "hamii [--project PATH] [--profile NAME] [--json] <version|init NAME|inspect|validate|git switch BRANCH|git recover|git merge check BRANCH|git merge publish BRANCH|preview plan SURFACE_ID|migrate plan|migrate resolution|migrate prepare [--resolution PATH]|migrate publish REVIEW_ID SOURCE_OID CANDIDATE_OID|migrate recover|skills list|get NAME|index rebuild|query components SCOPE_ID TERM|generate swiftui SCREEN_ID TARGET_ID|integration contract SCREEN_ID|page create NAME|scope create PARENT_ID NAME|screen create SCOPE_ID NAME|target add PLATFORM FRAMEWORK|surface add PAGE_ID SCREEN_ID TARGET_ID DEVICE RUNTIME BUILD_ENVIRONMENT|surface target SURFACE_ID TARGET_ID|capability set TARGET_ID KEY SUPPORT|asset import SCOPE_ID NAME MEDIA_TYPE SOURCE_PATH --storage git|layer add SCREEN_ID PARENT_ID KIND NAME TEXT|layer text SCREEN_ID LAYER_ID TEXT|layer token SCREEN_ID LAYER_ID spacing|padding TOKEN_ID|-|token create SCOPE_ID NAME KIND VALUE|token alias SCOPE_ID NAME KIND TOKEN_ID|layer image SCREEN_ID PARENT_ID ASSET_ID NAME|component create SCOPE_ID NAME|component list SCOPE_ID|component instantiate SCREEN_ID PARENT_ID DEFINITION_ID|component promote DEFINITION_ID ANCESTOR_SCOPE_ID> [--state TOKEN]"
+    static let usage = "hamii [--project PATH] [--profile NAME] [--json] <version|init NAME|inspect|validate|git switch BRANCH|git recover|git merge check BRANCH|git merge publish BRANCH|preview plan SURFACE_ID|migrate plan|migrate resolution|migrate prepare [--resolution PATH]|migrate publish REVIEW_ID SOURCE_OID CANDIDATE_OID|migrate recover|skills list|get NAME|index rebuild|query components SCOPE_ID TERM|query context summary [--screen ID --layer ID]|query context layer SCREEN_ID LAYER_ID --state TOKEN|query context resources SCOPE_ID component|token|asset [MATCH] [--limit N] --state TOKEN|query context component SCOPE_ID COMPONENT_ID --state TOKEN|query context token SCOPE_ID TOKEN_ID --state TOKEN|generate swiftui SCREEN_ID TARGET_ID|integration contract SCREEN_ID|page create NAME|scope create PARENT_ID NAME|screen create SCOPE_ID NAME|target add PLATFORM FRAMEWORK|surface add PAGE_ID SCREEN_ID TARGET_ID DEVICE RUNTIME BUILD_ENVIRONMENT|surface target SURFACE_ID TARGET_ID|capability set TARGET_ID KEY SUPPORT|asset import SCOPE_ID NAME MEDIA_TYPE SOURCE_PATH --storage git|layer add SCREEN_ID PARENT_ID KIND NAME TEXT|layer text SCREEN_ID LAYER_ID TEXT|layer token SCREEN_ID LAYER_ID spacing|padding TOKEN_ID|-|token create SCOPE_ID NAME KIND VALUE|token alias SCOPE_ID NAME KIND TOKEN_ID|layer image SCREEN_ID PARENT_ID ASSET_ID NAME|component create SCOPE_ID NAME|component list SCOPE_ID|component instantiate SCREEN_ID PARENT_ID DEFINITION_ID|component promote DEFINITION_ID ANCESTOR_SCOPE_ID> [--state TOKEN]"
 
     static func takeOption(_ name: String, from args: inout [String]) -> String? {
         guard let index = args.firstIndex(of: name), args.indices.contains(index + 1) else { return nil }
@@ -334,6 +414,8 @@ do {
         print(skills.joined(separator: "\n"))
     } else if let message = output.message {
         print(message)
+    } else if let context = output.context {
+        print(context.description)
     } else if let mutation = output.mutation {
         print("revision \(mutation.revision): \(mutation.patches.map(\.path).joined(separator: ", "))")
     } else if let document = output.document {
@@ -368,6 +450,7 @@ do {
     case AuthoringError.mutationLimit: category = "permission"; code = 4
     case AuthoringError.notFound: category = "notFound"; code = 2
     case AuthoringError.validation: category = "validation"; code = 5
+    case ContextQueryError.invalidLimit: category = "usage"; code = 2
     case let value as CanonicalError:
         if case .unsupportedFormat = value { category = "migrationRequired"; code = 6 }
         else if case .transactionConflict = value { category = "conflict"; code = 3 }

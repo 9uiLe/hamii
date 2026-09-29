@@ -31,6 +31,8 @@ open .build/hamii.app
 
 `init` は directory を Git repository にし、worktree 固有の `.hamii/` を Git ignore に登録します。`inspect --json` は `document.revision` と opaque な `statePrecondition.rawValue` を返します。Semantic mutation には `--state TOKEN` が必須です。例えば `screen create SCOPE_ID Profile --state TOKEN` は GUI と同じ Application Service と Validator を通り、結果から次の token を取得できます。古い token は `conflict` として拒否されます。`--json` は structured output、失敗時は `category` と非ゼロ exit status を返します。AI は `skills list` / `skills get` でインストール済み version の操作方法を取得し、Canonical JSON や Local DB を直接編集しません。
 
+AI の semantic context は `hamii skills get context` の手順で段階的に取得します。`query context summary --json` の `context.observation.statePrecondition.rawValue` を後続の `query context layer`、`resources`、`component`、`token` に `--state TOKEN` として渡します。各 response は `ClientPrecondition` と mutation 順序の `DocumentRevision` を別々に返します。異なる state の response は結合せず、`conflict` なら summary から取り直します。Resource は consumer `ArchitectureScope` で利用可能なものに絞り、既定 32 件・最大 100 件と `truncated` を返します。通常の AI workflow は bounded context を使い、`inspect` は全 Document の確認にも利用できます。
+
 Spacing Token は `skills get tokens` で操作方法を取得できます。`token create`、`token alias`、`layer token` は Scope と参照を検証し、Canvas と macOS Native Preview に spacing / padding を反映します。
 
 `hamii-agent-profiles.json` は Actor Harness の versioned 設定です。`--profile builder` は mutation 可能、`--profile reviewer` は読み取り専用です。Scope promotion の権限は profile に明示されない限りありません。Skill text は操作説明であり権限ではありません。

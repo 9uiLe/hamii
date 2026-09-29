@@ -49,22 +49,15 @@ public final class ProjectService {
     }
 
     public func availableComponents(for scopeID: EntityID) throws -> [ComponentDefinition] {
-        let document = try repository.observe().document
-        let scopes = ScopeEvaluator(document.scopes)
-        let definitions = Dictionary(document.components.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
-        return document.components.filter { ComponentAvailability.reason($0, consumer: scopeID, scopes: scopes, definitions: definitions) == nil }
+        ProjectResourceAvailability.components(in: try repository.observe().document, consumer: scopeID)
     }
 
     public func availableAssets(for scopeID: EntityID) throws -> [Asset] {
-        let document = try repository.observe().document
-        let scopes = ScopeEvaluator(document.scopes)
-        return document.assets.filter { scopes.canUse(owner: $0.ownerScopeID, consumer: scopeID) }
+        ProjectResourceAvailability.assets(in: try repository.observe().document, consumer: scopeID)
     }
 
     public func availableTokens(for scopeID: EntityID, kind: TokenKind) throws -> [DesignToken] {
-        let document = try repository.observe().document
-        let scopes = ScopeEvaluator(document.scopes)
-        return document.tokens.filter { $0.kind == kind && scopes.canUse(owner: $0.ownerScopeID, consumer: scopeID) }
+        ProjectResourceAvailability.tokens(in: try repository.observe().document, consumer: scopeID, kind: kind)
     }
 
     public func promotionCandidate(for consumerScopeIDs: [EntityID]) throws -> EntityID? {
