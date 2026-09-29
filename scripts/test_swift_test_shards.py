@@ -48,6 +48,26 @@ class ShardResultsTests(unittest.TestCase):
         second = "Test Case '-[HamiiTests.SecondTests testWorker]' passed (0.001 seconds)"
         self.assertTrue(any("exited 2" in issue for issue in self.assess(first, second, first_exit=2)[2]))
 
+    def test_partition_is_complete_disjoint_and_keeps_new_suites(self):
+        expected = {
+            "HamiiTests.ValidatedMergePublicationTests/testPublish",
+            "HamiiTests.MigrationPublicationTests/testRecover",
+            "HamiiTests.MigrationResolutionRuntimeTests/testResolve",
+            "HamiiTests.MigrationCandidatePreparationTests/testPrepare",
+            "HamiiTests.IndexQuerySessionTests/testRead",
+            "HamiiTests.FutureTests/testNew",
+        }
+        groups = dict(module.partition_tests(expected))
+        self.assertEqual(set(groups), {"publication", "migration", "remaining"})
+        self.assertEqual(set(groups["publication"]), {"HamiiTests.ValidatedMergePublicationTests/testPublish"})
+        self.assertEqual(len(groups["migration"]), 3)
+        self.assertEqual(len(groups["remaining"]), 2)
+        flattened = [test for cases in groups.values() for test in cases]
+        self.assertEqual(set(flattened), expected)
+        self.assertEqual(len(flattened), len(expected))
+        self.assertEqual(module.partition_tests({"HamiiTests.FutureTests/testNew"}),
+                         [("remaining", ["HamiiTests.FutureTests/testNew"])])
+
 
 if __name__ == "__main__":
     unittest.main()

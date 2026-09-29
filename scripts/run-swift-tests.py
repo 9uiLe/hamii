@@ -14,6 +14,11 @@ import time
 
 ROOT = Path(__file__).resolve().parent.parent
 HEAVY_SUITE = "HamiiTests.ValidatedMergePublicationTests"
+MIGRATION_SUITES = {
+    "HamiiTests.MigrationPublicationTests",
+    "HamiiTests.MigrationResolutionRuntimeTests",
+    "HamiiTests.MigrationCandidatePreparationTests",
+}
 TEST_NAME = re.compile(r"HamiiTests\.[A-Za-z0-9_]+/test[A-Za-z0-9_]+")
 CASE_RESULT = re.compile(
     r"^Test Case '-\[(HamiiTests\.[A-Za-z0-9_]+) (test[A-Za-z0-9_]+)\]' "
@@ -84,6 +89,16 @@ def assess_results(expected: set[str], outputs: list[tuple[str, int, str]]) -> t
     return len(seen), skipped, problems
 
 
+def partition_tests(expected: set[str]) -> list[tuple[str, list[str]]]:
+    """Keep complete coverage while balancing measured long-running suites."""
+    groups: dict[str, list[str]] = {"publication": [], "migration": [], "remaining": []}
+    for name in sorted(expected):
+        suite = name.split("/", 1)[0]
+        group = "publication" if suite == HEAVY_SUITE else "migration" if suite in MIGRATION_SUITES else "remaining"
+        groups[group].append(name)
+    return [(name, cases) for name, cases in groups.items() if cases]
+
+
 def main() -> int:
     swift = os.environ.get("HAMII_SWIFT") or str(Path.home() / ".swiftly/bin/swift")
     if not Path(swift).is_file():
@@ -95,11 +110,7 @@ def main() -> int:
         print(error, file=sys.stderr)
         return 1
 
-    heavy = {name for name in expected if name.startswith(HEAVY_SUITE + "/")}
-    shards = (
-        [("publication", sorted(heavy)), ("remaining", sorted(expected - heavy))]
-        if heavy and len(heavy) < len(expected) else [("all", sorted(expected))]
-    )
+    shards = partition_tests(expected)
     run_id = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S-%f") + f"-{os.getpid()}"
     log_dir = ROOT / ".build" / "verify-logs" / f"swift-test-{run_id}"
     log_dir.mkdir(parents=True, exist_ok=False)
