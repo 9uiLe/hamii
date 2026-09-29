@@ -23,7 +23,6 @@ Status: 検証中。各 Spike は fixture、対象 OS/SDK/Xcode、実行 command
 
 下表の ID は計画上の分類。個別実験の計画と結果の正本は次の `SPIKE.md`。
 
-- [Scope-aware AI Context Retrieval](../adr/ai-context-retrieval/spikes/scope-aware-context/SPIKE.md)
 - [Git / LFS threshold and availability](../adr/asset-storage-policy/spikes/git-lfs-threshold/SPIKE.md)
 - [Authoring Harness の共通 policy 実行](../adr/authoring-policy-enforcement/spikes/actor-policy-parity/SPIKE.md)
 - [Large Canvas benchmark](../adr/canvas-renderer-performance/spikes/large-canvas/SPIKE.md)
