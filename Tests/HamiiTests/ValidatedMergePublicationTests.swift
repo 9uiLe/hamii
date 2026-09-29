@@ -59,11 +59,25 @@ final class ValidatedMergePublicationTests: XCTestCase {
                        documentID: observed.document.id, scopeID: created.scopes[0].id)
     }
 
+    private func copyFixture(_ template: Fixture) throws -> Fixture {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("hamii-publish-test-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.copyItem(at: template.root, to: root)
+        let repository = CanonicalRepository(root: root)
+        let observed = try repository.observe()
+        _ = try PublishedCanonicalIndex().rebuildPublished(at: root,
+            snapshot: repository.withCoordinatedSnapshot { $0 })
+        return Fixture(root: root, main: template.main, oldHead: template.oldHead,
+                       otherHead: template.otherHead, oldState: observed.statePrecondition,
+                       documentID: observed.document.id, scopeID: template.scopeID)
+    }
+
     func testPublicationAndRecoveryAtEveryCoordinatedPhase() throws {
         let phases: [MergePublicationStep] = [.pending, .beforeRefCAS, .afterRefCAS, .materialized,
             .canonicalVerified, .beforeIndexBuild, .indexBuilt, .beforeGateRelease, .gateReleased]
+        let template = try fixture()
+        defer { try? FileManager.default.removeItem(at: template.root) }
         for phase in phases {
-            let f = try fixture()
+            let f = try copyFixture(template)
             defer { cleanupTestCandidates(f.root); try? FileManager.default.removeItem(at: f.root) }
             let publisher = ValidatedMergePublisher(root: f.root, index: PublishedCanonicalIndex()) { reached in
                 if reached == phase { throw Stopped() }
@@ -251,8 +265,10 @@ final class ValidatedMergePublicationTests: XCTestCase {
                       "materialized", "beforeCanonicalValidation", "duringCanonicalValidation", "canonicalVerified",
                       "beforeIndexBuild", "indexBeforeBuild", "indexDuringTransaction", "indexBuilt", "indexBeforePublish",
                       "indexPublished", "beforeGateRelease", "gateReleased"]
+        let template = try fixture()
+        defer { try? FileManager.default.removeItem(at: template.root) }
         for stage in stages {
-            let f = try fixture()
+            let f = try copyFixture(template)
             defer { cleanupTestCandidates(f.root); try? FileManager.default.removeItem(at: f.root) }
             if stage == "materializationInternal" { try configureMaterializationStop(f.root, main: f.main) }
             if stage == "refCASPrepared" || stage == "refCASCommitted" {

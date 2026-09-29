@@ -58,10 +58,11 @@ class ShardResultsTests(unittest.TestCase):
             "HamiiTests.FutureTests/testNew",
         }
         groups = dict(module.partition_tests(expected))
-        self.assertEqual(set(groups), {"publication", "migration", "remaining"})
+        self.assertEqual(set(groups), {"publication", "migration", "query-resolution", "remaining"})
         self.assertEqual(set(groups["publication"]), {"HamiiTests.ValidatedMergePublicationTests/testPublish"})
-        self.assertEqual(len(groups["migration"]), 3)
-        self.assertEqual(len(groups["remaining"]), 2)
+        self.assertEqual(len(groups["migration"]), 2)
+        self.assertEqual(len(groups["query-resolution"]), 2)
+        self.assertEqual(len(groups["remaining"]), 1)
         flattened = [test for cases in groups.values() for test in cases]
         self.assertEqual(set(flattened), expected)
         self.assertEqual(len(flattened), len(expected))
