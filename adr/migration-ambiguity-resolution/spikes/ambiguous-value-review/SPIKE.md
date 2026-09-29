@@ -63,7 +63,7 @@ GUI editor; production CLI/API or migration schema; `MigrationCandidatePreparer`
 - [x] Produced candidates parse and validate as Current v2; the safe automatic v1 path is unchanged.
 - [x] Production migration/publication source is unchanged; comparison and machine-readable matrix artifacts exist.
 - [x] Full local gate succeeds.
-- [ ] Exact pushed-SHA CI succeeds (pending evidence commit).
+- [x] Evidence commit `ae6e38809358e20687af39a2888d346f5ffef34e` passes exact-SHA Verify CI run `36527679629`.
 
 ## Failure Criteria
 
@@ -75,7 +75,7 @@ The precommitted oracle was recorded in `7cd7ff2368037e685818dc34a3607eb270beea4
 
 [The matrix](artifacts/resolution-matrix.json) records every observed diagnostic, candidate set with affected semantic/path/loss class, classification, unresolved count, Current v2 validation, three-run determinism, and exact loss details. A/L produced a valid candidate only by selecting one distinct spacing declaration and visibly discarding the conflicting duplicate (`potentiallyLossy`). Both A choices were tested; each selected support/reason reached the Current v2 padding declaration and the discarded declaration remained reported. B normalized a fully equivalent duplicate (`losslessWithNormalization`). D/E produced valid candidates after explicit residual discard while preserving `potentiallyLossy` and exact historical path/value. C and F–J remained hard blocked with zero choices. K remained blocked after partial resolution. L rejected a manifest after unrelated historical Canonical bytes changed even though the relevant diagnostic item identity remained the same. M preserved the existing automatic result and exact output bytes. Invalid candidate IDs, duplicate decisions, and source OID mismatch were rejected.
 
-The candidate manifest was JSON round-tripped before application. Produced candidates were parsed by the actual Current v2 reader and passed `DocumentValidator`. Production migration/publication sources were not changed. [The workflow comparison](artifacts/resolution-comparison.md) records tradeoffs and the prototype's limits. The local full gate passed all 14 checks in 753.235 seconds: 266 Swift tests executed, 58 skipped, 0 failures. Detailed log: `.build/verify-logs/20260929-053118-397816-36179-full.log` (local, untracked). Exact-SHA CI for the evidence commit is pending.
+The candidate manifest was JSON round-tripped before application. Produced candidates were parsed by the actual Current v2 reader and passed `DocumentValidator`. Production migration/publication sources were not changed. [The workflow comparison](artifacts/resolution-comparison.md) records tradeoffs and the prototype's limits. The local full gate passed all 14 checks in 753.235 seconds: 266 Swift tests executed, 58 skipped, 0 failures. Detailed log: `.build/verify-logs/20260929-053118-397816-36179-full.log` (local, untracked). Evidence commit `ae6e38809358e20687af39a2888d346f5ffef34e` passed exact-SHA Verify CI run `36527679629`.
 
 ## Conclusion
 
