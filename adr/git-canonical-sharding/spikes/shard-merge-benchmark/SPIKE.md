@@ -57,12 +57,13 @@ monolithic と同程度の conflict、または file 数/IO が budget を超え
 
 ## Result
 
-Not yet validated。実測値、観察、失敗、成果物 link を記録する。
+Observation-shape phase: [analysis and conditions](artifacts/observation-shape-analysis.md)、[raw matrix](artifacts/observation-shape-matrix.json)。L/S/C 各10,002 Layers、12/111/112 Canonical JSON paths。通常 observe 中央値は 109.364/120.840/122.001 ms (`max/min = 1.116`)。T2 current CLI 中央値は 490.257/534.794/551.290 ms、test-only single-observation candidate は 108.783/120.423/134.195 ms。全 shape の T2/T3 candidate は current の50%以下で、production ContextService の response payload と一致した。事前 routing rule により **batch investigation first**。この phase は save、diff、merge、50k、partial load を測っていない。
 
 ## Conclusion
 
-Not yet validated。結果が ADR の判断に与える影響を記録し、削除前に commit する。
+Observation-shape phase は、今回の同数 Layer fixture に限り、shape 間の一回観測差より、四回応答 workflow と一回観測候補の差が大きい Evidence を得た。candidate は production batch の実装・安全性・性能保証ではない。shard 粒度の Decision は未完了であり、この Spike 自体も save/diff/merge/50k/partial-load Evidence を待つ。ADR は `Spike Required` のまま維持する。
 
 ## Artifacts
 
-未作成。必要になった場合だけ、この Spike の `artifacts/` に成果物を置く。
+- [Observation-shape analysis](artifacts/observation-shape-analysis.md)
+- [Observation-shape raw matrix](artifacts/observation-shape-matrix.json)
