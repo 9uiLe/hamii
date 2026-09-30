@@ -59,6 +59,62 @@ final class CurrentFormatV2Tests: XCTestCase {
         XCTAssertNotEqual(try encoded(root), try encoded(Layer(id: root.id, name: root.name, payload: .stack, children: root.children, effects: root.effects.reversed())))
     }
 
+    func testCurrentFormatKeepsCompleteScreenAndComponentTreesInOwningEntityFiles() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("hamii-shard-ownership-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: root) }
+        let repository = CanonicalRepository(root: root)
+        _ = try repository.create(name: "Entity ownership")
+        let observed = try repository.observe()
+        let scope = try XCTUnwrap(observed.document.scopes.first?.id)
+        func tree(_ prefix: String) -> Layer {
+            Layer(id: EntityID("\(prefix)_root"), name: "Root", payload: .stack, children: [
+                Layer(id: EntityID("\(prefix)_nested"), name: "Nested", payload: .stack, children: [
+                    Layer(id: EntityID("\(prefix)_first"), name: "First", payload: .text(TextLayerPayload(value: "First"))),
+                    Layer(id: EntityID("\(prefix)_second"), name: "Second", payload: .text(TextLayerPayload(value: "Second")))
+                ])
+            ])
+        }
+        let screen = Screen(id: EntityID("screen_ownership"), name: "Screen", scopeID: scope, root: tree("screen"))
+        let component = ComponentDefinition(id: EntityID("component_ownership"), name: "Component", ownerScopeID: scope, root: tree("component"))
+        let target = Target(id: EntityID("target_ownership"), platform: .macOS, framework: .swiftUI)
+        let surface = AppSurface(id: EntityID("surface_ownership"), targetID: target.id, device: "Mac", runtime: "macOS 26", buildEnvironment: "macOS SDK", screenID: screen.id, architectureScopeID: scope)
+        let page = Page(id: EntityID("page_ownership"), name: "Organization", surfaces: [surface])
+        var expected = observed.document
+        expected.revision += 1
+        expected.screens = [screen]; expected.components = [component]
+        expected.targets = [target]; expected.pages = [page]
+        _ = try repository.commit(expected, expected: observed)
+
+        let decoder = JSONDecoder()
+        let screenPath = "screens/\(screen.id.rawValue).json"
+        let componentPath = "components/\(component.id.rawValue).json"
+        let pagePath = "pages/\(page.id.rawValue).json"
+        let decodedScreen = try decoder.decode(Screen.self, from: Data(contentsOf: root.appendingPathComponent(screenPath)))
+        let decodedComponent = try decoder.decode(ComponentDefinition.self, from: Data(contentsOf: root.appendingPathComponent(componentPath)))
+        let pageBytes = try Data(contentsOf: root.appendingPathComponent(pagePath))
+        let decodedPage = try decoder.decode(Page.self, from: pageBytes)
+        XCTAssertEqual(decodedScreen.root, screen.root)
+        XCTAssertEqual(decodedComponent.root, component.root)
+        XCTAssertEqual(decodedPage, page)
+        XCTAssertEqual(decodedPage.surfaces.first?.screenID, screen.id)
+        let pageJSON = try XCTUnwrap(JSONSerialization.jsonObject(with: pageBytes) as? [String: Any])
+        XCTAssertEqual(Set(pageJSON.keys), ["id", "name", "surfaces"])
+        let surfaceJSON = try XCTUnwrap((pageJSON["surfaces"] as? [[String: Any]])?.first)
+        XCTAssertNil(surfaceJSON["root"])
+
+        // Check the produced Canonical inventory, excluding coordination/Git
+        // metadata. A subtree/layer namespace would appear as an extra JSON path.
+        let enumerator = try XCTUnwrap(FileManager.default.enumerator(atPath: root.path))
+        var paths = Set<String>()
+        for case let relative as String in enumerator {
+            if relative == ".hamii" || relative == ".git" { enumerator.skipDescendants(); continue }
+            if (relative as NSString).pathExtension == "json" { paths.insert(relative) }
+        }
+        XCTAssertEqual(paths, ["hamii.json", "hamii-agent-profiles.json", screenPath, componentPath, pagePath,
+                               "scopes/\(scope.rawValue).json", "targets/\(target.id.rawValue).json"])
+        XCTAssertEqual(try CanonicalRepository(root: root).load(), expected)
+    }
+
     func testUnknownEffectAndLegacyLayoutPaddingFailDecoding() throws {
         let layer = Layer(id: EntityID("layer"), name: "Text", payload: .text(TextLayerPayload(value: "Text")))
         var object = try JSONSerialization.jsonObject(with: encoded(layer)) as! [String: Any]

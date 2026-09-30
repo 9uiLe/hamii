@@ -1,0 +1,148 @@
+{
+  "classification": "fixture validation error; incomplete full gate intentionally cancelled after useful failure",
+  "correctiveAction": "use version-bearing macOS 26 runtime label; preserve actual validation; rerun focused regression then full gate",
+  "firstFailure": [
+    "Test Case '-[HamiiTests.CurrentFormatV2Tests testCurrentFormatKeepsCompleteScreenAndComponentTreesInOwningEntityFiles]' started.",
+    "/Users/t.kobayashi/orca/hamii/Sources/HamiiFormat/CanonicalRepository.swift:563: error: -[HamiiTests.CurrentFormatV2Tests testCurrentFormatKeepsCompleteScreenAndComponentTreesInOwningEntityFiles] : failed: caught error: \"surface.runtimePlatform: Runtime platform does not match the Target\"",
+    "Test Case '-[HamiiTests.CurrentFormatV2Tests testCurrentFormatKeepsCompleteScreenAndComponentTreesInOwningEntityFiles]' failed (0.280 seconds)."
+  ],
+  "focusedRegressionAfterFix": {
+    "executed": 1,
+    "exitCode": 0,
+    "failures": 0,
+    "logReference": "/tmp/hamii-shard-ownership-focused-relative.log",
+    "skipped": 0,
+    "testDurationSeconds": 0.027
+  },
+  "focusedRetryFailure": {
+    "cause": "manual absolute-URL prefix trimming produced wrong relative paths; enumerated URL spelling differed from the temporary root URL",
+    "correctiveAction": "enumerate resolved root, assert prefix, derive relative paths from the same resolved root; preserve exact inventory assertion",
+    "excerpt": [
+      "/Users/t.kobayashi/orca/hamii/Tests/HamiiTests/CurrentFormatV2Tests.swift:114: error: -[HamiiTests.CurrentFormatV2Tests testCurrentFormatKeepsCompleteScreenAndComponentTreesInOwningEntityFiles] : XCTAssertEqual failed: (\"[\"906DD92/components/component_ownership.json\", \"906DD92/hamii-agent-profiles.json\", \"906DD92/scopes/scope_cf550775-e884-4c35-92b5-9188b8d12abb.json\", \"906DD92/targets/target_ownership.json\", \"906DD92/.hamii/canonical-generation.json\", \"906DD92/pages/page_ownership.json\", \"906DD92/screens/screen_ownership.json\", \"906DD92/hamii.json\"]\") is not equal to (\"[\"hamii.json\", \"screens/screen_ownership.json\", \"pages/page_ownership.json\", \"components/component_ownership.json\", \"hamii-agent-profiles.json\", \"scopes/scope_cf550775-e884-4c35-92b5-9188b8d12abb.json\", \"targets/target_ownership.json\"]\")"
+    ],
+    "executed": 1,
+    "exitCode": 1,
+    "failures": 1
+  },
+  "gate": {
+    "changedFileCount": 2,
+    "checks": [
+      {
+        "name": "change-impact-tests",
+        "status": "passed"
+      },
+      {
+        "name": "swift-test-shard-tests",
+        "status": "passed"
+      },
+      {
+        "name": "architecture",
+        "status": "passed"
+      },
+      {
+        "name": "adr",
+        "status": "passed"
+      },
+      {
+        "name": "links",
+        "status": "passed"
+      },
+      {
+        "name": "swift-version",
+        "status": "passed"
+      },
+      {
+        "name": "swift-build",
+        "status": "passed"
+      },
+      {
+        "name": "package-app",
+        "status": "passed"
+      },
+      {
+        "name": "codesign",
+        "status": "passed"
+      },
+      {
+        "name": "swift-test",
+        "status": "failed"
+      },
+      {
+        "name": "cli-smoke",
+        "status": "notRun"
+      },
+      {
+        "name": "state-precondition-smoke",
+        "status": "notRun"
+      },
+      {
+        "name": "merge-candidate-smoke",
+        "status": "notRun"
+      },
+      {
+        "name": "samples",
+        "status": "notRun"
+      }
+    ],
+    "durationSeconds": 259.975,
+    "exitCode": 1,
+    "failureTail": [
+      "/Users/t.kobayashi/orca/hamii/Tests/HamiiTests/IndexQuerySessionTests.swift:1665: -[HamiiTests.IndexQuerySessionTests testRecoveryLockProbeWorker] : Test skipped - Recovery lock probe worker only",
+      "Test Case '-[HamiiTests.IndexQuerySessionTests testRecoveryLockProbeWorker]' skipped (0.000 seconds).",
+      "Test Case '-[HamiiTests.IndexQuerySessionTests testStoragePathFailureIsNotClassifiedAsDisposableIndexCorruption]' started.",
+      "Test Case '-[HamiiTests.IndexQuerySessionTests testStoragePathFailureIsNotClassifiedAsDisposableIndexCorruption]' passed (1.257 seconds).",
+      "Test Case '-[HamiiTests.IndexQuerySessionTests testTwoOSProcessRecoveriesPublishOnceAndReuseOneGeneration]' started.",
+      "Test Case '-[HamiiTests.IndexQuerySessionTests testTwoOSProcessRecoveriesPublishOnceAndReuseOneGeneration]' passed (2.541 seconds).",
+      "Test Case '-[HamiiTests.IndexQuerySessionTests testWitnessesStayWithinTheirWorktrees]' started.",
+      "Test Case '-[HamiiTests.IndexQuerySessionTests testWitnessesStayWithinTheirWorktrees]' passed (3.527 seconds).",
+      "Test Suite 'IndexQuerySessionTests' passed at 2026-09-30 14:13:02.107.",
+      "\t Executed 64 tests, with 21 tests skipped and 0 failures (0 unexpected) in 181.447 (181.452) seconds",
+      "Test Suite 'MigrationResolutionRuntimeTests' started at 2026-09-30 14:13:02.107.",
+      "Test Case '-[HamiiTests.MigrationResolutionRuntimeTests testAutomaticReviewKeepsVersionOneAndCanPublish]' started.",
+      "Test Case '-[HamiiTests.MigrationResolutionRuntimeTests testAutomaticReviewKeepsVersionOneAndCanPublish]' passed (9.835 seconds).",
+      "Test Case '-[HamiiTests.MigrationResolutionRuntimeTests testNestedUnknownCanonicalPathIsVisibleAndHasNoChoice]' started.",
+      "Test Case '-[HamiiTests.MigrationResolutionRuntimeTests testNestedUnknownCanonicalPathIsVisibleAndHasNoChoice]' passed (2.340 seconds).",
+      "Test Case '-[HamiiTests.MigrationResolutionRuntimeTests testReportAndPrepareRejectDirtyDetachedPartialAndStaleSource]' started.",
+      "Test Case '-[HamiiTests.MigrationResolutionRuntimeTests testReportAndPrepareRejectDirtyDetachedPartialAndStaleSource]' passed (4.678 seconds).",
+      "Test Case '-[HamiiTests.MigrationResolutionRuntimeTests testResolvedPublicationRecoversAfterRefCASAndRetainsAudit]' started.",
+      "Test Case '-[HamiiTests.MigrationResolutionRuntimeTests testResolvedPublicationRecoversAfterRefCASAndRetainsAudit]' passed (11.726 seconds).",
+      "Test Case '-[HamiiTests.MigrationResolutionRuntimeTests testSourceBoundReportPrepareAndPublishedLossAudit]' started."
+    ],
+    "log": ".build/verify-logs/20260930-050952-771328-97144-full.log",
+    "mode": "full",
+    "nextAction": "inspect failureTail and log; fix, then rerun exact gate",
+    "outputOmittedLines": 133,
+    "selectionReason": "code, data, tooling, config, or unknown path changed",
+    "status": "failed",
+    "swiftTests": {
+      "executed": 64,
+      "failures": 0,
+      "skipped": 21
+    }
+  },
+  "resolvedRootRetryFailure": {
+    "correctiveAction": "use Foundation enumerator(atPath:) relative String results directly; no manual URL prefix trimming; retain exact Canonical inventory equality",
+    "excerpt": [
+      "/Users/t.kobayashi/orca/hamii/Tests/HamiiTests/CurrentFormatV2Tests.swift:111: error: -[HamiiTests.CurrentFormatV2Tests testCurrentFormatKeepsCompleteScreenAndComponentTreesInOwningEntityFiles] : XCTAssertTrue failed",
+      "/Users/t.kobayashi/orca/hamii/Tests/HamiiTests/CurrentFormatV2Tests.swift:111: error: -[HamiiTests.CurrentFormatV2Tests testCurrentFormatKeepsCompleteScreenAndComponentTreesInOwningEntityFiles] : XCTAssertTrue failed",
+      "/Users/t.kobayashi/orca/hamii/Tests/HamiiTests/CurrentFormatV2Tests.swift:111: error: -[HamiiTests.CurrentFormatV2Tests testCurrentFormatKeepsCompleteScreenAndComponentTreesInOwningEntityFiles] : XCTAssertTrue failed",
+      "/Users/t.kobayashi/orca/hamii/Tests/HamiiTests/CurrentFormatV2Tests.swift:111: error: -[HamiiTests.CurrentFormatV2Tests testCurrentFormatKeepsCompleteScreenAndComponentTreesInOwningEntityFiles] : XCTAssertTrue failed",
+      "/Users/t.kobayashi/orca/hamii/Tests/HamiiTests/CurrentFormatV2Tests.swift:111: error: -[HamiiTests.CurrentFormatV2Tests testCurrentFormatKeepsCompleteScreenAndComponentTreesInOwningEntityFiles] : XCTAssertTrue failed",
+      "/Users/t.kobayashi/orca/hamii/Tests/HamiiTests/CurrentFormatV2Tests.swift:111: error: -[HamiiTests.CurrentFormatV2Tests testCurrentFormatKeepsCompleteScreenAndComponentTreesInOwningEntityFiles] : XCTAssertTrue failed",
+      "/Users/t.kobayashi/orca/hamii/Tests/HamiiTests/CurrentFormatV2Tests.swift:111: error: -[HamiiTests.CurrentFormatV2Tests testCurrentFormatKeepsCompleteScreenAndComponentTreesInOwningEntityFiles] : XCTAssertTrue failed",
+      "/Users/t.kobayashi/orca/hamii/Tests/HamiiTests/CurrentFormatV2Tests.swift:111: error: -[HamiiTests.CurrentFormatV2Tests testCurrentFormatKeepsCompleteScreenAndComponentTreesInOwningEntityFiles] : XCTAssertTrue failed",
+      "/Users/t.kobayashi/orca/hamii/Tests/HamiiTests/CurrentFormatV2Tests.swift:111: error: -[HamiiTests.CurrentFormatV2Tests testCurrentFormatKeepsCompleteScreenAndComponentTreesInOwningEntityFiles] : XCTAssertTrue failed",
+      "/Users/t.kobayashi/orca/hamii/Tests/HamiiTests/CurrentFormatV2Tests.swift:111: error: -[HamiiTests.CurrentFormatV2Tests testCurrentFormatKeepsCompleteScreenAndComponentTreesInOwningEntityFiles] : XCTAssertTrue failed",
+      "/Users/t.kobayashi/orca/hamii/Tests/HamiiTests/CurrentFormatV2Tests.swift:111: error: -[HamiiTests.CurrentFormatV2Tests testCurrentFormatKeepsCompleteScreenAndComponentTreesInOwningEntityFiles] : XCTAssertTrue failed",
+      "/Users/t.kobayashi/orca/hamii/Tests/HamiiTests/CurrentFormatV2Tests.swift:111: error: -[HamiiTests.CurrentFormatV2Tests testCurrentFormatKeepsCompleteScreenAndComponentTreesInOwningEntityFiles] : XCTAssertTrue failed",
+      "/Users/t.kobayashi/orca/hamii/Tests/HamiiTests/CurrentFormatV2Tests.swift:111: error: -[HamiiTests.CurrentFormatV2Tests testCurrentFormatKeepsCompleteScreenAndComponentTreesInOwningEntityFiles] : XCTAssertTrue failed",
+      "/Users/t.kobayashi/orca/hamii/Tests/HamiiTests/CurrentFormatV2Tests.swift:111: error: -[HamiiTests.CurrentFormatV2Tests testCurrentFormatKeepsCompleteScreenAndComponentTreesInOwningEntityFiles] : XCTAssertTrue failed",
+      "/Users/t.kobayashi/orca/hamii/Tests/HamiiTests/CurrentFormatV2Tests.swift:111: error: -[HamiiTests.CurrentFormatV2Tests testCurrentFormatKeepsCompleteScreenAndComponentTreesInOwningEntityFiles] : XCTAssertTrue failed",
+      "/Users/t.kobayashi/orca/hamii/Tests/HamiiTests/CurrentFormatV2Tests.swift:111: error: -[HamiiTests.CurrentFormatV2Tests testCurrentFormatKeepsCompleteScreenAndComponentTreesInOwningEntityFiles] : XCTAssertTrue failed",
+      "/Users/t.kobayashi/orca/hamii/Tests/HamiiTests/CurrentFormatV2Tests.swift:116: error: -[HamiiTests.CurrentFormatV2Tests testCurrentFormatKeepsCompleteScreenAndComponentTreesInOwningEntityFiles] : XCTAssertEqual failed: (\"[\"B8BF15B/components/component_ownership.json\", \"B8BF15B/hamii.json\", \"B8BF15B/screens/screen_ownership.json\", \"B8BF15B/hamii-agent-profiles.json\", \"B8BF15B/.hamii/canonical-generation.json\", \"B8BF15B/targets/target_ownership.json\", \"B8BF15B/scopes/scope_dea28972-a660-40f1-bc5b-aae422e94e04.json\", \"B8BF15B/pages/page_ownership.json\"]\") is not equal to (\"[\"hamii-agent-profiles.json\", \"pages/page_ownership.json\", \"hamii.json\", \"screens/screen_ownership.json\", \"scopes/scope_dea28972-a660-40f1-bc5b-aae422e94e04.json\", \"components/component_ownership.json\", \"targets/target_ownership.json\"]\")"
+    ],
+    "executed": 1,
+    "exitCode": 1,
+    "failures": 17
+  }
+}

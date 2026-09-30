@@ -93,6 +93,18 @@ Canonical sharding and read optimization are separate concerns. Authoring/curren
 
 No production format implementation change is required: this selects the existing Current Format v2. No new format version, migration edge, Canonical rewrite or Index schema change follows from this Decision. The enduring ownership and validation rules are expressed in [Current Architecture](../../docs/final-architecture.md). Remaining work is closure verification of implementation/coverage/documentation and, only after its conditions hold, ADR deletion in a later commit. Reopen conditions remain those specified in Unknowns.
 
+## Closure Review
+
+- Decision review `81d47c41d64dbdfdeee35715cbf501e835add9d5`, [Verify 36671101207 success](https://github.com/9uiLe/hamii/actions/runs/36671101207).
+- Decision `31ea2715417c7393d75a2d8268143eb107c47a3a`, [Verify 36671238265 success](https://github.com/9uiLe/hamii/actions/runs/36671238265).
+- Save/merge Evidence `d3a0d4acac93b21bfb071d0126c10c31f419172d`; normalized serializer / 50k open/save `7b665074d424e543b4565b82e651be02c3999fc2`; partial-load `424168ecce412f78227033570b7af3322a29fb68`. Each is a prior historical commit with raw samples and retained failures.
+- Decision made; required Spike phases complete; chosen Current Format v2 is production; no Format/migration/Index implementation change required.
+- `CanonicalRepository.encodedFiles` / `encodeAll` store whole Screen/Component values by stable entity filename. `testCurrentFormatKeepsCompleteScreenAndComponentTreesInOwningEntityFiles` adds an actual create/commit/disk-decode/reopen regression for nested tree values/order, Page → AppSurface → Screen reference, and exact generated Canonical JSON inventory. No subtree Canonical namespace is emitted. It uses no ADR helper.
+- Current Architecture owns entity/tree/Page rules and the full-observation authoring boundary. README describes stable-ID Canonical storage and points to Current Architecture; implementation status has no specific unresolved sharding entry. The only external Spike inventory link is in `docs/spikes.md` and will be removed with deletion.
+- [Initial closure gate failure](artifacts/closure-initial-failure.json) records a test fixture runtime label rejected by existing `surface.runtimePlatform` validation. Remaining test processes were deliberately cancelled after the useful failure; that run is incomplete/failed, not accepted. The fixture uses the existing version-bearing label before focused regression and full-gate retry. A focused retry exposed an unresolved temporary-root / enumerated-URL spelling mismatch; resolved-root prefix trimming also failed. The inventory now uses Foundation’s relative String enumeration directly, avoiding absolute-URL spelling assumptions. No assertion or production validation was weakened.
+- No in-boundary production implementation remains; deletion awaits this commit’s full gate and exact-SHA verification. No extra performance measurements are required for closure.
+- Power-loss durability remains in its independent ADR. Semantic merge is a separate product concern. Read-only partial optimization was not adopted; concrete future workloads use the stated reopen trigger. Many-shard/cold-cache/AI-cost unknowns are limits, not unfinished implementation tasks for this Decision.
+
 ## Status
 
 Implementation Required
