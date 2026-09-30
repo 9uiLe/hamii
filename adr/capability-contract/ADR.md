@@ -20,7 +20,7 @@ Node 単位、property 単位、semantic contract 単位。Navigation/Toolbar/Re
 
 **Decision:** IR から semantic requirements を抽出し、target/runtime profile に対して requirement 単位の support を評価し、共有 loss report を出す。Approved Approximate も loss を隠さない。Property metadata は requirement 抽出の入力になり得るが、判定単位は独立した意味とその integration obligation とする。Node 単位の一括 support を判定の正本にしない。
 
-これは granularity と評価境界の決定であり、SwiftUI/UIKit/Compose の正確な supported API set の決定ではない。Production の `TargetPlanner` と `SwiftUIGenerator` は Current Format v2 の requirement 抽出・共有 evaluator へ接続済み。両者は異なる実装 catalog を持ち、未宣言・未実装の意味を拒否する。明示的な semantic key は basic node alias より優先し、`effect.padding` は `token.spacing` alias に継承されず、alias は event・binding・asset source 等にも拡張しない。Generator は runtime 未指定で評価する。Canvas・AI 等の残る consumer と framework support coverage は未実装。
+これは granularity と評価境界の決定であり、SwiftUI/UIKit/Compose の正確な supported API set の決定ではない。Production の `TargetPlanner` と `SwiftUIGenerator` は Current Format v2 の requirement 抽出・共有 evaluator へ接続済み。両者は異なる実装 catalog を持ち、未宣言・未実装の意味を拒否する。明示的な semantic key は basic node alias より優先し、`effect.padding` は `token.spacing` alias に継承されず、alias は event・binding・asset source 等にも拡張しない。Generator は runtime 未指定で評価する。macOS Canvas は選択した SwiftUI AppSurface について、Application の read-only assessment から同じ `CapabilityLossReport` と `TargetPlan` を Inspector に表示する。AI 等の残る consumer と framework support coverage は未実装。
 
 ## Unknowns
 

@@ -16,6 +16,9 @@ final class EditorSession {
     var errorMessage: String?
     var selectedScreenID: EntityID?
     var selectedLayerID: EntityID?
+    var selectedSurfaceID: EntityID?
+    var surfaceCapabilityAssessment: SurfaceCapabilityAssessment?
+    var surfaceAssessmentError: String?
     var availableComponents: [ComponentDefinition] = []
     var availableAssets: [Asset] = []
     var availableSpacingTokens: [DesignToken] = []
@@ -43,6 +46,7 @@ final class EditorSession {
             self.statePrecondition = observed.statePrecondition
             selectedScreenID = document.screens.first?.id
             selectedLayerID = nil
+            refreshSurfaceAssessment()
             previewSession = makePreviewSession(document, statePrecondition: observed.statePrecondition)
             refreshAvailableComponents()
             errorMessage = nil
@@ -51,7 +55,46 @@ final class EditorSession {
     func selectScreen(_ id: EntityID) {
         selectedScreenID = id
         selectedLayerID = nil
+        refreshSurfaceAssessment()
+        if let document, let statePrecondition {
+            previewSession = makePreviewSession(document, statePrecondition: statePrecondition)
+        }
         refreshAvailableComponents()
+    }
+
+    var eligibleSurfaces: [AppSurface] {
+        guard let document, let selectedScreenID else { return [] }
+        return document.pages.flatMap(\.surfaces).filter { surface in
+            surface.screenID == selectedScreenID && document.targets.contains {
+                $0.id == surface.targetID && $0.platform == .macOS && $0.framework == .swiftUI
+            }
+        }
+    }
+
+    func selectSurface(_ id: EntityID) {
+        guard eligibleSurfaces.contains(where: { $0.id == id }) else { return }
+        selectedSurfaceID = id
+        refreshSurfaceAssessment()
+        if let document, let statePrecondition {
+            previewSession = makePreviewSession(document, statePrecondition: statePrecondition)
+        }
+    }
+
+    private func refreshSurfaceAssessment() {
+        let surfaces = eligibleSurfaces
+        if !surfaces.contains(where: { $0.id == selectedSurfaceID }) {
+            selectedSurfaceID = surfaces.first?.id
+        }
+        surfaceCapabilityAssessment = nil
+        surfaceAssessmentError = nil
+        guard let document, let selectedSurfaceID else { return }
+        do {
+            surfaceCapabilityAssessment = try SurfaceCapabilityAssessmentService.assess(
+                document: document, surfaceID: selectedSurfaceID
+            )
+        } catch {
+            surfaceAssessmentError = String(describing: error)
+        }
     }
 
     func createPage() { perform(.createPage(name: "New Page")) }
@@ -119,7 +162,11 @@ final class EditorSession {
             let result = try operation(service, priorState)
             let observed = try service.observe()
             let updated = observed.document
+            document = updated
+            statePrecondition = observed.statePrecondition
+            refreshSurfaceAssessment()
             if let previewSession, result.statePrecondition == observed.statePrecondition,
+               previewSession.surface.id == selectedSurfaceID,
                !result.patches.isEmpty, result.patches.allSatisfy({ $0.path == "text" }) {
                 let changes = result.patches.compactMap { patch -> PreviewChange? in
                     guard let value = patch.newValue else { return nil }
@@ -130,14 +177,13 @@ final class EditorSession {
             } else {
                 previewSession = makePreviewSession(updated, statePrecondition: observed.statePrecondition)
             }
-            document = updated
-            statePrecondition = observed.statePrecondition
             refreshAvailableComponents()
             errorMessage = nil
         } catch {
             if case AuthoringError.staleState = error, let observed = try? service.observe() {
                 document = observed.document
                 statePrecondition = observed.statePrecondition
+                refreshSurfaceAssessment()
                 previewSession = makePreviewSession(observed.document, statePrecondition: observed.statePrecondition)
                 refreshAvailableComponents()
             }
@@ -146,10 +192,7 @@ final class EditorSession {
     }
 
     private func makePreviewSession(_ document: HamiiCore.Document, statePrecondition: ClientPrecondition) -> NativePreviewSession? {
-        let surface = document.pages.flatMap(\.surfaces).first { surface in
-            document.targets.contains { $0.id == surface.targetID && $0.platform == .macOS && $0.framework == .swiftUI }
-        }
-        guard let surface else { return nil }
+        guard let surface = eligibleSurfaces.first(where: { $0.id == selectedSurfaceID }) else { return nil }
         return try? NativePreviewSession(document: document, surface: surface, statePrecondition: statePrecondition)
     }
 
@@ -260,6 +303,82 @@ struct LayerRow: View {
     }
 }
 
+private struct SurfaceCapabilityPanel: View {
+    let assessment: SurfaceCapabilityAssessment
+
+    private struct LossRow: Identifiable {
+        let id: String
+        let loss: CapabilityLoss
+    }
+
+    private struct DiagnosticRow: Identifiable {
+        let id: String
+        let diagnostic: Diagnostic
+    }
+
+    private var lossRows: [LossRow] {
+        var occurrences: [String: Int] = [:]
+        return assessment.lossReport.items.filter { $0.loss != .none }.map { loss in
+            let key = "\(loss.requirement.sourceEntityID.rawValue):\(loss.requirement.key.rawValue)"
+            let occurrence = occurrences[key, default: 0]
+            occurrences[key] = occurrence + 1
+            return LossRow(id: "\(key):\(occurrence)", loss: loss)
+        }
+    }
+
+    private var diagnosticRows: [DiagnosticRow] {
+        var occurrences: [String: Int] = [:]
+        return assessment.previewPlan.diagnostics.map { diagnostic in
+            let key = "\(diagnostic.entityID?.rawValue ?? "document"):\(diagnostic.rule):\(diagnostic.message)"
+            let occurrence = occurrences[key, default: 0]
+            occurrences[key] = occurrence + 1
+            return DiagnosticRow(id: "\(key):\(occurrence)", diagnostic: diagnostic)
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            let profile = assessment.lossReport.profile
+            Text("Surface: \(assessment.surfaceID.rawValue)")
+            Text("Target: \(assessment.targetID.rawValue)")
+            Text("\(profile.platform.rawValue) / \(profile.framework.rawValue) / \(profile.runtime ?? "Runtime unknown")")
+                .font(.caption)
+            Text(lossRows.isEmpty ? "No capability loss" : "\(lossRows.count) capability losses")
+                .font(.subheadline.weight(.semibold))
+            ForEach(lossRows) { row in
+                let loss = row.loss
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(loss.requirement.key.rawValue).font(.caption.weight(.semibold))
+                    Text("\(loss.support.rawValue) · \(loss.loss.rawValue)").font(.caption)
+                    Text("Source: \(loss.requirement.sourceEntityID.rawValue)").font(.caption)
+                    Text(loss.reason).font(.caption)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.vertical, 3)
+                .accessibilityElement(children: .combine)
+            }
+            Divider()
+            Text(assessment.previewPlan.canPreview ? "Preview Plan: Ready" : "Preview Plan: Blocked")
+                .font(.subheadline.weight(.semibold))
+            if !assessment.previewPlan.canPreview {
+                ForEach(diagnosticRows) { row in
+                    let diagnostic = row.diagnostic
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(diagnostic.rule).font(.caption.weight(.semibold))
+                        Text("Entity: \(diagnostic.entityID?.rawValue ?? "document")").font(.caption)
+                        Text(diagnostic.message).font(.caption)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityElement(children: .combine)
+                }
+            }
+            Text("Capability and plan assessment does not prove that a native host is available or launchable.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+}
+
 struct EditorView: View {
     @State private var session = EditorSession()
     @State private var draftText = ""
@@ -347,27 +466,53 @@ struct EditorView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 Divider()
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Inspector").font(.headline)
-                    if let layer = selectedLayer {
-                        Text(layer.name)
-                        if layer.kind == .text || layer.kind == .button {
-                            TextField("Text", text: $draftText)
-                                .onSubmit { session.setText(draftText) }
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Inspector").font(.headline)
+                        if let layer = selectedLayer {
+                            Text(layer.name)
+                            if layer.kind == .text || layer.kind == .button {
+                                TextField("Text", text: $draftText)
+                                    .onSubmit { session.setText(draftText) }
+                            }
+                            if layer.kind == .stack {
+                                tokenPicker("Spacing", selected: layer.layout.spacingTokenID, property: .spacing)
+                            }
+                            if [.stack, .overlay, .scroll].contains(layer.kind) {
+                                tokenPicker("Padding", selected: layer.effects.compactMap { effect -> EntityID? in
+                                    if case .padding(let tokenID) = effect { return tokenID }
+                                    return nil
+                                }.first, property: .padding)
+                            }
                         }
-                        if layer.kind == .stack {
-                            tokenPicker("Spacing", selected: layer.layout.spacingTokenID, property: .spacing)
-                        }
-                        if [.stack, .overlay, .scroll].contains(layer.kind) {
-                            tokenPicker("Padding", selected: layer.effects.compactMap { effect -> EntityID? in
-                                if case .padding(let tokenID) = effect { return tokenID }
-                                return nil
-                            }.first, property: .padding)
+                        if selectedScreen != nil {
+                            Divider()
+                            Text("Target Support").font(.headline)
+                            if session.eligibleSurfaces.count > 1 {
+                                Picker("AppSurface", selection: Binding(
+                                    get: { session.selectedSurfaceID?.rawValue ?? "" },
+                                    set: { session.selectSurface(EntityID($0)) }
+                                )) {
+                                    ForEach(session.eligibleSurfaces) { surface in
+                                        Text("\(surface.device) · \(surface.runtime) · \(surface.id.rawValue)")
+                                            .tag(surface.id.rawValue)
+                                    }
+                                }
+                            }
+                            if let assessment = session.surfaceCapabilityAssessment {
+                                SurfaceCapabilityPanel(assessment: assessment)
+                            } else if let error = session.surfaceAssessmentError {
+                                Text("Capability assessment unavailable: \(error)")
+                            } else {
+                                Text("No macOS SwiftUI AppSurface is available for this Screen. Other framework and host coverage is not evaluated here.")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
                         }
                     }
-                    Spacer()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding()
                 }
-                .padding()
                 .frame(width: 240)
                 .frame(maxHeight: .infinity, alignment: .topLeading)
             }

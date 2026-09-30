@@ -14,7 +14,7 @@ bash scripts/package-app.sh
 open .build/hamii.app
 ```
 
-`hamii-studio` は macOS editor です。Project directory を Open すると Pages、Screens、Layers、Components、Assets、Canvas、Text Inspector を表示します。Asset は toolbar の Import Asset to Git から Git storage へ取り込み、利用可能な Asset を sidebar から Screen に挿入できます。macOS SwiftUI AppSurface は Native Preview へ切り替えられ、対応する Text patch は compile なしで反映されます。iOS Simulator Native Preview Host は Preview 関連 ADR の検証対象です。
+`hamii-studio` は macOS editor です。Project directory を Open すると Pages、Screens、Layers、Components、Assets、Canvas、Inspector を表示します。Inspector は選択 Screen の macOS SwiftUI AppSurface を選び、capability loss と Preview Plan の診断を分けて表示します。Asset は toolbar の Import Asset to Git から Git storage へ取り込み、利用可能な Asset を sidebar から Screen に挿入できます。選択した macOS SwiftUI AppSurface は Native Preview へ切り替えられ、対応する Text patch は compile なしで反映されます。iOS Simulator Native Preview Host は Preview 関連 ADR の検証対象です。
 
 `hamii preview plan SURFACE_ID --json` は Target の capability 宣言と Screen の意味を検証します。成功した plan は Host の起動可否とは別です。Starter sample の macOS Surface は CI で plan を検証します。
 
