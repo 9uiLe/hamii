@@ -18,7 +18,7 @@
 
 - [Candidate manifest](artifacts/taxonomy-candidates.json): CURRENT / RESOURCE / VERB / TASK の42 operation prefix、operand grammar、skill text と semantic fact IDs を固定する。
 - [Task suite](artifacts/task-suite.json): stable fixture IDs、5 task の意味と oracle、順序、失敗判定、runtime と計測範囲。
-- [Initial prompt](artifacts/agent-prompt.txt): 全8 session へ byte-identical に提供。候補名を含めない。
+- [Initial prompt](artifacts/agent-prompt.txt): 全8 session へ byte-identical に提供。候補名を含めず、共通の bootstrap invocation だけを最初の command instruction とする。
 - Test-only proxy は `candidate argv → production argv → 同じ Release hamii → stdout/stderr/exit passthrough`。Skill discovery だけは固定 candidate catalog を返す。未知 prefix は proxy usage error として記録する。
 - ID discovery、inspect/context の隠れた呼出し、`--state` 挿入、retry、business rule、validation の実装は proxy に持たせない。
 - 9個の semantic skill group 境界は CURRENT と同じ。候補に合わせて group 名と command prefix を変える。この Spike は任意の skill 再分割を比較しない。
@@ -74,6 +74,8 @@ Spike success は全候補 task success を意味しない。候補 failure も 
 
 Not run. Live CURRENT catalog の採取と4候補の静的 fairness 確認は plan preparation であり、fresh-agent evidence ではない。Proxy / fixture / oracle は Evidence commit に追加する。CURRENT の取得元は `1bf458a` の production source、application version 0.1.0。
 
+Plan `c6b0298` 後、agent trial 前の fixture preparation で root の spacingTokenID が static generator の非対応 semantics として拒否された。Token は T3 用に保持し、fixture root から参照を外した。T1 で新規 Screen に token を割り当てる authoring task は変えない。初回 bootstrap invocation と task metric labels も試行前に明示化した。[Preparation record](artifacts/pre-trial-preparation.json) に失敗 / 修正 / prompt identity を保持する。Agent trial はまだ0件で、candidate grammar と skill text は変更していない。
+
 ## Conclusion
 
 未決定。ADR は Spike Required。Evidence commit の full gate / push / exact-SHA Verify success 後に STOP / report し、Decision Review を行う。Prototype の結果を自動的に production rename にしない。
@@ -83,3 +85,4 @@ Not run. Live CURRENT catalog の採取と4候補の静的 fairness 確認は pl
 - [Candidate grammar and live skills](artifacts/taxonomy-candidates.json)
 - [Task suite and oracle contract](artifacts/task-suite.json)
 - [Byte-identical agent prompt](artifacts/agent-prompt.txt)
+- [Pre-trial preparation failure and correction](artifacts/pre-trial-preparation.json)

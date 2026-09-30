@@ -1,0 +1,23 @@
+{
+  "kind": "pre-trial fixture preparation",
+  "agentTrialsStarted": 0,
+  "sourcePlanCommit": "c6b0298",
+  "exitCode": -5,
+  "stdout": "",
+  "stderr": "Swift/ErrorType.swift:254: Fatal error: Error raised at top level: Unsupported at layer_taxonomy_root: Capability layout.spacingToken: This consumer does not implement this semantic requirement\n\n",
+  "diagnosis": "Fixture root spacingTokenID is outside the generator capability catalog; T5 must use supported source. Remove fixture root token assignment; existing Token stays present for T3. No production or candidate grammar change.",
+  "planOnlyCorrections": [
+    "Remove fixture root spacingTokenID; keep Token for T3.",
+    "Expose byte-identical common bootstrap invocation to make starting instruction executable without guessing.",
+    "Add HAMII_TASK environment labels for task-attributed command/discovery metrics.",
+    "Restrict additional writable Index namespace to the disposable worktree derived data."
+  ],
+  "previousPromptSHA256": "7f0d71e2c715d30fd5849d7038ae585f470cd11186bd8d62c66104d5cf12cf52",
+  "fixedPromptSHA256": "e151bab478c304f9fd98e2bb593d2878a695b5f5e9980909e131237add421381",
+  "fixedFixtureCheck": {
+    "exitCode": 0,
+    "stdout": "Fixture validated; preview and generator supported\n",
+    "stderr": "",
+    "agentTrialsStarted": 0
+  }
+}

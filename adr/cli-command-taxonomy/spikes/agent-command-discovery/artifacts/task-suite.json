@@ -33,7 +33,7 @@
       "buildEnvironment": "SDK 26",
       "device": "Mac"
     },
-    "layout": "vertical Stack with one Text leaf; Commerce owns PriceBadge; Account owns PrivateBadge; Checkout owns spacing.checkout literal 12; declared stack/text/token spacing support sufficient for fixture Preview/generator.",
+    "layout": "vertical Stack with one Text leaf and no layout-token references; Commerce owns PriceBadge; Account owns PrivateBadge; Checkout owns spacing.checkout literal 12 for T3. Declared target capabilities cover the fixture Preview and static generator.",
     "name": "Taxonomy discovery",
     "capabilities": [
       "layout.stack.container",
@@ -45,7 +45,6 @@
       "kind": "stack",
       "name": "Root",
       "axis": "vertical",
-      "spacingTokenID": "token_taxonomy_checkout",
       "children": [
         {
           "id": "layer_taxonomy_summary",
@@ -125,7 +124,8 @@
       "sandbox_workspace_write.exclude_tmpdir_env_var": true
     },
     "officialReference": "https://learn.chatgpt.com/docs/non-interactive-mode",
-    "configReference": "https://learn.chatgpt.com/docs/config-file/config-reference"
+    "configReference": "https://learn.chatgpt.com/docs/config-file/config-reference",
+    "indexPermission": "Additional writable directory is limited to the newly allocated disposable document/worktree LocalIndexLocation namespace; source repository and other projects remain outside writable roots."
   },
   "tokenMeasurement": {
     "sessionTotals": "authoritative aggregate per-session usage only, if platform provides it; include failures and retries once; input/output/cached nesting documented",
