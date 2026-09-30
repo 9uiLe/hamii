@@ -18,7 +18,7 @@ CURRENT の hybrid command tree を維持、resource-first tree、verb-first tre
 
 ## Current Hypothesis
 
-**Decision Review recommendation、正式 Decision 前:** CURRENT の production taxonomy と installed live-skill discovery を維持する。CURRENT は resource-oriented authoring と query / preview / integration / generation / migration / Git の semantic namespaces を組み合わせる hybrid であり、pure resource-first ではない。
+候補比較の仮説は Evidence review を完了し、下記 Decision に移した。CURRENT は resource-oriented authoring と query / preview / integration / generation / migration / Git の semantic namespaces を組み合わせる hybrid であり、pure resource-first ではない。
 
 ## Unknowns
 
@@ -55,6 +55,16 @@ Alternative adoption は既存 user/scripts の例、skill text、docs、smoke�
 
 より広い fresh-agent workload で、discovery failure、discovery round-trip、または authoritative session token usage に再現可能な product 上の改善が観測され、command compatibility / migration cost を正当化できる場合に再評価する。別 model / task set での再現が必要になる可能性がある。今回未検証の数値 threshold は設けない。
 
+## Decision
+
+CURRENT の production CLI taxonomy を維持する。試験した RESOURCE / VERB / TASK への command tree rename は行わない。全候補が代表 task を推測 / error なしに、同じ discovery-call 数で完了した。TASK の低い observed token / wall 値だけでは compatibility / migration cost を正当化できない。
+
+`hamii` CLI は唯一の AI/automation interface。Installed `skills list` / `skills get` が正式な command discovery mechanism であり、existing production namespaces を安定させる。新 command は近い existing semantic/resource namespace を拡張する。`query context` / `preview plan` / `integration contract` / `generate swiftui` のような cross-resource operation に global resource/verb/task rewrite を強制しない。Production rename は具体的な新 Evidence で正当化する。
+
+全 command 表の正本は current source と live skills であり、ADR に複製しない。CURRENT 維持のための compatibility alias / migration は不要。Future taxonomy の再評価は Reopen Trigger に従う。
+
+Decision Review は `31aa38885a5a54f09e1ffa9222341eb906db3e32`、[Verify 36716913744 success](https://github.com/9uiLe/hamii/actions/runs/36716913744) に保存済み。残る implementation は Current Architecture の恒久ルールと既存 CLI smoke での代表 namespace discovery regression、および full gate / exact-SHA CI と closure review。
+
 ## Status
 
-Ready for Decision
+Implementation Required
