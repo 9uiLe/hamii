@@ -18,11 +18,11 @@ GUI と同じ Application Service を使う。Human output と JSON output を�
 
 ## Current Hypothesis
 
-**Decision candidate; not yet adopted:** 既存の `category` を主要な機械判定値とし、既存の 1–9 exit code は粗い失敗種別として維持する。`ok: false` と category ごとの既存 structured fields を利用し、`message` は人間向け診断とする。未知 category を推測で retry せず安全停止する。既存 category の削除・改名・意味変更、field の型・意味変更、exit 再割当は breaking CLI change として version change、互換性 review、release note を要する。別の `errorSchemaVersion` や recovery action field は現時点では追加しない。
+Decision Review 時の仮説は、既存の `category` と粗い exit status を維持することだった。以下の Decision に採用した。
 
 ## Unknowns
 
-未検証の category に固有の recovery semantics。将来 CLI version と独立して error envelope を変更する具体的要件が生じるか。リリース数で区切る互換保証期間を定める根拠はない。
+未検証の category に固有の recovery semantics は推定しない。将来 CLI version と独立して error envelope を変更する要件が発生した時だけ別 schema version の必要性を検討する。リリース数で区切る互換保証期間を定める根拠はない。
 
 ## Required Evidence
 
@@ -42,6 +42,16 @@ Fresh Evidence は [structured-recovery Spike](spikes/structured-recovery/SPIKE.
 
 Agent runtime は S 560.689 秒、P 566.904 秒。報告された input + output token は S 1,198,379、P 1,108,187。各 case / arm は n=1 で、case 難度と実行順も異なるため、時間・token の優劣や削減率は結論できない。開発 cycle 全体の token と費用は未計測。最初の pilot は Git stdout / stderr 混入バグの影響で無効とし、fresh matrix に混ぜない。このバグは `956508865b774eea191f827d87e92f87c8f28893` で error schema と独立に修正した。
 
+## Decision
+
+`--json` の失敗は `ok: false`、既存の `category`、非ゼロ process exit、存在する場合の category-specific structured fields、任意の人間向け `message` で表す。`category` は machine error identity、exit status は粗い失敗種別であり、exit status だけで retry 方法を決めない。Automation は `message` の prose や文言を parse して回復判断をしない。任意 field が欠けていることから、特定の意味や false 値を推測しない。
+
+既存 category の exit allocation は Decision Review の 1–9 mapping を維持する。未知 category を受け取った consumer は自動 mutation / retry をせず、安全停止して確認を求める。新しい意味に対する category と optional structured field の追加は compatible。既存 category の削除・改名・意味変更、既存 field の型・意味変更、既存 category の exit 再割当、安全な解釈に必須の field の追加は breaking CLI contract とし、CLI version change、明示的な compatibility review、release note を要する。既存 machine contract は breaking-version decision まで維持する。根拠のない N release 保証はしない。
+
+検証した 9 class の回復または安全停止には既存 envelope で十分だったため、`retryAction`、`recoveryCommand`、`humanRequired`、`reasonCode`、別の `errorSchemaVersion` は追加しない。具体的な回復手順は installed live skills と category-specific workflow で案内する。今回の実験は他 category の retry semantics や S/P の時間・token 優劣を証明しない。
+
+残る作業は current documentation と実 CLI を用いた恒久 regression の実装・検証である。
+
 ## Status
 
-Ready for Decision
+Implementation Required
