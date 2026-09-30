@@ -44,7 +44,7 @@ All 180 measured pairs across both rounds have identical raw `Output` response b
 
 [The real-process regression](../scripts/test-context-session.py) verifies response equivalence; strict usage errors and bounded oversized-line recovery; Scope-unavailable resources; EOF/close; a separate writer while the session is idle; equal-revision managed branch switch; pending gate; corrupt epoch; and restart. Failures return no context, terminal freshness/storage errors end the session, and mutations still use `ProjectService` preconditions. Application tests cover exact observation/verification counts, permanently invalidated sessions, journal recovery and additional coordination corruption cases.
 
-Transport commit `2d7d781` passed [exact-SHA Verify](https://github.com/9uiLe/hamii/actions/runs/36651548078): 14 checks, 291 tests, 62 intentional opt-in skips, zero failures. Release build also succeeded. SIGKILL/process behavior does not establish power-loss durability. The context-observation-reuse ADR remains `Implementation Required` pending the measurement commit verification and closure review. Canonical sharding and CLI taxonomy decisions remain separate.
+Transport commit `2d7d781` passed [exact-SHA Verify](https://github.com/9uiLe/hamii/actions/runs/36651548078): 14 checks, 291 tests, 62 intentional opt-in skips, zero failures. Release build also succeeded. SIGKILL/process behavior does not establish power-loss durability. Measurement commit `e8c206e` also passed [exact-SHA Verify](https://github.com/9uiLe/hamii/actions/runs/36653624988) with the same check/test counts. The production observation-reuse contract is implemented and its scoped Release comparison is validated. Canonical sharding and CLI taxonomy decisions remain separate.
 
 ## Reproduce
 
