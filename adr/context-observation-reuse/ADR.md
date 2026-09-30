@@ -2,7 +2,7 @@
 
 ## Context
 
-Production STAGED AI context uses one `CanonicalRepository.observe()` per response. The [observation-shape phase](../git-canonical-sharding/spikes/shard-merge-benchmark/artifacts/observation-shape-analysis.md) measured a single 10k-Layer observation at 109–122 ms across L/S/C shapes, while four-response T2 CLI workflows took 490–551 ms. A test-only one-observation candidate was faster, but it did not establish a safe production reuse contract. The sharding ADR remains `Spike Required`; this ADR concerns the number and freshness of observations used for context responses.
+Production one-shot STAGED AI context uses one `CanonicalRepository.observe()` per response. The [observation-shape phase](../git-canonical-sharding/spikes/shard-merge-benchmark/artifacts/observation-shape-analysis.md) measured a single 10k-Layer observation at 109–122 ms across L/S/C shapes, while four-response T2 CLI workflows took 490–551 ms. A test-only one-observation candidate was faster, but it did not establish a safe production reuse contract. The sharding ADR remains `Spike Required`; this ADR concerns the number and freshness of observations used for context responses.
 
 ## Decision to Make
 
@@ -32,11 +32,11 @@ The [adaptive-read Spike](spikes/adaptive-read/SPIKE.md) met the precommitted co
 
 ## Unknowns
 
-Production external entry point and lifecycle/close, real process restart behavior at that entry point, release end-to-end performance, and structured invalidation/resync UX remain implementation and validation work. The Application core has a production verifier; the original Spike measurements remain test-only evidence. Power-loss durability remains with its separate ADR. Session ID encoding and CLI command spelling are implementation details unless they expose a new decision boundary.
+Release end-to-end performance remains validation work. The Application core has a production verifier; the original Spike measurements remain test-only evidence. Power-loss durability remains with its separate ADR.
 
 ## Implementation Progress
 
-`ProjectContextReadSession` holds one immutable validated S0 and generates its initial summary at start. Each follow-up verifies S0 under the coordinated Ready boundary, then calls the same pure projection as `ProjectContextService`. `CanonicalRepository.verifyCurrent` performs transaction recovery and the existing exact client-precondition calculation without a full Document decode. Failure permanently invalidates the session. The one-shot CLI keeps independent observations; no session transport, registry, or persistent cache exists. Focused production regression tests cover payload equivalence, observation counts, coordinated transitions, pending gates, epoch and generation corruption, journal recovery, and mutation revalidation. The production external entry point and end-to-end validation remain open, so this ADR stays `Implementation Required`.
+`ProjectContextReadSession` holds one immutable validated S0 and generates its initial summary at start. Each follow-up verifies S0 under the coordinated Ready boundary, then calls the same pure projection as `ProjectContextService`. `CanonicalRepository.verifyCurrent` performs transaction recovery and the existing exact client-precondition calculation without a full Document decode. Failure permanently invalidates the session. The one-shot CLI keeps independent observations. `query context session --json` connects the same Application core to bounded NDJSON input and structured output in one OS process; it has no registry or persistent cache. Real-process tests cover one-shot payload equivalence, usage recovery, EOF/close, separate-process mutations, equal-revision managed switch, pending gates, epoch corruption and restart. Focused production regression tests cover payload equivalence, observation counts, coordinated transitions, pending gates, epoch and generation corruption, journal recovery, and mutation revalidation. Release end-to-end validation remains open, so this ADR stays `Implementation Required`.
 
 ## Required Evidence
 
@@ -47,6 +47,10 @@ Production external entry point and lifecycle/close, real process restart behavi
 False current, Scope violations, mixed `ContextObservation`, or stale mutation acceptance disqualify a candidate regardless of speed. Apply the Spike's precommitted payload, observation-count, median-ratio, and complexity thresholds without changing them after results. If neither reuse candidate qualifies, retain independent observations. A decision must name its freshness guarantee and failure behavior before implementation.
 
 SESSION qualified in all measured shapes, with no additional failure in the tested correctness matrix and T2 median at most 75% of BATCH. Production adoption still requires the implementation and validation listed above; the Spike does not prove arbitrary external-writer safety, OS restart recovery, production end-to-end latency, or AI-token reduction.
+
+## Release Transport Acceptance Criteria (before measurement)
+
+Compare CURRENT independent one-shot processes against SESSION one process + NDJSON requests using the same Release executable, local environment and L/S/C 10,002-Layer fixtures. Run ten paired iterations per shape and task T1/T2/T3, alternating order. Time from process launch to the last required context response; session close and fixture preparation are excluded. For both T2 and T3 in all three shapes, SESSION median must be at most 70% of CURRENT median. T1 is reported without a threshold. This is a comparison criterion, not a Product SLA, and must not change after measurements. Require identical semantic payloads and observations, one full session observation, one freshness verification per follow-up, and unchanged correctness gates. Report median/min/max and raw samples; do not claim p95 from ten trials. AI total tokens, LLM task success and model cost remain unmeasured.
 
 ## Status
 

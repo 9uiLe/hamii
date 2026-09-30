@@ -159,6 +159,22 @@ final class ProjectContextServiceTests: XCTestCase {
         XCTAssertEqual(repository.verifications, 7)
     }
 
+    func testFourResponseSessionUsesOneObservationAndThreeVerifications() throws {
+        let repository = CountingRepository(fixture())
+        let started = try ProjectContextReadSession.start(repository: repository,
+            selection: ContextSelection(screenID: Self.screen, layerID: Self.parent))
+        let layer = try started.session.layerDetail(screenID: Self.screen, layerID: Self.parent)
+        let resources = try started.session.resources(consumerScopeID: Self.checkout,
+            kind: .component, matching: "PriceBadge")
+        let component = try started.session.componentDetail(componentID: Self.component,
+            consumerScopeID: Self.checkout)
+        for observation in [layer.observation, resources.observation, component.observation] {
+            XCTAssertEqual(observation, started.initialSummary.observation)
+        }
+        XCTAssertEqual(repository.observations, 1)
+        XCTAssertEqual(repository.verifications, 3)
+    }
+
     func testReadSessionInvalidationIsPermanentAndMutationStillRevalidates() throws {
         let repository = CountingRepository(fixture())
         let started = try ProjectContextReadSession.start(repository: repository)

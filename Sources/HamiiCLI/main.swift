@@ -74,7 +74,8 @@ private struct Output: Encodable {
     var previewPlan: TargetPlan?
     var mergeCheck: MergeCheck?
     var context: ContextCLIOutput?
-    init(ok: Bool, category: String? = nil, message: String? = nil, blockers: [String]? = nil, document: Document? = nil, statePrecondition: ClientPrecondition? = nil, mutation: MutationResult? = nil, components: [ComponentDefinition]? = nil, skills: [String]? = nil, skill: String? = nil, diagnostics: [Diagnostic]? = nil, hits: [ComponentHit]? = nil, generated: GeneratedSource? = nil, contract: IntegrationContract? = nil, migration: MigrationPlan? = nil, migrationResolution: MigrationResolutionReport? = nil, migrationReview: MigrationReviewPackage? = nil, migrationPublication: MigrationPublicationResult? = nil, previewPlan: TargetPlan? = nil, mergeCheck: MergeCheck? = nil, context: ContextCLIOutput? = nil) {
+    var terminal: Bool?
+    init(ok: Bool, category: String? = nil, message: String? = nil, blockers: [String]? = nil, document: Document? = nil, statePrecondition: ClientPrecondition? = nil, mutation: MutationResult? = nil, components: [ComponentDefinition]? = nil, skills: [String]? = nil, skill: String? = nil, diagnostics: [Diagnostic]? = nil, hits: [ComponentHit]? = nil, generated: GeneratedSource? = nil, contract: IntegrationContract? = nil, migration: MigrationPlan? = nil, migrationResolution: MigrationResolutionReport? = nil, migrationReview: MigrationReviewPackage? = nil, migrationPublication: MigrationPublicationResult? = nil, previewPlan: TargetPlan? = nil, mergeCheck: MergeCheck? = nil, context: ContextCLIOutput? = nil, terminal: Bool? = nil) {
         self.ok = ok; self.category = category; self.message = message; self.blockers = blockers; self.document = document
         self.statePrecondition = statePrecondition
         self.mutation = mutation; self.components = components; self.skills = skills
@@ -85,6 +86,7 @@ private struct Output: Encodable {
         self.previewPlan = previewPlan
         self.mergeCheck = mergeCheck
         self.context = context
+        self.terminal = terminal
     }
 }
 
@@ -99,8 +101,83 @@ private enum CLI {
         "integration": "hamii \(version)\nintegration contract SCREEN_ID --json returns semantic inputs, events, token/asset references, native and accessibility intent. Unknown product mappings require review. generate swiftui SCREEN_ID TARGET_ID --json is a separate deterministic path for the supported static subset and returns an error for unsupported semantics.",
         "assets": "hamii \(version)\nasset import SCOPE_ID NAME MEDIA_TYPE SOURCE_PATH --storage git --state TOKEN writes a SHA-256 addressed repository blob and Asset metadata. Large binary Git/LFS policy is unresolved; choose Git storage explicitly. layer image SCREEN_ID PARENT_ID ASSET_ID NAME --state TOKEN adds an image reference. Run validate --json to check blob integrity. Remote caches and thumbnails are not canonical data.",
         "preview": "hamii \(version)\npreview plan SURFACE_ID --json checks declared target capabilities and semantic support for one AppSurface. A successful plan reports that the IR is supported; an installed and running Native Preview Host is a separate requirement. macOS SwiftUI supports the current in-process subset. iOS Simulator and Android Hosts are not yet implemented.",
-        "context": "hamii \(version)\nUse --json. Start with query context summary [--screen SCREEN_ID --layer LAYER_ID]. Use its observation.statePrecondition as --state TOKEN for every follow-up: query context layer SCREEN_ID LAYER_ID; query context resources SCOPE_ID component|token|asset [MATCH] [--limit N]; query context component SCOPE_ID COMPONENT_ID; query context token SCOPE_ID TOKEN_ID. Resource results are Scope-filtered and bounded. Never combine responses with different statePrecondition values. Request selected detail only when needed. Mutate through existing commands with the same --state TOKEN. On conflict, restart from summary. Do not edit Canonical files directly or use full inspect as the routine AI context."
+        "context": "hamii \(version)\nUse --json. Prefer query context session [--screen SCREEN_ID --layer LAYER_ID] for multiple reads. It emits an initial summary, then accepts one NDJSON request per line: layer {op,screenID,layerID}, resources {op,consumerScopeID,kind,matching?,limit?}, component {op,consumerScopeID,componentID}, token {op,consumerScopeID,tokenID}, or {op:close}. op is the operation name and all string values must be JSON quoted. Responses reuse the initial observation; requests never accept --state. Lines are limited to 64 KiB. usage and notFound errors have terminal:false; other errors have terminal:true and end the process. On a terminal error start a new session; never combine observations. EOF closes without a response. Mutations use existing one-shot commands with the initial observation.statePrecondition as --state TOKEN. For one-shot reads, start with query context summary [--screen SCREEN_ID --layer LAYER_ID]. Use its observation.statePrecondition as --state TOKEN for every follow-up: query context layer SCREEN_ID LAYER_ID; query context resources SCOPE_ID component|token|asset [MATCH] [--limit N]; query context component SCOPE_ID COMPONENT_ID; query context token SCOPE_ID TOKEN_ID. Resource results are Scope-filtered and bounded. Never combine responses with different statePrecondition values. Request selected detail only when needed. Mutate through existing commands with the same --state TOKEN. On conflict, restart from summary. Do not edit Canonical files directly or use full inspect as the routine AI context."
     ]
+
+    static func isContextSessionInvocation(_ raw: [String]) -> Bool {
+        var args = raw.filter { $0 != "--json" }
+        for name in ["--project", "--screen", "--layer", "--profile", "--state", "--limit"] {
+            _ = takeOption(name, from: &args)
+        }
+        return Array(args.prefix(3)) == ["query", "context", "session"]
+    }
+
+    static func writeJSON(_ output: Output) throws {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        try FileHandle.standardOutput.write(contentsOf: encoder.encode(output) + Data([0x0A]))
+    }
+
+    static func runContextSession(_ raw: [String]) throws -> Int32 {
+        var args = raw
+        func option(_ name: String) throws -> String? {
+            guard let index = args.firstIndex(of: name) else { return nil }
+            guard args.indices.contains(index + 1), !args[index + 1].hasPrefix("--"),
+                  !args[index + 1].isEmpty else {
+                throw CLIError(category: "usage", message: "Missing value for \(name)")
+            }
+            let value = args[index + 1]
+            args.removeSubrange(index...(index + 1))
+            guard !args.contains(name) else { throw CLIError(category: "usage", message: "Duplicate \(name)") }
+            return value
+        }
+        guard args.filter({ $0 == "--json" }).count == 1 else {
+            throw CLIError(category: "usage", message: "Context session requires --json")
+        }
+        args.removeAll { $0 == "--json" }
+        let project = try option("--project") ?? FileManager.default.currentDirectoryPath
+        let screen = try option("--screen")
+        let layer = try option("--layer")
+        guard args == ["query", "context", "session"], layer == nil || screen != nil else {
+            throw CLIError(category: "usage", message: "Context session accepts only --project, --json, --screen and --layer")
+        }
+        let selection = screen.map { ContextSelection(screenID: EntityID($0), layerID: layer.map(EntityID.init)) }
+        let started = try ProjectContextReadSession.start(
+            repository: CanonicalRepository(root: URL(fileURLWithPath: project, isDirectory: true)),
+            selection: selection)
+        try writeJSON(Output(ok: true, context: .summary(started.initialSummary)))
+        let reader = ContextSessionLineReader(input: .standardInput)
+        while let line = try reader.next() {
+            do {
+                guard case .bytes(let data) = line else {
+                    throw ContextSessionInputError.usage("Request exceeds 64 KiB; line discarded")
+                }
+                let context: ContextCLIOutput
+                switch try ContextSessionRequest.decode(data) {
+                case .close:
+                    try writeJSON(Output(ok: true, message: "Context session closed"))
+                    return 0
+                case .layer(let screen, let layer):
+                    context = .layer(try started.session.layerDetail(screenID: screen, layerID: layer))
+                case .resources(let scope, let kind, let matching, let limit):
+                    context = .resources(try started.session.resources(consumerScopeID: scope, kind: kind,
+                        matching: matching, limit: limit))
+                case .component(let scope, let component):
+                    context = .component(try started.session.componentDetail(componentID: component, consumerScopeID: scope))
+                case .token(let scope, let token):
+                    context = .token(try started.session.tokenDetail(tokenID: token, consumerScopeID: scope))
+                }
+                try writeJSON(Output(ok: true, context: context))
+            } catch {
+                var (output, code) = failureOutput(error)
+                let terminal = output.category != "usage" && output.category != "notFound"
+                output.terminal = terminal
+                try writeJSON(output)
+                if terminal { return code }
+            }
+        }
+        return 0
+    }
 
     static func run(_ raw: [String]) throws -> Output {
         var args = raw.filter { $0 != "--json" }
@@ -370,7 +447,7 @@ private enum CLI {
         return Output(ok: true, mutation: result)
     }
 
-    static let usage = "hamii [--project PATH] [--profile NAME] [--json] <version|init NAME|inspect|validate|git switch BRANCH|git recover|git merge check BRANCH|git merge publish BRANCH|preview plan SURFACE_ID|migrate plan|migrate resolution|migrate prepare [--resolution PATH]|migrate publish REVIEW_ID SOURCE_OID CANDIDATE_OID|migrate recover|skills list|get NAME|index rebuild|query components SCOPE_ID TERM|query context summary [--screen ID --layer ID]|query context layer SCREEN_ID LAYER_ID --state TOKEN|query context resources SCOPE_ID component|token|asset [MATCH] [--limit N] --state TOKEN|query context component SCOPE_ID COMPONENT_ID --state TOKEN|query context token SCOPE_ID TOKEN_ID --state TOKEN|generate swiftui SCREEN_ID TARGET_ID|integration contract SCREEN_ID|page create NAME|scope create PARENT_ID NAME|screen create SCOPE_ID NAME|target add PLATFORM FRAMEWORK|surface add PAGE_ID SCREEN_ID TARGET_ID DEVICE RUNTIME BUILD_ENVIRONMENT|surface target SURFACE_ID TARGET_ID|capability set TARGET_ID KEY SUPPORT|asset import SCOPE_ID NAME MEDIA_TYPE SOURCE_PATH --storage git|layer add SCREEN_ID PARENT_ID KIND NAME TEXT|layer text SCREEN_ID LAYER_ID TEXT|layer token SCREEN_ID LAYER_ID spacing|padding TOKEN_ID|-|token create SCOPE_ID NAME KIND VALUE|token alias SCOPE_ID NAME KIND TOKEN_ID|layer image SCREEN_ID PARENT_ID ASSET_ID NAME|component create SCOPE_ID NAME|component list SCOPE_ID|component instantiate SCREEN_ID PARENT_ID DEFINITION_ID|component promote DEFINITION_ID ANCESTOR_SCOPE_ID> [--state TOKEN]"
+    static let usage = "hamii [--project PATH] [--profile NAME] [--json] <version|init NAME|inspect|validate|git switch BRANCH|git recover|git merge check BRANCH|git merge publish BRANCH|preview plan SURFACE_ID|migrate plan|migrate resolution|migrate prepare [--resolution PATH]|migrate publish REVIEW_ID SOURCE_OID CANDIDATE_OID|migrate recover|skills list|get NAME|index rebuild|query components SCOPE_ID TERM|query context session [--screen ID --layer ID]|query context summary [--screen ID --layer ID]|query context layer SCREEN_ID LAYER_ID --state TOKEN|query context resources SCOPE_ID component|token|asset [MATCH] [--limit N] --state TOKEN|query context component SCOPE_ID COMPONENT_ID --state TOKEN|query context token SCOPE_ID TOKEN_ID --state TOKEN|generate swiftui SCREEN_ID TARGET_ID|integration contract SCREEN_ID|page create NAME|scope create PARENT_ID NAME|screen create SCOPE_ID NAME|target add PLATFORM FRAMEWORK|surface add PAGE_ID SCREEN_ID TARGET_ID DEVICE RUNTIME BUILD_ENVIRONMENT|surface target SURFACE_ID TARGET_ID|capability set TARGET_ID KEY SUPPORT|asset import SCOPE_ID NAME MEDIA_TYPE SOURCE_PATH --storage git|layer add SCREEN_ID PARENT_ID KIND NAME TEXT|layer text SCREEN_ID LAYER_ID TEXT|layer token SCREEN_ID LAYER_ID spacing|padding TOKEN_ID|-|token create SCOPE_ID NAME KIND VALUE|token alias SCOPE_ID NAME KIND TOKEN_ID|layer image SCREEN_ID PARENT_ID ASSET_ID NAME|component create SCOPE_ID NAME|component list SCOPE_ID|component instantiate SCREEN_ID PARENT_ID DEFINITION_ID|component promote DEFINITION_ID ANCESTOR_SCOPE_ID> [--state TOKEN]"
 
     static func takeOption(_ name: String, from args: inout [String]) -> String? {
         guard let index = args.firstIndex(of: name), args.indices.contains(index + 1) else { return nil }
@@ -401,49 +478,12 @@ private enum CLI {
     }
 }
 
-let json = CommandLine.arguments.contains("--json")
-do {
-    let output = try CLI.run(Array(CommandLine.arguments.dropFirst()))
-    if json {
-        let encoder = JSONEncoder(); encoder.outputFormatting = [.sortedKeys]
-        let data = try encoder.encode(output)
-        FileHandle.standardOutput.write(data + Data([0x0A]))
-    } else if let skill = output.skill {
-        print(skill)
-    } else if let skills = output.skills {
-        print(skills.joined(separator: "\n"))
-    } else if let message = output.message {
-        print(message)
-    } else if let context = output.context {
-        print(context.description)
-    } else if let mutation = output.mutation {
-        print("revision \(mutation.revision): \(mutation.patches.map(\.path).joined(separator: ", "))")
-    } else if let document = output.document {
-        print("\(document.name) (revision \(document.revision))")
-    } else if let components = output.components {
-        print(components.map { "\($0.id.rawValue) \($0.name)" }.joined(separator: "\n"))
-    } else if let hits = output.hits {
-        print(hits.map { "\($0.id.rawValue) \($0.name) (\($0.usageCount) uses)" }.joined(separator: "\n"))
-    } else if let generated = output.generated {
-        print(generated.source)
-    } else if let contract = output.contract {
-        print("\(contract.name): \(contract.inputs.count) inputs, \(contract.events.count) events")
-    } else if let migration = output.migration {
-        print("Document format \(migration.sourceDocumentFormatVersion): \(migration.state)")
-    } else if let review = output.migrationReview {
-        print("Validated migration candidate \(review.sourceOID) → \(review.candidateOID); source branch unchanged")
-    } else if let plan = output.previewPlan {
-        print(plan.canPreview ? "Preview plan supported" : plan.diagnostics.map { "\($0.rule): \($0.message)" }.joined(separator: "\n"))
-    } else if let check = output.mergeCheck {
-        print("Validated merge candidate \(check.candidateHead); project unchanged")
-    } else if let diagnostics = output.diagnostics {
-        print(diagnostics.isEmpty ? "valid" : diagnostics.map { "\($0.rule): \($0.message)" }.joined(separator: "\n"))
-    }
-    if !output.ok { exit(output.category == "migrationRequired" ? 6 : 5) }
-} catch {
+private func failureOutput(_ error: Error, terminal: Bool? = nil) -> (Output, Int32) {
     let category: String
     let code: Int32
     switch error {
+    case is ContextSessionInputError: category = "usage"; code = 2
+    case ProjectContextSessionError.invalidated: category = "conflict"; code = 3
     case let value as CLIError: category = value.category; code = value.category == "transitionPending" ? 7 : 2
     case AuthoringError.staleRevision, AuthoringError.staleState: category = "conflict"; code = 3
     case AuthoringError.approvalRequired: category = "approval"; code = 4
@@ -489,7 +529,54 @@ do {
     let blockers: [String]?
     if case MigrationPreparationError.migrationUnavailable(let reasons) = error { blockers = reasons }
     else { blockers = nil }
-    let output = Output(ok: false, category: category, message: String(describing: error), blockers: blockers)
+    return (Output(ok: false, category: category, message: String(describing: error), blockers: blockers, terminal: terminal), code)
+
+}
+
+let json = CommandLine.arguments.contains("--json")
+let isSession = CLI.isContextSessionInvocation(Array(CommandLine.arguments.dropFirst()))
+do {
+    if isSession { exit(try CLI.runContextSession(Array(CommandLine.arguments.dropFirst()))) }
+    let output = try CLI.run(Array(CommandLine.arguments.dropFirst()))
+    if json {
+        let encoder = JSONEncoder(); encoder.outputFormatting = [.sortedKeys]
+        let data = try encoder.encode(output)
+        FileHandle.standardOutput.write(data + Data([0x0A]))
+    } else if let skill = output.skill {
+        print(skill)
+    } else if let skills = output.skills {
+        print(skills.joined(separator: "\n"))
+    } else if let message = output.message {
+        print(message)
+    } else if let context = output.context {
+        print(context.description)
+    } else if let mutation = output.mutation {
+        print("revision \(mutation.revision): \(mutation.patches.map(\.path).joined(separator: ", "))")
+    } else if let document = output.document {
+        print("\(document.name) (revision \(document.revision))")
+    } else if let components = output.components {
+        print(components.map { "\($0.id.rawValue) \($0.name)" }.joined(separator: "\n"))
+    } else if let hits = output.hits {
+        print(hits.map { "\($0.id.rawValue) \($0.name) (\($0.usageCount) uses)" }.joined(separator: "\n"))
+    } else if let generated = output.generated {
+        print(generated.source)
+    } else if let contract = output.contract {
+        print("\(contract.name): \(contract.inputs.count) inputs, \(contract.events.count) events")
+    } else if let migration = output.migration {
+        print("Document format \(migration.sourceDocumentFormatVersion): \(migration.state)")
+    } else if let review = output.migrationReview {
+        print("Validated migration candidate \(review.sourceOID) → \(review.candidateOID); source branch unchanged")
+    } else if let plan = output.previewPlan {
+        print(plan.canPreview ? "Preview plan supported" : plan.diagnostics.map { "\($0.rule): \($0.message)" }.joined(separator: "\n"))
+    } else if let check = output.mergeCheck {
+        print("Validated merge candidate \(check.candidateHead); project unchanged")
+    } else if let diagnostics = output.diagnostics {
+        print(diagnostics.isEmpty ? "valid" : diagnostics.map { "\($0.rule): \($0.message)" }.joined(separator: "\n"))
+    }
+    if !output.ok { exit(output.category == "migrationRequired" ? 6 : 5) }
+} catch {
+    let (output, code) = failureOutput(error, terminal: isSession ? true : nil)
+    let category = output.category!
     if json, let data = try? JSONEncoder().encode(output) { FileHandle.standardOutput.write(data + Data([0x0A])) }
     else { FileHandle.standardError.write(Data("\(category): \(error)\n".utf8)) }
     exit(code)
