@@ -1,0 +1,2609 @@
+{
+  "schemaVersion": 1,
+  "baselineSourceCommit": "1bf458a9b426842e3497a8003b13508e7f3e5e6f",
+  "applicationVersion": "0.1.0",
+  "globalOptions": [
+    "--project PATH",
+    "--profile NAME",
+    "--json",
+    "--state TOKEN",
+    "--screen ID",
+    "--layer ID",
+    "--limit N",
+    "--storage git",
+    "--resolution PATH"
+  ],
+  "discoveryGrammar": [
+    "skills list",
+    "skills get NAME"
+  ],
+  "candidateOrder": [
+    "CURRENT",
+    "RESOURCE",
+    "VERB",
+    "TASK",
+    "TASK",
+    "VERB",
+    "RESOURCE",
+    "CURRENT"
+  ],
+  "candidates": {
+    "CURRENT": {
+      "commands": [
+        {
+          "id": "version",
+          "prefix": [
+            "version"
+          ],
+          "productionPrefix": [
+            "version"
+          ],
+          "operands": ""
+        },
+        {
+          "id": "init",
+          "prefix": [
+            "init"
+          ],
+          "productionPrefix": [
+            "init"
+          ],
+          "operands": "NAME"
+        },
+        {
+          "id": "inspect",
+          "prefix": [
+            "inspect"
+          ],
+          "productionPrefix": [
+            "inspect"
+          ],
+          "operands": ""
+        },
+        {
+          "id": "validate",
+          "prefix": [
+            "validate"
+          ],
+          "productionPrefix": [
+            "validate"
+          ],
+          "operands": ""
+        },
+        {
+          "id": "page.create",
+          "prefix": [
+            "page",
+            "create"
+          ],
+          "productionPrefix": [
+            "page",
+            "create"
+          ],
+          "operands": "NAME"
+        },
+        {
+          "id": "scope.create",
+          "prefix": [
+            "scope",
+            "create"
+          ],
+          "productionPrefix": [
+            "scope",
+            "create"
+          ],
+          "operands": "PARENT_ID NAME"
+        },
+        {
+          "id": "screen.create",
+          "prefix": [
+            "screen",
+            "create"
+          ],
+          "productionPrefix": [
+            "screen",
+            "create"
+          ],
+          "operands": "SCOPE_ID NAME"
+        },
+        {
+          "id": "layer.add",
+          "prefix": [
+            "layer",
+            "add"
+          ],
+          "productionPrefix": [
+            "layer",
+            "add"
+          ],
+          "operands": "SCREEN_ID PARENT_ID KIND NAME TEXT"
+        },
+        {
+          "id": "layer.text",
+          "prefix": [
+            "layer",
+            "text"
+          ],
+          "productionPrefix": [
+            "layer",
+            "text"
+          ],
+          "operands": "SCREEN_ID LAYER_ID TEXT"
+        },
+        {
+          "id": "layer.token",
+          "prefix": [
+            "layer",
+            "token"
+          ],
+          "productionPrefix": [
+            "layer",
+            "token"
+          ],
+          "operands": "SCREEN_ID LAYER_ID spacing|padding TOKEN_ID|-"
+        },
+        {
+          "id": "layer.image",
+          "prefix": [
+            "layer",
+            "image"
+          ],
+          "productionPrefix": [
+            "layer",
+            "image"
+          ],
+          "operands": "SCREEN_ID PARENT_ID ASSET_ID NAME"
+        },
+        {
+          "id": "token.create",
+          "prefix": [
+            "token",
+            "create"
+          ],
+          "productionPrefix": [
+            "token",
+            "create"
+          ],
+          "operands": "OWNER_SCOPE_ID NAME KIND LITERAL"
+        },
+        {
+          "id": "token.alias",
+          "prefix": [
+            "token",
+            "alias"
+          ],
+          "productionPrefix": [
+            "token",
+            "alias"
+          ],
+          "operands": "OWNER_SCOPE_ID NAME KIND TARGET_TOKEN_ID"
+        },
+        {
+          "id": "component.list",
+          "prefix": [
+            "component",
+            "list"
+          ],
+          "productionPrefix": [
+            "component",
+            "list"
+          ],
+          "operands": "CONSUMER_SCOPE_ID"
+        },
+        {
+          "id": "component.query",
+          "prefix": [
+            "query",
+            "components"
+          ],
+          "productionPrefix": [
+            "query",
+            "components"
+          ],
+          "operands": "CONSUMER_SCOPE_ID TERM"
+        },
+        {
+          "id": "component.create",
+          "prefix": [
+            "component",
+            "create"
+          ],
+          "productionPrefix": [
+            "component",
+            "create"
+          ],
+          "operands": "OWNER_SCOPE_ID NAME"
+        },
+        {
+          "id": "component.instantiate",
+          "prefix": [
+            "component",
+            "instantiate"
+          ],
+          "productionPrefix": [
+            "component",
+            "instantiate"
+          ],
+          "operands": "SCREEN_ID PARENT_LAYER_ID DEFINITION_ID"
+        },
+        {
+          "id": "component.promote",
+          "prefix": [
+            "component",
+            "promote"
+          ],
+          "productionPrefix": [
+            "component",
+            "promote"
+          ],
+          "operands": "DEFINITION_ID ANCESTOR_SCOPE_ID"
+        },
+        {
+          "id": "target.add",
+          "prefix": [
+            "target",
+            "add"
+          ],
+          "productionPrefix": [
+            "target",
+            "add"
+          ],
+          "operands": "PLATFORM FRAMEWORK"
+        },
+        {
+          "id": "surface.add",
+          "prefix": [
+            "surface",
+            "add"
+          ],
+          "productionPrefix": [
+            "surface",
+            "add"
+          ],
+          "operands": "PAGE_ID SCREEN_ID TARGET_ID DEVICE RUNTIME BUILD_ENVIRONMENT"
+        },
+        {
+          "id": "surface.target",
+          "prefix": [
+            "surface",
+            "target"
+          ],
+          "productionPrefix": [
+            "surface",
+            "target"
+          ],
+          "operands": "SURFACE_ID TARGET_ID"
+        },
+        {
+          "id": "capability.set",
+          "prefix": [
+            "capability",
+            "set"
+          ],
+          "productionPrefix": [
+            "capability",
+            "set"
+          ],
+          "operands": "TARGET_ID KEY SUPPORT"
+        },
+        {
+          "id": "asset.import",
+          "prefix": [
+            "asset",
+            "import"
+          ],
+          "productionPrefix": [
+            "asset",
+            "import"
+          ],
+          "operands": "SCOPE_ID NAME MEDIA_TYPE SOURCE_PATH --storage git"
+        },
+        {
+          "id": "context.summary",
+          "prefix": [
+            "query",
+            "context",
+            "summary"
+          ],
+          "productionPrefix": [
+            "query",
+            "context",
+            "summary"
+          ],
+          "operands": "[--screen SCREEN_ID --layer LAYER_ID]"
+        },
+        {
+          "id": "context.layer",
+          "prefix": [
+            "query",
+            "context",
+            "layer"
+          ],
+          "productionPrefix": [
+            "query",
+            "context",
+            "layer"
+          ],
+          "operands": "SCREEN_ID LAYER_ID"
+        },
+        {
+          "id": "context.resources",
+          "prefix": [
+            "query",
+            "context",
+            "resources"
+          ],
+          "productionPrefix": [
+            "query",
+            "context",
+            "resources"
+          ],
+          "operands": "SCOPE_ID component|token|asset [MATCH] [--limit N]"
+        },
+        {
+          "id": "context.component",
+          "prefix": [
+            "query",
+            "context",
+            "component"
+          ],
+          "productionPrefix": [
+            "query",
+            "context",
+            "component"
+          ],
+          "operands": "SCOPE_ID COMPONENT_ID"
+        },
+        {
+          "id": "context.token",
+          "prefix": [
+            "query",
+            "context",
+            "token"
+          ],
+          "productionPrefix": [
+            "query",
+            "context",
+            "token"
+          ],
+          "operands": "SCOPE_ID TOKEN_ID"
+        },
+        {
+          "id": "context.session",
+          "prefix": [
+            "query",
+            "context",
+            "session"
+          ],
+          "productionPrefix": [
+            "query",
+            "context",
+            "session"
+          ],
+          "operands": "[--screen SCREEN_ID --layer LAYER_ID]"
+        },
+        {
+          "id": "preview.plan",
+          "prefix": [
+            "preview",
+            "plan"
+          ],
+          "productionPrefix": [
+            "preview",
+            "plan"
+          ],
+          "operands": "SURFACE_ID"
+        },
+        {
+          "id": "integration.contract",
+          "prefix": [
+            "integration",
+            "contract"
+          ],
+          "productionPrefix": [
+            "integration",
+            "contract"
+          ],
+          "operands": "SCREEN_ID"
+        },
+        {
+          "id": "generate.swiftui",
+          "prefix": [
+            "generate",
+            "swiftui"
+          ],
+          "productionPrefix": [
+            "generate",
+            "swiftui"
+          ],
+          "operands": "SCREEN_ID TARGET_ID"
+        },
+        {
+          "id": "git.switch",
+          "prefix": [
+            "git",
+            "switch"
+          ],
+          "productionPrefix": [
+            "git",
+            "switch"
+          ],
+          "operands": "BRANCH"
+        },
+        {
+          "id": "git.recover",
+          "prefix": [
+            "git",
+            "recover"
+          ],
+          "productionPrefix": [
+            "git",
+            "recover"
+          ],
+          "operands": ""
+        },
+        {
+          "id": "git.merge.check",
+          "prefix": [
+            "git",
+            "merge",
+            "check"
+          ],
+          "productionPrefix": [
+            "git",
+            "merge",
+            "check"
+          ],
+          "operands": "BRANCH"
+        },
+        {
+          "id": "git.merge.publish",
+          "prefix": [
+            "git",
+            "merge",
+            "publish"
+          ],
+          "productionPrefix": [
+            "git",
+            "merge",
+            "publish"
+          ],
+          "operands": "BRANCH"
+        },
+        {
+          "id": "migrate.plan",
+          "prefix": [
+            "migrate",
+            "plan"
+          ],
+          "productionPrefix": [
+            "migrate",
+            "plan"
+          ],
+          "operands": ""
+        },
+        {
+          "id": "migrate.resolution",
+          "prefix": [
+            "migrate",
+            "resolution"
+          ],
+          "productionPrefix": [
+            "migrate",
+            "resolution"
+          ],
+          "operands": ""
+        },
+        {
+          "id": "migrate.prepare",
+          "prefix": [
+            "migrate",
+            "prepare"
+          ],
+          "productionPrefix": [
+            "migrate",
+            "prepare"
+          ],
+          "operands": "[--resolution PATH]"
+        },
+        {
+          "id": "migrate.publish",
+          "prefix": [
+            "migrate",
+            "publish"
+          ],
+          "productionPrefix": [
+            "migrate",
+            "publish"
+          ],
+          "operands": "REVIEW_ID SOURCE_OID CANDIDATE_OID"
+        },
+        {
+          "id": "migrate.recover",
+          "prefix": [
+            "migrate",
+            "recover"
+          ],
+          "productionPrefix": [
+            "migrate",
+            "recover"
+          ],
+          "operands": ""
+        },
+        {
+          "id": "index.rebuild",
+          "prefix": [
+            "index",
+            "rebuild"
+          ],
+          "productionPrefix": [
+            "index",
+            "rebuild"
+          ],
+          "operands": ""
+        }
+      ],
+      "skills": {
+        "assets": {
+          "text": "hamii 0.1.0\nasset import SCOPE_ID NAME MEDIA_TYPE SOURCE_PATH --storage git --state TOKEN writes a SHA-256 addressed repository blob and Asset metadata. Large binary Git/LFS policy is unresolved; choose Git storage explicitly. layer image SCREEN_ID PARENT_ID ASSET_ID NAME --state TOKEN adds an image reference. Run validate --json to check blob integrity. Remote caches and thumbnails are not canonical data.",
+          "factIDs": [
+            "asset.explicit-git-storage",
+            "asset.content-addressed",
+            "asset.large-policy-unresolved",
+            "asset.reference-only",
+            "asset.integrity-validation",
+            "asset.cache-not-canonical",
+            "mutation.state-required"
+          ],
+          "sourceSkill": "assets"
+        },
+        "authoring": {
+          "text": "hamii 0.1.0\nGlobal options: --project PATH --profile NAME --json. Inspect: hamii inspect. Mutations require --state TOKEN from inspect or the previous mutation. Commands: page create NAME; scope create PARENT_ID NAME; screen create SCOPE_ID NAME; target add PLATFORM FRAMEWORK; surface add PAGE_ID SCREEN_ID TARGET_ID DEVICE RUNTIME BUILD_ENVIRONMENT; surface target SURFACE_ID TARGET_ID; capability set TARGET_ID KEY SUPPORT; layer add SCREEN_ID PARENT_ID KIND NAME TEXT; layer text SCREEN_ID LAYER_ID TEXT. Managed git switch BRANCH requires a clean worktree and --state TOKEN; git recover validates an interrupted switch or merge publication. git merge check BRANCH --state TOKEN validates an isolated candidate without publishing. git merge publish BRANCH --state TOKEN validates and publishes a candidate through the coordinated pending gate. Use - for no text. Read the tokens, components or assets skill when needed. All mutations use the same Authoring Harness validation as GUI.",
+          "factIDs": [
+            "actor.profile",
+            "mutation.state-required",
+            "mutation.token-refresh",
+            "mutation.shared-validation",
+            "authoring.command-grammar",
+            "authoring.no-text-sentinel",
+            "git.clean-precondition",
+            "git.recovery",
+            "git.candidate-isolated",
+            "git.validated-publication",
+            "discovery.related-skills"
+          ],
+          "sourceSkill": "authoring"
+        },
+        "bootstrap": {
+          "text": "hamii 0.1.0\nUse hamii skills list and hamii skills get NAME. Load only the relevant live skill. Global options: --project PATH --json. Create a Git-backed project with hamii init NAME --project PATH --json; inspect it with hamii inspect --project PATH --json. Do not guess commands or edit canonical files directly. Supply the statePrecondition from inspect as --state TOKEN for every mutation.",
+          "factIDs": [
+            "installed.version",
+            "discovery.live",
+            "discovery.progressive",
+            "global.project-json",
+            "project.git-init",
+            "canonical.no-direct-edit",
+            "mutation.state-required"
+          ],
+          "sourceSkill": "bootstrap"
+        },
+        "components": {
+          "text": "hamii 0.1.0\ncomponent list CONSUMER_SCOPE_ID; component create OWNER_SCOPE_ID NAME --state TOKEN; component instantiate SCREEN_ID PARENT_LAYER_ID DEFINITION_ID --state TOKEN; component promote DEFINITION_ID ANCESTOR_SCOPE_ID --state TOKEN. Promotion requires an Agent profile with explicit mayPromoteScope permission. Definition tree is referenced by instances; scope and availability are enforced by the mutation service.",
+          "factIDs": [
+            "component.consumer-scope",
+            "component.owner-scope",
+            "component.references-not-clones",
+            "component.availability-enforced",
+            "component.promotion-permission",
+            "mutation.state-required"
+          ],
+          "sourceSkill": "components"
+        },
+        "context": {
+          "text": "hamii 0.1.0\nUse --json. Prefer query context session [--screen SCREEN_ID --layer LAYER_ID] for multiple reads. It emits an initial summary, then accepts one NDJSON request per line: layer {op,screenID,layerID}, resources {op,consumerScopeID,kind,matching?,limit?}, component {op,consumerScopeID,componentID}, token {op,consumerScopeID,tokenID}, or {op:close}. op is the operation name and all string values must be JSON quoted. Responses reuse the initial observation; requests never accept --state. Lines are limited to 64 KiB. usage and notFound errors have terminal:false; other errors have terminal:true and end the process. On a terminal error start a new session; never combine observations. EOF closes without a response. Mutations use existing one-shot commands with the initial observation.statePrecondition as --state TOKEN. For one-shot reads, start with query context summary [--screen SCREEN_ID --layer LAYER_ID]. Use its observation.statePrecondition as --state TOKEN for every follow-up: query context layer SCREEN_ID LAYER_ID; query context resources SCOPE_ID component|token|asset [MATCH] [--limit N]; query context component SCOPE_ID COMPONENT_ID; query context token SCOPE_ID TOKEN_ID. Resource results are Scope-filtered and bounded. Never combine responses with different statePrecondition values. Request selected detail only when needed. Mutate through existing commands with the same --state TOKEN. On conflict, restart from summary. Do not edit Canonical files directly or use full inspect as the routine AI context.",
+          "factIDs": [
+            "context.bounded",
+            "context.observation-precondition",
+            "context.no-mixed-state",
+            "context.conflict-restart",
+            "context.scope-filtered",
+            "context.only-selected-detail",
+            "context.session-ndjson",
+            "context.session-no-state",
+            "context.session-64k",
+            "context.session-terminal",
+            "context.session-eof",
+            "canonical.no-direct-edit",
+            "context.not-routine-inspect"
+          ],
+          "sourceSkill": "context"
+        },
+        "integration": {
+          "text": "hamii 0.1.0\nintegration contract SCREEN_ID --json returns semantic inputs, events, token/asset references, native and accessibility intent. Unknown product mappings require review. generate swiftui SCREEN_ID TARGET_ID --json is a separate deterministic path for the supported static subset and returns an error for unsupported semantics.",
+          "factIDs": [
+            "integration.semantic-contract",
+            "integration.mapping-review",
+            "generation.separate-static-subset",
+            "generation.unsupported-error"
+          ],
+          "sourceSkill": "integration"
+        },
+        "preview": {
+          "text": "hamii 0.1.0\npreview plan SURFACE_ID --json checks declared target capabilities and semantic support for one AppSurface. A successful plan reports that the IR is supported; an installed and running Native Preview Host is a separate requirement. macOS SwiftUI supports the current in-process subset. iOS Simulator and Android Hosts are not yet implemented.",
+          "factIDs": [
+            "preview.capability-semantic-plan",
+            "preview.plan-not-host",
+            "preview.mac-subset",
+            "preview.other-host-unimplemented"
+          ],
+          "sourceSkill": "preview"
+        },
+        "tokens": {
+          "text": "hamii 0.1.0\ntoken create OWNER_SCOPE_ID NAME KIND LITERAL --state TOKEN creates a primitive token; token alias OWNER_SCOPE_ID NAME KIND TARGET_TOKEN_ID --state TOKEN creates a semantic alias. KIND is color|typography|spacing|radius|border|shadow|opacity|motion. Spacing literals are nonnegative finite numbers. layer token SCREEN_ID LAYER_ID spacing|padding TOKEN_ID|- --state TOKEN sets or clears a layout token. ArchitectureScope ownership and token references are validated before save.",
+          "factIDs": [
+            "token.primitive-alias",
+            "token.kind-set",
+            "token.spacing-finite-nonnegative",
+            "token.layout-clear-sentinel",
+            "token.scope-validation",
+            "mutation.state-required"
+          ],
+          "sourceSkill": "tokens"
+        },
+        "validation": {
+          "text": "hamii 0.1.0\nvalidate --project PATH --json returns diagnostics with rule, severity, entityID and message. query components CONSUMER_SCOPE_ID TERM automatically rebuilds a missing or stale derived index only from a verified coordinated Canonical generation. External edits, pending transitions, unverifiable Git state, and storage failures remain fail closed; use index rebuild explicitly after supported external edits. If canonical Git files are marked assume-unchanged or skip-worktree or use Git filters, clear those settings before rebuilding. migrate plan --json preflights a format without changing it. migrate resolution --json lists finite, source-bound choices for clean committed historical input; zero-choice items stay blocked. Save a typed manifest outside Canonical data, then migrate prepare --resolution PATH --json creates a reviewed candidate and reports exact losses. Safe automatic sources still use migrate prepare --json. After reviewing exact IDs and losses, migrate publish REVIEW_ID SOURCE_OID CANDIDATE_OID --json publishes only that candidate; migrate recover --json reconciles an interrupted publication.",
+          "factIDs": [
+            "validation.structured-diagnostics",
+            "index.auto-recovery-proof",
+            "index.fail-closed",
+            "index.external-rebuild",
+            "index.hidden-git-flags-filter",
+            "migration.preflight",
+            "migration.source-bound-resolution",
+            "migration.reviewed-candidate",
+            "migration.exact-publish",
+            "migration.recovery"
+          ],
+          "sourceSkill": "validation"
+        }
+      },
+      "catalogUTF8Bytes": 6065,
+      "grouping": "Same nine semantic group boundaries; candidate-specific group names and grammar. This experiment does not test arbitrary regrouping."
+    },
+    "RESOURCE": {
+      "commands": [
+        {
+          "id": "version",
+          "prefix": [
+            "version"
+          ],
+          "productionPrefix": [
+            "version"
+          ],
+          "operands": ""
+        },
+        {
+          "id": "init",
+          "prefix": [
+            "project",
+            "init"
+          ],
+          "productionPrefix": [
+            "init"
+          ],
+          "operands": "NAME"
+        },
+        {
+          "id": "inspect",
+          "prefix": [
+            "project",
+            "inspect"
+          ],
+          "productionPrefix": [
+            "inspect"
+          ],
+          "operands": ""
+        },
+        {
+          "id": "validate",
+          "prefix": [
+            "project",
+            "validate"
+          ],
+          "productionPrefix": [
+            "validate"
+          ],
+          "operands": ""
+        },
+        {
+          "id": "page.create",
+          "prefix": [
+            "page",
+            "create"
+          ],
+          "productionPrefix": [
+            "page",
+            "create"
+          ],
+          "operands": "NAME"
+        },
+        {
+          "id": "scope.create",
+          "prefix": [
+            "scope",
+            "create"
+          ],
+          "productionPrefix": [
+            "scope",
+            "create"
+          ],
+          "operands": "PARENT_ID NAME"
+        },
+        {
+          "id": "screen.create",
+          "prefix": [
+            "screen",
+            "create"
+          ],
+          "productionPrefix": [
+            "screen",
+            "create"
+          ],
+          "operands": "SCOPE_ID NAME"
+        },
+        {
+          "id": "layer.add",
+          "prefix": [
+            "layer",
+            "add"
+          ],
+          "productionPrefix": [
+            "layer",
+            "add"
+          ],
+          "operands": "SCREEN_ID PARENT_ID KIND NAME TEXT"
+        },
+        {
+          "id": "layer.text",
+          "prefix": [
+            "layer",
+            "text"
+          ],
+          "productionPrefix": [
+            "layer",
+            "text"
+          ],
+          "operands": "SCREEN_ID LAYER_ID TEXT"
+        },
+        {
+          "id": "layer.token",
+          "prefix": [
+            "layer",
+            "token"
+          ],
+          "productionPrefix": [
+            "layer",
+            "token"
+          ],
+          "operands": "SCREEN_ID LAYER_ID spacing|padding TOKEN_ID|-"
+        },
+        {
+          "id": "layer.image",
+          "prefix": [
+            "layer",
+            "image"
+          ],
+          "productionPrefix": [
+            "layer",
+            "image"
+          ],
+          "operands": "SCREEN_ID PARENT_ID ASSET_ID NAME"
+        },
+        {
+          "id": "token.create",
+          "prefix": [
+            "token",
+            "create"
+          ],
+          "productionPrefix": [
+            "token",
+            "create"
+          ],
+          "operands": "OWNER_SCOPE_ID NAME KIND LITERAL"
+        },
+        {
+          "id": "token.alias",
+          "prefix": [
+            "token",
+            "alias"
+          ],
+          "productionPrefix": [
+            "token",
+            "alias"
+          ],
+          "operands": "OWNER_SCOPE_ID NAME KIND TARGET_TOKEN_ID"
+        },
+        {
+          "id": "component.list",
+          "prefix": [
+            "component",
+            "list"
+          ],
+          "productionPrefix": [
+            "component",
+            "list"
+          ],
+          "operands": "CONSUMER_SCOPE_ID"
+        },
+        {
+          "id": "component.query",
+          "prefix": [
+            "component",
+            "query"
+          ],
+          "productionPrefix": [
+            "query",
+            "components"
+          ],
+          "operands": "CONSUMER_SCOPE_ID TERM"
+        },
+        {
+          "id": "component.create",
+          "prefix": [
+            "component",
+            "create"
+          ],
+          "productionPrefix": [
+            "component",
+            "create"
+          ],
+          "operands": "OWNER_SCOPE_ID NAME"
+        },
+        {
+          "id": "component.instantiate",
+          "prefix": [
+            "component",
+            "instantiate"
+          ],
+          "productionPrefix": [
+            "component",
+            "instantiate"
+          ],
+          "operands": "SCREEN_ID PARENT_LAYER_ID DEFINITION_ID"
+        },
+        {
+          "id": "component.promote",
+          "prefix": [
+            "component",
+            "promote"
+          ],
+          "productionPrefix": [
+            "component",
+            "promote"
+          ],
+          "operands": "DEFINITION_ID ANCESTOR_SCOPE_ID"
+        },
+        {
+          "id": "target.add",
+          "prefix": [
+            "target",
+            "add"
+          ],
+          "productionPrefix": [
+            "target",
+            "add"
+          ],
+          "operands": "PLATFORM FRAMEWORK"
+        },
+        {
+          "id": "surface.add",
+          "prefix": [
+            "surface",
+            "add"
+          ],
+          "productionPrefix": [
+            "surface",
+            "add"
+          ],
+          "operands": "PAGE_ID SCREEN_ID TARGET_ID DEVICE RUNTIME BUILD_ENVIRONMENT"
+        },
+        {
+          "id": "surface.target",
+          "prefix": [
+            "surface",
+            "target"
+          ],
+          "productionPrefix": [
+            "surface",
+            "target"
+          ],
+          "operands": "SURFACE_ID TARGET_ID"
+        },
+        {
+          "id": "capability.set",
+          "prefix": [
+            "capability",
+            "set"
+          ],
+          "productionPrefix": [
+            "capability",
+            "set"
+          ],
+          "operands": "TARGET_ID KEY SUPPORT"
+        },
+        {
+          "id": "asset.import",
+          "prefix": [
+            "asset",
+            "import"
+          ],
+          "productionPrefix": [
+            "asset",
+            "import"
+          ],
+          "operands": "SCOPE_ID NAME MEDIA_TYPE SOURCE_PATH --storage git"
+        },
+        {
+          "id": "context.summary",
+          "prefix": [
+            "context",
+            "summary"
+          ],
+          "productionPrefix": [
+            "query",
+            "context",
+            "summary"
+          ],
+          "operands": "[--screen SCREEN_ID --layer LAYER_ID]"
+        },
+        {
+          "id": "context.layer",
+          "prefix": [
+            "context",
+            "layer"
+          ],
+          "productionPrefix": [
+            "query",
+            "context",
+            "layer"
+          ],
+          "operands": "SCREEN_ID LAYER_ID"
+        },
+        {
+          "id": "context.resources",
+          "prefix": [
+            "context",
+            "resources"
+          ],
+          "productionPrefix": [
+            "query",
+            "context",
+            "resources"
+          ],
+          "operands": "SCOPE_ID component|token|asset [MATCH] [--limit N]"
+        },
+        {
+          "id": "context.component",
+          "prefix": [
+            "context",
+            "component"
+          ],
+          "productionPrefix": [
+            "query",
+            "context",
+            "component"
+          ],
+          "operands": "SCOPE_ID COMPONENT_ID"
+        },
+        {
+          "id": "context.token",
+          "prefix": [
+            "context",
+            "token"
+          ],
+          "productionPrefix": [
+            "query",
+            "context",
+            "token"
+          ],
+          "operands": "SCOPE_ID TOKEN_ID"
+        },
+        {
+          "id": "context.session",
+          "prefix": [
+            "context",
+            "session"
+          ],
+          "productionPrefix": [
+            "query",
+            "context",
+            "session"
+          ],
+          "operands": "[--screen SCREEN_ID --layer LAYER_ID]"
+        },
+        {
+          "id": "preview.plan",
+          "prefix": [
+            "preview",
+            "plan"
+          ],
+          "productionPrefix": [
+            "preview",
+            "plan"
+          ],
+          "operands": "SURFACE_ID"
+        },
+        {
+          "id": "integration.contract",
+          "prefix": [
+            "integration",
+            "contract"
+          ],
+          "productionPrefix": [
+            "integration",
+            "contract"
+          ],
+          "operands": "SCREEN_ID"
+        },
+        {
+          "id": "generate.swiftui",
+          "prefix": [
+            "generation",
+            "swiftui"
+          ],
+          "productionPrefix": [
+            "generate",
+            "swiftui"
+          ],
+          "operands": "SCREEN_ID TARGET_ID"
+        },
+        {
+          "id": "git.switch",
+          "prefix": [
+            "git",
+            "switch"
+          ],
+          "productionPrefix": [
+            "git",
+            "switch"
+          ],
+          "operands": "BRANCH"
+        },
+        {
+          "id": "git.recover",
+          "prefix": [
+            "git",
+            "recover"
+          ],
+          "productionPrefix": [
+            "git",
+            "recover"
+          ],
+          "operands": ""
+        },
+        {
+          "id": "git.merge.check",
+          "prefix": [
+            "git",
+            "merge",
+            "check"
+          ],
+          "productionPrefix": [
+            "git",
+            "merge",
+            "check"
+          ],
+          "operands": "BRANCH"
+        },
+        {
+          "id": "git.merge.publish",
+          "prefix": [
+            "git",
+            "merge",
+            "publish"
+          ],
+          "productionPrefix": [
+            "git",
+            "merge",
+            "publish"
+          ],
+          "operands": "BRANCH"
+        },
+        {
+          "id": "migrate.plan",
+          "prefix": [
+            "migrate",
+            "plan"
+          ],
+          "productionPrefix": [
+            "migrate",
+            "plan"
+          ],
+          "operands": ""
+        },
+        {
+          "id": "migrate.resolution",
+          "prefix": [
+            "migrate",
+            "resolution"
+          ],
+          "productionPrefix": [
+            "migrate",
+            "resolution"
+          ],
+          "operands": ""
+        },
+        {
+          "id": "migrate.prepare",
+          "prefix": [
+            "migrate",
+            "prepare"
+          ],
+          "productionPrefix": [
+            "migrate",
+            "prepare"
+          ],
+          "operands": "[--resolution PATH]"
+        },
+        {
+          "id": "migrate.publish",
+          "prefix": [
+            "migrate",
+            "publish"
+          ],
+          "productionPrefix": [
+            "migrate",
+            "publish"
+          ],
+          "operands": "REVIEW_ID SOURCE_OID CANDIDATE_OID"
+        },
+        {
+          "id": "migrate.recover",
+          "prefix": [
+            "migrate",
+            "recover"
+          ],
+          "productionPrefix": [
+            "migrate",
+            "recover"
+          ],
+          "operands": ""
+        },
+        {
+          "id": "index.rebuild",
+          "prefix": [
+            "index",
+            "rebuild"
+          ],
+          "productionPrefix": [
+            "index",
+            "rebuild"
+          ],
+          "operands": ""
+        }
+      ],
+      "skills": {
+        "asset": {
+          "text": "hamii 0.1.0\nasset import SCOPE_ID NAME MEDIA_TYPE SOURCE_PATH --storage git --state TOKEN writes a SHA-256 addressed repository blob and Asset metadata. Large binary Git/LFS policy is unresolved; choose Git storage explicitly. layer image SCREEN_ID PARENT_ID ASSET_ID NAME --state TOKEN adds an image reference. Run project validate --json to check blob integrity. Remote caches and thumbnails are not canonical data.",
+          "factIDs": [
+            "asset.explicit-git-storage",
+            "asset.content-addressed",
+            "asset.large-policy-unresolved",
+            "asset.reference-only",
+            "asset.integrity-validation",
+            "asset.cache-not-canonical",
+            "mutation.state-required"
+          ],
+          "sourceSkill": "assets"
+        },
+        "structure": {
+          "text": "hamii 0.1.0\nGlobal options: --project PATH --profile NAME --json. Inspect: hamii project inspect. Mutations require --state TOKEN from project inspect or the previous mutation. Commands: page create NAME; scope create PARENT_ID NAME; screen create SCOPE_ID NAME; target add PLATFORM FRAMEWORK; surface add PAGE_ID SCREEN_ID TARGET_ID DEVICE RUNTIME BUILD_ENVIRONMENT; surface target SURFACE_ID TARGET_ID; capability set TARGET_ID KEY SUPPORT; layer add SCREEN_ID PARENT_ID KIND NAME TEXT; layer text SCREEN_ID LAYER_ID TEXT. Managed git switch BRANCH requires a clean worktree and --state TOKEN; git recover validates an interrupted switch or merge publication. git merge check BRANCH --state TOKEN validates an isolated candidate without publishing. git merge publish BRANCH --state TOKEN validates and publishes a candidate through the coordinated pending gate. Use - for no text. Read the token, component or asset skill when needed. All mutations use the same Authoring Harness validation as GUI.",
+          "factIDs": [
+            "actor.profile",
+            "mutation.state-required",
+            "mutation.token-refresh",
+            "mutation.shared-validation",
+            "authoring.command-grammar",
+            "authoring.no-text-sentinel",
+            "git.clean-precondition",
+            "git.recovery",
+            "git.candidate-isolated",
+            "git.validated-publication",
+            "discovery.related-skills"
+          ],
+          "sourceSkill": "authoring"
+        },
+        "bootstrap": {
+          "text": "hamii 0.1.0\nUse hamii skills list and hamii skills get NAME. Load only the relevant live skill. Global options: --project PATH --json. Create a Git-backed project with hamii project init NAME --project PATH --json; project inspect it with hamii project inspect --project PATH --json. Do not guess commands or edit canonical files directly. Supply the statePrecondition from project inspect as --state TOKEN for every mutation.",
+          "factIDs": [
+            "installed.version",
+            "discovery.live",
+            "discovery.progressive",
+            "global.project-json",
+            "project.git-init",
+            "canonical.no-direct-edit",
+            "mutation.state-required"
+          ],
+          "sourceSkill": "bootstrap"
+        },
+        "component": {
+          "text": "hamii 0.1.0\ncomponent list CONSUMER_SCOPE_ID; component create OWNER_SCOPE_ID NAME --state TOKEN; component instantiate SCREEN_ID PARENT_LAYER_ID DEFINITION_ID --state TOKEN; component promote DEFINITION_ID ANCESTOR_SCOPE_ID --state TOKEN. Promotion requires an Agent profile with explicit mayPromoteScope permission. Definition tree is referenced by instances; scope and availability are enforced by the mutation service.",
+          "factIDs": [
+            "component.consumer-scope",
+            "component.owner-scope",
+            "component.references-not-clones",
+            "component.availability-enforced",
+            "component.promotion-permission",
+            "mutation.state-required"
+          ],
+          "sourceSkill": "components"
+        },
+        "context": {
+          "text": "hamii 0.1.0\nUse --json. Prefer context session [--screen SCREEN_ID --layer LAYER_ID] for multiple reads. It emits an initial summary, then accepts one NDJSON request per line: layer {op,screenID,layerID}, resources {op,consumerScopeID,kind,matching?,limit?}, component {op,consumerScopeID,componentID}, token {op,consumerScopeID,tokenID}, or {op:close}. op is the operation name and all string values must be JSON quoted. Responses reuse the initial observation; requests never accept --state. Lines are limited to 64 KiB. usage and notFound errors have terminal:false; other errors have terminal:true and end the process. On a terminal error start a new session; never combine observations. EOF closes without a response. Mutations use existing one-shot commands with the initial observation.statePrecondition as --state TOKEN. For one-shot reads, start with context summary [--screen SCREEN_ID --layer LAYER_ID]. Use its observation.statePrecondition as --state TOKEN for every follow-up: context layer SCREEN_ID LAYER_ID; context resources SCOPE_ID component|token|asset [MATCH] [--limit N]; context component SCOPE_ID COMPONENT_ID; context token SCOPE_ID TOKEN_ID. Resource results are Scope-filtered and bounded. Never combine responses with different statePrecondition values. Request selected detail only when needed. Mutate through existing commands with the same --state TOKEN. On conflict, restart from summary. Do not edit Canonical files directly or use full project inspect as the routine AI context.",
+          "factIDs": [
+            "context.bounded",
+            "context.observation-precondition",
+            "context.no-mixed-state",
+            "context.conflict-restart",
+            "context.scope-filtered",
+            "context.only-selected-detail",
+            "context.session-ndjson",
+            "context.session-no-state",
+            "context.session-64k",
+            "context.session-terminal",
+            "context.session-eof",
+            "canonical.no-direct-edit",
+            "context.not-routine-inspect"
+          ],
+          "sourceSkill": "context"
+        },
+        "integration": {
+          "text": "hamii 0.1.0\nintegration contract SCREEN_ID --json returns semantic inputs, events, token/asset references, native and accessibility intent. Unknown product mappings require review. generation swiftui SCREEN_ID TARGET_ID --json is a separate deterministic path for the supported static subset and returns an error for unsupported semantics.",
+          "factIDs": [
+            "integration.semantic-contract",
+            "integration.mapping-review",
+            "generation.separate-static-subset",
+            "generation.unsupported-error"
+          ],
+          "sourceSkill": "integration"
+        },
+        "preview": {
+          "text": "hamii 0.1.0\npreview plan SURFACE_ID --json checks declared target capabilities and semantic support for one AppSurface. A successful plan reports that the IR is supported; an installed and running Native Preview Host is a separate requirement. macOS SwiftUI supports the current in-process subset. iOS Simulator and Android Hosts are not yet implemented.",
+          "factIDs": [
+            "preview.capability-semantic-plan",
+            "preview.plan-not-host",
+            "preview.mac-subset",
+            "preview.other-host-unimplemented"
+          ],
+          "sourceSkill": "preview"
+        },
+        "token": {
+          "text": "hamii 0.1.0\ntoken create OWNER_SCOPE_ID NAME KIND LITERAL --state TOKEN creates a primitive token; token alias OWNER_SCOPE_ID NAME KIND TARGET_TOKEN_ID --state TOKEN creates a semantic alias. KIND is color|typography|spacing|radius|border|shadow|opacity|motion. Spacing literals are nonnegative finite numbers. layer token SCREEN_ID LAYER_ID spacing|padding TOKEN_ID|- --state TOKEN sets or clears a layout token. ArchitectureScope ownership and token references are validated before save.",
+          "factIDs": [
+            "token.primitive-alias",
+            "token.kind-set",
+            "token.spacing-finite-nonnegative",
+            "token.layout-clear-sentinel",
+            "token.scope-validation",
+            "mutation.state-required"
+          ],
+          "sourceSkill": "tokens"
+        },
+        "project-checks": {
+          "text": "hamii 0.1.0\nproject validate --project PATH --json returns diagnostics with rule, severity, entityID and message. component query CONSUMER_SCOPE_ID TERM automatically rebuilds a missing or stale derived index only from a verified coordinated Canonical generation. External edits, pending transitions, unverifiable Git state, and storage failures remain fail closed; use index rebuild explicitly after supported external edits. If canonical Git files are marked assume-unchanged or skip-worktree or use Git filters, clear those settings before rebuilding. migrate plan --json preflights a format without changing it. migrate resolution --json lists finite, source-bound choices for clean committed historical input; zero-choice items stay blocked. Save a typed manifest outside Canonical data, then migrate prepare --resolution PATH --json creates a reviewed candidate and reports exact losses. Safe automatic sources still use migrate prepare --json. After reviewing exact IDs and losses, migrate publish REVIEW_ID SOURCE_OID CANDIDATE_OID --json publishes only that candidate; migrate recover --json reconciles an interrupted publication.",
+          "factIDs": [
+            "validation.structured-diagnostics",
+            "index.auto-recovery-proof",
+            "index.fail-closed",
+            "index.external-rebuild",
+            "index.hidden-git-flags-filter",
+            "migration.preflight",
+            "migration.source-bound-resolution",
+            "migration.reviewed-candidate",
+            "migration.exact-publish",
+            "migration.recovery"
+          ],
+          "sourceSkill": "validation"
+        }
+      },
+      "catalogUTF8Bytes": 6099,
+      "grouping": "Same nine semantic group boundaries; candidate-specific group names and grammar. This experiment does not test arbitrary regrouping."
+    },
+    "VERB": {
+      "commands": [
+        {
+          "id": "version",
+          "prefix": [
+            "version"
+          ],
+          "productionPrefix": [
+            "version"
+          ],
+          "operands": ""
+        },
+        {
+          "id": "init",
+          "prefix": [
+            "initialize",
+            "project"
+          ],
+          "productionPrefix": [
+            "init"
+          ],
+          "operands": "NAME"
+        },
+        {
+          "id": "inspect",
+          "prefix": [
+            "inspect",
+            "project"
+          ],
+          "productionPrefix": [
+            "inspect"
+          ],
+          "operands": ""
+        },
+        {
+          "id": "validate",
+          "prefix": [
+            "validate",
+            "project"
+          ],
+          "productionPrefix": [
+            "validate"
+          ],
+          "operands": ""
+        },
+        {
+          "id": "page.create",
+          "prefix": [
+            "create",
+            "page"
+          ],
+          "productionPrefix": [
+            "page",
+            "create"
+          ],
+          "operands": "NAME"
+        },
+        {
+          "id": "scope.create",
+          "prefix": [
+            "create",
+            "scope"
+          ],
+          "productionPrefix": [
+            "scope",
+            "create"
+          ],
+          "operands": "PARENT_ID NAME"
+        },
+        {
+          "id": "screen.create",
+          "prefix": [
+            "create",
+            "screen"
+          ],
+          "productionPrefix": [
+            "screen",
+            "create"
+          ],
+          "operands": "SCOPE_ID NAME"
+        },
+        {
+          "id": "layer.add",
+          "prefix": [
+            "add",
+            "layer"
+          ],
+          "productionPrefix": [
+            "layer",
+            "add"
+          ],
+          "operands": "SCREEN_ID PARENT_ID KIND NAME TEXT"
+        },
+        {
+          "id": "layer.text",
+          "prefix": [
+            "set",
+            "layer-text"
+          ],
+          "productionPrefix": [
+            "layer",
+            "text"
+          ],
+          "operands": "SCREEN_ID LAYER_ID TEXT"
+        },
+        {
+          "id": "layer.token",
+          "prefix": [
+            "set",
+            "layer-token"
+          ],
+          "productionPrefix": [
+            "layer",
+            "token"
+          ],
+          "operands": "SCREEN_ID LAYER_ID spacing|padding TOKEN_ID|-"
+        },
+        {
+          "id": "layer.image",
+          "prefix": [
+            "add",
+            "image"
+          ],
+          "productionPrefix": [
+            "layer",
+            "image"
+          ],
+          "operands": "SCREEN_ID PARENT_ID ASSET_ID NAME"
+        },
+        {
+          "id": "token.create",
+          "prefix": [
+            "create",
+            "token"
+          ],
+          "productionPrefix": [
+            "token",
+            "create"
+          ],
+          "operands": "OWNER_SCOPE_ID NAME KIND LITERAL"
+        },
+        {
+          "id": "token.alias",
+          "prefix": [
+            "alias",
+            "token"
+          ],
+          "productionPrefix": [
+            "token",
+            "alias"
+          ],
+          "operands": "OWNER_SCOPE_ID NAME KIND TARGET_TOKEN_ID"
+        },
+        {
+          "id": "component.list",
+          "prefix": [
+            "list",
+            "component"
+          ],
+          "productionPrefix": [
+            "component",
+            "list"
+          ],
+          "operands": "CONSUMER_SCOPE_ID"
+        },
+        {
+          "id": "component.query",
+          "prefix": [
+            "query",
+            "component"
+          ],
+          "productionPrefix": [
+            "query",
+            "components"
+          ],
+          "operands": "CONSUMER_SCOPE_ID TERM"
+        },
+        {
+          "id": "component.create",
+          "prefix": [
+            "create",
+            "component"
+          ],
+          "productionPrefix": [
+            "component",
+            "create"
+          ],
+          "operands": "OWNER_SCOPE_ID NAME"
+        },
+        {
+          "id": "component.instantiate",
+          "prefix": [
+            "instantiate",
+            "component"
+          ],
+          "productionPrefix": [
+            "component",
+            "instantiate"
+          ],
+          "operands": "SCREEN_ID PARENT_LAYER_ID DEFINITION_ID"
+        },
+        {
+          "id": "component.promote",
+          "prefix": [
+            "promote",
+            "component"
+          ],
+          "productionPrefix": [
+            "component",
+            "promote"
+          ],
+          "operands": "DEFINITION_ID ANCESTOR_SCOPE_ID"
+        },
+        {
+          "id": "target.add",
+          "prefix": [
+            "add",
+            "target"
+          ],
+          "productionPrefix": [
+            "target",
+            "add"
+          ],
+          "operands": "PLATFORM FRAMEWORK"
+        },
+        {
+          "id": "surface.add",
+          "prefix": [
+            "add",
+            "surface"
+          ],
+          "productionPrefix": [
+            "surface",
+            "add"
+          ],
+          "operands": "PAGE_ID SCREEN_ID TARGET_ID DEVICE RUNTIME BUILD_ENVIRONMENT"
+        },
+        {
+          "id": "surface.target",
+          "prefix": [
+            "set",
+            "surface-target"
+          ],
+          "productionPrefix": [
+            "surface",
+            "target"
+          ],
+          "operands": "SURFACE_ID TARGET_ID"
+        },
+        {
+          "id": "capability.set",
+          "prefix": [
+            "set",
+            "capability"
+          ],
+          "productionPrefix": [
+            "capability",
+            "set"
+          ],
+          "operands": "TARGET_ID KEY SUPPORT"
+        },
+        {
+          "id": "asset.import",
+          "prefix": [
+            "import",
+            "asset"
+          ],
+          "productionPrefix": [
+            "asset",
+            "import"
+          ],
+          "operands": "SCOPE_ID NAME MEDIA_TYPE SOURCE_PATH --storage git"
+        },
+        {
+          "id": "context.summary",
+          "prefix": [
+            "read",
+            "context",
+            "summary"
+          ],
+          "productionPrefix": [
+            "query",
+            "context",
+            "summary"
+          ],
+          "operands": "[--screen SCREEN_ID --layer LAYER_ID]"
+        },
+        {
+          "id": "context.layer",
+          "prefix": [
+            "read",
+            "context",
+            "layer"
+          ],
+          "productionPrefix": [
+            "query",
+            "context",
+            "layer"
+          ],
+          "operands": "SCREEN_ID LAYER_ID"
+        },
+        {
+          "id": "context.resources",
+          "prefix": [
+            "read",
+            "context",
+            "resources"
+          ],
+          "productionPrefix": [
+            "query",
+            "context",
+            "resources"
+          ],
+          "operands": "SCOPE_ID component|token|asset [MATCH] [--limit N]"
+        },
+        {
+          "id": "context.component",
+          "prefix": [
+            "read",
+            "context",
+            "component"
+          ],
+          "productionPrefix": [
+            "query",
+            "context",
+            "component"
+          ],
+          "operands": "SCOPE_ID COMPONENT_ID"
+        },
+        {
+          "id": "context.token",
+          "prefix": [
+            "read",
+            "context",
+            "token"
+          ],
+          "productionPrefix": [
+            "query",
+            "context",
+            "token"
+          ],
+          "operands": "SCOPE_ID TOKEN_ID"
+        },
+        {
+          "id": "context.session",
+          "prefix": [
+            "read",
+            "context",
+            "session"
+          ],
+          "productionPrefix": [
+            "query",
+            "context",
+            "session"
+          ],
+          "operands": "[--screen SCREEN_ID --layer LAYER_ID]"
+        },
+        {
+          "id": "preview.plan",
+          "prefix": [
+            "plan",
+            "preview"
+          ],
+          "productionPrefix": [
+            "preview",
+            "plan"
+          ],
+          "operands": "SURFACE_ID"
+        },
+        {
+          "id": "integration.contract",
+          "prefix": [
+            "describe",
+            "integration"
+          ],
+          "productionPrefix": [
+            "integration",
+            "contract"
+          ],
+          "operands": "SCREEN_ID"
+        },
+        {
+          "id": "generate.swiftui",
+          "prefix": [
+            "generate",
+            "swiftui"
+          ],
+          "productionPrefix": [
+            "generate",
+            "swiftui"
+          ],
+          "operands": "SCREEN_ID TARGET_ID"
+        },
+        {
+          "id": "git.switch",
+          "prefix": [
+            "git",
+            "switch"
+          ],
+          "productionPrefix": [
+            "git",
+            "switch"
+          ],
+          "operands": "BRANCH"
+        },
+        {
+          "id": "git.recover",
+          "prefix": [
+            "git",
+            "recover"
+          ],
+          "productionPrefix": [
+            "git",
+            "recover"
+          ],
+          "operands": ""
+        },
+        {
+          "id": "git.merge.check",
+          "prefix": [
+            "git",
+            "merge",
+            "check"
+          ],
+          "productionPrefix": [
+            "git",
+            "merge",
+            "check"
+          ],
+          "operands": "BRANCH"
+        },
+        {
+          "id": "git.merge.publish",
+          "prefix": [
+            "git",
+            "merge",
+            "publish"
+          ],
+          "productionPrefix": [
+            "git",
+            "merge",
+            "publish"
+          ],
+          "operands": "BRANCH"
+        },
+        {
+          "id": "migrate.plan",
+          "prefix": [
+            "migrate",
+            "plan"
+          ],
+          "productionPrefix": [
+            "migrate",
+            "plan"
+          ],
+          "operands": ""
+        },
+        {
+          "id": "migrate.resolution",
+          "prefix": [
+            "migrate",
+            "resolution"
+          ],
+          "productionPrefix": [
+            "migrate",
+            "resolution"
+          ],
+          "operands": ""
+        },
+        {
+          "id": "migrate.prepare",
+          "prefix": [
+            "migrate",
+            "prepare"
+          ],
+          "productionPrefix": [
+            "migrate",
+            "prepare"
+          ],
+          "operands": "[--resolution PATH]"
+        },
+        {
+          "id": "migrate.publish",
+          "prefix": [
+            "migrate",
+            "publish"
+          ],
+          "productionPrefix": [
+            "migrate",
+            "publish"
+          ],
+          "operands": "REVIEW_ID SOURCE_OID CANDIDATE_OID"
+        },
+        {
+          "id": "migrate.recover",
+          "prefix": [
+            "migrate",
+            "recover"
+          ],
+          "productionPrefix": [
+            "migrate",
+            "recover"
+          ],
+          "operands": ""
+        },
+        {
+          "id": "index.rebuild",
+          "prefix": [
+            "index",
+            "rebuild"
+          ],
+          "productionPrefix": [
+            "index",
+            "rebuild"
+          ],
+          "operands": ""
+        }
+      ],
+      "skills": {
+        "import-image": {
+          "text": "hamii 0.1.0\nimport asset SCOPE_ID NAME MEDIA_TYPE SOURCE_PATH --storage git --state TOKEN writes a SHA-256 addressed repository blob and Asset metadata. Large binary Git/LFS policy is unresolved; choose Git storage explicitly. add image SCREEN_ID PARENT_ID ASSET_ID NAME --state TOKEN adds an image reference. Run validate project --json to check blob integrity. Remote caches and thumbnails are not canonical data.",
+          "factIDs": [
+            "asset.explicit-git-storage",
+            "asset.content-addressed",
+            "asset.large-policy-unresolved",
+            "asset.reference-only",
+            "asset.integrity-validation",
+            "asset.cache-not-canonical",
+            "mutation.state-required"
+          ],
+          "sourceSkill": "assets"
+        },
+        "create-and-set": {
+          "text": "hamii 0.1.0\nGlobal options: --project PATH --profile NAME --json. Inspect: hamii inspect project. Mutations require --state TOKEN from inspect project or the previous mutation. Commands: create page NAME; create scope PARENT_ID NAME; create screen SCOPE_ID NAME; add target PLATFORM FRAMEWORK; add surface PAGE_ID SCREEN_ID TARGET_ID DEVICE RUNTIME BUILD_ENVIRONMENT; set surface-target SURFACE_ID TARGET_ID; set capability TARGET_ID KEY SUPPORT; add layer SCREEN_ID PARENT_ID KIND NAME TEXT; set layer-text SCREEN_ID LAYER_ID TEXT. Managed git switch BRANCH requires a clean worktree and --state TOKEN; git recover validates an interrupted switch or merge publication. git merge check BRANCH --state TOKEN validates an isolated candidate without publishing. git merge publish BRANCH --state TOKEN validates and publishes a candidate through the coordinated pending gate. Use - for no text. Read the create-and-alias, list-and-instantiate or import-image skill when needed. All mutations use the same Authoring Harness validation as GUI.",
+          "factIDs": [
+            "actor.profile",
+            "mutation.state-required",
+            "mutation.token-refresh",
+            "mutation.shared-validation",
+            "authoring.command-grammar",
+            "authoring.no-text-sentinel",
+            "git.clean-precondition",
+            "git.recovery",
+            "git.candidate-isolated",
+            "git.validated-publication",
+            "discovery.related-skills"
+          ],
+          "sourceSkill": "authoring"
+        },
+        "bootstrap": {
+          "text": "hamii 0.1.0\nUse hamii skills list and hamii skills get NAME. Load only the relevant live skill. Global options: --project PATH --json. Create a Git-backed project with hamii initialize project NAME --project PATH --json; inspect project it with hamii inspect project --project PATH --json. Do not guess commands or edit canonical files directly. Supply the statePrecondition from inspect project as --state TOKEN for every mutation.",
+          "factIDs": [
+            "installed.version",
+            "discovery.live",
+            "discovery.progressive",
+            "global.project-json",
+            "project.git-init",
+            "canonical.no-direct-edit",
+            "mutation.state-required"
+          ],
+          "sourceSkill": "bootstrap"
+        },
+        "list-and-instantiate": {
+          "text": "hamii 0.1.0\nlist component CONSUMER_SCOPE_ID; create component OWNER_SCOPE_ID NAME --state TOKEN; instantiate component SCREEN_ID PARENT_LAYER_ID DEFINITION_ID --state TOKEN; promote component DEFINITION_ID ANCESTOR_SCOPE_ID --state TOKEN. Promotion requires an Agent profile with explicit mayPromoteScope permission. Definition tree is referenced by instances; scope and availability are enforced by the mutation service.",
+          "factIDs": [
+            "component.consumer-scope",
+            "component.owner-scope",
+            "component.references-not-clones",
+            "component.availability-enforced",
+            "component.promotion-permission",
+            "mutation.state-required"
+          ],
+          "sourceSkill": "components"
+        },
+        "read-context": {
+          "text": "hamii 0.1.0\nUse --json. Prefer read context session [--screen SCREEN_ID --layer LAYER_ID] for multiple reads. It emits an initial summary, then accepts one NDJSON request per line: layer {op,screenID,layerID}, resources {op,consumerScopeID,kind,matching?,limit?}, component {op,consumerScopeID,componentID}, token {op,consumerScopeID,tokenID}, or {op:close}. op is the operation name and all string values must be JSON quoted. Responses reuse the initial observation; requests never accept --state. Lines are limited to 64 KiB. usage and notFound errors have terminal:false; other errors have terminal:true and end the process. On a terminal error start a new session; never combine observations. EOF closes without a response. Mutations use existing one-shot commands with the initial observation.statePrecondition as --state TOKEN. For one-shot reads, start with read context summary [--screen SCREEN_ID --layer LAYER_ID]. Use its observation.statePrecondition as --state TOKEN for every follow-up: read context layer SCREEN_ID LAYER_ID; read context resources SCOPE_ID component|token|asset [MATCH] [--limit N]; read context component SCOPE_ID COMPONENT_ID; read context token SCOPE_ID TOKEN_ID. Resource results are Scope-filtered and bounded. Never combine responses with different statePrecondition values. Request selected detail only when needed. Mutate through existing commands with the same --state TOKEN. On conflict, restart from summary. Do not edit Canonical files directly or use full inspect project as the routine AI context.",
+          "factIDs": [
+            "context.bounded",
+            "context.observation-precondition",
+            "context.no-mixed-state",
+            "context.conflict-restart",
+            "context.scope-filtered",
+            "context.only-selected-detail",
+            "context.session-ndjson",
+            "context.session-no-state",
+            "context.session-64k",
+            "context.session-terminal",
+            "context.session-eof",
+            "canonical.no-direct-edit",
+            "context.not-routine-inspect"
+          ],
+          "sourceSkill": "context"
+        },
+        "describe-and-generate": {
+          "text": "hamii 0.1.0\ndescribe integration SCREEN_ID --json returns semantic inputs, events, token/asset references, native and accessibility intent. Unknown product mappings require review. generate swiftui SCREEN_ID TARGET_ID --json is a separate deterministic path for the supported static subset and returns an error for unsupported semantics.",
+          "factIDs": [
+            "integration.semantic-contract",
+            "integration.mapping-review",
+            "generation.separate-static-subset",
+            "generation.unsupported-error"
+          ],
+          "sourceSkill": "integration"
+        },
+        "plan-preview": {
+          "text": "hamii 0.1.0\nplan preview SURFACE_ID --json checks declared target capabilities and semantic support for one AppSurface. A successful plan reports that the IR is supported; an installed and running Native Preview Host is a separate requirement. macOS SwiftUI supports the current in-process subset. iOS Simulator and Android Hosts are not yet implemented.",
+          "factIDs": [
+            "preview.capability-semantic-plan",
+            "preview.plan-not-host",
+            "preview.mac-subset",
+            "preview.other-host-unimplemented"
+          ],
+          "sourceSkill": "preview"
+        },
+        "create-and-alias": {
+          "text": "hamii 0.1.0\ncreate token OWNER_SCOPE_ID NAME KIND LITERAL --state TOKEN creates a primitive token; alias token OWNER_SCOPE_ID NAME KIND TARGET_TOKEN_ID --state TOKEN creates a semantic alias. KIND is color|typography|spacing|radius|border|shadow|opacity|motion. Spacing literals are nonnegative finite numbers. set layer-token SCREEN_ID LAYER_ID spacing|padding TOKEN_ID|- --state TOKEN sets or clears a layout token. ArchitectureScope ownership and token references are validated before save.",
+          "factIDs": [
+            "token.primitive-alias",
+            "token.kind-set",
+            "token.spacing-finite-nonnegative",
+            "token.layout-clear-sentinel",
+            "token.scope-validation",
+            "mutation.state-required"
+          ],
+          "sourceSkill": "tokens"
+        },
+        "validate-and-recover": {
+          "text": "hamii 0.1.0\nvalidate project --project PATH --json returns diagnostics with rule, severity, entityID and message. query component CONSUMER_SCOPE_ID TERM automatically rebuilds a missing or stale derived index only from a verified coordinated Canonical generation. External edits, pending transitions, unverifiable Git state, and storage failures remain fail closed; use index rebuild explicitly after supported external edits. If canonical Git files are marked assume-unchanged or skip-worktree or use Git filters, clear those settings before rebuilding. migrate plan --json preflights a format without changing it. migrate resolution --json lists finite, source-bound choices for clean committed historical input; zero-choice items stay blocked. Save a typed manifest outside Canonical data, then migrate prepare --resolution PATH --json creates a reviewed candidate and reports exact losses. Safe automatic sources still use migrate prepare --json. After reviewing exact IDs and losses, migrate publish REVIEW_ID SOURCE_OID CANDIDATE_OID --json publishes only that candidate; migrate recover --json reconciles an interrupted publication.",
+          "factIDs": [
+            "validation.structured-diagnostics",
+            "index.auto-recovery-proof",
+            "index.fail-closed",
+            "index.external-rebuild",
+            "index.hidden-git-flags-filter",
+            "migration.preflight",
+            "migration.source-bound-resolution",
+            "migration.reviewed-candidate",
+            "migration.exact-publish",
+            "migration.recovery"
+          ],
+          "sourceSkill": "validation"
+        }
+      },
+      "catalogUTF8Bytes": 6172,
+      "grouping": "Same nine semantic group boundaries; candidate-specific group names and grammar. This experiment does not test arbitrary regrouping."
+    },
+    "TASK": {
+      "commands": [
+        {
+          "id": "version",
+          "prefix": [
+            "version"
+          ],
+          "productionPrefix": [
+            "version"
+          ],
+          "operands": ""
+        },
+        {
+          "id": "init",
+          "prefix": [
+            "project",
+            "initialize"
+          ],
+          "productionPrefix": [
+            "init"
+          ],
+          "operands": "NAME"
+        },
+        {
+          "id": "inspect",
+          "prefix": [
+            "project",
+            "inspect"
+          ],
+          "productionPrefix": [
+            "inspect"
+          ],
+          "operands": ""
+        },
+        {
+          "id": "validate",
+          "prefix": [
+            "project",
+            "validate"
+          ],
+          "productionPrefix": [
+            "validate"
+          ],
+          "operands": ""
+        },
+        {
+          "id": "page.create",
+          "prefix": [
+            "author",
+            "page"
+          ],
+          "productionPrefix": [
+            "page",
+            "create"
+          ],
+          "operands": "NAME"
+        },
+        {
+          "id": "scope.create",
+          "prefix": [
+            "author",
+            "scope"
+          ],
+          "productionPrefix": [
+            "scope",
+            "create"
+          ],
+          "operands": "PARENT_ID NAME"
+        },
+        {
+          "id": "screen.create",
+          "prefix": [
+            "author",
+            "screen"
+          ],
+          "productionPrefix": [
+            "screen",
+            "create"
+          ],
+          "operands": "SCOPE_ID NAME"
+        },
+        {
+          "id": "layer.add",
+          "prefix": [
+            "author",
+            "layer"
+          ],
+          "productionPrefix": [
+            "layer",
+            "add"
+          ],
+          "operands": "SCREEN_ID PARENT_ID KIND NAME TEXT"
+        },
+        {
+          "id": "layer.text",
+          "prefix": [
+            "author",
+            "text"
+          ],
+          "productionPrefix": [
+            "layer",
+            "text"
+          ],
+          "operands": "SCREEN_ID LAYER_ID TEXT"
+        },
+        {
+          "id": "layer.token",
+          "prefix": [
+            "author",
+            "layout-token"
+          ],
+          "productionPrefix": [
+            "layer",
+            "token"
+          ],
+          "operands": "SCREEN_ID LAYER_ID spacing|padding TOKEN_ID|-"
+        },
+        {
+          "id": "layer.image",
+          "prefix": [
+            "author",
+            "image"
+          ],
+          "productionPrefix": [
+            "layer",
+            "image"
+          ],
+          "operands": "SCREEN_ID PARENT_ID ASSET_ID NAME"
+        },
+        {
+          "id": "token.create",
+          "prefix": [
+            "author",
+            "token"
+          ],
+          "productionPrefix": [
+            "token",
+            "create"
+          ],
+          "operands": "OWNER_SCOPE_ID NAME KIND LITERAL"
+        },
+        {
+          "id": "token.alias",
+          "prefix": [
+            "author",
+            "token-alias"
+          ],
+          "productionPrefix": [
+            "token",
+            "alias"
+          ],
+          "operands": "OWNER_SCOPE_ID NAME KIND TARGET_TOKEN_ID"
+        },
+        {
+          "id": "component.list",
+          "prefix": [
+            "discover",
+            "component"
+          ],
+          "productionPrefix": [
+            "component",
+            "list"
+          ],
+          "operands": "CONSUMER_SCOPE_ID"
+        },
+        {
+          "id": "component.query",
+          "prefix": [
+            "discover",
+            "component-search"
+          ],
+          "productionPrefix": [
+            "query",
+            "components"
+          ],
+          "operands": "CONSUMER_SCOPE_ID TERM"
+        },
+        {
+          "id": "component.create",
+          "prefix": [
+            "author",
+            "component"
+          ],
+          "productionPrefix": [
+            "component",
+            "create"
+          ],
+          "operands": "OWNER_SCOPE_ID NAME"
+        },
+        {
+          "id": "component.instantiate",
+          "prefix": [
+            "author",
+            "instance"
+          ],
+          "productionPrefix": [
+            "component",
+            "instantiate"
+          ],
+          "operands": "SCREEN_ID PARENT_LAYER_ID DEFINITION_ID"
+        },
+        {
+          "id": "component.promote",
+          "prefix": [
+            "configure",
+            "component-owner"
+          ],
+          "productionPrefix": [
+            "component",
+            "promote"
+          ],
+          "operands": "DEFINITION_ID ANCESTOR_SCOPE_ID"
+        },
+        {
+          "id": "target.add",
+          "prefix": [
+            "configure",
+            "target"
+          ],
+          "productionPrefix": [
+            "target",
+            "add"
+          ],
+          "operands": "PLATFORM FRAMEWORK"
+        },
+        {
+          "id": "surface.add",
+          "prefix": [
+            "configure",
+            "surface"
+          ],
+          "productionPrefix": [
+            "surface",
+            "add"
+          ],
+          "operands": "PAGE_ID SCREEN_ID TARGET_ID DEVICE RUNTIME BUILD_ENVIRONMENT"
+        },
+        {
+          "id": "surface.target",
+          "prefix": [
+            "configure",
+            "surface-target"
+          ],
+          "productionPrefix": [
+            "surface",
+            "target"
+          ],
+          "operands": "SURFACE_ID TARGET_ID"
+        },
+        {
+          "id": "capability.set",
+          "prefix": [
+            "configure",
+            "capability"
+          ],
+          "productionPrefix": [
+            "capability",
+            "set"
+          ],
+          "operands": "TARGET_ID KEY SUPPORT"
+        },
+        {
+          "id": "asset.import",
+          "prefix": [
+            "author",
+            "asset"
+          ],
+          "productionPrefix": [
+            "asset",
+            "import"
+          ],
+          "operands": "SCOPE_ID NAME MEDIA_TYPE SOURCE_PATH --storage git"
+        },
+        {
+          "id": "context.summary",
+          "prefix": [
+            "context",
+            "read",
+            "summary"
+          ],
+          "productionPrefix": [
+            "query",
+            "context",
+            "summary"
+          ],
+          "operands": "[--screen SCREEN_ID --layer LAYER_ID]"
+        },
+        {
+          "id": "context.layer",
+          "prefix": [
+            "context",
+            "read",
+            "layer"
+          ],
+          "productionPrefix": [
+            "query",
+            "context",
+            "layer"
+          ],
+          "operands": "SCREEN_ID LAYER_ID"
+        },
+        {
+          "id": "context.resources",
+          "prefix": [
+            "context",
+            "read",
+            "resources"
+          ],
+          "productionPrefix": [
+            "query",
+            "context",
+            "resources"
+          ],
+          "operands": "SCOPE_ID component|token|asset [MATCH] [--limit N]"
+        },
+        {
+          "id": "context.component",
+          "prefix": [
+            "context",
+            "read",
+            "component"
+          ],
+          "productionPrefix": [
+            "query",
+            "context",
+            "component"
+          ],
+          "operands": "SCOPE_ID COMPONENT_ID"
+        },
+        {
+          "id": "context.token",
+          "prefix": [
+            "context",
+            "read",
+            "token"
+          ],
+          "productionPrefix": [
+            "query",
+            "context",
+            "token"
+          ],
+          "operands": "SCOPE_ID TOKEN_ID"
+        },
+        {
+          "id": "context.session",
+          "prefix": [
+            "context",
+            "read",
+            "session"
+          ],
+          "productionPrefix": [
+            "query",
+            "context",
+            "session"
+          ],
+          "operands": "[--screen SCREEN_ID --layer LAYER_ID]"
+        },
+        {
+          "id": "preview.plan",
+          "prefix": [
+            "preview",
+            "check"
+          ],
+          "productionPrefix": [
+            "preview",
+            "plan"
+          ],
+          "operands": "SURFACE_ID"
+        },
+        {
+          "id": "integration.contract",
+          "prefix": [
+            "integration",
+            "describe"
+          ],
+          "productionPrefix": [
+            "integration",
+            "contract"
+          ],
+          "operands": "SCREEN_ID"
+        },
+        {
+          "id": "generate.swiftui",
+          "prefix": [
+            "source",
+            "generate"
+          ],
+          "productionPrefix": [
+            "generate",
+            "swiftui"
+          ],
+          "operands": "SCREEN_ID TARGET_ID"
+        },
+        {
+          "id": "git.switch",
+          "prefix": [
+            "git",
+            "switch"
+          ],
+          "productionPrefix": [
+            "git",
+            "switch"
+          ],
+          "operands": "BRANCH"
+        },
+        {
+          "id": "git.recover",
+          "prefix": [
+            "git",
+            "recover"
+          ],
+          "productionPrefix": [
+            "git",
+            "recover"
+          ],
+          "operands": ""
+        },
+        {
+          "id": "git.merge.check",
+          "prefix": [
+            "git",
+            "merge",
+            "check"
+          ],
+          "productionPrefix": [
+            "git",
+            "merge",
+            "check"
+          ],
+          "operands": "BRANCH"
+        },
+        {
+          "id": "git.merge.publish",
+          "prefix": [
+            "git",
+            "merge",
+            "publish"
+          ],
+          "productionPrefix": [
+            "git",
+            "merge",
+            "publish"
+          ],
+          "operands": "BRANCH"
+        },
+        {
+          "id": "migrate.plan",
+          "prefix": [
+            "migrate",
+            "plan"
+          ],
+          "productionPrefix": [
+            "migrate",
+            "plan"
+          ],
+          "operands": ""
+        },
+        {
+          "id": "migrate.resolution",
+          "prefix": [
+            "migrate",
+            "resolution"
+          ],
+          "productionPrefix": [
+            "migrate",
+            "resolution"
+          ],
+          "operands": ""
+        },
+        {
+          "id": "migrate.prepare",
+          "prefix": [
+            "migrate",
+            "prepare"
+          ],
+          "productionPrefix": [
+            "migrate",
+            "prepare"
+          ],
+          "operands": "[--resolution PATH]"
+        },
+        {
+          "id": "migrate.publish",
+          "prefix": [
+            "migrate",
+            "publish"
+          ],
+          "productionPrefix": [
+            "migrate",
+            "publish"
+          ],
+          "operands": "REVIEW_ID SOURCE_OID CANDIDATE_OID"
+        },
+        {
+          "id": "migrate.recover",
+          "prefix": [
+            "migrate",
+            "recover"
+          ],
+          "productionPrefix": [
+            "migrate",
+            "recover"
+          ],
+          "operands": ""
+        },
+        {
+          "id": "index.rebuild",
+          "prefix": [
+            "index",
+            "rebuild"
+          ],
+          "productionPrefix": [
+            "index",
+            "rebuild"
+          ],
+          "operands": ""
+        }
+      ],
+      "skills": {
+        "media-workflow": {
+          "text": "hamii 0.1.0\nauthor asset SCOPE_ID NAME MEDIA_TYPE SOURCE_PATH --storage git --state TOKEN writes a SHA-256 addressed repository blob and Asset metadata. Large binary Git/LFS policy is unresolved; choose Git storage explicitly. author image SCREEN_ID PARENT_ID ASSET_ID NAME --state TOKEN adds an image reference. Run project validate --json to check blob integrity. Remote caches and thumbnails are not canonical data.",
+          "factIDs": [
+            "asset.explicit-git-storage",
+            "asset.content-addressed",
+            "asset.large-policy-unresolved",
+            "asset.reference-only",
+            "asset.integrity-validation",
+            "asset.cache-not-canonical",
+            "mutation.state-required"
+          ],
+          "sourceSkill": "assets"
+        },
+        "author-workflow": {
+          "text": "hamii 0.1.0\nGlobal options: --project PATH --profile NAME --json. Inspect: hamii project inspect. Mutations require --state TOKEN from project inspect or the previous mutation. Commands: author page NAME; author scope PARENT_ID NAME; author screen SCOPE_ID NAME; configure target PLATFORM FRAMEWORK; configure surface PAGE_ID SCREEN_ID TARGET_ID DEVICE RUNTIME BUILD_ENVIRONMENT; configure surface-target SURFACE_ID TARGET_ID; configure capability TARGET_ID KEY SUPPORT; author layer SCREEN_ID PARENT_ID KIND NAME TEXT; author text SCREEN_ID LAYER_ID TEXT. Managed git switch BRANCH requires a clean worktree and --state TOKEN; git recover validates an interrupted switch or merge publication. git merge check BRANCH --state TOKEN validates an isolated candidate without publishing. git merge publish BRANCH --state TOKEN validates and publishes a candidate through the coordinated pending gate. Use - for no text. Read the token-workflow, component-workflow or media-workflow skill when needed. All mutations use the same Authoring Harness validation as GUI.",
+          "factIDs": [
+            "actor.profile",
+            "mutation.state-required",
+            "mutation.token-refresh",
+            "mutation.shared-validation",
+            "authoring.command-grammar",
+            "authoring.no-text-sentinel",
+            "git.clean-precondition",
+            "git.recovery",
+            "git.candidate-isolated",
+            "git.validated-publication",
+            "discovery.related-skills"
+          ],
+          "sourceSkill": "authoring"
+        },
+        "bootstrap": {
+          "text": "hamii 0.1.0\nUse hamii skills list and hamii skills get NAME. Load only the relevant live skill. Global options: --project PATH --json. Create a Git-backed project with hamii project initialize NAME --project PATH --json; project inspect it with hamii project inspect --project PATH --json. Do not guess commands or edit canonical files directly. Supply the statePrecondition from project inspect as --state TOKEN for every mutation.",
+          "factIDs": [
+            "installed.version",
+            "discovery.live",
+            "discovery.progressive",
+            "global.project-json",
+            "project.git-init",
+            "canonical.no-direct-edit",
+            "mutation.state-required"
+          ],
+          "sourceSkill": "bootstrap"
+        },
+        "component-workflow": {
+          "text": "hamii 0.1.0\ndiscover component CONSUMER_SCOPE_ID; author component OWNER_SCOPE_ID NAME --state TOKEN; author instance SCREEN_ID PARENT_LAYER_ID DEFINITION_ID --state TOKEN; configure component-owner DEFINITION_ID ANCESTOR_SCOPE_ID --state TOKEN. Promotion requires an Agent profile with explicit mayPromoteScope permission. Definition tree is referenced by instances; scope and availability are enforced by the mutation service.",
+          "factIDs": [
+            "component.consumer-scope",
+            "component.owner-scope",
+            "component.references-not-clones",
+            "component.availability-enforced",
+            "component.promotion-permission",
+            "mutation.state-required"
+          ],
+          "sourceSkill": "components"
+        },
+        "context-workflow": {
+          "text": "hamii 0.1.0\nUse --json. Prefer context read session [--screen SCREEN_ID --layer LAYER_ID] for multiple reads. It emits an initial summary, then accepts one NDJSON request per line: layer {op,screenID,layerID}, resources {op,consumerScopeID,kind,matching?,limit?}, component {op,consumerScopeID,componentID}, token {op,consumerScopeID,tokenID}, or {op:close}. op is the operation name and all string values must be JSON quoted. Responses reuse the initial observation; requests never accept --state. Lines are limited to 64 KiB. usage and notFound errors have terminal:false; other errors have terminal:true and end the process. On a terminal error start a new session; never combine observations. EOF closes without a response. Mutations use existing one-shot commands with the initial observation.statePrecondition as --state TOKEN. For one-shot reads, start with context read summary [--screen SCREEN_ID --layer LAYER_ID]. Use its observation.statePrecondition as --state TOKEN for every follow-up: context read layer SCREEN_ID LAYER_ID; context read resources SCOPE_ID component|token|asset [MATCH] [--limit N]; context read component SCOPE_ID COMPONENT_ID; context read token SCOPE_ID TOKEN_ID. Resource results are Scope-filtered and bounded. Never combine responses with different statePrecondition values. Request selected detail only when needed. Mutate through existing commands with the same --state TOKEN. On conflict, restart from summary. Do not edit Canonical files directly or use full project inspect as the routine AI context.",
+          "factIDs": [
+            "context.bounded",
+            "context.observation-precondition",
+            "context.no-mixed-state",
+            "context.conflict-restart",
+            "context.scope-filtered",
+            "context.only-selected-detail",
+            "context.session-ndjson",
+            "context.session-no-state",
+            "context.session-64k",
+            "context.session-terminal",
+            "context.session-eof",
+            "canonical.no-direct-edit",
+            "context.not-routine-inspect"
+          ],
+          "sourceSkill": "context"
+        },
+        "delivery-workflow": {
+          "text": "hamii 0.1.0\nintegration describe SCREEN_ID --json returns semantic inputs, events, token/asset references, native and accessibility intent. Unknown product mappings require review. source generate SCREEN_ID TARGET_ID --json is a separate deterministic path for the supported static subset and returns an error for unsupported semantics.",
+          "factIDs": [
+            "integration.semantic-contract",
+            "integration.mapping-review",
+            "generation.separate-static-subset",
+            "generation.unsupported-error"
+          ],
+          "sourceSkill": "integration"
+        },
+        "preview-workflow": {
+          "text": "hamii 0.1.0\npreview check SURFACE_ID --json checks declared target capabilities and semantic support for one AppSurface. A successful plan reports that the IR is supported; an installed and running Native Preview Host is a separate requirement. macOS SwiftUI supports the current in-process subset. iOS Simulator and Android Hosts are not yet implemented.",
+          "factIDs": [
+            "preview.capability-semantic-plan",
+            "preview.plan-not-host",
+            "preview.mac-subset",
+            "preview.other-host-unimplemented"
+          ],
+          "sourceSkill": "preview"
+        },
+        "token-workflow": {
+          "text": "hamii 0.1.0\nauthor token OWNER_SCOPE_ID NAME KIND LITERAL --state TOKEN creates a primitive token; author token-alias OWNER_SCOPE_ID NAME KIND TARGET_TOKEN_ID --state TOKEN creates a semantic alias. KIND is color|typography|spacing|radius|border|shadow|opacity|motion. Spacing literals are nonnegative finite numbers. author layout-token SCREEN_ID LAYER_ID spacing|padding TOKEN_ID|- --state TOKEN sets or clears a layout token. ArchitectureScope ownership and token references are validated before save.",
+          "factIDs": [
+            "token.primitive-alias",
+            "token.kind-set",
+            "token.spacing-finite-nonnegative",
+            "token.layout-clear-sentinel",
+            "token.scope-validation",
+            "mutation.state-required"
+          ],
+          "sourceSkill": "tokens"
+        },
+        "check-workflow": {
+          "text": "hamii 0.1.0\nproject validate --project PATH --json returns diagnostics with rule, severity, entityID and message. discover component-search CONSUMER_SCOPE_ID TERM automatically rebuilds a missing or stale derived index only from a verified coordinated Canonical generation. External edits, pending transitions, unverifiable Git state, and storage failures remain fail closed; use index rebuild explicitly after supported external edits. If canonical Git files are marked assume-unchanged or skip-worktree or use Git filters, clear those settings before rebuilding. migrate plan --json preflights a format without changing it. migrate resolution --json lists finite, source-bound choices for clean committed historical input; zero-choice items stay blocked. Save a typed manifest outside Canonical data, then migrate prepare --resolution PATH --json creates a reviewed candidate and reports exact losses. Safe automatic sources still use migrate prepare --json. After reviewing exact IDs and losses, migrate publish REVIEW_ID SOURCE_OID CANDIDATE_OID --json publishes only that candidate; migrate recover --json reconciles an interrupted publication.",
+          "factIDs": [
+            "validation.structured-diagnostics",
+            "index.auto-recovery-proof",
+            "index.fail-closed",
+            "index.external-rebuild",
+            "index.hidden-git-flags-filter",
+            "migration.preflight",
+            "migration.source-bound-resolution",
+            "migration.reviewed-candidate",
+            "migration.exact-publish",
+            "migration.recovery"
+          ],
+          "sourceSkill": "validation"
+        }
+      },
+      "catalogUTF8Bytes": 6224,
+      "grouping": "Same nine semantic group boundaries; candidate-specific group names and grammar. This experiment does not test arbitrary regrouping."
+    }
+  },
+  "fairness": {
+    "maxToMinCatalogBytes": 1.0262159934047814,
+    "limit": 1.1,
+    "sameFactUnion": true,
+    "textRule": "Only command prefixes and references to renamed skills differ; unchanged semantic prose is retained verbatim."
+  }
+}

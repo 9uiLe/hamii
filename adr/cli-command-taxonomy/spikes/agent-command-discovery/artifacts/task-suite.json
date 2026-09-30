@@ -1,0 +1,145 @@
+{
+  "schemaVersion": 1,
+  "fixture": {
+    "ids": {
+      "document": "doc_taxonomy_fixture",
+      "appScope": "scope_taxonomy_app",
+      "commerceScope": "scope_taxonomy_commerce",
+      "checkoutScope": "scope_taxonomy_checkout",
+      "accountScope": "scope_taxonomy_account",
+      "screen": "screen_taxonomy_fixture",
+      "root": "layer_taxonomy_root",
+      "text": "layer_taxonomy_summary",
+      "priceBadge": "component_taxonomy_price",
+      "priceRoot": "layer_taxonomy_price",
+      "privateBadge": "component_taxonomy_private",
+      "privateRoot": "layer_taxonomy_private",
+      "token": "token_taxonomy_checkout",
+      "page": "page_taxonomy_preview",
+      "surface": "surface_taxonomy_preview",
+      "target": "target_taxonomy_macos"
+    },
+    "names": {
+      "screen": "Checkout fixture",
+      "component": "PriceBadge",
+      "privateComponent": "PrivateBadge",
+      "token": "spacing.checkout"
+    },
+    "documentRevision": 1,
+    "target": {
+      "platform": "macOS",
+      "framework": "swiftUI",
+      "runtime": "macOS 26",
+      "buildEnvironment": "SDK 26",
+      "device": "Mac"
+    },
+    "layout": "vertical Stack with one Text leaf; Commerce owns PriceBadge; Account owns PrivateBadge; Checkout owns spacing.checkout literal 12; declared stack/text/token spacing support sufficient for fixture Preview/generator.",
+    "name": "Taxonomy discovery",
+    "capabilities": [
+      "layout.stack.container",
+      "component.text.visual",
+      "layout.spacingToken"
+    ],
+    "screenTree": {
+      "rootID": "layer_taxonomy_root",
+      "kind": "stack",
+      "name": "Root",
+      "axis": "vertical",
+      "spacingTokenID": "token_taxonomy_checkout",
+      "children": [
+        {
+          "id": "layer_taxonomy_summary",
+          "kind": "text",
+          "name": "Summary",
+          "text": "Order summary"
+        }
+      ]
+    },
+    "componentRoots": {
+      "PriceBadge": {
+        "kind": "text",
+        "name": "Price",
+        "text": "Price"
+      },
+      "PrivateBadge": {
+        "kind": "text",
+        "name": "Private",
+        "text": "Private"
+      }
+    }
+  },
+  "tasks": [
+    {
+      "id": "T1",
+      "instruction": "In Checkout scope scope_taxonomy_checkout, create a Screen named TaxonomyCheckout. Under its root add a Text Layer named ReceiptText with text Order total. Create spacing Token spacing.taxonomy with literal 16 owned by Checkout and assign it as root padding. Obtain and refresh your own mutation state precondition.",
+      "oracle": "Exactly one new named Screen in Checkout with exactly one ReceiptText plus later PriceBadge instance; root paddingTokenID references exactly one new spacing.taxonomy primitive literal 16."
+    },
+    {
+      "id": "T2",
+      "instruction": "Discover the available PriceBadge for Checkout and instantiate it under the new TaxonomyCheckout Screen root. PrivateBadge exists in Account and is unavailable to Checkout; do not instantiate it.",
+      "oracle": "Exactly one PriceBadge instance under the new root, after ReceiptText; no PrivateBadge instance anywhere."
+    },
+    {
+      "id": "T3",
+      "instruction": "Using one-shot semantic context reads, retrieve layer_taxonomy_summary in screen_taxonomy_fixture, available Components and Tokens for scope_taxonomy_checkout, and selected PriceBadge and spacing.checkout details. Use a single current observation for these context responses.",
+      "oracle": "Structured summary, layer detail, available component/token lists and matching selected component/token details captured with same observation; correct IDs; PrivateBadge absent."
+    },
+    {
+      "id": "T4",
+      "instruction": "Validate the project and obtain a Preview plan for surface_taxonomy_preview. Success means supported semantic plan, not a running Native Host.",
+      "oracle": "validate has no error diagnostics, previewPlan.canPreview true and plan captured."
+    },
+    {
+      "id": "T5",
+      "instruction": "Obtain the integration contract for screen_taxonomy_fixture and generate its supported SwiftUI source for target_taxonomy_macos. These are separate paths; capture both structured outputs.",
+      "oracle": "Correct Screen contract and nonempty generated SwiftUI source captured; final Canonical validation succeeds."
+    }
+  ],
+  "trialLimit": {
+    "wallSeconds": 1200,
+    "commandTimeoutSeconds": 60,
+    "maxAgentToolCalls": 120
+  },
+  "forbidden": [
+    "source/docs/proxy inspection",
+    "direct canonical reads/edits",
+    "web search",
+    "hidden ID/state insertion",
+    "session transport in T3"
+  ],
+  "agentRuntime": {
+    "implementation": "fresh codex exec --json --ephemeral --skip-git-repo-check --ignore-user-config --sandbox workspace-write, no resume/fork, disposable workspace outside repository; never approval; identical tool access",
+    "cliVersionObserved": "codex-cli 0.159.1",
+    "modelTelemetry": "record effective model/config if available; unavailable otherwise; no model changes across trials",
+    "audit": "Audit each actual shell/tool invocation and compare Canonical modifications to proxy mutations. Forbidden inspection/edit marks trial invalid; this is experiment exposure/audit control, not a product security boundary.",
+    "fixedSettings": {
+      "model": "gpt-6.1-sol",
+      "model_reasoning_effort": "high",
+      "source": "existing user configuration, read-only subset observed before trial; no model comparison",
+      "network": "no web search tool / shell network; workspace-write sandbox; saved CLI auth used by harness",
+      "approval_policy": "never",
+      "web_search": "disabled",
+      "project_doc_max_bytes": 0,
+      "sandbox_workspace_write.network_access": false,
+      "sandbox_workspace_write.exclude_slash_tmp": true,
+      "sandbox_workspace_write.exclude_tmpdir_env_var": true
+    },
+    "officialReference": "https://learn.chatgpt.com/docs/non-interactive-mode",
+    "configReference": "https://learn.chatgpt.com/docs/config-file/config-reference"
+  },
+  "tokenMeasurement": {
+    "sessionTotals": "authoritative aggregate per-session usage only, if platform provides it; include failures and retries once; input/output/cached nesting documented",
+    "wholeDevelopmentCycle": "unmeasured unless complete parent/operator/platform usage is available; never infer from bytes or per-agent subset"
+  },
+  "trialOrder": [
+    "CURRENT-1",
+    "RESOURCE-1",
+    "VERB-1",
+    "TASK-1",
+    "TASK-2",
+    "VERB-2",
+    "RESOURCE-2",
+    "CURRENT-2"
+  ],
+  "rejectedUnsafeAttemptRule": "Production rejection remains a safety success and is counted as agent error. An attempt to instantiate the explicitly forbidden PrivateBadge also fails T2 task adherence; it never becomes a Core correctness failure merely because production rejected it."
+}

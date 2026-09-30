@@ -2,7 +2,7 @@
 
 ## Context
 
-CLI は AI、CI、validation、migration、debugging に使う正式 interface。現在の command subset から capability、asset、preview、integration を増やすときの命名規則は未検証。
+CLI は AI、CI、validation、migration、debugging に使う正式 interface。現在の command subset から capability、asset、preview、integration を増やすときの命名規則は未検証。安全性を保った開発 cycle の改善では、context payload / process latency と独立して、command discovery に必要な往復と読み込む live skill を評価する。
 
 ## Decision to Make
 
@@ -26,7 +26,7 @@ Target / Surface / Component / Integration の command が複数 resource にま
 
 ## Required Evidence
 
-新規 Agent が bootstrap skill だけから代表的な authoring、query、validation、integration task を完了する観察と command discovery の失敗記録。
+新規 Agent が bootstrap skill だけから代表的な authoring、query、validation、preview、integration、generation task を完了する観察と command discovery の失敗記録。[Agent command discovery Spike](spikes/agent-command-discovery/SPIKE.md) は CURRENT を含む4候補を test-only proxy で同じ production semantics へ接続し、各2回の fresh session を比較する。実測前に grammar、task、初期 prompt、順序、hard gate を固定する。
 
 ## Decision Criteria
 
@@ -34,4 +34,4 @@ Target / Surface / Component / Integration の command が複数 resource にま
 
 ## Status
 
-Researching
+Spike Required
