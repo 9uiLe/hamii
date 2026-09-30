@@ -29,7 +29,7 @@ A Page-based aggregate bucket without semantic ownership would still introduce g
 
 ## Current Hypothesis
 
-**Recommended, not yet decided:** retain CURRENT entity-per-file sharding for Current Format v2. Under the tested workload and current validity/ownership contracts, the evidence does not justify replacing it with monolithic aggregation or subtree externalization. This is not a universal optimum or a claim that subtree reads cannot help another workload.
+**Review hypothesis (now decided below):** retain CURRENT entity-per-file sharding for Current Format v2. Under the tested workload and current validity/ownership contracts, the evidence does not justify replacing it with monolithic aggregation or subtree externalization. This is not a universal optimum or a claim that subtree reads cannot help another workload.
 
 ## Evidence Review
 
@@ -83,6 +83,16 @@ Choose a layout from measured product-relevant benefits and ownership/validity c
 
 Do not modify production format or implement a locator during review. Record the Decision independently, transfer current rules to permanent docs, validate existing implementation/coverage, and only then evaluate deletion under [ADR workflow](../../docs/adr-workflow.md).
 
+## Decision
+
+Current Canonical Format v2 uses entity-per-file sharding: `hamii.json` and document-level configuration plus one stable-ID JSON file per first-class entity. A Screen owns its complete Layer tree; a ComponentDefinition owns its complete definition tree. Page remains canvas organization referencing independent Screens through AppSurfaces.
+
+The selected layout is CURRENT. Whole-document aggregation, Page-owned Screen canonicalization, external subtree shards and a Canonical Layer locator are not introduced. MONOLITHIC did not establish merge/read/save advantages under the measured workload. SUBTREE demonstrated replacement/read byte locality but did not establish sufficient end-to-end benefit to justify extra cross-file reference, migration, reconstruction and locator/freshness complexity. These conclusions are bounded by the fixtures, serializer control and prototype/production measurement boundaries above; they do not exclude a different result for a future concrete workload.
+
+Canonical sharding and read optimization are separate concerns. Authoring/currentness continues to require the fully validated coordinated Canonical observation. The test-only partial reader is not production code; a semantic slice cannot issue CanonicalSnapshot, ProjectObservation, ClientPrecondition or mutation authority.
+
+No production format implementation change is required: this selects the existing Current Format v2. No new format version, migration edge, Canonical rewrite or Index schema change follows from this Decision. The enduring ownership and validation rules are expressed in [Current Architecture](../../docs/final-architecture.md). Remaining work is closure verification of implementation/coverage/documentation and, only after its conditions hold, ADR deletion in a later commit. Reopen conditions remain those specified in Unknowns.
+
 ## Status
 
-Ready for Decision
+Implementation Required
