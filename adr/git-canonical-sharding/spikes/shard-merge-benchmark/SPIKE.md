@@ -77,9 +77,49 @@ Out of scope: 50k/open-save scaling, partial reader, production Format migration
 
 Commit this plan before prototype execution and verify its exact SHA. Then commit test-only prototype, raw matrix and focused Result/Conclusion under this Spike's `artifacts/`; full gate and exact-SHA CI are required. Keep the ADR `Spike Required`. After Evidence delivery, report and await the next routing decision; do not infer a final shard layout from this phase alone.
 
+### Serializer control and open/save scaling phase (precommitted plan)
+
+This phase keeps the ADR `Spike Required`. It uses the same aggregate boundaries, stable path rules and simple Stack/Text fixture as the save/diff/merge phase; no production Format, serializer, Migration, Index or Preview changes. Existing results remain intact.
+
+#### Serializer control before scaling
+
+Use a test-only Swift/Foundation JSON value serializer (sorted keys, pretty printed, unescaped slashes, UTF-8 and trailing newline) for all normalized layouts. **CURRENT-P** retains actual production bytes; **CURRENT-N** reserializes the current inventory through the common encoder; **MONOLITHIC-N** and **SUBTREE-N** use the same common encoder with the previously fixed layouts. Python may orchestrate but must not serialize the measured candidates.
+
+At 1k and 10k, record CURRENT-P/N inventory and replacement bytes for the same equal-length Text mutation. Check normalized round trips with the actual Current parser and DocumentValidator, preserving complete values, IDs, references and child order. Byte equality is recorded, not required.
+
+Before 50k, repeat the five existing 10k merge scenarios once each for P and all three N layouts (20 trials). Require all three independent Text scenarios to merge cleanly with both deltas and unrelated fields preserved, and same-property to conflict. Record same-parent append classification/order and any difference from the existing Evidence. **Hard stop:** a CURRENT-P/N major clean/conflict classification change, lost edit, invalid reconstruction or validation failure stops scaling; retain failure and consult the design session. Do not rerun 90 trials or change layout/criteria after observing results.
+
+#### Scaling fixture and correctness
+
+Exactly 1k, 10k and 50k Layers: two Screens, two child Stack subtrees per Screen, and two Component roots. Extend the same Text pattern (248/2,498/12,498 leaves per subtree), Scope hierarchy, Components, Token, AppSurface and Target. Same inventory and selected stable Text ID/value across candidates. Fixed four subtree files; no adaptive split threshold.
+
+At each scale/N layout, perform at least three encode/decode/reconstruct/current-parser/semantic-validation round trips. Require repeated encodes of identical input to yield identical bytes. Retain rejection of dangling/duplicate/unreachable/unknown/identity-mismatched subtree references at 50k too. Report all failures, OOM, timeout and interrupted/incomplete trials; do not remove them from the matrix.
+
+#### Open boundaries
+
+- **Production CURRENT:** Release `CanonicalRepository.load()` and `observe()` separately, ten warm-local runs each per scale, after fixture preparation. `observe()` includes ClientPrecondition work. This is actual production API cost, excluding OS process launch, preparation and Git commit.
+- **Normalized prototype:** ten warm-local runs per scale/layout using one test-only Swift pipeline: candidate file read → JSON decode → layout reconstruction → same typed current entity decode / Document construction → DocumentValidator. CURRENT-N uses the same pipeline as MONOLITHIC-N/SUBTREE-N. Prototype timing is not production open latency. Record stage times separately; do not sum overlapping timings.
+
+Record canonical/candidate paths, JSON bytes, largest/median shard bytes and exact prototype files/bytes read. Production inventory sizes are metadata, not measured syscall counts; actual production read counts are unmeasured if the public Release API cannot expose them without production changes. Do not infer read counts from file sizes or DEBUG timings. Reconstructed outputs must independently pass actual Current parser validation outside timed prototype measurements.
+
+#### Save boundaries
+
+- **Production CURRENT:** five fresh disposable copies per scale. Observe each copy outside timing, then time `ProjectService.mutate(.setText, expectedState: …)` entry through returned new precondition. This includes its internal validation, observation, journal/transaction, generation coordination and serialization/write. Post-save observation and exact intended-delta checks are outside timing; Git commit is excluded. Use the same selected ID and eight-character Text delta. No repeated mutations of one copy.
+- **Normalized prototype:** five fresh copies per scale/layout. Time the same in-memory semantic Text delta → common Swift candidate encode → changed files write. Record encode/write/total separately, changed paths, replacement payload bytes and total candidate bytes. Validate exact intended delta and reconstructed Current result after timing. Do not add fsync or call this production durable save latency/physical write bytes.
+
+Use Release modules and a test-only Swift executable linked outside Package targets; production does not import ADR artifacts. Record source/dependency/toolchain/prototype/binary fingerprints, commands, sample counts, warm-up, layout order, environment/load and measurement boundaries. Run sequentially without competing full gate. If available, record peak RSS with a fixed macOS process measurement method; otherwise explicitly unmeasured. Report median/min/max and raw samples only; no p95, SLA, throughput or AI token/cost inference.
+
+#### Success, routing and delivery
+
+Correctness/completeness are hard gates; no arbitrary speed threshold or winning format. Success requires serializer gate, all scale/layout deterministic round trips/current validation, all open/save series, metadata, retained failed attempts, full gate and exact-SHA Verify. Production syscall counts or RSS that cannot be acquired remain marked unmeasured.
+
+Routing: serializer-sensitive major classification → stop and normalized merge re-evidence; candidate correctness/nondeterminism/OOM/execution failure → retain failure, consult about partial-load on surviving layouts; all candidates viable → partial-load phase next. Production scale problems are Evidence for partial-load planning, not permission to implement a partial reader. No `Ready for Decision` until partial-load Evidence is complete.
+
+First commit only this plan, Markdown gate, push and exact-SHA Verify. Then test-only common serializer/harness, `artifacts/open-save-scaling-matrix.json`, `artifacts/open-save-scaling-analysis.md` (and separate serializer-control results if needed), plus Result/Conclusion; full gate, push and exact-SHA Verify. Report to the designated design session and stop for routing after that Evidence. No new ADR or production architecture decision in this phase.
+
 ## Prototype Scope
 
-Observation-shape phase と、上記の固定した 1k/10k save/diff/merge phase。50k、partial load は未検証の後続範囲として残す。
+Observation-shape phase と、上記の固定した 1k/10k save/diff/merge phase と serializer control / 1k/10k/50k open-save phase。partial load は未検証の後続範囲として残す。
 
 ## Out of Scope
 
