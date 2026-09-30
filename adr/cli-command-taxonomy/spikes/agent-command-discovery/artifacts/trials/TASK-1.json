@@ -1,0 +1,3326 @@
+{
+  "candidate": "TASK",
+  "repetition": 1,
+  "runtimeExitCode": 0,
+  "timeout": false,
+  "toolBudgetExceeded": false,
+  "toolCallCount": 27,
+  "workspace": "/var/folders/05/9dz9l23n10d4pk_yp0ktzb4m0000gn/T/hamii-agent-f969ce27-sp9bwx_u",
+  "indexNamespace": "/Users/t.kobayashi/Library/Application Support/hamii/indexes/d460b8a5d504bfef444aabc3b9093791193761898a475a8d3a9b35405fc103b9/d7ac03e10829511ad7c44f877b7f47591ce6027d6e03dbe976edf7046014022b",
+  "initialCanonical": {
+    "sha256": "bf4e1a48867f30086063ae9839853e11edb3b7e0d146e924d53455991f39adb8",
+    "pathCount": 12,
+    "bytes": 4976
+  },
+  "finalCanonical": {
+    "sha256": "47780501b25a4eb38e8c0d1ee146413e28c895afe26692b04fb3271250ef60a0",
+    "pathCount": 14,
+    "bytes": 6818
+  },
+  "binarySHA256": "dd59e5bfbdf35a631d1c1576837e2432d6d943024f41c2ae887378d736adc336",
+  "promptSHA256": "e151bab478c304f9fd98e2bb593d2878a695b5f5e9980909e131237add421381",
+  "provenance": {
+    "command": [
+      "codex",
+      "exec",
+      "--json",
+      "--ephemeral",
+      "--skip-git-repo-check",
+      "--ignore-user-config",
+      "--sandbox",
+      "workspace-write",
+      "--cd",
+      "/var/folders/05/9dz9l23n10d4pk_yp0ktzb4m0000gn/T/hamii-agent-f969ce27-sp9bwx_u",
+      "--add-dir",
+      "/Users/t.kobayashi/Library/Application Support/hamii/indexes/d460b8a5d504bfef444aabc3b9093791193761898a475a8d3a9b35405fc103b9/d7ac03e10829511ad7c44f877b7f47591ce6027d6e03dbe976edf7046014022b",
+      "-m",
+      "gpt-6.1-sol",
+      "-c",
+      "model_reasoning_effort=\"high\"",
+      "-c",
+      "approval_policy=\"never\"",
+      "-c",
+      "web_search=\"disabled\"",
+      "-c",
+      "project_doc_max_bytes=0",
+      "-c",
+      "sandbox_workspace_write.network_access=false",
+      "-c",
+      "sandbox_workspace_write.exclude_slash_tmp=true",
+      "-c",
+      "sandbox_workspace_write.exclude_tmpdir_env_var=true",
+      "-"
+    ],
+    "configuredSettings": {
+      "model": "gpt-6.1-sol",
+      "model_reasoning_effort": "high",
+      "source": "existing user configuration, read-only subset observed before trial; no model comparison",
+      "network": "no web search tool / shell network; workspace-write sandbox; saved CLI auth used by harness",
+      "approval_policy": "never",
+      "web_search": "disabled",
+      "project_doc_max_bytes": 0,
+      "sandbox_workspace_write.network_access": false,
+      "sandbox_workspace_write.exclude_slash_tmp": true,
+      "sandbox_workspace_write.exclude_tmpdir_env_var": true
+    },
+    "codexVersion": "codex-cli 0.159.1",
+    "effectiveServerModelVersion": "unavailable",
+    "OS": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "python": "3.14.6"
+  },
+  "machineRecord": "TASK-1-machine.ndjson",
+  "commandEvents": [
+    {
+      "event": "attempt",
+      "sequence": 1,
+      "candidate": "TASK",
+      "repetition": 1,
+      "task": "T1",
+      "argv": [
+        "--json",
+        "skills",
+        "get",
+        "bootstrap"
+      ],
+      "operation": "skills.get",
+      "startNs": 315264023724625,
+      "undiscoveredCommandAttempt": false,
+      "skillRequested": "bootstrap"
+    },
+    {
+      "event": "completed",
+      "sequence": 1,
+      "candidate": "TASK",
+      "repetition": 1,
+      "task": "T1",
+      "argv": [
+        "--json",
+        "skills",
+        "get",
+        "bootstrap"
+      ],
+      "operation": "skills.get",
+      "startNs": 315264023724625,
+      "undiscoveredCommandAttempt": false,
+      "skillRequested": "bootstrap",
+      "exitCode": 0,
+      "origin": "production",
+      "productionArgv": [
+        "--json",
+        "skills",
+        "get",
+        "bootstrap"
+      ],
+      "endNs": 315264032127083,
+      "durationMs": 8.402583,
+      "structuredCategory": null,
+      "ok": true,
+      "skillResponseBytes": 432,
+      "CLIResponseBytes": 456,
+      "stderrBytes": 0,
+      "response": {
+        "ok": true,
+        "skill": "hamii 0.1.0\nUse hamii skills list and hamii skills get NAME. Load only the relevant live skill. Global options: --project PATH --json. Create a Git-backed project with hamii project initialize NAME --project PATH --json; project inspect it with hamii project inspect --project PATH --json. Do not guess commands or edit canonical files directly. Supply the statePrecondition from project inspect as --state TOKEN for every mutation."
+      },
+      "stdoutUnparsed": null,
+      "stderr": "",
+      "disclosedOperationIDs": [
+        "init",
+        "inspect",
+        "skills.get",
+        "skills.list"
+      ]
+    },
+    {
+      "event": "attempt",
+      "sequence": 2,
+      "candidate": "TASK",
+      "repetition": 1,
+      "task": "T1",
+      "argv": [
+        "--json",
+        "skills",
+        "list"
+      ],
+      "operation": "skills.list",
+      "startNs": 315269513557708,
+      "undiscoveredCommandAttempt": false,
+      "skillRequested": null
+    },
+    {
+      "event": "completed",
+      "sequence": 2,
+      "candidate": "TASK",
+      "repetition": 1,
+      "task": "T1",
+      "argv": [
+        "--json",
+        "skills",
+        "list"
+      ],
+      "operation": "skills.list",
+      "startNs": 315269513557708,
+      "undiscoveredCommandAttempt": false,
+      "skillRequested": null,
+      "exitCode": 0,
+      "origin": "production",
+      "productionArgv": [
+        "--json",
+        "skills",
+        "list"
+      ],
+      "endNs": 315269520631791,
+      "durationMs": 7.074208,
+      "structuredCategory": null,
+      "ok": true,
+      "skillResponseBytes": 0,
+      "CLIResponseBytes": 183,
+      "stderrBytes": 0,
+      "response": {
+        "ok": true,
+        "skills": [
+          "author-workflow",
+          "bootstrap",
+          "check-workflow",
+          "component-workflow",
+          "context-workflow",
+          "delivery-workflow",
+          "media-workflow",
+          "preview-workflow",
+          "token-workflow"
+        ]
+      },
+      "stdoutUnparsed": null,
+      "stderr": "",
+      "disclosedOperationIDs": [
+        "skills.list",
+        "skills.get"
+      ]
+    },
+    {
+      "event": "attempt",
+      "sequence": 3,
+      "candidate": "TASK",
+      "repetition": 1,
+      "task": "T1",
+      "argv": [
+        "--json",
+        "skills",
+        "get",
+        "author-workflow"
+      ],
+      "operation": "skills.get",
+      "startNs": 315276219690500,
+      "undiscoveredCommandAttempt": false,
+      "skillRequested": "author-workflow"
+    },
+    {
+      "event": "completed",
+      "sequence": 3,
+      "candidate": "TASK",
+      "repetition": 1,
+      "task": "T1",
+      "argv": [
+        "--json",
+        "skills",
+        "get",
+        "author-workflow"
+      ],
+      "operation": "skills.get",
+      "startNs": 315276219690500,
+      "undiscoveredCommandAttempt": false,
+      "skillRequested": "author-workflow",
+      "exitCode": 0,
+      "origin": "production",
+      "productionArgv": [
+        "--json",
+        "skills",
+        "get",
+        "authoring"
+      ],
+      "endNs": 315276229627041,
+      "durationMs": 9.936833,
+      "structuredCategory": null,
+      "ok": true,
+      "skillResponseBytes": 1059,
+      "CLIResponseBytes": 1083,
+      "stderrBytes": 0,
+      "response": {
+        "ok": true,
+        "skill": "hamii 0.1.0\nGlobal options: --project PATH --profile NAME --json. Inspect: hamii project inspect. Mutations require --state TOKEN from project inspect or the previous mutation. Commands: author page NAME; author scope PARENT_ID NAME; author screen SCOPE_ID NAME; configure target PLATFORM FRAMEWORK; configure surface PAGE_ID SCREEN_ID TARGET_ID DEVICE RUNTIME BUILD_ENVIRONMENT; configure surface-target SURFACE_ID TARGET_ID; configure capability TARGET_ID KEY SUPPORT; author layer SCREEN_ID PARENT_ID KIND NAME TEXT; author text SCREEN_ID LAYER_ID TEXT. Managed git switch BRANCH requires a clean worktree and --state TOKEN; git recover validates an interrupted switch or merge publication. git merge check BRANCH --state TOKEN validates an isolated candidate without publishing. git merge publish BRANCH --state TOKEN validates and publishes a candidate through the coordinated pending gate. Use - for no text. Read the token-workflow, component-workflow or media-workflow skill when needed. All mutations use the same Authoring Harness validation as GUI."
+      },
+      "stdoutUnparsed": null,
+      "stderr": "",
+      "disclosedOperationIDs": [
+        "inspect",
+        "page.create",
+        "scope.create",
+        "screen.create",
+        "layer.add",
+        "layer.text",
+        "target.add",
+        "surface.add",
+        "surface.target",
+        "capability.set",
+        "git.switch",
+        "git.recover",
+        "git.merge.check",
+        "git.merge.publish",
+        "skills.get",
+        "skills.list"
+      ]
+    },
+    {
+      "event": "attempt",
+      "sequence": 4,
+      "candidate": "TASK",
+      "repetition": 1,
+      "task": "T1",
+      "argv": [
+        "--json",
+        "skills",
+        "get",
+        "token-workflow"
+      ],
+      "operation": "skills.get",
+      "startNs": 315276387195000,
+      "undiscoveredCommandAttempt": false,
+      "skillRequested": "token-workflow"
+    },
+    {
+      "event": "completed",
+      "sequence": 4,
+      "candidate": "TASK",
+      "repetition": 1,
+      "task": "T1",
+      "argv": [
+        "--json",
+        "skills",
+        "get",
+        "token-workflow"
+      ],
+      "operation": "skills.get",
+      "startNs": 315276387195000,
+      "undiscoveredCommandAttempt": false,
+      "skillRequested": "token-workflow",
+      "exitCode": 0,
+      "origin": "production",
+      "productionArgv": [
+        "--json",
+        "skills",
+        "get",
+        "tokens"
+      ],
+      "endNs": 315276396298041,
+      "durationMs": 9.103208,
+      "structuredCategory": null,
+      "ok": true,
+      "skillResponseBytes": 504,
+      "CLIResponseBytes": 528,
+      "stderrBytes": 0,
+      "response": {
+        "ok": true,
+        "skill": "hamii 0.1.0\nauthor token OWNER_SCOPE_ID NAME KIND LITERAL --state TOKEN creates a primitive token; author token-alias OWNER_SCOPE_ID NAME KIND TARGET_TOKEN_ID --state TOKEN creates a semantic alias. KIND is color|typography|spacing|radius|border|shadow|opacity|motion. Spacing literals are nonnegative finite numbers. author layout-token SCREEN_ID LAYER_ID spacing|padding TOKEN_ID|- --state TOKEN sets or clears a layout token. ArchitectureScope ownership and token references are validated before save."
+      },
+      "stdoutUnparsed": null,
+      "stderr": "",
+      "disclosedOperationIDs": [
+        "layer.token",
+        "token.create",
+        "token.alias",
+        "skills.get",
+        "skills.list"
+      ]
+    },
+    {
+      "event": "attempt",
+      "sequence": 5,
+      "candidate": "TASK",
+      "repetition": 1,
+      "task": "T1",
+      "argv": [
+        "project",
+        "inspect",
+        "--project",
+        "project",
+        "--json"
+      ],
+      "operation": "inspect",
+      "startNs": 315276545680500,
+      "undiscoveredCommandAttempt": false,
+      "skillRequested": null
+    },
+    {
+      "event": "completed",
+      "sequence": 5,
+      "candidate": "TASK",
+      "repetition": 1,
+      "task": "T1",
+      "argv": [
+        "project",
+        "inspect",
+        "--project",
+        "project",
+        "--json"
+      ],
+      "operation": "inspect",
+      "startNs": 315276545680500,
+      "undiscoveredCommandAttempt": false,
+      "skillRequested": null,
+      "exitCode": 0,
+      "origin": "production",
+      "productionArgv": [
+        "--project",
+        "project",
+        "--json",
+        "inspect"
+      ],
+      "endNs": 315276561018125,
+      "durationMs": 15.337875,
+      "structuredCategory": null,
+      "ok": true,
+      "skillResponseBytes": 0,
+      "CLIResponseBytes": 3329,
+      "stderrBytes": 0,
+      "response": {
+        "document": {
+          "assets": [],
+          "authoringHarness": {
+            "maximumMutationNodes": 100,
+            "requireAccessibleControls": true,
+            "requireTokenSpacing": false
+          },
+          "capabilityDeclarations": [
+            {
+              "key": {
+                "rawValue": "layout.stack.container"
+              },
+              "reason": "",
+              "support": "exact",
+              "targetID": {
+                "rawValue": "target_taxonomy_macos"
+              }
+            },
+            {
+              "key": {
+                "rawValue": "component.text.visual"
+              },
+              "reason": "",
+              "support": "exact",
+              "targetID": {
+                "rawValue": "target_taxonomy_macos"
+              }
+            },
+            {
+              "key": {
+                "rawValue": "layout.spacingToken"
+              },
+              "reason": "",
+              "support": "exact",
+              "targetID": {
+                "rawValue": "target_taxonomy_macos"
+              }
+            }
+          ],
+          "components": [
+            {
+              "api": {
+                "bindings": [],
+                "events": [],
+                "overridablePaths": [],
+                "properties": [],
+                "slots": []
+              },
+              "availability": {
+                "allowOnlyScopeIDs": [],
+                "denyScopeIDs": []
+              },
+              "id": {
+                "rawValue": "component_taxonomy_price"
+              },
+              "name": "PriceBadge",
+              "nativeSemantics": {},
+              "ownerScopeID": {
+                "rawValue": "scope_taxonomy_commerce"
+              },
+              "root": {
+                "children": [],
+                "effects": [],
+                "id": {
+                  "rawValue": "layer_taxonomy_price"
+                },
+                "kind": "text",
+                "layout": {},
+                "name": "Price",
+                "targetOverrides": {},
+                "text": "Price"
+              },
+              "variants": [],
+              "visibility": "public"
+            },
+            {
+              "api": {
+                "bindings": [],
+                "events": [],
+                "overridablePaths": [],
+                "properties": [],
+                "slots": []
+              },
+              "availability": {
+                "allowOnlyScopeIDs": [],
+                "denyScopeIDs": []
+              },
+              "id": {
+                "rawValue": "component_taxonomy_private"
+              },
+              "name": "PrivateBadge",
+              "nativeSemantics": {},
+              "ownerScopeID": {
+                "rawValue": "scope_taxonomy_account"
+              },
+              "root": {
+                "children": [],
+                "effects": [],
+                "id": {
+                  "rawValue": "layer_taxonomy_private"
+                },
+                "kind": "text",
+                "layout": {},
+                "name": "Private",
+                "targetOverrides": {},
+                "text": "Private"
+              },
+              "variants": [],
+              "visibility": "public"
+            }
+          ],
+          "fixtures": [],
+          "id": {
+            "rawValue": "doc_taxonomy_fixture"
+          },
+          "interactions": [],
+          "motions": [],
+          "name": "Taxonomy discovery",
+          "pages": [
+            {
+              "id": {
+                "rawValue": "page_taxonomy_preview"
+              },
+              "name": "Preview",
+              "surfaces": [
+                {
+                  "architectureScopeID": {
+                    "rawValue": "scope_taxonomy_checkout"
+                  },
+                  "buildEnvironment": "SDK 26",
+                  "device": "Mac",
+                  "environment": {},
+                  "id": {
+                    "rawValue": "surface_taxonomy_preview"
+                  },
+                  "previewConfiguration": {},
+                  "runtime": "macOS 26",
+                  "screenID": {
+                    "rawValue": "screen_taxonomy_fixture"
+                  },
+                  "targetID": {
+                    "rawValue": "target_taxonomy_macos"
+                  }
+                }
+              ]
+            }
+          ],
+          "revision": 1,
+          "scopes": [
+            {
+              "id": {
+                "rawValue": "scope_taxonomy_account"
+              },
+              "name": "Account",
+              "parentID": {
+                "rawValue": "scope_taxonomy_app"
+              }
+            },
+            {
+              "id": {
+                "rawValue": "scope_taxonomy_app"
+              },
+              "name": "App"
+            },
+            {
+              "id": {
+                "rawValue": "scope_taxonomy_checkout"
+              },
+              "name": "Checkout",
+              "parentID": {
+                "rawValue": "scope_taxonomy_commerce"
+              }
+            },
+            {
+              "id": {
+                "rawValue": "scope_taxonomy_commerce"
+              },
+              "name": "Commerce",
+              "parentID": {
+                "rawValue": "scope_taxonomy_app"
+              }
+            }
+          ],
+          "screens": [
+            {
+              "id": {
+                "rawValue": "screen_taxonomy_fixture"
+              },
+              "name": "Checkout fixture",
+              "root": {
+                "children": [
+                  {
+                    "children": [],
+                    "effects": [],
+                    "id": {
+                      "rawValue": "layer_taxonomy_summary"
+                    },
+                    "kind": "text",
+                    "layout": {},
+                    "name": "Summary",
+                    "targetOverrides": {},
+                    "text": "Order summary"
+                  }
+                ],
+                "effects": [],
+                "id": {
+                  "rawValue": "layer_taxonomy_root"
+                },
+                "kind": "stack",
+                "layout": {
+                  "axis": "vertical"
+                },
+                "name": "Root",
+                "targetOverrides": {}
+              },
+              "scopeID": {
+                "rawValue": "scope_taxonomy_checkout"
+              }
+            }
+          ],
+          "targets": [
+            {
+              "framework": "swiftUI",
+              "id": {
+                "rawValue": "target_taxonomy_macos"
+              },
+              "platform": "macOS"
+            }
+          ],
+          "tokens": [
+            {
+              "id": {
+                "rawValue": "token_taxonomy_checkout"
+              },
+              "kind": "spacing",
+              "name": "spacing.checkout",
+              "ownerScopeID": {
+                "rawValue": "scope_taxonomy_checkout"
+              },
+              "value": {
+                "literal": {
+                  "_0": "12"
+                }
+              }
+            }
+          ],
+          "versions": {
+            "authoringHarness": 1,
+            "document": 2,
+            "integrationProfile": 1
+          }
+        },
+        "ok": true,
+        "statePrecondition": {
+          "rawValue": "30d2085fd3edaf80c489a7fef38cd49c5ca560db3697674419cf05fa33f289e3"
+        }
+      },
+      "stdoutUnparsed": null,
+      "stderr": "",
+      "disclosedOperationIDs": []
+    },
+    {
+      "event": "attempt",
+      "sequence": 6,
+      "candidate": "TASK",
+      "repetition": 1,
+      "task": "T1",
+      "argv": [
+        "author",
+        "screen",
+        "scope_taxonomy_checkout",
+        "TaxonomyCheckout",
+        "--state",
+        "30d2085fd3edaf80c489a7fef38cd49c5ca560db3697674419cf05fa33f289e3",
+        "--project",
+        "project",
+        "--json"
+      ],
+      "operation": "screen.create",
+      "startNs": 315283704808166,
+      "undiscoveredCommandAttempt": false,
+      "skillRequested": null
+    },
+    {
+      "event": "completed",
+      "sequence": 6,
+      "candidate": "TASK",
+      "repetition": 1,
+      "task": "T1",
+      "argv": [
+        "author",
+        "screen",
+        "scope_taxonomy_checkout",
+        "TaxonomyCheckout",
+        "--state",
+        "30d2085fd3edaf80c489a7fef38cd49c5ca560db3697674419cf05fa33f289e3",
+        "--project",
+        "project",
+        "--json"
+      ],
+      "operation": "screen.create",
+      "startNs": 315283704808166,
+      "undiscoveredCommandAttempt": false,
+      "skillRequested": null,
+      "exitCode": 0,
+      "origin": "production",
+      "productionArgv": [
+        "--state",
+        "30d2085fd3edaf80c489a7fef38cd49c5ca560db3697674419cf05fa33f289e3",
+        "--project",
+        "project",
+        "--json",
+        "screen",
+        "create",
+        "scope_taxonomy_checkout",
+        "TaxonomyCheckout"
+      ],
+      "endNs": 315283740410666,
+      "durationMs": 35.602875,
+      "structuredCategory": null,
+      "ok": true,
+      "skillResponseBytes": 0,
+      "CLIResponseBytes": 286,
+      "stderrBytes": 0,
+      "response": {
+        "mutation": {
+          "diagnostics": [],
+          "patches": [
+            {
+              "entityID": {
+                "rawValue": "screen_9fe015ef-87fe-400f-8c6f-5c47e2dd40e8"
+              },
+              "newValue": "TaxonomyCheckout",
+              "path": "screens"
+            }
+          ],
+          "revision": 2,
+          "statePrecondition": {
+            "rawValue": "92b3bc6f3760bd5753f03f3500904a721bfb86caf113394190bce681faabea1a"
+          }
+        },
+        "ok": true
+      },
+      "stdoutUnparsed": null,
+      "stderr": "",
+      "disclosedOperationIDs": []
+    },
+    {
+      "event": "attempt",
+      "sequence": 7,
+      "candidate": "TASK",
+      "repetition": 1,
+      "task": "T1",
+      "argv": [
+        "project",
+        "inspect",
+        "--project",
+        "project",
+        "--json"
+      ],
+      "operation": "inspect",
+      "startNs": 315293392196625,
+      "undiscoveredCommandAttempt": false,
+      "skillRequested": null
+    },
+    {
+      "event": "completed",
+      "sequence": 7,
+      "candidate": "TASK",
+      "repetition": 1,
+      "task": "T1",
+      "argv": [
+        "project",
+        "inspect",
+        "--project",
+        "project",
+        "--json"
+      ],
+      "operation": "inspect",
+      "startNs": 315293392196625,
+      "undiscoveredCommandAttempt": false,
+      "skillRequested": null,
+      "exitCode": 0,
+      "origin": "production",
+      "productionArgv": [
+        "--project",
+        "project",
+        "--json",
+        "inspect"
+      ],
+      "endNs": 315293407850541,
+      "durationMs": 15.654208,
+      "structuredCategory": null,
+      "ok": true,
+      "skillResponseBytes": 0,
+      "CLIResponseBytes": 3648,
+      "stderrBytes": 0,
+      "response": {
+        "document": {
+          "assets": [],
+          "authoringHarness": {
+            "maximumMutationNodes": 100,
+            "requireAccessibleControls": true,
+            "requireTokenSpacing": false
+          },
+          "capabilityDeclarations": [
+            {
+              "key": {
+                "rawValue": "layout.stack.container"
+              },
+              "reason": "",
+              "support": "exact",
+              "targetID": {
+                "rawValue": "target_taxonomy_macos"
+              }
+            },
+            {
+              "key": {
+                "rawValue": "component.text.visual"
+              },
+              "reason": "",
+              "support": "exact",
+              "targetID": {
+                "rawValue": "target_taxonomy_macos"
+              }
+            },
+            {
+              "key": {
+                "rawValue": "layout.spacingToken"
+              },
+              "reason": "",
+              "support": "exact",
+              "targetID": {
+                "rawValue": "target_taxonomy_macos"
+              }
+            }
+          ],
+          "components": [
+            {
+              "api": {
+                "bindings": [],
+                "events": [],
+                "overridablePaths": [],
+                "properties": [],
+                "slots": []
+              },
+              "availability": {
+                "allowOnlyScopeIDs": [],
+                "denyScopeIDs": []
+              },
+              "id": {
+                "rawValue": "component_taxonomy_price"
+              },
+              "name": "PriceBadge",
+              "nativeSemantics": {},
+              "ownerScopeID": {
+                "rawValue": "scope_taxonomy_commerce"
+              },
+              "root": {
+                "children": [],
+                "effects": [],
+                "id": {
+                  "rawValue": "layer_taxonomy_price"
+                },
+                "kind": "text",
+                "layout": {},
+                "name": "Price",
+                "targetOverrides": {},
+                "text": "Price"
+              },
+              "variants": [],
+              "visibility": "public"
+            },
+            {
+              "api": {
+                "bindings": [],
+                "events": [],
+                "overridablePaths": [],
+                "properties": [],
+                "slots": []
+              },
+              "availability": {
+                "allowOnlyScopeIDs": [],
+                "denyScopeIDs": []
+              },
+              "id": {
+                "rawValue": "component_taxonomy_private"
+              },
+              "name": "PrivateBadge",
+              "nativeSemantics": {},
+              "ownerScopeID": {
+                "rawValue": "scope_taxonomy_account"
+              },
+              "root": {
+                "children": [],
+                "effects": [],
+                "id": {
+                  "rawValue": "layer_taxonomy_private"
+                },
+                "kind": "text",
+                "layout": {},
+                "name": "Private",
+                "targetOverrides": {},
+                "text": "Private"
+              },
+              "variants": [],
+              "visibility": "public"
+            }
+          ],
+          "fixtures": [],
+          "id": {
+            "rawValue": "doc_taxonomy_fixture"
+          },
+          "interactions": [],
+          "motions": [],
+          "name": "Taxonomy discovery",
+          "pages": [
+            {
+              "id": {
+                "rawValue": "page_taxonomy_preview"
+              },
+              "name": "Preview",
+              "surfaces": [
+                {
+                  "architectureScopeID": {
+                    "rawValue": "scope_taxonomy_checkout"
+                  },
+                  "buildEnvironment": "SDK 26",
+                  "device": "Mac",
+                  "environment": {},
+                  "id": {
+                    "rawValue": "surface_taxonomy_preview"
+                  },
+                  "previewConfiguration": {},
+                  "runtime": "macOS 26",
+                  "screenID": {
+                    "rawValue": "screen_taxonomy_fixture"
+                  },
+                  "targetID": {
+                    "rawValue": "target_taxonomy_macos"
+                  }
+                }
+              ]
+            }
+          ],
+          "revision": 2,
+          "scopes": [
+            {
+              "id": {
+                "rawValue": "scope_taxonomy_account"
+              },
+              "name": "Account",
+              "parentID": {
+                "rawValue": "scope_taxonomy_app"
+              }
+            },
+            {
+              "id": {
+                "rawValue": "scope_taxonomy_app"
+              },
+              "name": "App"
+            },
+            {
+              "id": {
+                "rawValue": "scope_taxonomy_checkout"
+              },
+              "name": "Checkout",
+              "parentID": {
+                "rawValue": "scope_taxonomy_commerce"
+              }
+            },
+            {
+              "id": {
+                "rawValue": "scope_taxonomy_commerce"
+              },
+              "name": "Commerce",
+              "parentID": {
+                "rawValue": "scope_taxonomy_app"
+              }
+            }
+          ],
+          "screens": [
+            {
+              "id": {
+                "rawValue": "screen_9fe015ef-87fe-400f-8c6f-5c47e2dd40e8"
+              },
+              "name": "TaxonomyCheckout",
+              "root": {
+                "children": [],
+                "effects": [],
+                "id": {
+                  "rawValue": "layer_a8e1d1c4-e1b7-4844-88f7-a2fe510b4784"
+                },
+                "kind": "stack",
+                "layout": {
+                  "axis": "vertical"
+                },
+                "name": "Root",
+                "targetOverrides": {}
+              },
+              "scopeID": {
+                "rawValue": "scope_taxonomy_checkout"
+              }
+            },
+            {
+              "id": {
+                "rawValue": "screen_taxonomy_fixture"
+              },
+              "name": "Checkout fixture",
+              "root": {
+                "children": [
+                  {
+                    "children": [],
+                    "effects": [],
+                    "id": {
+                      "rawValue": "layer_taxonomy_summary"
+                    },
+                    "kind": "text",
+                    "layout": {},
+                    "name": "Summary",
+                    "targetOverrides": {},
+                    "text": "Order summary"
+                  }
+                ],
+                "effects": [],
+                "id": {
+                  "rawValue": "layer_taxonomy_root"
+                },
+                "kind": "stack",
+                "layout": {
+                  "axis": "vertical"
+                },
+                "name": "Root",
+                "targetOverrides": {}
+              },
+              "scopeID": {
+                "rawValue": "scope_taxonomy_checkout"
+              }
+            }
+          ],
+          "targets": [
+            {
+              "framework": "swiftUI",
+              "id": {
+                "rawValue": "target_taxonomy_macos"
+              },
+              "platform": "macOS"
+            }
+          ],
+          "tokens": [
+            {
+              "id": {
+                "rawValue": "token_taxonomy_checkout"
+              },
+              "kind": "spacing",
+              "name": "spacing.checkout",
+              "ownerScopeID": {
+                "rawValue": "scope_taxonomy_checkout"
+              },
+              "value": {
+                "literal": {
+                  "_0": "12"
+                }
+              }
+            }
+          ],
+          "versions": {
+            "authoringHarness": 1,
+            "document": 2,
+            "integrationProfile": 1
+          }
+        },
+        "ok": true,
+        "statePrecondition": {
+          "rawValue": "92b3bc6f3760bd5753f03f3500904a721bfb86caf113394190bce681faabea1a"
+        }
+      },
+      "stdoutUnparsed": null,
+      "stderr": "",
+      "disclosedOperationIDs": []
+    },
+    {
+      "event": "attempt",
+      "sequence": 8,
+      "candidate": "TASK",
+      "repetition": 1,
+      "task": "T1",
+      "argv": [
+        "author",
+        "layer",
+        "screen_9fe015ef-87fe-400f-8c6f-5c47e2dd40e8",
+        "layer_a8e1d1c4-e1b7-4844-88f7-a2fe510b4784",
+        "text",
+        "ReceiptText",
+        "Order total",
+        "--state",
+        "92b3bc6f3760bd5753f03f3500904a721bfb86caf113394190bce681faabea1a",
+        "--project",
+        "project",
+        "--json"
+      ],
+      "operation": "layer.add",
+      "startNs": 315300166800666,
+      "undiscoveredCommandAttempt": false,
+      "skillRequested": null
+    },
+    {
+      "event": "completed",
+      "sequence": 8,
+      "candidate": "TASK",
+      "repetition": 1,
+      "task": "T1",
+      "argv": [
+        "author",
+        "layer",
+        "screen_9fe015ef-87fe-400f-8c6f-5c47e2dd40e8",
+        "layer_a8e1d1c4-e1b7-4844-88f7-a2fe510b4784",
+        "text",
+        "ReceiptText",
+        "Order total",
+        "--state",
+        "92b3bc6f3760bd5753f03f3500904a721bfb86caf113394190bce681faabea1a",
+        "--project",
+        "project",
+        "--json"
+      ],
+      "operation": "layer.add",
+      "startNs": 315300166800666,
+      "undiscoveredCommandAttempt": false,
+      "skillRequested": null,
+      "exitCode": 0,
+      "origin": "production",
+      "productionArgv": [
+        "--state",
+        "92b3bc6f3760bd5753f03f3500904a721bfb86caf113394190bce681faabea1a",
+        "--project",
+        "project",
+        "--json",
+        "layer",
+        "add",
+        "screen_9fe015ef-87fe-400f-8c6f-5c47e2dd40e8",
+        "layer_a8e1d1c4-e1b7-4844-88f7-a2fe510b4784",
+        "text",
+        "ReceiptText",
+        "Order total"
+      ],
+      "endNs": 315300200939708,
+      "durationMs": 34.13925,
+      "structuredCategory": null,
+      "ok": true,
+      "skillResponseBytes": 0,
+      "CLIResponseBytes": 274,
+      "stderrBytes": 0,
+      "response": {
+        "mutation": {
+          "diagnostics": [],
+          "patches": [
+            {
+              "entityID": {
+                "rawValue": "layer_9c6a9789-9d66-4a70-8595-fd5aee2990cc"
+              },
+              "newValue": "text",
+              "path": "children"
+            }
+          ],
+          "revision": 3,
+          "statePrecondition": {
+            "rawValue": "e67e0bbfa06a94f0877f3808dc93efa801772c9462639ab34f36a2813d9eeb10"
+          }
+        },
+        "ok": true
+      },
+      "stdoutUnparsed": null,
+      "stderr": "",
+      "disclosedOperationIDs": []
+    },
+    {
+      "event": "attempt",
+      "sequence": 9,
+      "candidate": "TASK",
+      "repetition": 1,
+      "task": "T1",
+      "argv": [
+        "author",
+        "token",
+        "scope_taxonomy_checkout",
+        "spacing.taxonomy",
+        "spacing",
+        "16",
+        "--state",
+        "e67e0bbfa06a94f0877f3808dc93efa801772c9462639ab34f36a2813d9eeb10",
+        "--project",
+        "project",
+        "--json"
+      ],
+      "operation": "token.create",
+      "startNs": 315307246579208,
+      "undiscoveredCommandAttempt": false,
+      "skillRequested": null
+    },
+    {
+      "event": "completed",
+      "sequence": 9,
+      "candidate": "TASK",
+      "repetition": 1,
+      "task": "T1",
+      "argv": [
+        "author",
+        "token",
+        "scope_taxonomy_checkout",
+        "spacing.taxonomy",
+        "spacing",
+        "16",
+        "--state",
+        "e67e0bbfa06a94f0877f3808dc93efa801772c9462639ab34f36a2813d9eeb10",
+        "--project",
+        "project",
+        "--json"
+      ],
+      "operation": "token.create",
+      "startNs": 315307246579208,
+      "undiscoveredCommandAttempt": false,
+      "skillRequested": null,
+      "exitCode": 0,
+      "origin": "production",
+      "productionArgv": [
+        "--state",
+        "e67e0bbfa06a94f0877f3808dc93efa801772c9462639ab34f36a2813d9eeb10",
+        "--project",
+        "project",
+        "--json",
+        "token",
+        "create",
+        "scope_taxonomy_checkout",
+        "spacing.taxonomy",
+        "spacing",
+        "16"
+      ],
+      "endNs": 315307280154833,
+      "durationMs": 33.575875,
+      "structuredCategory": null,
+      "ok": true,
+      "skillResponseBytes": 0,
+      "CLIResponseBytes": 284,
+      "stderrBytes": 0,
+      "response": {
+        "mutation": {
+          "diagnostics": [],
+          "patches": [
+            {
+              "entityID": {
+                "rawValue": "token_9471ff52-0ca3-4882-b75e-806a8119fdd6"
+              },
+              "newValue": "spacing.taxonomy",
+              "path": "tokens"
+            }
+          ],
+          "revision": 4,
+          "statePrecondition": {
+            "rawValue": "736d54d8fad992e1bf2a68845492f05b8fda01597c66275fcce386fcdd52f11e"
+          }
+        },
+        "ok": true
+      },
+      "stdoutUnparsed": null,
+      "stderr": "",
+      "disclosedOperationIDs": []
+    },
+    {
+      "event": "attempt",
+      "sequence": 10,
+      "candidate": "TASK",
+      "repetition": 1,
+      "task": "T1",
+      "argv": [
+        "author",
+        "layout-token",
+        "screen_9fe015ef-87fe-400f-8c6f-5c47e2dd40e8",
+        "layer_a8e1d1c4-e1b7-4844-88f7-a2fe510b4784",
+        "padding",
+        "token_9471ff52-0ca3-4882-b75e-806a8119fdd6",
+        "--state",
+        "736d54d8fad992e1bf2a68845492f05b8fda01597c66275fcce386fcdd52f11e",
+        "--project",
+        "project",
+        "--json"
+      ],
+      "operation": "layer.token",
+      "startNs": 315314126491958,
+      "undiscoveredCommandAttempt": false,
+      "skillRequested": null
+    },
+    {
+      "event": "completed",
+      "sequence": 10,
+      "candidate": "TASK",
+      "repetition": 1,
+      "task": "T1",
+      "argv": [
+        "author",
+        "layout-token",
+        "screen_9fe015ef-87fe-400f-8c6f-5c47e2dd40e8",
+        "layer_a8e1d1c4-e1b7-4844-88f7-a2fe510b4784",
+        "padding",
+        "token_9471ff52-0ca3-4882-b75e-806a8119fdd6",
+        "--state",
+        "736d54d8fad992e1bf2a68845492f05b8fda01597c66275fcce386fcdd52f11e",
+        "--project",
+        "project",
+        "--json"
+      ],
+      "operation": "layer.token",
+      "startNs": 315314126491958,
+      "undiscoveredCommandAttempt": false,
+      "skillRequested": null,
+      "exitCode": 0,
+      "origin": "production",
+      "productionArgv": [
+        "--state",
+        "736d54d8fad992e1bf2a68845492f05b8fda01597c66275fcce386fcdd52f11e",
+        "--project",
+        "project",
+        "--json",
+        "layer",
+        "token",
+        "screen_9fe015ef-87fe-400f-8c6f-5c47e2dd40e8",
+        "layer_a8e1d1c4-e1b7-4844-88f7-a2fe510b4784",
+        "padding",
+        "token_9471ff52-0ca3-4882-b75e-806a8119fdd6"
+      ],
+      "endNs": 315314161376250,
+      "durationMs": 34.884667,
+      "structuredCategory": null,
+      "ok": true,
+      "skillResponseBytes": 0,
+      "CLIResponseBytes": 325,
+      "stderrBytes": 0,
+      "response": {
+        "mutation": {
+          "diagnostics": [],
+          "patches": [
+            {
+              "entityID": {
+                "rawValue": "layer_a8e1d1c4-e1b7-4844-88f7-a2fe510b4784"
+              },
+              "newValue": "token_9471ff52-0ca3-4882-b75e-806a8119fdd6",
+              "path": "layout.paddingTokenID"
+            }
+          ],
+          "revision": 5,
+          "statePrecondition": {
+            "rawValue": "3780027d3631382f1f26c52f331ad92933244442af27c0692b2018a160bb60f3"
+          }
+        },
+        "ok": true
+      },
+      "stdoutUnparsed": null,
+      "stderr": "",
+      "disclosedOperationIDs": []
+    },
+    {
+      "event": "attempt",
+      "sequence": 11,
+      "candidate": "TASK",
+      "repetition": 1,
+      "task": "T2",
+      "argv": [
+        "--json",
+        "skills",
+        "get",
+        "component-workflow"
+      ],
+      "operation": "skills.get",
+      "startNs": 315321530822541,
+      "undiscoveredCommandAttempt": false,
+      "skillRequested": "component-workflow"
+    },
+    {
+      "event": "completed",
+      "sequence": 11,
+      "candidate": "TASK",
+      "repetition": 1,
+      "task": "T2",
+      "argv": [
+        "--json",
+        "skills",
+        "get",
+        "component-workflow"
+      ],
+      "operation": "skills.get",
+      "startNs": 315321530822541,
+      "undiscoveredCommandAttempt": false,
+      "skillRequested": "component-workflow",
+      "exitCode": 0,
+      "origin": "production",
+      "productionArgv": [
+        "--json",
+        "skills",
+        "get",
+        "components"
+      ],
+      "endNs": 315321540279541,
+      "durationMs": 9.457167,
+      "structuredCategory": null,
+      "ok": true,
+      "skillResponseBytes": 428,
+      "CLIResponseBytes": 452,
+      "stderrBytes": 0,
+      "response": {
+        "ok": true,
+        "skill": "hamii 0.1.0\ndiscover component CONSUMER_SCOPE_ID; author component OWNER_SCOPE_ID NAME --state TOKEN; author instance SCREEN_ID PARENT_LAYER_ID DEFINITION_ID --state TOKEN; configure component-owner DEFINITION_ID ANCESTOR_SCOPE_ID --state TOKEN. Promotion requires an Agent profile with explicit mayPromoteScope permission. Definition tree is referenced by instances; scope and availability are enforced by the mutation service."
+      },
+      "stdoutUnparsed": null,
+      "stderr": "",
+      "disclosedOperationIDs": [
+        "component.list",
+        "component.create",
+        "component.instantiate",
+        "component.promote",
+        "skills.get",
+        "skills.list"
+      ]
+    },
+    {
+      "event": "attempt",
+      "sequence": 12,
+      "candidate": "TASK",
+      "repetition": 1,
+      "task": "T2",
+      "argv": [
+        "discover",
+        "component",
+        "scope_taxonomy_checkout",
+        "--project",
+        "project",
+        "--json"
+      ],
+      "operation": "component.list",
+      "startNs": 315328303101125,
+      "undiscoveredCommandAttempt": false,
+      "skillRequested": null
+    },
+    {
+      "event": "completed",
+      "sequence": 12,
+      "candidate": "TASK",
+      "repetition": 1,
+      "task": "T2",
+      "argv": [
+        "discover",
+        "component",
+        "scope_taxonomy_checkout",
+        "--project",
+        "project",
+        "--json"
+      ],
+      "operation": "component.list",
+      "startNs": 315328303101125,
+      "undiscoveredCommandAttempt": false,
+      "skillRequested": null,
+      "exitCode": 0,
+      "origin": "production",
+      "productionArgv": [
+        "--project",
+        "project",
+        "--json",
+        "component",
+        "list",
+        "scope_taxonomy_checkout"
+      ],
+      "endNs": 315328318167416,
+      "durationMs": 15.066625,
+      "structuredCategory": null,
+      "ok": true,
+      "skillResponseBytes": 0,
+      "CLIResponseBytes": 500,
+      "stderrBytes": 0,
+      "response": {
+        "components": [
+          {
+            "api": {
+              "bindings": [],
+              "events": [],
+              "overridablePaths": [],
+              "properties": [],
+              "slots": []
+            },
+            "availability": {
+              "allowOnlyScopeIDs": [],
+              "denyScopeIDs": []
+            },
+            "id": {
+              "rawValue": "component_taxonomy_price"
+            },
+            "name": "PriceBadge",
+            "nativeSemantics": {},
+            "ownerScopeID": {
+              "rawValue": "scope_taxonomy_commerce"
+            },
+            "root": {
+              "children": [],
+              "effects": [],
+              "id": {
+                "rawValue": "layer_taxonomy_price"
+              },
+              "kind": "text",
+              "layout": {},
+              "name": "Price",
+              "targetOverrides": {},
+              "text": "Price"
+            },
+            "variants": [],
+            "visibility": "public"
+          }
+        ],
+        "ok": true
+      },
+      "stdoutUnparsed": null,
+      "stderr": "",
+      "disclosedOperationIDs": []
+    },
+    {
+      "event": "attempt",
+      "sequence": 13,
+      "candidate": "TASK",
+      "repetition": 1,
+      "task": "T2",
+      "argv": [
+        "author",
+        "instance",
+        "screen_9fe015ef-87fe-400f-8c6f-5c47e2dd40e8",
+        "layer_a8e1d1c4-e1b7-4844-88f7-a2fe510b4784",
+        "component_taxonomy_price",
+        "--state",
+        "3780027d3631382f1f26c52f331ad92933244442af27c0692b2018a160bb60f3",
+        "--project",
+        "project",
+        "--json"
+      ],
+      "operation": "component.instantiate",
+      "startNs": 315336194411458,
+      "undiscoveredCommandAttempt": false,
+      "skillRequested": null
+    },
+    {
+      "event": "completed",
+      "sequence": 13,
+      "candidate": "TASK",
+      "repetition": 1,
+      "task": "T2",
+      "argv": [
+        "author",
+        "instance",
+        "screen_9fe015ef-87fe-400f-8c6f-5c47e2dd40e8",
+        "layer_a8e1d1c4-e1b7-4844-88f7-a2fe510b4784",
+        "component_taxonomy_price",
+        "--state",
+        "3780027d3631382f1f26c52f331ad92933244442af27c0692b2018a160bb60f3",
+        "--project",
+        "project",
+        "--json"
+      ],
+      "operation": "component.instantiate",
+      "startNs": 315336194411458,
+      "undiscoveredCommandAttempt": false,
+      "skillRequested": null,
+      "exitCode": 0,
+      "origin": "production",
+      "productionArgv": [
+        "--state",
+        "3780027d3631382f1f26c52f331ad92933244442af27c0692b2018a160bb60f3",
+        "--project",
+        "project",
+        "--json",
+        "component",
+        "instantiate",
+        "screen_9fe015ef-87fe-400f-8c6f-5c47e2dd40e8",
+        "layer_a8e1d1c4-e1b7-4844-88f7-a2fe510b4784",
+        "component_taxonomy_price"
+      ],
+      "endNs": 315336228597000,
+      "durationMs": 34.186042,
+      "structuredCategory": null,
+      "ok": true,
+      "skillResponseBytes": 0,
+      "CLIResponseBytes": 308,
+      "stderrBytes": 0,
+      "response": {
+        "mutation": {
+          "diagnostics": [],
+          "patches": [
+            {
+              "entityID": {
+                "rawValue": "layer_5fc6f564-6c47-4f96-b9fd-e8ad6c300f0d"
+              },
+              "newValue": "component_taxonomy_price",
+              "path": "component.definitionID"
+            }
+          ],
+          "revision": 6,
+          "statePrecondition": {
+            "rawValue": "b44dac2aaa615992b1e4ffef2c738768064a95147c397277bca5326438545621"
+          }
+        },
+        "ok": true
+      },
+      "stdoutUnparsed": null,
+      "stderr": "",
+      "disclosedOperationIDs": []
+    },
+    {
+      "event": "attempt",
+      "sequence": 14,
+      "candidate": "TASK",
+      "repetition": 1,
+      "task": "T3",
+      "argv": [
+        "--json",
+        "skills",
+        "get",
+        "context-workflow"
+      ],
+      "operation": "skills.get",
+      "startNs": 315340277064083,
+      "undiscoveredCommandAttempt": false,
+      "skillRequested": "context-workflow"
+    },
+    {
+      "event": "completed",
+      "sequence": 14,
+      "candidate": "TASK",
+      "repetition": 1,
+      "task": "T3",
+      "argv": [
+        "--json",
+        "skills",
+        "get",
+        "context-workflow"
+      ],
+      "operation": "skills.get",
+      "startNs": 315340277064083,
+      "undiscoveredCommandAttempt": false,
+      "skillRequested": "context-workflow",
+      "exitCode": 0,
+      "origin": "production",
+      "productionArgv": [
+        "--json",
+        "skills",
+        "get",
+        "context"
+      ],
+      "endNs": 315340286413000,
+      "durationMs": 9.349083,
+      "structuredCategory": null,
+      "ok": true,
+      "skillResponseBytes": 1543,
+      "CLIResponseBytes": 1567,
+      "stderrBytes": 0,
+      "response": {
+        "ok": true,
+        "skill": "hamii 0.1.0\nUse --json. Prefer context read session [--screen SCREEN_ID --layer LAYER_ID] for multiple reads. It emits an initial summary, then accepts one NDJSON request per line: layer {op,screenID,layerID}, resources {op,consumerScopeID,kind,matching?,limit?}, component {op,consumerScopeID,componentID}, token {op,consumerScopeID,tokenID}, or {op:close}. op is the operation name and all string values must be JSON quoted. Responses reuse the initial observation; requests never accept --state. Lines are limited to 64 KiB. usage and notFound errors have terminal:false; other errors have terminal:true and end the process. On a terminal error start a new session; never combine observations. EOF closes without a response. Mutations use existing one-shot commands with the initial observation.statePrecondition as --state TOKEN. For one-shot reads, start with context read summary [--screen SCREEN_ID --layer LAYER_ID]. Use its observation.statePrecondition as --state TOKEN for every follow-up: context read layer SCREEN_ID LAYER_ID; context read resources SCOPE_ID component|token|asset [MATCH] [--limit N]; context read component SCOPE_ID COMPONENT_ID; context read token SCOPE_ID TOKEN_ID. Resource results are Scope-filtered and bounded. Never combine responses with different statePrecondition values. Request selected detail only when needed. Mutate through existing commands with the same --state TOKEN. On conflict, restart from summary. Do not edit Canonical files directly or use full project inspect as the routine AI context."
+      },
+      "stdoutUnparsed": null,
+      "stderr": "",
+      "disclosedOperationIDs": [
+        "inspect",
+        "context.summary",
+        "context.layer",
+        "context.resources",
+        "context.component",
+        "context.token",
+        "context.session",
+        "skills.get",
+        "skills.list"
+      ]
+    },
+    {
+      "event": "attempt",
+      "sequence": 15,
+      "candidate": "TASK",
+      "repetition": 1,
+      "task": "T3",
+      "argv": [
+        "context",
+        "read",
+        "summary",
+        "--screen",
+        "screen_taxonomy_fixture",
+        "--layer",
+        "layer_taxonomy_summary",
+        "--project",
+        "project",
+        "--json"
+      ],
+      "operation": "context.summary",
+      "startNs": 315349276406250,
+      "undiscoveredCommandAttempt": false,
+      "skillRequested": null
+    },
+    {
+      "event": "completed",
+      "sequence": 15,
+      "candidate": "TASK",
+      "repetition": 1,
+      "task": "T3",
+      "argv": [
+        "context",
+        "read",
+        "summary",
+        "--screen",
+        "screen_taxonomy_fixture",
+        "--layer",
+        "layer_taxonomy_summary",
+        "--project",
+        "project",
+        "--json"
+      ],
+      "operation": "context.summary",
+      "startNs": 315349276406250,
+      "undiscoveredCommandAttempt": false,
+      "skillRequested": null,
+      "exitCode": 0,
+      "origin": "production",
+      "productionArgv": [
+        "--screen",
+        "screen_taxonomy_fixture",
+        "--layer",
+        "layer_taxonomy_summary",
+        "--project",
+        "project",
+        "--json",
+        "query",
+        "context",
+        "summary"
+      ],
+      "endNs": 315349292575291,
+      "durationMs": 16.169416,
+      "structuredCategory": null,
+      "ok": true,
+      "skillResponseBytes": 0,
+      "CLIResponseBytes": 628,
+      "stderrBytes": 0,
+      "response": {
+        "context": {
+          "contextSchemaVersion": 1,
+          "observation": {
+            "documentID": {
+              "rawValue": "doc_taxonomy_fixture"
+            },
+            "documentRevision": 6,
+            "statePrecondition": {
+              "rawValue": "b44dac2aaa615992b1e4ffef2c738768064a95147c397277bca5326438545621"
+            }
+          },
+          "payload": {
+            "counts": {
+              "assets": 0,
+              "components": 2,
+              "pages": 1,
+              "scopes": 4,
+              "screens": 2,
+              "tokens": 2
+            },
+            "documentID": {
+              "rawValue": "doc_taxonomy_fixture"
+            },
+            "documentName": "Taxonomy discovery",
+            "documentRevision": 6,
+            "selectedLayerID": {
+              "rawValue": "layer_taxonomy_summary"
+            },
+            "selectedScreen": {
+              "id": {
+                "rawValue": "screen_taxonomy_fixture"
+              },
+              "name": "Checkout fixture",
+              "scopeID": {
+                "rawValue": "scope_taxonomy_checkout"
+              }
+            }
+          }
+        },
+        "ok": true
+      },
+      "stdoutUnparsed": null,
+      "stderr": "",
+      "disclosedOperationIDs": []
+    },
+    {
+      "event": "attempt",
+      "sequence": 16,
+      "candidate": "TASK",
+      "repetition": 1,
+      "task": "T3",
+      "argv": [
+        "context",
+        "read",
+        "layer",
+        "screen_taxonomy_fixture",
+        "layer_taxonomy_summary",
+        "--state",
+        "b44dac2aaa615992b1e4ffef2c738768064a95147c397277bca5326438545621",
+        "--project",
+        "project",
+        "--json"
+      ],
+      "operation": "context.layer",
+      "startNs": 315358215542791,
+      "undiscoveredCommandAttempt": false,
+      "skillRequested": null
+    },
+    {
+      "event": "completed",
+      "sequence": 16,
+      "candidate": "TASK",
+      "repetition": 1,
+      "task": "T3",
+      "argv": [
+        "context",
+        "read",
+        "layer",
+        "screen_taxonomy_fixture",
+        "layer_taxonomy_summary",
+        "--state",
+        "b44dac2aaa615992b1e4ffef2c738768064a95147c397277bca5326438545621",
+        "--project",
+        "project",
+        "--json"
+      ],
+      "operation": "context.layer",
+      "startNs": 315358215542791,
+      "undiscoveredCommandAttempt": false,
+      "skillRequested": null,
+      "exitCode": 0,
+      "origin": "production",
+      "productionArgv": [
+        "--state",
+        "b44dac2aaa615992b1e4ffef2c738768064a95147c397277bca5326438545621",
+        "--project",
+        "project",
+        "--json",
+        "query",
+        "context",
+        "layer",
+        "screen_taxonomy_fixture",
+        "layer_taxonomy_summary"
+      ],
+      "endNs": 315358229764250,
+      "durationMs": 14.224084,
+      "structuredCategory": null,
+      "ok": true,
+      "skillResponseBytes": 0,
+      "CLIResponseBytes": 487,
+      "stderrBytes": 0,
+      "response": {
+        "context": {
+          "contextSchemaVersion": 1,
+          "observation": {
+            "documentID": {
+              "rawValue": "doc_taxonomy_fixture"
+            },
+            "documentRevision": 6,
+            "statePrecondition": {
+              "rawValue": "b44dac2aaa615992b1e4ffef2c738768064a95147c397277bca5326438545621"
+            }
+          },
+          "payload": {
+            "layer": {
+              "childCount": 0,
+              "effects": [],
+              "id": {
+                "rawValue": "layer_taxonomy_summary"
+              },
+              "kind": "text",
+              "name": "Summary",
+              "text": "Order summary"
+            },
+            "screenID": {
+              "rawValue": "screen_taxonomy_fixture"
+            },
+            "screenScopeID": {
+              "rawValue": "scope_taxonomy_checkout"
+            }
+          }
+        },
+        "ok": true
+      },
+      "stdoutUnparsed": null,
+      "stderr": "",
+      "disclosedOperationIDs": []
+    },
+    {
+      "event": "attempt",
+      "sequence": 17,
+      "candidate": "TASK",
+      "repetition": 1,
+      "task": "T3",
+      "argv": [
+        "context",
+        "read",
+        "resources",
+        "scope_taxonomy_checkout",
+        "component",
+        "--state",
+        "b44dac2aaa615992b1e4ffef2c738768064a95147c397277bca5326438545621",
+        "--project",
+        "project",
+        "--json"
+      ],
+      "operation": "context.resources",
+      "startNs": 315358388899416,
+      "undiscoveredCommandAttempt": false,
+      "skillRequested": null
+    },
+    {
+      "event": "completed",
+      "sequence": 17,
+      "candidate": "TASK",
+      "repetition": 1,
+      "task": "T3",
+      "argv": [
+        "context",
+        "read",
+        "resources",
+        "scope_taxonomy_checkout",
+        "component",
+        "--state",
+        "b44dac2aaa615992b1e4ffef2c738768064a95147c397277bca5326438545621",
+        "--project",
+        "project",
+        "--json"
+      ],
+      "operation": "context.resources",
+      "startNs": 315358388899416,
+      "undiscoveredCommandAttempt": false,
+      "skillRequested": null,
+      "exitCode": 0,
+      "origin": "production",
+      "productionArgv": [
+        "--state",
+        "b44dac2aaa615992b1e4ffef2c738768064a95147c397277bca5326438545621",
+        "--project",
+        "project",
+        "--json",
+        "query",
+        "context",
+        "resources",
+        "scope_taxonomy_checkout",
+        "component"
+      ],
+      "endNs": 315358402504791,
+      "durationMs": 13.605584,
+      "structuredCategory": null,
+      "ok": true,
+      "skillResponseBytes": 0,
+      "CLIResponseBytes": 549,
+      "stderrBytes": 0,
+      "response": {
+        "context": {
+          "contextSchemaVersion": 1,
+          "observation": {
+            "documentID": {
+              "rawValue": "doc_taxonomy_fixture"
+            },
+            "documentRevision": 6,
+            "statePrecondition": {
+              "rawValue": "b44dac2aaa615992b1e4ffef2c738768064a95147c397277bca5326438545621"
+            }
+          },
+          "payload": {
+            "consumerScopeID": {
+              "rawValue": "scope_taxonomy_checkout"
+            },
+            "items": [
+              {
+                "id": {
+                  "rawValue": "component_taxonomy_price"
+                },
+                "kind": "component",
+                "name": "PriceBadge",
+                "ownerScopeID": {
+                  "rawValue": "scope_taxonomy_commerce"
+                },
+                "visibility": "public"
+              }
+            ],
+            "kind": "component",
+            "matchingCount": 1,
+            "returnedCount": 1,
+            "truncated": false
+          }
+        },
+        "ok": true
+      },
+      "stdoutUnparsed": null,
+      "stderr": "",
+      "disclosedOperationIDs": []
+    },
+    {
+      "event": "attempt",
+      "sequence": 18,
+      "candidate": "TASK",
+      "repetition": 1,
+      "task": "T3",
+      "argv": [
+        "context",
+        "read",
+        "resources",
+        "scope_taxonomy_checkout",
+        "token",
+        "--state",
+        "b44dac2aaa615992b1e4ffef2c738768064a95147c397277bca5326438545621",
+        "--project",
+        "project",
+        "--json"
+      ],
+      "operation": "context.resources",
+      "startNs": 315358553543875,
+      "undiscoveredCommandAttempt": false,
+      "skillRequested": null
+    },
+    {
+      "event": "completed",
+      "sequence": 18,
+      "candidate": "TASK",
+      "repetition": 1,
+      "task": "T3",
+      "argv": [
+        "context",
+        "read",
+        "resources",
+        "scope_taxonomy_checkout",
+        "token",
+        "--state",
+        "b44dac2aaa615992b1e4ffef2c738768064a95147c397277bca5326438545621",
+        "--project",
+        "project",
+        "--json"
+      ],
+      "operation": "context.resources",
+      "startNs": 315358553543875,
+      "undiscoveredCommandAttempt": false,
+      "skillRequested": null,
+      "exitCode": 0,
+      "origin": "production",
+      "productionArgv": [
+        "--state",
+        "b44dac2aaa615992b1e4ffef2c738768064a95147c397277bca5326438545621",
+        "--project",
+        "project",
+        "--json",
+        "query",
+        "context",
+        "resources",
+        "scope_taxonomy_checkout",
+        "token"
+      ],
+      "endNs": 315358566420333,
+      "durationMs": 12.876666,
+      "structuredCategory": null,
+      "ok": true,
+      "skillResponseBytes": 0,
+      "CLIResponseBytes": 728,
+      "stderrBytes": 0,
+      "response": {
+        "context": {
+          "contextSchemaVersion": 1,
+          "observation": {
+            "documentID": {
+              "rawValue": "doc_taxonomy_fixture"
+            },
+            "documentRevision": 6,
+            "statePrecondition": {
+              "rawValue": "b44dac2aaa615992b1e4ffef2c738768064a95147c397277bca5326438545621"
+            }
+          },
+          "payload": {
+            "consumerScopeID": {
+              "rawValue": "scope_taxonomy_checkout"
+            },
+            "items": [
+              {
+                "id": {
+                  "rawValue": "token_taxonomy_checkout"
+                },
+                "kind": "token",
+                "name": "spacing.checkout",
+                "ownerScopeID": {
+                  "rawValue": "scope_taxonomy_checkout"
+                },
+                "tokenKind": "spacing"
+              },
+              {
+                "id": {
+                  "rawValue": "token_9471ff52-0ca3-4882-b75e-806a8119fdd6"
+                },
+                "kind": "token",
+                "name": "spacing.taxonomy",
+                "ownerScopeID": {
+                  "rawValue": "scope_taxonomy_checkout"
+                },
+                "tokenKind": "spacing"
+              }
+            ],
+            "kind": "token",
+            "matchingCount": 2,
+            "returnedCount": 2,
+            "truncated": false
+          }
+        },
+        "ok": true
+      },
+      "stdoutUnparsed": null,
+      "stderr": "",
+      "disclosedOperationIDs": []
+    },
+    {
+      "event": "attempt",
+      "sequence": 19,
+      "candidate": "TASK",
+      "repetition": 1,
+      "task": "T3",
+      "argv": [
+        "context",
+        "read",
+        "component",
+        "scope_taxonomy_checkout",
+        "component_taxonomy_price",
+        "--state",
+        "b44dac2aaa615992b1e4ffef2c738768064a95147c397277bca5326438545621",
+        "--project",
+        "project",
+        "--json"
+      ],
+      "operation": "context.component",
+      "startNs": 315369254637125,
+      "undiscoveredCommandAttempt": false,
+      "skillRequested": null
+    },
+    {
+      "event": "completed",
+      "sequence": 19,
+      "candidate": "TASK",
+      "repetition": 1,
+      "task": "T3",
+      "argv": [
+        "context",
+        "read",
+        "component",
+        "scope_taxonomy_checkout",
+        "component_taxonomy_price",
+        "--state",
+        "b44dac2aaa615992b1e4ffef2c738768064a95147c397277bca5326438545621",
+        "--project",
+        "project",
+        "--json"
+      ],
+      "operation": "context.component",
+      "startNs": 315369254637125,
+      "undiscoveredCommandAttempt": false,
+      "skillRequested": null,
+      "exitCode": 0,
+      "origin": "production",
+      "productionArgv": [
+        "--state",
+        "b44dac2aaa615992b1e4ffef2c738768064a95147c397277bca5326438545621",
+        "--project",
+        "project",
+        "--json",
+        "query",
+        "context",
+        "component",
+        "scope_taxonomy_checkout",
+        "component_taxonomy_price"
+      ],
+      "endNs": 315369274294541,
+      "durationMs": 19.657625,
+      "structuredCategory": null,
+      "ok": true,
+      "skillResponseBytes": 0,
+      "CLIResponseBytes": 857,
+      "stderrBytes": 0,
+      "response": {
+        "context": {
+          "contextSchemaVersion": 1,
+          "observation": {
+            "documentID": {
+              "rawValue": "doc_taxonomy_fixture"
+            },
+            "documentRevision": 6,
+            "statePrecondition": {
+              "rawValue": "b44dac2aaa615992b1e4ffef2c738768064a95147c397277bca5326438545621"
+            }
+          },
+          "payload": {
+            "bindings": {
+              "items": [],
+              "totalCount": 0,
+              "truncated": false
+            },
+            "events": {
+              "items": [],
+              "totalCount": 0,
+              "truncated": false
+            },
+            "id": {
+              "rawValue": "component_taxonomy_price"
+            },
+            "name": "PriceBadge",
+            "overridablePaths": {
+              "items": [],
+              "totalCount": 0,
+              "truncated": false
+            },
+            "ownerScopeID": {
+              "rawValue": "scope_taxonomy_commerce"
+            },
+            "properties": {
+              "items": [],
+              "totalCount": 0,
+              "truncated": false
+            },
+            "root": {
+              "childCount": 0,
+              "effects": [],
+              "id": {
+                "rawValue": "layer_taxonomy_price"
+              },
+              "kind": "text",
+              "name": "Price",
+              "text": "Price"
+            },
+            "slots": {
+              "items": [],
+              "totalCount": 0,
+              "truncated": false
+            },
+            "variants": {
+              "items": [],
+              "totalCount": 0,
+              "truncated": false
+            },
+            "visibility": "public"
+          }
+        },
+        "ok": true
+      },
+      "stdoutUnparsed": null,
+      "stderr": "",
+      "disclosedOperationIDs": []
+    },
+    {
+      "event": "attempt",
+      "sequence": 20,
+      "candidate": "TASK",
+      "repetition": 1,
+      "task": "T3",
+      "argv": [
+        "context",
+        "read",
+        "token",
+        "scope_taxonomy_checkout",
+        "token_taxonomy_checkout",
+        "--state",
+        "b44dac2aaa615992b1e4ffef2c738768064a95147c397277bca5326438545621",
+        "--project",
+        "project",
+        "--json"
+      ],
+      "operation": "context.token",
+      "startNs": 315369418504000,
+      "undiscoveredCommandAttempt": false,
+      "skillRequested": null
+    },
+    {
+      "event": "completed",
+      "sequence": 20,
+      "candidate": "TASK",
+      "repetition": 1,
+      "task": "T3",
+      "argv": [
+        "context",
+        "read",
+        "token",
+        "scope_taxonomy_checkout",
+        "token_taxonomy_checkout",
+        "--state",
+        "b44dac2aaa615992b1e4ffef2c738768064a95147c397277bca5326438545621",
+        "--project",
+        "project",
+        "--json"
+      ],
+      "operation": "context.token",
+      "startNs": 315369418504000,
+      "undiscoveredCommandAttempt": false,
+      "skillRequested": null,
+      "exitCode": 0,
+      "origin": "production",
+      "productionArgv": [
+        "--state",
+        "b44dac2aaa615992b1e4ffef2c738768064a95147c397277bca5326438545621",
+        "--project",
+        "project",
+        "--json",
+        "query",
+        "context",
+        "token",
+        "scope_taxonomy_checkout",
+        "token_taxonomy_checkout"
+      ],
+      "endNs": 315369431842833,
+      "durationMs": 13.339083,
+      "structuredCategory": null,
+      "ok": true,
+      "skillResponseBytes": 0,
+      "CLIResponseBytes": 420,
+      "stderrBytes": 0,
+      "response": {
+        "context": {
+          "contextSchemaVersion": 1,
+          "observation": {
+            "documentID": {
+              "rawValue": "doc_taxonomy_fixture"
+            },
+            "documentRevision": 6,
+            "statePrecondition": {
+              "rawValue": "b44dac2aaa615992b1e4ffef2c738768064a95147c397277bca5326438545621"
+            }
+          },
+          "payload": {
+            "id": {
+              "rawValue": "token_taxonomy_checkout"
+            },
+            "kind": "spacing",
+            "name": "spacing.checkout",
+            "ownerScopeID": {
+              "rawValue": "scope_taxonomy_checkout"
+            },
+            "value": {
+              "literal": {
+                "_0": "12"
+              }
+            }
+          }
+        },
+        "ok": true
+      },
+      "stdoutUnparsed": null,
+      "stderr": "",
+      "disclosedOperationIDs": []
+    },
+    {
+      "event": "attempt",
+      "sequence": 21,
+      "candidate": "TASK",
+      "repetition": 1,
+      "task": "T4",
+      "argv": [
+        "--json",
+        "skills",
+        "get",
+        "check-workflow"
+      ],
+      "operation": "skills.get",
+      "startNs": 315374716751708,
+      "undiscoveredCommandAttempt": false,
+      "skillRequested": "check-workflow"
+    },
+    {
+      "event": "completed",
+      "sequence": 21,
+      "candidate": "TASK",
+      "repetition": 1,
+      "task": "T4",
+      "argv": [
+        "--json",
+        "skills",
+        "get",
+        "check-workflow"
+      ],
+      "operation": "skills.get",
+      "startNs": 315374716751708,
+      "undiscoveredCommandAttempt": false,
+      "skillRequested": "check-workflow",
+      "exitCode": 0,
+      "origin": "production",
+      "productionArgv": [
+        "--json",
+        "skills",
+        "get",
+        "validation"
+      ],
+      "endNs": 315374726620208,
+      "durationMs": 9.868708,
+      "structuredCategory": null,
+      "ok": true,
+      "skillResponseBytes": 1149,
+      "CLIResponseBytes": 1173,
+      "stderrBytes": 0,
+      "response": {
+        "ok": true,
+        "skill": "hamii 0.1.0\nproject validate --project PATH --json returns diagnostics with rule, severity, entityID and message. discover component-search CONSUMER_SCOPE_ID TERM automatically rebuilds a missing or stale derived index only from a verified coordinated Canonical generation. External edits, pending transitions, unverifiable Git state, and storage failures remain fail closed; use index rebuild explicitly after supported external edits. If canonical Git files are marked assume-unchanged or skip-worktree or use Git filters, clear those settings before rebuilding. migrate plan --json preflights a format without changing it. migrate resolution --json lists finite, source-bound choices for clean committed historical input; zero-choice items stay blocked. Save a typed manifest outside Canonical data, then migrate prepare --resolution PATH --json creates a reviewed candidate and reports exact losses. Safe automatic sources still use migrate prepare --json. After reviewing exact IDs and losses, migrate publish REVIEW_ID SOURCE_OID CANDIDATE_OID --json publishes only that candidate; migrate recover --json reconciles an interrupted publication."
+      },
+      "stdoutUnparsed": null,
+      "stderr": "",
+      "disclosedOperationIDs": [
+        "validate",
+        "component.query",
+        "migrate.plan",
+        "migrate.resolution",
+        "migrate.prepare",
+        "migrate.publish",
+        "migrate.recover",
+        "index.rebuild",
+        "skills.get",
+        "skills.list"
+      ]
+    },
+    {
+      "event": "attempt",
+      "sequence": 22,
+      "candidate": "TASK",
+      "repetition": 1,
+      "task": "T4",
+      "argv": [
+        "--json",
+        "skills",
+        "get",
+        "preview-workflow"
+      ],
+      "operation": "skills.get",
+      "startNs": 315374885727750,
+      "undiscoveredCommandAttempt": false,
+      "skillRequested": "preview-workflow"
+    },
+    {
+      "event": "completed",
+      "sequence": 22,
+      "candidate": "TASK",
+      "repetition": 1,
+      "task": "T4",
+      "argv": [
+        "--json",
+        "skills",
+        "get",
+        "preview-workflow"
+      ],
+      "operation": "skills.get",
+      "startNs": 315374885727750,
+      "undiscoveredCommandAttempt": false,
+      "skillRequested": "preview-workflow",
+      "exitCode": 0,
+      "origin": "production",
+      "productionArgv": [
+        "--json",
+        "skills",
+        "get",
+        "preview"
+      ],
+      "endNs": 315374895342458,
+      "durationMs": 9.614875,
+      "structuredCategory": null,
+      "ok": true,
+      "skillResponseBytes": 355,
+      "CLIResponseBytes": 379,
+      "stderrBytes": 0,
+      "response": {
+        "ok": true,
+        "skill": "hamii 0.1.0\npreview check SURFACE_ID --json checks declared target capabilities and semantic support for one AppSurface. A successful plan reports that the IR is supported; an installed and running Native Preview Host is a separate requirement. macOS SwiftUI supports the current in-process subset. iOS Simulator and Android Hosts are not yet implemented."
+      },
+      "stdoutUnparsed": null,
+      "stderr": "",
+      "disclosedOperationIDs": [
+        "preview.plan",
+        "skills.get",
+        "skills.list"
+      ]
+    },
+    {
+      "event": "attempt",
+      "sequence": 23,
+      "candidate": "TASK",
+      "repetition": 1,
+      "task": "T4",
+      "argv": [
+        "project",
+        "validate",
+        "--project",
+        "project",
+        "--json"
+      ],
+      "operation": "validate",
+      "startNs": 315385179744625,
+      "undiscoveredCommandAttempt": false,
+      "skillRequested": null
+    },
+    {
+      "event": "completed",
+      "sequence": 23,
+      "candidate": "TASK",
+      "repetition": 1,
+      "task": "T4",
+      "argv": [
+        "project",
+        "validate",
+        "--project",
+        "project",
+        "--json"
+      ],
+      "operation": "validate",
+      "startNs": 315385179744625,
+      "undiscoveredCommandAttempt": false,
+      "skillRequested": null,
+      "exitCode": 0,
+      "origin": "production",
+      "productionArgv": [
+        "--project",
+        "project",
+        "--json",
+        "validate"
+      ],
+      "endNs": 315385199753708,
+      "durationMs": 20.009291,
+      "structuredCategory": null,
+      "ok": true,
+      "skillResponseBytes": 0,
+      "CLIResponseBytes": 29,
+      "stderrBytes": 0,
+      "response": {
+        "diagnostics": [],
+        "ok": true
+      },
+      "stdoutUnparsed": null,
+      "stderr": "",
+      "disclosedOperationIDs": []
+    },
+    {
+      "event": "attempt",
+      "sequence": 24,
+      "candidate": "TASK",
+      "repetition": 1,
+      "task": "T4",
+      "argv": [
+        "preview",
+        "check",
+        "surface_taxonomy_preview",
+        "--project",
+        "project",
+        "--json"
+      ],
+      "operation": "preview.plan",
+      "startNs": 315385360833500,
+      "undiscoveredCommandAttempt": false,
+      "skillRequested": null
+    },
+    {
+      "event": "completed",
+      "sequence": 24,
+      "candidate": "TASK",
+      "repetition": 1,
+      "task": "T4",
+      "argv": [
+        "preview",
+        "check",
+        "surface_taxonomy_preview",
+        "--project",
+        "project",
+        "--json"
+      ],
+      "operation": "preview.plan",
+      "startNs": 315385360833500,
+      "undiscoveredCommandAttempt": false,
+      "skillRequested": null,
+      "exitCode": 0,
+      "origin": "production",
+      "productionArgv": [
+        "--project",
+        "project",
+        "--json",
+        "preview",
+        "plan",
+        "surface_taxonomy_preview"
+      ],
+      "endNs": 315385375868750,
+      "durationMs": 15.035583,
+      "structuredCategory": null,
+      "ok": true,
+      "skillResponseBytes": 0,
+      "CLIResponseBytes": 195,
+      "stderrBytes": 0,
+      "response": {
+        "ok": true,
+        "previewPlan": {
+          "diagnostics": [],
+          "screenID": {
+            "rawValue": "screen_taxonomy_fixture"
+          },
+          "surfaceID": {
+            "rawValue": "surface_taxonomy_preview"
+          },
+          "targetID": {
+            "rawValue": "target_taxonomy_macos"
+          }
+        }
+      },
+      "stdoutUnparsed": null,
+      "stderr": "",
+      "disclosedOperationIDs": []
+    },
+    {
+      "event": "attempt",
+      "sequence": 25,
+      "candidate": "TASK",
+      "repetition": 1,
+      "task": "T5",
+      "argv": [
+        "--json",
+        "skills",
+        "get",
+        "delivery-workflow"
+      ],
+      "operation": "skills.get",
+      "startNs": 315389674212708,
+      "undiscoveredCommandAttempt": false,
+      "skillRequested": "delivery-workflow"
+    },
+    {
+      "event": "completed",
+      "sequence": 25,
+      "candidate": "TASK",
+      "repetition": 1,
+      "task": "T5",
+      "argv": [
+        "--json",
+        "skills",
+        "get",
+        "delivery-workflow"
+      ],
+      "operation": "skills.get",
+      "startNs": 315389674212708,
+      "undiscoveredCommandAttempt": false,
+      "skillRequested": "delivery-workflow",
+      "exitCode": 0,
+      "origin": "production",
+      "productionArgv": [
+        "--json",
+        "skills",
+        "get",
+        "integration"
+      ],
+      "endNs": 315389688110000,
+      "durationMs": 13.897542,
+      "structuredCategory": null,
+      "ok": true,
+      "skillResponseBytes": 336,
+      "CLIResponseBytes": 360,
+      "stderrBytes": 0,
+      "response": {
+        "ok": true,
+        "skill": "hamii 0.1.0\nintegration describe SCREEN_ID --json returns semantic inputs, events, token/asset references, native and accessibility intent. Unknown product mappings require review. source generate SCREEN_ID TARGET_ID --json is a separate deterministic path for the supported static subset and returns an error for unsupported semantics."
+      },
+      "stdoutUnparsed": null,
+      "stderr": "",
+      "disclosedOperationIDs": [
+        "integration.contract",
+        "generate.swiftui",
+        "skills.get",
+        "skills.list"
+      ]
+    },
+    {
+      "event": "attempt",
+      "sequence": 26,
+      "candidate": "TASK",
+      "repetition": 1,
+      "task": "T5",
+      "argv": [
+        "integration",
+        "describe",
+        "screen_taxonomy_fixture",
+        "--project",
+        "project",
+        "--json"
+      ],
+      "operation": "integration.contract",
+      "startNs": 315398431750416,
+      "undiscoveredCommandAttempt": false,
+      "skillRequested": null
+    },
+    {
+      "event": "completed",
+      "sequence": 26,
+      "candidate": "TASK",
+      "repetition": 1,
+      "task": "T5",
+      "argv": [
+        "integration",
+        "describe",
+        "screen_taxonomy_fixture",
+        "--project",
+        "project",
+        "--json"
+      ],
+      "operation": "integration.contract",
+      "startNs": 315398431750416,
+      "undiscoveredCommandAttempt": false,
+      "skillRequested": null,
+      "exitCode": 0,
+      "origin": "production",
+      "productionArgv": [
+        "--project",
+        "project",
+        "--json",
+        "integration",
+        "contract",
+        "screen_taxonomy_fixture"
+      ],
+      "endNs": 315398449935666,
+      "durationMs": 18.18575,
+      "structuredCategory": null,
+      "ok": true,
+      "skillResponseBytes": 0,
+      "CLIResponseBytes": 258,
+      "stderrBytes": 0,
+      "response": {
+        "contract": {
+          "accessibilityLabels": [],
+          "architectureScopeID": {
+            "rawValue": "scope_taxonomy_checkout"
+          },
+          "assetIDs": [],
+          "events": [],
+          "inputs": [],
+          "name": "Checkout fixture",
+          "nativeIntents": [],
+          "screenID": {
+            "rawValue": "screen_taxonomy_fixture"
+          },
+          "tokenIDs": []
+        },
+        "ok": true
+      },
+      "stdoutUnparsed": null,
+      "stderr": "",
+      "disclosedOperationIDs": []
+    },
+    {
+      "event": "attempt",
+      "sequence": 27,
+      "candidate": "TASK",
+      "repetition": 1,
+      "task": "T5",
+      "argv": [
+        "source",
+        "generate",
+        "screen_taxonomy_fixture",
+        "target_taxonomy_macos",
+        "--project",
+        "project",
+        "--json"
+      ],
+      "operation": "generate.swiftui",
+      "startNs": 315398607448291,
+      "undiscoveredCommandAttempt": false,
+      "skillRequested": null
+    },
+    {
+      "event": "completed",
+      "sequence": 27,
+      "candidate": "TASK",
+      "repetition": 1,
+      "task": "T5",
+      "argv": [
+        "source",
+        "generate",
+        "screen_taxonomy_fixture",
+        "target_taxonomy_macos",
+        "--project",
+        "project",
+        "--json"
+      ],
+      "operation": "generate.swiftui",
+      "startNs": 315398607448291,
+      "undiscoveredCommandAttempt": false,
+      "skillRequested": null,
+      "exitCode": 0,
+      "origin": "production",
+      "productionArgv": [
+        "--project",
+        "project",
+        "--json",
+        "generate",
+        "swiftui",
+        "screen_taxonomy_fixture",
+        "target_taxonomy_macos"
+      ],
+      "endNs": 315398624175791,
+      "durationMs": 16.727834,
+      "structuredCategory": null,
+      "ok": true,
+      "skillResponseBytes": 0,
+      "CLIResponseBytes": 309,
+      "stderrBytes": 0,
+      "response": {
+        "generated": {
+          "screenID": {
+            "rawValue": "screen_taxonomy_fixture"
+          },
+          "source": "import SwiftUI\n\nstruct HamiiScreen_screen_taxonomy_fixture: View {\n    var body: some View {\n        VStack {\n            Text(\"Order summary\")\n        }\n    }\n}\n",
+          "targetID": {
+            "rawValue": "target_taxonomy_macos"
+          }
+        },
+        "ok": true
+      },
+      "stdoutUnparsed": null,
+      "stderr": "",
+      "disclosedOperationIDs": []
+    }
+  ],
+  "audit": {
+    "status": "valid within observed command boundary",
+    "deterministicFindings": [],
+    "boundary": "Task exposure + sandbox + command audit; not arbitrary file-read security isolation.",
+    "manualReview": {
+      "reviewer": "primary Codex operator",
+      "reviewedCompletedCommands": 27,
+      "result": "All actual invocations are HAMII_TASK-tagged ./hamii CLI calls. No source/docs/proxy/Canonical reads, direct edits, raw Git, web, context session, ID/state helper, or bypass was observed. VERB-2 repeated context.summary once; retained in metrics.",
+      "limitation": "Task exposure and sandbox plus machine command audit, not proof against all invisible host access or adversarial command injection."
+    }
+  },
+  "oracle": {
+    "checks": {
+      "finalValidation": true,
+      "T1.screen": true,
+      "T1.token": true,
+      "T1.padding": true,
+      "T1.text": true,
+      "T1.entityCounts": true,
+      "T2.instance": true,
+      "T2.noForbiddenSelection": true,
+      "T3.context.summary": true,
+      "T3.context.layer": true,
+      "T3.context.resources": true,
+      "T3.context.component": true,
+      "T3.context.token": true,
+      "T3.sameObservation": true,
+      "T4.validate": true,
+      "T4.preview": true,
+      "T5.integration": true,
+      "T5.generate": true
+    },
+    "tasks": {
+      "T1": true,
+      "T2": true,
+      "T3": true,
+      "T4": true,
+      "T5": true
+    },
+    "allTasksSucceeded": true,
+    "evidence": {
+      "inspect": {
+        "exitCode": 0,
+        "response": {
+          "document": {
+            "assets": [],
+            "authoringHarness": {
+              "maximumMutationNodes": 100,
+              "requireAccessibleControls": true,
+              "requireTokenSpacing": false
+            },
+            "capabilityDeclarations": [
+              {
+                "key": {
+                  "rawValue": "layout.stack.container"
+                },
+                "reason": "",
+                "support": "exact",
+                "targetID": {
+                  "rawValue": "target_taxonomy_macos"
+                }
+              },
+              {
+                "key": {
+                  "rawValue": "component.text.visual"
+                },
+                "reason": "",
+                "support": "exact",
+                "targetID": {
+                  "rawValue": "target_taxonomy_macos"
+                }
+              },
+              {
+                "key": {
+                  "rawValue": "layout.spacingToken"
+                },
+                "reason": "",
+                "support": "exact",
+                "targetID": {
+                  "rawValue": "target_taxonomy_macos"
+                }
+              }
+            ],
+            "components": [
+              {
+                "api": {
+                  "bindings": [],
+                  "events": [],
+                  "overridablePaths": [],
+                  "properties": [],
+                  "slots": []
+                },
+                "availability": {
+                  "allowOnlyScopeIDs": [],
+                  "denyScopeIDs": []
+                },
+                "id": {
+                  "rawValue": "component_taxonomy_price"
+                },
+                "name": "PriceBadge",
+                "nativeSemantics": {},
+                "ownerScopeID": {
+                  "rawValue": "scope_taxonomy_commerce"
+                },
+                "root": {
+                  "children": [],
+                  "effects": [],
+                  "id": {
+                    "rawValue": "layer_taxonomy_price"
+                  },
+                  "kind": "text",
+                  "layout": {},
+                  "name": "Price",
+                  "targetOverrides": {},
+                  "text": "Price"
+                },
+                "variants": [],
+                "visibility": "public"
+              },
+              {
+                "api": {
+                  "bindings": [],
+                  "events": [],
+                  "overridablePaths": [],
+                  "properties": [],
+                  "slots": []
+                },
+                "availability": {
+                  "allowOnlyScopeIDs": [],
+                  "denyScopeIDs": []
+                },
+                "id": {
+                  "rawValue": "component_taxonomy_private"
+                },
+                "name": "PrivateBadge",
+                "nativeSemantics": {},
+                "ownerScopeID": {
+                  "rawValue": "scope_taxonomy_account"
+                },
+                "root": {
+                  "children": [],
+                  "effects": [],
+                  "id": {
+                    "rawValue": "layer_taxonomy_private"
+                  },
+                  "kind": "text",
+                  "layout": {},
+                  "name": "Private",
+                  "targetOverrides": {},
+                  "text": "Private"
+                },
+                "variants": [],
+                "visibility": "public"
+              }
+            ],
+            "fixtures": [],
+            "id": {
+              "rawValue": "doc_taxonomy_fixture"
+            },
+            "interactions": [],
+            "motions": [],
+            "name": "Taxonomy discovery",
+            "pages": [
+              {
+                "id": {
+                  "rawValue": "page_taxonomy_preview"
+                },
+                "name": "Preview",
+                "surfaces": [
+                  {
+                    "architectureScopeID": {
+                      "rawValue": "scope_taxonomy_checkout"
+                    },
+                    "buildEnvironment": "SDK 26",
+                    "device": "Mac",
+                    "environment": {},
+                    "id": {
+                      "rawValue": "surface_taxonomy_preview"
+                    },
+                    "previewConfiguration": {},
+                    "runtime": "macOS 26",
+                    "screenID": {
+                      "rawValue": "screen_taxonomy_fixture"
+                    },
+                    "targetID": {
+                      "rawValue": "target_taxonomy_macos"
+                    }
+                  }
+                ]
+              }
+            ],
+            "revision": 6,
+            "scopes": [
+              {
+                "id": {
+                  "rawValue": "scope_taxonomy_account"
+                },
+                "name": "Account",
+                "parentID": {
+                  "rawValue": "scope_taxonomy_app"
+                }
+              },
+              {
+                "id": {
+                  "rawValue": "scope_taxonomy_app"
+                },
+                "name": "App"
+              },
+              {
+                "id": {
+                  "rawValue": "scope_taxonomy_checkout"
+                },
+                "name": "Checkout",
+                "parentID": {
+                  "rawValue": "scope_taxonomy_commerce"
+                }
+              },
+              {
+                "id": {
+                  "rawValue": "scope_taxonomy_commerce"
+                },
+                "name": "Commerce",
+                "parentID": {
+                  "rawValue": "scope_taxonomy_app"
+                }
+              }
+            ],
+            "screens": [
+              {
+                "id": {
+                  "rawValue": "screen_9fe015ef-87fe-400f-8c6f-5c47e2dd40e8"
+                },
+                "name": "TaxonomyCheckout",
+                "root": {
+                  "children": [
+                    {
+                      "children": [],
+                      "effects": [],
+                      "id": {
+                        "rawValue": "layer_9c6a9789-9d66-4a70-8595-fd5aee2990cc"
+                      },
+                      "kind": "text",
+                      "layout": {},
+                      "name": "ReceiptText",
+                      "targetOverrides": {},
+                      "text": "Order total"
+                    },
+                    {
+                      "children": [],
+                      "component": {
+                        "allowedOverrides": {},
+                        "definitionID": {
+                          "rawValue": "component_taxonomy_price"
+                        },
+                        "propertyValues": {},
+                        "slotContent": {},
+                        "variantSelection": {}
+                      },
+                      "effects": [],
+                      "id": {
+                        "rawValue": "layer_5fc6f564-6c47-4f96-b9fd-e8ad6c300f0d"
+                      },
+                      "kind": "componentInstance",
+                      "layout": {},
+                      "name": "PriceBadge",
+                      "targetOverrides": {}
+                    }
+                  ],
+                  "effects": [
+                    {
+                      "kind": "padding",
+                      "tokenID": {
+                        "rawValue": "token_9471ff52-0ca3-4882-b75e-806a8119fdd6"
+                      }
+                    }
+                  ],
+                  "id": {
+                    "rawValue": "layer_a8e1d1c4-e1b7-4844-88f7-a2fe510b4784"
+                  },
+                  "kind": "stack",
+                  "layout": {
+                    "axis": "vertical"
+                  },
+                  "name": "Root",
+                  "targetOverrides": {}
+                },
+                "scopeID": {
+                  "rawValue": "scope_taxonomy_checkout"
+                }
+              },
+              {
+                "id": {
+                  "rawValue": "screen_taxonomy_fixture"
+                },
+                "name": "Checkout fixture",
+                "root": {
+                  "children": [
+                    {
+                      "children": [],
+                      "effects": [],
+                      "id": {
+                        "rawValue": "layer_taxonomy_summary"
+                      },
+                      "kind": "text",
+                      "layout": {},
+                      "name": "Summary",
+                      "targetOverrides": {},
+                      "text": "Order summary"
+                    }
+                  ],
+                  "effects": [],
+                  "id": {
+                    "rawValue": "layer_taxonomy_root"
+                  },
+                  "kind": "stack",
+                  "layout": {
+                    "axis": "vertical"
+                  },
+                  "name": "Root",
+                  "targetOverrides": {}
+                },
+                "scopeID": {
+                  "rawValue": "scope_taxonomy_checkout"
+                }
+              }
+            ],
+            "targets": [
+              {
+                "framework": "swiftUI",
+                "id": {
+                  "rawValue": "target_taxonomy_macos"
+                },
+                "platform": "macOS"
+              }
+            ],
+            "tokens": [
+              {
+                "id": {
+                  "rawValue": "token_9471ff52-0ca3-4882-b75e-806a8119fdd6"
+                },
+                "kind": "spacing",
+                "name": "spacing.taxonomy",
+                "ownerScopeID": {
+                  "rawValue": "scope_taxonomy_checkout"
+                },
+                "value": {
+                  "literal": {
+                    "_0": "16"
+                  }
+                }
+              },
+              {
+                "id": {
+                  "rawValue": "token_taxonomy_checkout"
+                },
+                "kind": "spacing",
+                "name": "spacing.checkout",
+                "ownerScopeID": {
+                  "rawValue": "scope_taxonomy_checkout"
+                },
+                "value": {
+                  "literal": {
+                    "_0": "12"
+                  }
+                }
+              }
+            ],
+            "versions": {
+              "authoringHarness": 1,
+              "document": 2,
+              "integrationProfile": 1
+            }
+          },
+          "ok": true,
+          "statePrecondition": {
+            "rawValue": "b44dac2aaa615992b1e4ffef2c738768064a95147c397277bca5326438545621"
+          }
+        }
+      },
+      "validate": {
+        "exitCode": 0,
+        "response": {
+          "diagnostics": [],
+          "ok": true
+        }
+      }
+    }
+  },
+  "metrics": {
+    "suite": {
+      "taskSuccess": true,
+      "discoveryCalls": 9,
+      "skillsLoaded": [
+        "bootstrap",
+        "author-workflow",
+        "token-workflow",
+        "component-workflow",
+        "context-workflow",
+        "check-workflow",
+        "preview-workflow",
+        "delivery-workflow"
+      ],
+      "skillBytesLoaded": 5806,
+      "commandAttempts": 27,
+      "successfulCommands": 27,
+      "usageErrors": 0,
+      "otherStructuredErrors": 0,
+      "undiscoveredCommandAttempts": 0,
+      "CLIOutputBytes": 19595,
+      "incompleteAttempts": 0,
+      "commandWindowSeconds": 134.600451166,
+      "wallSeconds": 151.372908417
+    },
+    "tasks": {
+      "T1": {
+        "taskSuccess": true,
+        "discoveryCalls": 4,
+        "skillsLoaded": [
+          "bootstrap",
+          "author-workflow",
+          "token-workflow"
+        ],
+        "skillBytesLoaded": 1995,
+        "commandAttempts": 10,
+        "successfulCommands": 10,
+        "usageErrors": 0,
+        "otherStructuredErrors": 0,
+        "undiscoveredCommandAttempts": 0,
+        "CLIOutputBytes": 10396,
+        "incompleteAttempts": 0,
+        "commandWindowSeconds": 50.137651625
+      },
+      "T2": {
+        "taskSuccess": true,
+        "discoveryCalls": 1,
+        "skillsLoaded": [
+          "component-workflow"
+        ],
+        "skillBytesLoaded": 428,
+        "commandAttempts": 3,
+        "successfulCommands": 3,
+        "usageErrors": 0,
+        "otherStructuredErrors": 0,
+        "undiscoveredCommandAttempts": 0,
+        "CLIOutputBytes": 1260,
+        "incompleteAttempts": 0,
+        "commandWindowSeconds": 14.697774459
+      },
+      "T3": {
+        "taskSuccess": true,
+        "discoveryCalls": 1,
+        "skillsLoaded": [
+          "context-workflow"
+        ],
+        "skillBytesLoaded": 1543,
+        "commandAttempts": 7,
+        "successfulCommands": 7,
+        "usageErrors": 0,
+        "otherStructuredErrors": 0,
+        "undiscoveredCommandAttempts": 0,
+        "CLIOutputBytes": 5236,
+        "incompleteAttempts": 0,
+        "commandWindowSeconds": 29.15477875
+      },
+      "T4": {
+        "taskSuccess": true,
+        "discoveryCalls": 2,
+        "skillsLoaded": [
+          "check-workflow",
+          "preview-workflow"
+        ],
+        "skillBytesLoaded": 1504,
+        "commandAttempts": 4,
+        "successfulCommands": 4,
+        "usageErrors": 0,
+        "otherStructuredErrors": 0,
+        "undiscoveredCommandAttempts": 0,
+        "CLIOutputBytes": 1776,
+        "incompleteAttempts": 0,
+        "commandWindowSeconds": 10.659117042
+      },
+      "T5": {
+        "taskSuccess": true,
+        "discoveryCalls": 1,
+        "skillsLoaded": [
+          "delivery-workflow"
+        ],
+        "skillBytesLoaded": 336,
+        "commandAttempts": 3,
+        "successfulCommands": 3,
+        "usageErrors": 0,
+        "otherStructuredErrors": 0,
+        "undiscoveredCommandAttempts": 0,
+        "CLIOutputBytes": 927,
+        "incompleteAttempts": 0,
+        "commandWindowSeconds": 8.949963083
+      }
+    },
+    "wallBoundary": "Codex process launch through independent oracle completion; fixture setup/compile are separate preparation. Task commandWindowSeconds is first attempt through last response for tagged task, not proof of agent task completion time."
+  },
+  "telemetry": {
+    "rawTurnUsage": [
+      {
+        "input_tokens": 371776,
+        "cached_input_tokens": 336384,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 1983,
+        "reasoning_output_tokens": 9
+      }
+    ],
+    "agentInputTokens": 371776,
+    "agentOutputTokens": 1983,
+    "agentTotalTokens": 373759,
+    "cachedInputTokens": 336384,
+    "reasoningOutputTokens": 9,
+    "nesting": "cached_input_tokens is reported separately, never added to input; reasoning_output_tokens is never added to output; total is input+output only. Raw authoritative CLI fields retained. Whole development-cycle total/cost unmeasured."
+  },
+  "wholeDevelopmentCycleTokens": "unmeasured",
+  "cost": "unmeasured",
+  "stderrIfFailed": null
+}

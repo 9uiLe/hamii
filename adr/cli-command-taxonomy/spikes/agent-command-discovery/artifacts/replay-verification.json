@@ -1,0 +1,60 @@
+{
+  "agentCallsStarted": 0,
+  "sourceRelocationOnly": true,
+  "prepareExitCode": 0,
+  "fixtureCompileExitCode": 0,
+  "preflightExitCode": 0,
+  "results": [
+    {
+      "candidate": "CURRENT",
+      "allTasksSucceeded": true,
+      "commandCount": 27,
+      "negativeOracleControls": [
+        "missing context detail rejected",
+        "mixed observation rejected",
+        "empty result set rejected"
+      ],
+      "productionOutputPassthrough": true,
+      "notAgentTrial": true
+    },
+    {
+      "candidate": "RESOURCE",
+      "allTasksSucceeded": true,
+      "commandCount": 27,
+      "negativeOracleControls": [
+        "missing context detail rejected",
+        "mixed observation rejected",
+        "empty result set rejected"
+      ],
+      "productionOutputPassthrough": true,
+      "notAgentTrial": true
+    },
+    {
+      "candidate": "VERB",
+      "allTasksSucceeded": true,
+      "commandCount": 27,
+      "negativeOracleControls": [
+        "missing context detail rejected",
+        "mixed observation rejected",
+        "empty result set rejected"
+      ],
+      "productionOutputPassthrough": true,
+      "notAgentTrial": true
+    },
+    {
+      "candidate": "TASK",
+      "allTasksSucceeded": true,
+      "commandCount": 27,
+      "negativeOracleControls": [
+        "missing context detail rejected",
+        "mixed observation rejected",
+        "empty result set rejected"
+      ],
+      "productionOutputPassthrough": true,
+      "notAgentTrial": true
+    }
+  ],
+  "preparedHarness": "/var/folders/05/9dz9l23n10d4pk_yp0ktzb4m0000gn/T/hamii-taxonomy-replay-23uks32g",
+  "command": "python3 /var/folders/05/9dz9l23n10d4pk_yp0ktzb4m0000gn/T/hamii-taxonomy-replay-23uks32g/preflight.py",
+  "scope": "Reproduction harness compilation and production semantic oracle controls only, not extra fresh-agent trials."
+}

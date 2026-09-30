@@ -72,13 +72,15 @@ Spike success は全候補 task success を意味しない。候補 failure も 
 
 ## Result
 
-Not run. Live CURRENT catalog の採取と4候補の静的 fairness 確認は plan preparation であり、fresh-agent evidence ではない。Proxy / fixture / oracle は Evidence commit に追加する。CURRENT の取得元は `1bf458a` の production source、application version 0.1.0。
+8 fresh session を固定順序で完了。全40 task と final Canonical validation が independent oracle に合格した。Undiscovered attempt、usage / other structured error、invalid / failed / incomplete trial は0。候補ごとの discovery calls は各9、command attempts は各27（VERB-2 のみ context summary の重複取得を含み28）。全実 command log を監査し、許可外 inspection / mutation bypass は観測しなかった。
 
-Plan `c6b0298` 後、agent trial 前の fixture preparation で root の spacingTokenID が static generator の非対応 semantics として拒否された。Token は T3 用に保持し、fixture root から参照を外した。T1 で新規 Screen に token を割り当てる authoring task は変えない。初回 bootstrap invocation と task metric labels も試行前に明示化した。[Preparation record](artifacts/pre-trial-preparation.json) に失敗 / 修正 / prompt identity を保持する。Agent trial はまだ0件で、candidate grammar と skill text は変更していない。
+[Trial analysis](artifacts/trial-analysis.md) と [matrix](artifacts/trial-matrix.json) に各試行、task、n=2 median / min / max / range を記録した。Session wall median は CURRENT 171.403 / RESOURCE 162.045 / VERB 169.386 / TASK 154.710 seconds。Authoritative session token total は8試行合計3,384,232（input + output、cache / reasoning を重複加算しない）。Operator / integration / review 等を含む whole development-cycle tokens と費用は未計測。n=2 から p95、統計的優位性、whole-cycle 削減を主張しない。Production Sources は変更なし。CURRENT の取得元は `1bf458a` の production source、application version 0.1.0。
+
+Plan `c6b0298` 後、agent trial 前の fixture preparation で root の spacingTokenID が static generator の非対応 semantics として拒否された。Token は T3 用に保持し、fixture root から参照を外した。T1 で新規 Screen に token を割り当てる authoring task は変えない。初回 bootstrap invocation と task metric labels も試行前に明示化した。[Preparation record](artifacts/pre-trial-preparation.json) に失敗 / 修正 / prompt identity を保持する。この修正時点の agent trial は0件で、candidate grammar と skill text は変更していない。その後、corrected plan `e871d49` の exact-SHA Verify success を確認して全8試行を開始した。Operator-only oracle preflight の初回2失敗と wire predicate 修正も Evidence に保持する。
 
 ## Conclusion
 
-未決定。ADR は Spike Required。Evidence commit の full gate / push / exact-SHA Verify success 後に STOP / report し、Decision Review を行う。Prototype の結果を自動的に production rename にしない。
+ADR は Spike Required。試験範囲では CURRENT を含む全候補が推測なしに同じ task を完了し、discovery calls の差は観測しなかった。TASK の session time / token 値は review 対象であり、方式採用の証明ではない。Evidence commit の full gate / push / exact-SHA Verify success 後に STOP / report し、Decision Review を行う。Prototype の結果を自動的に production rename にしない。
 
 ## Artifacts
 
@@ -86,3 +88,10 @@ Plan `c6b0298` 後、agent trial 前の fixture preparation で root の spacing
 - [Task suite and oracle contract](artifacts/task-suite.json)
 - [Byte-identical agent prompt](artifacts/agent-prompt.txt)
 - [Pre-trial preparation failure and correction](artifacts/pre-trial-preparation.json)
+
+- [Trial analysis and reproduction](artifacts/trial-analysis.md)
+- [Trial / task metrics](artifacts/trial-matrix.json)
+- [Runtime provenance and executed source hashes](artifacts/runtime-provenance.json)
+- [Proxy](artifacts/cli-taxonomy-proxy.py) / [independent oracle](artifacts/verify-agent-tasks.py) / [fresh session runner](artifacts/run-agent-trials.py)
+- [Harness preflight](artifacts/preflight-results.json) / [retained oracle failures](artifacts/preflight-initial-failure.json)
+- [Replay preparation](artifacts/prepare-replay.py)

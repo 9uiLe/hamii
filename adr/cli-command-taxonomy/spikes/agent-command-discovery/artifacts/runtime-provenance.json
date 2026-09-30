@@ -1,0 +1,41 @@
+{
+  "planCommit": "c6b0298a73bfb4ab4f4c2317a2f069da6557ea15",
+  "correctedPlanCommit": "e871d49b12e80ba488527f045af05455c998ac03",
+  "exactPlanCI": {
+    "attempt": 1,
+    "conclusion": "success",
+    "runId": 36706859269,
+    "runUrl": "https://github.com/9uiLe/hamii/actions/runs/36706859269",
+    "sha": "e871d49b12e80ba488527f045af05455c998ac03",
+    "status": "passed"
+  },
+  "productionSourceBaseline": "1bf458a9b426842e3497a8003b13508e7f3e5e6f",
+  "productionSourceDiff": "",
+  "releaseBinarySHA256": "dd59e5bfbdf35a631d1c1576837e2432d6d943024f41c2ae887378d736adc336",
+  "initialCanonical": {
+    "sha256": "bf4e1a48867f30086063ae9839853e11edb3b7e0d146e924d53455991f39adb8",
+    "pathCount": 12,
+    "bytes": 4976
+  },
+  "promptSHA256": "e151bab478c304f9fd98e2bb593d2878a695b5f5e9980909e131237add421381",
+  "executedHarnessSHA256": {
+    "cli-taxonomy-proxy.py": "a4a0f87f6e70d50f287e4e52a2be71c0a0d9ced4dac619efd30b3d4137630f9e",
+    "verify-agent-tasks.py": "3ef2217514692dd8c0363d4d68e324cee0d999febb6055d82da2dfc3492098a4",
+    "preflight.py": "ee5f9f66cdcc7667d2e5a9083b57a08bba342ab0f4af3e4f548fce4664f608ee",
+    "run-agent-trials.py": "e007d3bf17f42c1e218b6bb14faeabd74ffbf04162514c6851438e9d92365372",
+    "main.swift": "642f867d22ea93622425fe839a78292c8c7c6fe6875bf7111a634de3cf60bc10"
+  },
+  "swiftVersion": "Apple Swift version 6.4 (swift-6.4-RELEASE)\nTarget: arm64-apple-macosx27.0.0",
+  "trialCount": 8,
+  "agentTaskResults": 40,
+  "failedAgentTrials": 0,
+  "invalidObservedTrials": 0,
+  "incompleteAgentTrials": 0,
+  "notRun": [],
+  "usageScope": "Codex CLI authoritative turn.completed usage only. input+output; cache/reasoning not added. Operator, prior planning/investigation, integration, CI verification, reviews/bridge, harness overhead token usage unavailable. Whole development-cycle tokens and all costs unmeasured.",
+  "failureRetention": [
+    "Pretrial fixture unsupported semantics: pre-trial-preparation.json",
+    "Two operator-only preflight oracle failures: preflight-initial-failure.json"
+  ],
+  "reproduction": "Exact executed source retained, including original machine paths. prepare-replay.py relocates only source/control paths and compiles fixture into a disposable directory; it never changes candidate grammar/task/prompt."
+}
