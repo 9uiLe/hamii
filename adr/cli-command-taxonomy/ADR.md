@@ -68,3 +68,13 @@ Decision Review は `31aa38885a5a54f09e1ffa9222341eb906db3e32`、[Verify 3671691
 ## Status
 
 Implementation Required
+
+## Closure Review
+
+- Plan: `c6b0298a73bfb4ab4f4c2317a2f069da6557ea15` / correction `e871d49b12e80ba488527f045af05455c998ac03`。
+- Evidence: `4cf61aa16ada4168e2452c0a8417905c9af64b1f`、[Verify 36713057042 success](https://github.com/9uiLe/hamii/actions/runs/36713057042)。Spike は完了、全失敗 / operator-only preflight 修正も保存済み。
+- Review: `31aa38885a5a54f09e1ffa9222341eb906db3e32`、[Verify 36716913744 success](https://github.com/9uiLe/hamii/actions/runs/36716913744)。
+- Decision: `2bf972664fa0adc813ba840b3f8f993dfe8f34e5`、[Verify 36717217446 success](https://github.com/9uiLe/hamii/actions/runs/36717217446)。CURRENT はすでに production。
+- Implementation / closure commit: `Lock current CLI taxonomy discovery contract`。Current Architecture と README は hybrid と live-skill discovery を説明し、`scripts/smoke-cli.py` は9 live skill names、bootstrap entry、および authoring / components / tokens / context / validation / preview / integration / generation の代表 grammar を検査する。全文 byte equality や ADR artifact への production dependency は作らない。
+- Rename / migration / compatibility alias の残作業はない。より広い workload の再評価は future reopen trigger であり、本 Decision の unresolved follow-up ではない。Error recovery の検証は独立 ADR。
+- この implementation commit の full gate と exact-SHA Verify success を確認した後の別 commit でのみ ADR を削除する。各 SHA と CI verdict は delivery report / Git history から辿れる。Gate 完了前の削除は許可しない。

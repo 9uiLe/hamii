@@ -85,7 +85,9 @@ macOS Canvas は編集用 SwiftUI view です。Native Preview は対象 OS が�
 
 ## CLI and development contract
 
-`hamii` は唯一の AI/automation interface です。主要 command は `--json` を提供します。Skill discovery は `skills list` / `skills get` で、内容は binary と同じ version です。Mutation は `inspect` または直前の mutation で得た `statePrecondition.rawValue` を `--state TOKEN` として渡し、古い state は conflict category で拒否します。Validation error は diagnostic rule です。長期 command taxonomy は [CLI Command ADR](../adr/cli-command-taxonomy/ADR.md)、error と exit schema は [CLI Error ADR](../adr/cli-error-contract/ADR.md) で検証します。
+`hamii` は唯一の AI/automation interface です。主要 command は `--json` を提供します。Skill discovery は `skills list` / `skills get` で、内容は binary と同じ version です。Mutation は `inspect` または直前の mutation で得た `statePrecondition.rawValue` を `--state TOKEN` として渡し、古い state は conflict category で拒否します。Validation error は diagnostic rule です。Error と exit schema は [CLI Error ADR](../adr/cli-error-contract/ADR.md) で検証します。
+
+CLI の taxonomy は resource-oriented authoring と query / preview / integration / generation / migration / Git の semantic namespaces を組み合わせる hybrid です。Existing production command names は安定した契約です。AI は global resource/verb/task grammar を推測せず、installed live skills から exact commands を発見します。新 command は近い existing semantic/resource namespace を拡張し、cross-resource operation に一律の grammar rewrite を強制しません。Production rename は変更・migration cost を正当化する新しい具体的 Evidence を必要とします。
 
 `HamiiApplication.ProjectContextService` は semantic AI context の read projection です。Project summary、選択 Layer detail、Scope-aware な Component / Token / Asset summary と必要な Component / Token detail を段階的に返します。各呼出しは一つの `ProjectObservation` から投影し、`ClientPrecondition` と `DocumentRevision` を別々に返します。後続の `query context ... --state TOKEN` が現在の observation と一致しない場合、payload を返さず `conflict` とします。利用可否は `ProjectService` と同じ `ScopeEvaluator` / `ComponentAvailability` に従い、Resource list は Scope filtering の後に name と stable ID で整列して上限を適用します。Index row は利用可否の正本ではありません。Mutation は引き続き `ProjectService` を使います。`skills get context` は staged retrieval を案内します。[Production Query measurement](ai-context-query-performance.md) は payload と service / CLI 待ち時間を別々に示し、AI 総トークンは未計測です。
 
