@@ -50,7 +50,15 @@ Agent runtime は S 560.689 秒、P 566.904 秒。報告された input + output
 
 検証した 9 class の回復または安全停止には既存 envelope で十分だったため、`retryAction`、`recoveryCommand`、`humanRequired`、`reasonCode`、別の `errorSchemaVersion` は追加しない。具体的な回復手順は installed live skills と category-specific workflow で案内する。今回の実験は他 category の retry semantics や S/P の時間・token 優劣を証明しない。
 
-残る作業は current documentation と実 CLI を用いた恒久 regression の実装・検証である。
+Current documentation と実 CLI を用いた恒久 regression の実装・検証は `b880e3519cc299037d2aa99608896b7c81e518f6` で完了した。
+
+## Closure Review
+
+Decision と Evidence は別々の Git commits に残る。最初の plan は `f4c340380cb461a878be018a2c2f23047f12b136`。無効な pilot で判明した Git subprocess channel bug は `956508865b774eea191f827d87e92f87c8f28893` で修正し、[Verify 36742941234](https://github.com/9uiLe/hamii/actions/runs/36742941234) は成功した。改訂 plan は `c9a50cdbb0e7f0602a41b6e1a6ce9a6e6e6d6941`、[Verify 36747742840](https://github.com/9uiLe/hamii/actions/runs/36747742840) 成功。Fresh 18-session Evidence は `44d0141e84b90a1bedded56370c9c6d934fc593e`、[Verify 36753271671](https://github.com/9uiLe/hamii/actions/runs/36753271671) 成功。Decision Review は `e394fafea919026fd41dc5f89dcd840471733875`、[Verify 36756282522](https://github.com/9uiLe/hamii/actions/runs/36756282522) 成功。Formal Decision は `1383b470d22b8a630727f938eb82f0edbecbb97a`、[Verify 36756423114](https://github.com/9uiLe/hamii/actions/runs/36756423114) 成功。
+
+Implementation `b880e3519cc299037d2aa99608896b7c81e518f6` は current schema を意図的に維持し、[CLI error contract](../../docs/cli-error-contract.md)、[Current Architecture](../../docs/final-architecture.md)、実 CLI の恒久 [error smoke](../../scripts/smoke-cli-errors.py) を追加した。[Verify 36757608426](https://github.com/9uiLe/hamii/actions/runs/36757608426) は成功。ローカル full gate は 14/14 checks、296 Swift tests、61 skips、failure 0、373.358 秒。Error smoke は `usage/2`、`notFound/2`、`validation/5`、`approval/4`、`conflict/3`、`transitionPending/7`、`staleIndex/8`、`migrationRequired/6`、`unsupportedCapability/9` と既存 `permission/4` を検査し、message の exact wording を固定しない。AI agent trial は CI に常設していない。
+
+Decision、Spike、implementation、validation は完了し、current docs と regression が契約を独立して表す。無効 pilot は fresh matrix から除外した。未検証 category の retry semantics、時間・token 削減率、将来の別 error schema version は決定として主張しない。この Decision Boundary に残る必須 work はない。ADR の履歴をこの commit に保存した後、別 commit で working queue から削除する。
 
 ## Status
 
