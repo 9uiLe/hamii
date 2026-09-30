@@ -117,9 +117,43 @@ Routing: serializer-sensitive major classification → stop and normalized merge
 
 First commit only this plan, Markdown gate, push and exact-SHA Verify. Then test-only common serializer/harness, `artifacts/open-save-scaling-matrix.json`, `artifacts/open-save-scaling-analysis.md` (and separate serializer-control results if needed), plus Result/Conclusion; full gate, push and exact-SHA Verify. Report to the designated design session and stop for routing after that Evidence. No new ADR or production architecture decision in this phase.
 
+### Read-only partial-load phase (precommitted plan)
+
+Keep `Spike Required`; compare CURRENT-N / MONOLITHIC-N / SUBTREE-N with the existing common Swift/Foundation encoder and fixed boundaries at exactly 1k/10k/50k Layers. All code stays in this Spike’s artifacts; no Sources, Package target, Format, migration, Index or Preview changes.
+
+#### Fixture and tasks
+
+Maintain two Screens, two direct child Stack subtrees per Screen, two Component roots, Scope hierarchy and AppSurface/Target. Replace the first three leaves of Screen A/X with one ComponentInstance, a system Asset Image and an accessible Button with Interaction → Motion; use the existing Stack’s spacing Token and a padding effect. Add a spacing alias → existing primitive Token, both owned by Checkout. Make the Commerce-owned primary Component root an instance of the existing secondary Component, now App-owned; its root references the system Asset and alias Token, and primary availability denies Account. Both roots remain single Layers. This fixes nested/transitive closure without changing Layer count. Add an unreferenced system Asset for hidden-read controls. Declare fixture capabilities required by actual current validation. These fixture changes are test-only.
+
+- **A:** request Screen A ID and known X root ID; return document identity/revision context, AuthoringHarness, Screen identity/scope, selected subtree and transitive dependencies.
+- **B:** request Screen A ID; return complete Screen including navigation and reachable dependencies. Custom navigation IDs must exist in the loaded Screen tree; Page/Surface/Target/Fixture validity is excluded.
+- **C:** request Screen A ID and last Text leaf in its second subtree; no cached locator, fixture path table, Layer-ID map or Index. Search in explicit child order and record all required subtree reads.
+
+Only request IDs, stable entity paths and references from loaded files locate data. No full directory scan, full Document decode or oracle access inside the partial reader. CURRENT reads its Screen shard; MONOLITHIC reads its aggregate; SUBTREE A reads shell + selected subtree, B both, C scans as necessary. A must not read sibling subtree, Screen B or unreferenced resources.
+
+#### Closure and validity boundary
+
+Traverse Layer children and Component slot content, layout spacing and effect Token IDs, Asset IDs, Component definition IDs, Interaction IDs. Tokens follow transitive references and owner Scope ancestors. Components retain API/variants/slots, follow nested definition trees and their references, owner Scope ancestors and availability allow/deny Scope IDs. Interactions follow transition Motion IDs. Start Scope closure at Screen scope; missing/cyclic required ancestors/dependencies and malformed required JSON fail without a semantic payload or fallback.
+
+Use a test-only `PartialSemanticSlice` with `globalValidityProven = false`, `authoringReady = false`. It is never a CanonicalSnapshot, ProjectObservation, ClientPrecondition, validated Document or mutation base. Full-current parse and DocumentValidator establish an independent oracle before measurement. Deterministic semantic projection (task/context/payload and ID-sorted dependency values) encoded by the common Swift encoder must byte-match that oracle; IDs, values and child order must match. Partial code never calls global validation or mutation APIs.
+
+Immutable disposable fixture only. Sorted exact candidate paths/bytes SHA-256 is `measurementSourceFingerprint`, not Snapshot identity. Check before and after each timing series; mismatch invalidates the series and remains recorded. No concurrent-writer/currentness proof.
+
+#### Measurements and controls
+
+Release test-only Swift process, sequential, no competing full gate. For each scale/layout measure ten full opens on the same dependency-rich fixture and ten runs each for A/B/C, with one recorded excluded warm-up before every series (90 full + 270 partial measured). Record actual read paths/bytes/count, largest read, fraction of candidate paths/bytes, semantic/oracle hashes, dependency IDs, source fingerprint, total time, read/decode/traversal/projection-encode stages and median/min/max. Nested stages are labeled and never summed as independent totals. Preserve raw attempts including timeout/OOM/incomplete/failed runs; never replace failed samples silently. AI tokens/cost/RSS remain unmeasured unless actual usage is available. No p95, SLA, speed gate or production partial latency claim.
+
+At 10k, each layout must reject missing selected payload/path mismatch, missing required Token/Component/Scope ancestor/Interaction/Motion and malformed required JSON. SUBTREE selected-path dangling/duplicate/unknown/identity-mismatched refs must reject; full reconstruction retains unreachable-ref rejection. Inject unrelated invalid reference in Screen B: A may remain byte-identical while actual full-current validation must reject. This explicitly demonstrates slice correctness does not imply project validity. Repeat deterministic partial bytes/IDs/read paths across all measured runs.
+
+#### Routing and delivery
+
+Hard gates are closure correctness, exact oracle agreement, source integrity, no hidden reads and complete matrix. Locator-required in C is tradeoff evidence; do not implement a locator. All gates complete → report for ADR Decision Review / possible Ready for Decision; do not automatically add performance Spikes or write a Decision. Missing closure/oracle mismatch/fallback → retain and report failure. Any need to infer Snapshot/currentness/mutation authority from a slice → stop for separate validity decision.
+
+Commit this plan first, Markdown gate, push and exact-SHA Verify. Then artifacts `measure-partial-load.swift`, `measure-partial-load.py`, `partial-load-matrix.json`, `partial-load-analysis.md` and failure data if any; update Result/Conclusion, full gate, push and exact-SHA Verify. Report to the designated design session and await routing.
+
 ## Prototype Scope
 
-Observation-shape phase と、上記の固定した 1k/10k save/diff/merge phase と serializer control / 1k/10k/50k open-save phase。partial load は未検証の後続範囲として残す。
+Observation-shape phase と、上記の固定した 1k/10k save/diff/merge phase と serializer control / 1k/10k/50k open-save phase。上記 read-only partial-load phase。
 
 ## Out of Scope
 
