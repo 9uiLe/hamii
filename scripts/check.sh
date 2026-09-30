@@ -32,7 +32,11 @@ run_check swift-build "$hamii_swift" build --build-tests
 run_check package-app bash scripts/package-app.sh
 run_check codesign codesign --verify --deep --strict .build/hamii.app
 run_check swift-test env HAMII_SWIFT="$hamii_swift" python3 scripts/run-swift-tests.py
-run_check cli-smoke python3 scripts/smoke-cli.py
+run_cli_smoke() {
+  python3 scripts/smoke-cli.py
+  python3 scripts/smoke-cli-errors.py
+}
+run_check cli-smoke run_cli_smoke
 run_check state-precondition-smoke python3 scripts/smoke-state-precondition.py
 run_check merge-candidate-smoke python3 scripts/smoke-merge-candidate.py
 run_check samples python3 scripts/validate-samples.py

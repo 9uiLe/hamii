@@ -85,7 +85,7 @@ macOS Canvas は編集用 SwiftUI view です。Native Preview は対象 OS が�
 
 ## CLI and development contract
 
-`hamii` は唯一の AI/automation interface です。主要 command は `--json` を提供します。Skill discovery は `skills list` / `skills get` で、内容は binary と同じ version です。Mutation は `inspect` または直前の mutation で得た `statePrecondition.rawValue` を `--state TOKEN` として渡し、古い state は conflict category で拒否します。Validation error は diagnostic rule です。Error と exit schema は [CLI Error ADR](../adr/cli-error-contract/ADR.md) で検証します。
+`hamii` は唯一の AI/automation interface です。主要 command は `--json` を提供します。Skill discovery は `skills list` / `skills get` で、内容は binary と同じ version です。Mutation は `inspect` または直前の mutation で得た `statePrecondition.rawValue` を `--state TOKEN` として渡し、古い state は conflict category で拒否します。Validation error は diagnostic rule です。JSON failure は `category` と既存の structured fields で判定し、exit status は粗い失敗種別として使います。人間向け `message` の文言を automation が解析せず、未知 category は安全停止します。[CLI error contract](cli-error-contract.md) に現在の mapping と互換性規則を記載します。
 
 CLI の taxonomy は resource-oriented authoring と query / preview / integration / generation / migration / Git の semantic namespaces を組み合わせる hybrid です。Existing production command names は安定した契約です。AI は global resource/verb/task grammar を推測せず、installed live skills から exact commands を発見します。新 command は近い existing semantic/resource namespace を拡張し、cross-resource operation に一律の grammar rewrite を強制しません。Production rename は変更・migration cost を正当化する新しい具体的 Evidence を必要とします。
 
