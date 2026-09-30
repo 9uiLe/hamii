@@ -101,11 +101,19 @@ save/diff/merge で edit loss、意図しない semantic change、不正な参�
 
 Observation-shape phase: [analysis and conditions](artifacts/observation-shape-analysis.md)、[raw matrix](artifacts/observation-shape-matrix.json)。L/S/C 各10,002 Layers、12/111/112 Canonical JSON paths。通常 observe 中央値は 109.364/120.840/122.001 ms (`max/min = 1.116`)。T2 current CLI 中央値は 490.257/534.794/551.290 ms、test-only single-observation candidate は 108.783/120.423/134.195 ms。全 shape の T2/T3 candidate は current の50%以下で、production ContextService の response payload と一致した。事前 routing rule により **batch investigation first**。この phase は save、diff、merge、50k、partial load を測っていない。
 
+Save/diff/merge phase: [analysis and conditions](artifacts/save-merge-analysis.md)、[raw matrix](artifacts/save-merge-matrix.json)。1k/10k 各3 repetitions × 5 scenarios × 3 layouts、90 merges。独立 Text edits は全候補で各18 clean、同一 property / same-parent append は各12 conflicts。54 clean merges は双方の変更と無関係な Canonical fields を保持し、current validation が成功した。270 base/A/B round-trip validations が成功。1k の Text replacement payload median は CURRENT 201,642 / MONOLITHIC 366,431 / SUBTREE 66,809 bytes、10k は 2,015,142 / 3,624,431 / 665,309 bytes。production save latency / durable IO ではなく、encoder/indentation を含む payload 比較である。初回 fixture preparation の expected-bytes 拒否も Failure Evidence として保存した。
+
 ## Conclusion
 
-Observation-shape phase は、今回の同数 Layer fixture に限り、shape 間の一回観測差より、四回応答 workflow と一回観測候補の差が大きい Evidence を得た。candidate は production batch の実装・安全性・性能保証ではない。shard 粒度の Decision は未完了であり、この Spike 自体も save/diff/merge/50k/partial-load Evidence を待つ。ADR は `Spike Required` のまま維持する。
+Observation-shape phase は、今回の同数 Layer fixture に限り、shape 間の一回観測差より、四回応答 workflow と一回観測候補の差が大きい Evidence を得た。candidate は production batch の実装・安全性・性能保証ではない。shard 粒度の Decision は未完了であり、save/diff/merge phase は、今回の fixture で全候補の conflict count が同一である Evidence を得た。SUBTREE の replacement payload / conflict file は小さいが、これだけで production granularity を採用しない。50k/open-save scaling、partial load、複雑な reference edits は未検証。ADR は `Spike Required` のまま維持する。
 
 ## Artifacts
 
 - [Observation-shape analysis](artifacts/observation-shape-analysis.md)
 - [Observation-shape raw matrix](artifacts/observation-shape-matrix.json)
+
+- [Save/diff/merge analysis](artifacts/save-merge-analysis.md)
+- [Save/diff/merge raw matrix](artifacts/save-merge-matrix.json)
+- [Initial preparation failure](artifacts/save-merge-initial-failure.json)
+- [Test-only measurement prototype](artifacts/measure-save-merge.py)
+- [Fixture normalization](artifacts/normalize-fixture.swift)
