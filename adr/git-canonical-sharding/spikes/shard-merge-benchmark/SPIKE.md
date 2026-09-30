@@ -12,7 +12,7 @@
 
 entity/page/subtree の diff と merge はどう違うか。50k Layer で file 数と IO は実用的か。
 
-### Observation-shape phase (measurement plan; no result yet)
+### Observation-shape phase (precommitted plan; results below)
 
 同じ約10k Layer で、一回の Canonical observation が shard shape にどれだけ依存するか、また T2/T3 の四回の observation が shape の差より大きいかを測る。この phase だけでは shard 粒度を決定しない。
 
@@ -35,9 +35,51 @@ entity/page/subtree の diff と merge はどう違うか。50k Layer で file �
 
 T2 10k を主指標、T3 を確認、T1 を二 response control とする。結果を見た後で閾値を変更しない。今回の比較はこの fixture に限定し、cold cache、release build、real project の性能や AI total tokens、LLM task success、model cost を推定しない。full gate scripts/CI workflow は変更しない。
 
+### Save / diff / merge phase (precommitted plan)
+
+This focused phase measures 1k and 10k Layers only. It follows the completed observation-reuse routing work; the current production context session is described in [the CLI contract](../../../../docs/context-session.md). This phase does not decide the production file format.
+
+#### Fixtures and fixed candidate layouts
+
+Use the existing common Scope / Component / Token / AppSurface fixture builder. Each scale contains exactly 1,000 or 10,000 Layers across two Screens and the two existing Component roots. Each Screen has one root Stack, two child Stack subtrees X/Y and 248 or 2,498 Text leaves per subtree respectively (499/4,999 Layers per Screen). Stable IDs, child order, properties, ownership and references are identical across candidates. Validate the current-format fixture before any comparison.
+
+- **CURRENT:** unchanged production Screen/Component entity-per-file layout. Use the actual Canonical JSON bytes from the validated current-format fixture and after production CLI mutations. No file split is introduced.
+- **MONOLITHIC:** test-only `document.json`, a sorted mapping from the complete Canonical JSON inventory's relative path to its JSON value (manifest, Agent profiles and entity shards). It preserves values and stable IDs; it does not give Page architectural ownership. This is the larger aggregate option.
+- **SUBTREE:** test-only layout retaining the current inventory except each Screen root's two children become `prototypeChildrenRefs` in stable child order. The four referenced Stack trees are stored in `subtrees/<stable-layer-id>.json`. Components and other entities retain their current shards. This is the smaller subtree option, not a node-per-file or production schema implementation.
+
+Prototype transforms must losslessly round-trip to the same current-format Canonical inventory. Unknown, dangling, duplicate or unreachable subtree references are errors. Validate every reconstructed result with current hamii parse/schema/semantic validation; Current Core never parses the prototype layouts directly. Use UTF-8, deterministic key order and indentation; stable IDs determine paths. Preserve CURRENT bytes, and use one fixed encoder for both prototype candidates.
+
+#### Edits and independent writers
+
+For each scale, use three fresh repetitions of these fixed A/B scenarios:
+
+1. **different-screen:** A changes the first Text in Screen A/X; B changes the first Text in Screen B/Y.
+2. **different-subtree:** A changes the first Text in Screen A/X; B changes the first Text in Screen A/Y.
+3. **same-subtree-distinct-leaves:** A changes the first Text in Screen A/X; B changes its last Text.
+4. **same-property:** A/B assign different values to the same first Text in Screen A/X. A clean merge silently selecting one value is a correctness failure.
+5. **same-parent-append:** A/B each append a distinct Text to Screen A/X. If Git merges cleanly, require both unique IDs/content under the correct parent exactly once and record the resulting child order. Do not decide semantic append ordering or implement semantic merge.
+
+Use equal-length ASCII Text values for A/B, distinct appended names and IDs, and identical logical deltas for all layouts. Obtain each writer's before/after inventory through production CLI mutations in separate current-format branch/worktrees. Each writer observes its own `ClientPrecondition`; no session/cache/Index proof substitutes for mutation validation. Translate the same inventories to prototype layouts afterward. Test Git merge only in disposable candidate repositories; neither valid input branch/worktree is overwritten. No source worktree publication occurs.
+
+Git configuration is isolated for disposable repositories, with fixed author identity and conflict style, no custom attributes/drivers/filters, and recorded Git version. Record base/source/target OIDs. Use the same base and A/B order for all candidates. Sequentially process scenarios to bound resources; no competing full gate during measurements.
+
+#### Measurements and correctness gates
+
+For each writer/candidate record: total JSON paths/bytes, changed paths/count, before/after sizes, sum of serialized bytes that must be replaced, Git numstat added/deleted lines, and intended semantic property/structural changes. CURRENT replacement bytes come from production save output; prototype replacement bytes come from their changed serialized payloads. Exclude `.git`, `.hamii`, repository-external Index/cache and durability/journal IO. Report these as Canonical payload amplification, not full transaction IO or production save latency.
+
+For each candidate merge record: exit status, clean/conflicted/failed, unmerged paths/count, conflict marker blocks, per-conflict-path base/ours/theirs blob bytes, and any clean merged semantic validation. Do not equate Git path/hunk counts with semantic conflict counts. Every clean independent-edit merge must retain both intended edits and all unrelated IDs/properties/references; every clean append must preserve both nodes and record order. Every candidate branch and clean merge must reconstruct valid current-format data. Report validation failures, command failures and interrupted/incomplete attempts; never treat them as clean merges.
+
+Three repetitions are descriptive median/min/max only; no p95, measured throughput, SLA or universal merge guarantee. No performance ratio threshold or winning format is selected here. Success means a complete comparable matrix plus passing round-trip/semantic preservation checks. A conflict in an independent-edit scenario is candidate evidence, not grounds to discard the trial. Loss of either edit, unintended semantic changes, malformed reconstruction, stable-ID/reference violations or a same-property clean merge selecting one value disqualifies the prototype evidence. Never tune layout or scenarios after results; record problems before revising a separate plan.
+
+#### Boundaries and delivery
+
+Out of scope: 50k/open-save scaling, partial reader, production Format migration/v3, production serializer changes, save crash/power-loss recovery, managed merge publisher changes, semantic merge engine, AI token/cost estimates and Native Preview. Existing production stale-index rejection is unchanged.
+
+Commit this plan before prototype execution and verify its exact SHA. Then commit test-only prototype, raw matrix and focused Result/Conclusion under this Spike's `artifacts/`; full gate and exact-SHA CI are required. Keep the ADR `Spike Required`. After Evidence delivery, report and await the next routing decision; do not infer a final shard layout from this phase alone.
+
 ## Prototype Scope
 
-1k/50k Layer fixture を各粒度で保存し、二人の branch edit/pull/merge と外部 edit を再現する。
+Observation-shape phase と、上記の固定した 1k/10k save/diff/merge phase。50k、partial load は未検証の後続範囲として残す。
 
 ## Out of Scope
 
@@ -45,15 +87,15 @@ save transaction の crash recovery、semantic merge engine。 試作 code を p
 
 ## Measurements
 
-changed file 数、diff 行数、open/save p50/p95、conflict 件数、partial load 時間。 実行環境、fixture、command、実装 commit と raw data を記録し、事前に計測 budget を固定する。
+各 phase の事前計画に従い、実行環境、fixture、command、source commit と raw data を記録する。save/diff/merge は payload bytes / paths / Git conflicts と descriptive median/min/max を扱い、3 回から p95 を算出しない。open/save latency、50k、partial load はこの phase の測定値に含めない。
 
 ## Success Criteria
 
-無関係 entity に diff が出ず、事前 budget の性能と conflict 水準を満たす。
+Observation-shape は上記 routing rule を適用する。save/diff/merge は全比較行の round-trip / semantic preservation と試行の完全性を検証する。独立編集の Git conflict は比較結果であり、試行を除外しない。
 
 ## Failure Criteria
 
-monolithic と同程度の conflict、または file 数/IO が budget を超える。
+save/diff/merge で edit loss、意図しない semantic change、不正な参照 / stable ID、malformed reconstruction、または同一 property の競合値を clean merge で片方だけ選択した場合は correctness failure とする。未完了 / 失敗試行を成功扱いしない。
 
 ## Result
 
