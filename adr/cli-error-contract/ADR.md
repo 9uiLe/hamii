@@ -34,4 +34,4 @@ CLI smoke と CI usage の error matrix、Agent による structured error retry
 
 ## Status
 
-Researching
+Spike Required
