@@ -30,7 +30,6 @@ Status: 検証中。各 Spike は fixture、対象 OS/SDK/Xcode、実行 command
 - [Component Variant と Instance の解決](../adr/component-variant-resolution/spikes/instance-resolution/SPIKE.md)
 - [Compose IR validation](../adr/compose-target-timing/spikes/compose-ir-validation/SPIKE.md)
 - [Custom Component artifact update](../adr/custom-component-loading/spikes/artifact-update/SPIKE.md)
-- [Shard and merge benchmark](../adr/git-canonical-sharding/spikes/shard-merge-benchmark/SPIKE.md)
 - [External writer interleaving](../adr/git-external-write-coordination/spikes/external-writer-interleaving/SPIKE.md)
 - [Worktree isolation](../adr/git-external-write-coordination/spikes/worktree-isolation/SPIKE.md)
 - [External change detection](../adr/git-external-write-coordination/spikes/external-change-detection/SPIKE.md)
