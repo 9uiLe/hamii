@@ -14,24 +14,47 @@ GUI と Application Service を共有し、CLI に独立した business rule を
 
 ## Options
 
-Resource-first tree、verb-first tree、task-oriented top-level commands。
+CURRENT の hybrid command tree を維持、resource-first tree、verb-first tree、task-oriented top-level commands。
 
 ## Current Hypothesis
 
-**未確定:** resource-first tree は小さな Skill に分割しやすい。
+**Decision Review recommendation、正式 Decision 前:** CURRENT の production taxonomy と installed live-skill discovery を維持する。CURRENT は resource-oriented authoring と query / preview / integration / generation / migration / Git の semantic namespaces を組み合わせる hybrid であり、pure resource-first ではない。
 
 ## Unknowns
 
-Target / Surface / Component / Integration の command が複数 resource にまたがる場合の一貫性、利用者が必要な Skill を見つける手数。
+異なる model、広い task set、異なる skill 分割での一般性は未測定。今回の代表 workload の決定を妨げる必須追加 Spike はない。Structured error の recovery / retry は別の [CLI Error ADR](../cli-error-contract/ADR.md) の責務。
 
 ## Required Evidence
 
 新規 Agent が bootstrap skill だけから代表的な authoring、query、validation、preview、integration、generation task を完了する観察と command discovery の失敗記録。[Agent command discovery Spike](spikes/agent-command-discovery/SPIKE.md) は CURRENT を含む4候補を test-only proxy で同じ production semantics へ接続し、各2回の fresh session を比較する。実測前に grammar、task、初期 prompt、順序、hard gate を固定する。
 
+## Evidence Synthesis
+
+Plan `c6b0298` / correction `e871d49` の exact-SHA CI 成功後に8 fresh session を実施した。Evidence は `4cf61aa16ada4168e2452c0a8417905c9af64b1f`、[Verify 36713057042 success](https://github.com/9uiLe/hamii/actions/runs/36713057042)。全試行の command-only audit、独立 oracle、失敗した preflight と修正を [analysis](spikes/agent-command-discovery/artifacts/trial-analysis.md) / [matrix](spikes/agent-command-discovery/artifacts/trial-matrix.json) に保持する。Production Sources は変更していない。
+
+| Candidate | Task success | Undiscovered attempts | Usage / other errors | Discovery calls | Command attempts | Loaded skill bytes |
+|---|---:|---:|---:|---:|---:|---:|
+| CURRENT | 10/10 | 0 | 0 / 0 | 9 / 9 | 27 / 27 | 5,656 / 5,656 |
+| RESOURCE | 10/10 | 0 | 0 / 0 | 9 / 9 | 27 / 27 | 5,682 / 5,682 |
+| VERB | 10/10 | 0 | 0 / 0 | 9 / 9 | 27 / 28 | 5,757 / 5,757 |
+| TASK | 10/10 | 0 | 0 / 0 | 9 / 9 | 27 / 27 | 5,806 / 5,806 |
+
+全候補で同じ semantic skill groups を取得した。Primary discovery correctness / guessing / round-trip に material difference は観測していない。VERB-2 の1追加は context summary の重複取得で、集計に残す。
+
+Authoritative runtime token median は CURRENT 440,951 / RESOURCE 432,945.5 / VERB 424,542 / TASK 393,677.5。Total は input + output のみで、cache / reasoning を重複加算しない。TASK が最小の observed agent-session total だが、n=2 / candidate、provider/cache variance 未制御、TASK range 39,837、whole development-cycle tokens / cost 未計測。一般的な token 削減率や開発費削減を主張しない。
+
+Session wall median は CURRENT 171.403 / RESOURCE 162.045 / VERB 169.386 / TASK 154.710 seconds。Process launch から oracle 完了までの descriptive observation で、fixture / gate / CI / operator cycle は含まず、p95 / SLA / winner 判定には使わない。
+
+Alternative adoption は既存 user/scripts の例、skill text、docs、smoke、automation、agent が学ぶ grammar の変更を伴う。Discovery-call / guessing / correctness の改善がない本測定では、TASK の低い token / wall 観測値だけでこの変更負担を正当化しない。
+
 ## Decision Criteria
 
-正式 command が推測なしに発見でき、resource の所有関係と mutation boundary が名前から分かる。
+正式 command が推測なしに発見でき、resource の所有関係と mutation boundary が名前から分かる。新 command は存在する近い semantic/resource namespace を拡張し、cross-resource operation に一律の global resource/verb/task grammar を強制しない。Production rename は compatibility / migration cost を正当化する具体的 Evidence が必要。
+
+## Reopen Trigger
+
+より広い fresh-agent workload で、discovery failure、discovery round-trip、または authoritative session token usage に再現可能な product 上の改善が観測され、command compatibility / migration cost を正当化できる場合に再評価する。別 model / task set での再現が必要になる可能性がある。今回未検証の数値 threshold は設けない。
 
 ## Status
 
-Spike Required
+Ready for Decision
