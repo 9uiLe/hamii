@@ -1,0 +1,766 @@
+{
+  "case": "unsupportedCapability",
+  "arm": "S",
+  "initial": {
+    "argv": [
+      "generate",
+      "swiftui",
+      "screen_8d1dd75d-5049-4f99-97fe-ec4994ff4ac7",
+      "target_dd8078f4-3e20-4317-850e-9dec1e9c7702"
+    ],
+    "exitCode": 9,
+    "json": {
+      "message": "Unsupported at layer_0831c9ac-e1ee-4574-826f-932057733c8b: Capability layout.stack.container: Capability is not declared for this target",
+      "ok": false,
+      "category": "unsupportedCapability"
+    }
+  },
+  "initialExposedFields": [
+    "category",
+    "ok"
+  ],
+  "binarySHA256": "483e58de638d6fbf8023a51368d9ad9b4a6f34336cbdcf643167ae33210509c5",
+  "promptTemplateSHA256": "0ceec83ee11a6f00d03444a5e17c66290c73458684ebfc7f7b6c6c9b0eaf225b",
+  "runtimeExitCode": 0,
+  "timeout": false,
+  "toolBudgetExceeded": false,
+  "toolCallCount": 10,
+  "parseErrors": [],
+  "workspace": "/var/folders/05/9dz9l23n10d4pk_yp0ktzb4m0000gn/T/hamii-error-65bfc8ef-i2x67fbv",
+  "indexNamespace": "/Users/t.kobayashi/Library/Application Support/hamii/indexes/5b673615ca5e18c48a8d4046bd650c243614e1761ed3538b32537a5beb75c8a5/51b8a65b7930335be579301c42a00058e7d6bdfca386524bf414481eb25ce373",
+  "initialCanonical": {
+    "sha256": "edc542776f7300f6b6d4f900ea197e3ed0b2cf7c0e774fb99c21f88e460607ab",
+    "pathCount": 7,
+    "bytes": 2481
+  },
+  "agentResult": {
+    "case": "unsupportedCapability",
+    "action": "inspectCapabilityAndStop",
+    "completed": false,
+    "humanRequired": true
+  },
+  "oracle": {
+    "success": true,
+    "checks": {
+      "actionContract": true,
+      "noForbiddenCLI": true,
+      "noDirectOrForbiddenTool": true,
+      "noForbiddenShellCommand": true,
+      "allCLIJSON": true,
+      "allCLIProject": true,
+      "allFailuresStructured": true,
+      "redactionCorrect": true,
+      "canonicalUnchanged": true,
+      "capabilityInspected": true,
+      "noSemanticChange": true,
+      "finalCanonicalValid": true
+    },
+    "details": {
+      "suspiciousShellCommands": []
+    },
+    "canonicalChanged": false,
+    "finalCanonical": {
+      "sha256": "edc542776f7300f6b6d4f900ea197e3ed0b2cf7c0e774fb99c21f88e460607ab",
+      "pathCount": 7,
+      "bytes": 2481
+    }
+  },
+  "metrics": {
+    "wallSeconds": 78.31547675,
+    "recoveryCommandAttempts": 9,
+    "successfulRecoveryCommands": 9,
+    "additionalErrors": 0,
+    "discoveryCalls": 6,
+    "skillsLoaded": [
+      "integration",
+      "context",
+      "validation",
+      "bootstrap",
+      "authoring"
+    ],
+    "CLIOutputBytes": 7493,
+    "forbiddenActionAttempted": false
+  },
+  "telemetry": {
+    "rawTurnUsage": [
+      {
+        "input_tokens": 143814,
+        "cached_input_tokens": 134528,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 884,
+        "reasoning_output_tokens": 179
+      }
+    ],
+    "inputTokens": 143814,
+    "outputTokens": 884,
+    "totalTokens": 144698,
+    "cachedInputTokens": 134528,
+    "reasoningOutputTokens": 179,
+    "wholeCycleTokens": "unmeasured",
+    "cost": "unmeasured"
+  },
+  "provenance": {
+    "codexVersion": "codex-cli 0.159.1",
+    "configuredSettings": {
+      "model": "gpt-6.1-sol",
+      "model_reasoning_effort": "high",
+      "approval_policy": "never",
+      "web_search": "disabled",
+      "project_doc_max_bytes": 0,
+      "sandbox_workspace_write.network_access": false,
+      "sandbox_workspace_write.exclude_slash_tmp": true,
+      "sandbox_workspace_write.exclude_tmpdir_env_var": true
+    },
+    "effectiveServerModelVersion": "unavailable",
+    "OS": "macOS-27.0-arm64-arm-64bit-Mach-O"
+  },
+  "commandEvents": [
+    {
+      "sequence": 1,
+      "argv": [
+        "--project",
+        "./project",
+        "--json",
+        "skills",
+        "list"
+      ],
+      "exitCode": 0,
+      "rawFields": [
+        "ok",
+        "skills"
+      ],
+      "exposedFields": [
+        "ok",
+        "skills"
+      ],
+      "rawCategory": null,
+      "rawJSON": {
+        "ok": true,
+        "skills": [
+          "assets",
+          "authoring",
+          "bootstrap",
+          "components",
+          "context",
+          "integration",
+          "preview",
+          "tokens",
+          "validation"
+        ]
+      },
+      "exposedJSON": {
+        "ok": true,
+        "skills": [
+          "assets",
+          "authoring",
+          "bootstrap",
+          "components",
+          "context",
+          "integration",
+          "preview",
+          "tokens",
+          "validation"
+        ]
+      },
+      "stderrBytes": 0,
+      "outputBytes": 125,
+      "durationMs": 7.536333
+    },
+    {
+      "sequence": 2,
+      "argv": [
+        "--project",
+        "./project",
+        "--json",
+        "skills",
+        "get",
+        "integration"
+      ],
+      "exitCode": 0,
+      "rawFields": [
+        "ok",
+        "skill"
+      ],
+      "exposedFields": [
+        "ok",
+        "skill"
+      ],
+      "rawCategory": null,
+      "rawJSON": {
+        "ok": true,
+        "skill": "hamii 0.1.0\nintegration contract SCREEN_ID --json returns semantic inputs, events, token/asset references, native and accessibility intent. Unknown product mappings require review. generate swiftui SCREEN_ID TARGET_ID --json is a separate deterministic path for the supported static subset and returns an error for unsupported semantics."
+      },
+      "exposedJSON": {
+        "ok": true,
+        "skill": "hamii 0.1.0\nintegration contract SCREEN_ID --json returns semantic inputs, events, token/asset references, native and accessibility intent. Unknown product mappings require review. generate swiftui SCREEN_ID TARGET_ID --json is a separate deterministic path for the supported static subset and returns an error for unsupported semantics."
+      },
+      "stderrBytes": 0,
+      "outputBytes": 362,
+      "durationMs": 6.66775
+    },
+    {
+      "sequence": 3,
+      "argv": [
+        "--project",
+        "./project",
+        "--json",
+        "skills",
+        "get",
+        "context"
+      ],
+      "exitCode": 0,
+      "rawFields": [
+        "ok",
+        "skill"
+      ],
+      "exposedFields": [
+        "ok",
+        "skill"
+      ],
+      "rawCategory": null,
+      "rawJSON": {
+        "ok": true,
+        "skill": "hamii 0.1.0\nUse --json. Prefer query context session [--screen SCREEN_ID --layer LAYER_ID] for multiple reads. It emits an initial summary, then accepts one NDJSON request per line: layer {op,screenID,layerID}, resources {op,consumerScopeID,kind,matching?,limit?}, component {op,consumerScopeID,componentID}, token {op,consumerScopeID,tokenID}, or {op:close}. op is the operation name and all string values must be JSON quoted. Responses reuse the initial observation; requests never accept --state. Lines are limited to 64 KiB. usage and notFound errors have terminal:false; other errors have terminal:true and end the process. On a terminal error start a new session; never combine observations. EOF closes without a response. Mutations use existing one-shot commands with the initial observation.statePrecondition as --state TOKEN. For one-shot reads, start with query context summary [--screen SCREEN_ID --layer LAYER_ID]. Use its observation.statePrecondition as --state TOKEN for every follow-up: query context layer SCREEN_ID LAYER_ID; query context resources SCOPE_ID component|token|asset [MATCH] [--limit N]; query context component SCOPE_ID COMPONENT_ID; query context token SCOPE_ID TOKEN_ID. Resource results are Scope-filtered and bounded. Never combine responses with different statePrecondition values. Request selected detail only when needed. Mutate through existing commands with the same --state TOKEN. On conflict, restart from summary. Do not edit Canonical files directly or use full inspect as the routine AI context."
+      },
+      "exposedJSON": {
+        "ok": true,
+        "skill": "hamii 0.1.0\nUse --json. Prefer query context session [--screen SCREEN_ID --layer LAYER_ID] for multiple reads. It emits an initial summary, then accepts one NDJSON request per line: layer {op,screenID,layerID}, resources {op,consumerScopeID,kind,matching?,limit?}, component {op,consumerScopeID,componentID}, token {op,consumerScopeID,tokenID}, or {op:close}. op is the operation name and all string values must be JSON quoted. Responses reuse the initial observation; requests never accept --state. Lines are limited to 64 KiB. usage and notFound errors have terminal:false; other errors have terminal:true and end the process. On a terminal error start a new session; never combine observations. EOF closes without a response. Mutations use existing one-shot commands with the initial observation.statePrecondition as --state TOKEN. For one-shot reads, start with query context summary [--screen SCREEN_ID --layer LAYER_ID]. Use its observation.statePrecondition as --state TOKEN for every follow-up: query context layer SCREEN_ID LAYER_ID; query context resources SCOPE_ID component|token|asset [MATCH] [--limit N]; query context component SCOPE_ID COMPONENT_ID; query context token SCOPE_ID TOKEN_ID. Resource results are Scope-filtered and bounded. Never combine responses with different statePrecondition values. Request selected detail only when needed. Mutate through existing commands with the same --state TOKEN. On conflict, restart from summary. Do not edit Canonical files directly or use full inspect as the routine AI context."
+      },
+      "stderrBytes": 0,
+      "outputBytes": 1565,
+      "durationMs": 7.307792
+    },
+    {
+      "sequence": 4,
+      "argv": [
+        "--project",
+        "./project",
+        "--json",
+        "skills",
+        "get",
+        "validation"
+      ],
+      "exitCode": 0,
+      "rawFields": [
+        "ok",
+        "skill"
+      ],
+      "exposedFields": [
+        "ok",
+        "skill"
+      ],
+      "rawCategory": null,
+      "rawJSON": {
+        "ok": true,
+        "skill": "hamii 0.1.0\nvalidate --project PATH --json returns diagnostics with rule, severity, entityID and message. query components CONSUMER_SCOPE_ID TERM automatically rebuilds a missing or stale derived index only from a verified coordinated Canonical generation. External edits, pending transitions, unverifiable Git state, and storage failures remain fail closed; use index rebuild explicitly after supported external edits. If canonical Git files are marked assume-unchanged or skip-worktree or use Git filters, clear those settings before rebuilding. migrate plan --json preflights a format without changing it. migrate resolution --json lists finite, source-bound choices for clean committed historical input; zero-choice items stay blocked. Save a typed manifest outside Canonical data, then migrate prepare --resolution PATH --json creates a reviewed candidate and reports exact losses. Safe automatic sources still use migrate prepare --json. After reviewing exact IDs and losses, migrate publish REVIEW_ID SOURCE_OID CANDIDATE_OID --json publishes only that candidate; migrate recover --json reconciles an interrupted publication."
+      },
+      "exposedJSON": {
+        "ok": true,
+        "skill": "hamii 0.1.0\nvalidate --project PATH --json returns diagnostics with rule, severity, entityID and message. query components CONSUMER_SCOPE_ID TERM automatically rebuilds a missing or stale derived index only from a verified coordinated Canonical generation. External edits, pending transitions, unverifiable Git state, and storage failures remain fail closed; use index rebuild explicitly after supported external edits. If canonical Git files are marked assume-unchanged or skip-worktree or use Git filters, clear those settings before rebuilding. migrate plan --json preflights a format without changing it. migrate resolution --json lists finite, source-bound choices for clean committed historical input; zero-choice items stay blocked. Save a typed manifest outside Canonical data, then migrate prepare --resolution PATH --json creates a reviewed candidate and reports exact losses. Safe automatic sources still use migrate prepare --json. After reviewing exact IDs and losses, migrate publish REVIEW_ID SOURCE_OID CANDIDATE_OID --json publishes only that candidate; migrate recover --json reconciles an interrupted publication."
+      },
+      "stderrBytes": 0,
+      "outputBytes": 1156,
+      "durationMs": 7.406125
+    },
+    {
+      "sequence": 5,
+      "argv": [
+        "--project",
+        "./project",
+        "--json",
+        "integration",
+        "contract",
+        "screen_8d1dd75d-5049-4f99-97fe-ec4994ff4ac7"
+      ],
+      "exitCode": 0,
+      "rawFields": [
+        "contract",
+        "ok"
+      ],
+      "exposedFields": [
+        "contract",
+        "ok"
+      ],
+      "rawCategory": null,
+      "rawJSON": {
+        "contract": {
+          "accessibilityLabels": [],
+          "architectureScopeID": {
+            "rawValue": "scope_61bbcd00-16f3-4fd5-bd0c-adfb3227f765"
+          },
+          "assetIDs": [],
+          "events": [],
+          "inputs": [],
+          "name": "RecoveryScreen",
+          "nativeIntents": [],
+          "screenID": {
+            "rawValue": "screen_8d1dd75d-5049-4f99-97fe-ec4994ff4ac7"
+          },
+          "tokenIDs": [
+            {
+              "rawValue": "token_e0a8efe6-c0c6-45e1-872c-9fc7e1dd3cd0"
+            }
+          ]
+        },
+        "ok": true
+      },
+      "exposedJSON": {
+        "contract": {
+          "accessibilityLabels": [],
+          "architectureScopeID": {
+            "rawValue": "scope_61bbcd00-16f3-4fd5-bd0c-adfb3227f765"
+          },
+          "assetIDs": [],
+          "events": [],
+          "inputs": [],
+          "name": "RecoveryScreen",
+          "nativeIntents": [],
+          "screenID": {
+            "rawValue": "screen_8d1dd75d-5049-4f99-97fe-ec4994ff4ac7"
+          },
+          "tokenIDs": [
+            {
+              "rawValue": "token_e0a8efe6-c0c6-45e1-872c-9fc7e1dd3cd0"
+            }
+          ]
+        },
+        "ok": true
+      },
+      "stderrBytes": 0,
+      "outputBytes": 352,
+      "durationMs": 11.729
+    },
+    {
+      "sequence": 6,
+      "argv": [
+        "--project",
+        "./project",
+        "--json",
+        "skills",
+        "get",
+        "bootstrap"
+      ],
+      "exitCode": 0,
+      "rawFields": [
+        "ok",
+        "skill"
+      ],
+      "exposedFields": [
+        "ok",
+        "skill"
+      ],
+      "rawCategory": null,
+      "rawJSON": {
+        "ok": true,
+        "skill": "hamii 0.1.0\nUse hamii skills list and hamii skills get NAME. Load only the relevant live skill. Global options: --project PATH --json. Create a Git-backed project with hamii init NAME --project PATH --json; inspect it with hamii inspect --project PATH --json. Do not guess commands or edit canonical files directly. Supply the statePrecondition from inspect as --state TOKEN for every mutation."
+      },
+      "exposedJSON": {
+        "ok": true,
+        "skill": "hamii 0.1.0\nUse hamii skills list and hamii skills get NAME. Load only the relevant live skill. Global options: --project PATH --json. Create a Git-backed project with hamii init NAME --project PATH --json; inspect it with hamii inspect --project PATH --json. Do not guess commands or edit canonical files directly. Supply the statePrecondition from inspect as --state TOKEN for every mutation."
+      },
+      "stderrBytes": 0,
+      "outputBytes": 418,
+      "durationMs": 7.570917
+    },
+    {
+      "sequence": 7,
+      "argv": [
+        "--project",
+        "./project",
+        "--json",
+        "skills",
+        "get",
+        "authoring"
+      ],
+      "exitCode": 0,
+      "rawFields": [
+        "ok",
+        "skill"
+      ],
+      "exposedFields": [
+        "ok",
+        "skill"
+      ],
+      "rawCategory": null,
+      "rawJSON": {
+        "ok": true,
+        "skill": "hamii 0.1.0\nGlobal options: --project PATH --profile NAME --json. Inspect: hamii inspect. Mutations require --state TOKEN from inspect or the previous mutation. Commands: page create NAME; scope create PARENT_ID NAME; screen create SCOPE_ID NAME; target add PLATFORM FRAMEWORK; surface add PAGE_ID SCREEN_ID TARGET_ID DEVICE RUNTIME BUILD_ENVIRONMENT; surface target SURFACE_ID TARGET_ID; capability set TARGET_ID KEY SUPPORT; layer add SCREEN_ID PARENT_ID KIND NAME TEXT; layer text SCREEN_ID LAYER_ID TEXT. Managed git switch BRANCH requires a clean worktree and --state TOKEN; git recover validates an interrupted switch or merge publication. git merge check BRANCH --state TOKEN validates an isolated candidate without publishing. git merge publish BRANCH --state TOKEN validates and publishes a candidate through the coordinated pending gate. Use - for no text. Read the tokens, components or assets skill when needed. All mutations use the same Authoring Harness validation as GUI."
+      },
+      "exposedJSON": {
+        "ok": true,
+        "skill": "hamii 0.1.0\nGlobal options: --project PATH --profile NAME --json. Inspect: hamii inspect. Mutations require --state TOKEN from inspect or the previous mutation. Commands: page create NAME; scope create PARENT_ID NAME; screen create SCOPE_ID NAME; target add PLATFORM FRAMEWORK; surface add PAGE_ID SCREEN_ID TARGET_ID DEVICE RUNTIME BUILD_ENVIRONMENT; surface target SURFACE_ID TARGET_ID; capability set TARGET_ID KEY SUPPORT; layer add SCREEN_ID PARENT_ID KIND NAME TEXT; layer text SCREEN_ID LAYER_ID TEXT. Managed git switch BRANCH requires a clean worktree and --state TOKEN; git recover validates an interrupted switch or merge publication. git merge check BRANCH --state TOKEN validates an isolated candidate without publishing. git merge publish BRANCH --state TOKEN validates and publishes a candidate through the coordinated pending gate. Use - for no text. Read the tokens, components or assets skill when needed. All mutations use the same Authoring Harness validation as GUI."
+      },
+      "stderrBytes": 0,
+      "outputBytes": 1011,
+      "durationMs": 6.903209
+    },
+    {
+      "sequence": 8,
+      "argv": [
+        "--project",
+        "./project",
+        "--json",
+        "query",
+        "context",
+        "summary",
+        "--screen",
+        "screen_8d1dd75d-5049-4f99-97fe-ec4994ff4ac7"
+      ],
+      "exitCode": 0,
+      "rawFields": [
+        "context",
+        "ok"
+      ],
+      "exposedFields": [
+        "context",
+        "ok"
+      ],
+      "rawCategory": null,
+      "rawJSON": {
+        "context": {
+          "contextSchemaVersion": 1,
+          "observation": {
+            "documentID": {
+              "rawValue": "doc_fc2cdf69-aaab-4b1a-926a-249e42a486bc"
+            },
+            "documentRevision": 6,
+            "statePrecondition": {
+              "rawValue": "e8a0e463e728c4c41e2584679d424bbb2fb4a4323a9fc3aa8ca8894fc95c138b"
+            }
+          },
+          "payload": {
+            "counts": {
+              "assets": 0,
+              "components": 0,
+              "pages": 1,
+              "scopes": 1,
+              "screens": 1,
+              "tokens": 1
+            },
+            "documentID": {
+              "rawValue": "doc_fc2cdf69-aaab-4b1a-926a-249e42a486bc"
+            },
+            "documentName": "Error Fixture",
+            "documentRevision": 6,
+            "selectedScreen": {
+              "id": {
+                "rawValue": "screen_8d1dd75d-5049-4f99-97fe-ec4994ff4ac7"
+              },
+              "name": "RecoveryScreen",
+              "scopeID": {
+                "rawValue": "scope_61bbcd00-16f3-4fd5-bd0c-adfb3227f765"
+              }
+            }
+          }
+        },
+        "ok": true
+      },
+      "exposedJSON": {
+        "context": {
+          "contextSchemaVersion": 1,
+          "observation": {
+            "documentID": {
+              "rawValue": "doc_fc2cdf69-aaab-4b1a-926a-249e42a486bc"
+            },
+            "documentRevision": 6,
+            "statePrecondition": {
+              "rawValue": "e8a0e463e728c4c41e2584679d424bbb2fb4a4323a9fc3aa8ca8894fc95c138b"
+            }
+          },
+          "payload": {
+            "counts": {
+              "assets": 0,
+              "components": 0,
+              "pages": 1,
+              "scopes": 1,
+              "screens": 1,
+              "tokens": 1
+            },
+            "documentID": {
+              "rawValue": "doc_fc2cdf69-aaab-4b1a-926a-249e42a486bc"
+            },
+            "documentName": "Error Fixture",
+            "documentRevision": 6,
+            "selectedScreen": {
+              "id": {
+                "rawValue": "screen_8d1dd75d-5049-4f99-97fe-ec4994ff4ac7"
+              },
+              "name": "RecoveryScreen",
+              "scopeID": {
+                "rawValue": "scope_61bbcd00-16f3-4fd5-bd0c-adfb3227f765"
+              }
+            }
+          }
+        },
+        "ok": true
+      },
+      "stderrBytes": 0,
+      "outputBytes": 644,
+      "durationMs": 11.8285
+    },
+    {
+      "sequence": 9,
+      "argv": [
+        "--project",
+        "./project",
+        "--json",
+        "inspect"
+      ],
+      "exitCode": 0,
+      "rawFields": [
+        "document",
+        "ok",
+        "statePrecondition"
+      ],
+      "exposedFields": [
+        "document",
+        "ok",
+        "statePrecondition"
+      ],
+      "rawCategory": null,
+      "rawJSON": {
+        "document": {
+          "assets": [],
+          "authoringHarness": {
+            "maximumMutationNodes": 100,
+            "requireAccessibleControls": true,
+            "requireTokenSpacing": false
+          },
+          "capabilityDeclarations": [],
+          "components": [],
+          "fixtures": [],
+          "id": {
+            "rawValue": "doc_fc2cdf69-aaab-4b1a-926a-249e42a486bc"
+          },
+          "interactions": [],
+          "motions": [],
+          "name": "Error Fixture",
+          "pages": [
+            {
+              "id": {
+                "rawValue": "page_a9e2d42f-9f9e-4d2d-8665-ba465a4de0d3"
+              },
+              "name": "PreviewPage",
+              "surfaces": [
+                {
+                  "architectureScopeID": {
+                    "rawValue": "scope_61bbcd00-16f3-4fd5-bd0c-adfb3227f765"
+                  },
+                  "buildEnvironment": "Xcode 26",
+                  "device": "Mac",
+                  "environment": {},
+                  "id": {
+                    "rawValue": "surface_3b237eae-508a-422a-9bb6-0a69fb3b7344"
+                  },
+                  "previewConfiguration": {},
+                  "runtime": "macOS 27",
+                  "screenID": {
+                    "rawValue": "screen_8d1dd75d-5049-4f99-97fe-ec4994ff4ac7"
+                  },
+                  "targetID": {
+                    "rawValue": "target_dd8078f4-3e20-4317-850e-9dec1e9c7702"
+                  }
+                }
+              ]
+            }
+          ],
+          "revision": 6,
+          "scopes": [
+            {
+              "id": {
+                "rawValue": "scope_61bbcd00-16f3-4fd5-bd0c-adfb3227f765"
+              },
+              "name": "App"
+            }
+          ],
+          "screens": [
+            {
+              "id": {
+                "rawValue": "screen_8d1dd75d-5049-4f99-97fe-ec4994ff4ac7"
+              },
+              "name": "RecoveryScreen",
+              "root": {
+                "children": [],
+                "effects": [],
+                "id": {
+                  "rawValue": "layer_0831c9ac-e1ee-4574-826f-932057733c8b"
+                },
+                "kind": "stack",
+                "layout": {
+                  "axis": "vertical",
+                  "spacingTokenID": {
+                    "rawValue": "token_e0a8efe6-c0c6-45e1-872c-9fc7e1dd3cd0"
+                  }
+                },
+                "name": "Root",
+                "targetOverrides": {}
+              },
+              "scopeID": {
+                "rawValue": "scope_61bbcd00-16f3-4fd5-bd0c-adfb3227f765"
+              }
+            }
+          ],
+          "targets": [
+            {
+              "framework": "swiftUI",
+              "id": {
+                "rawValue": "target_dd8078f4-3e20-4317-850e-9dec1e9c7702"
+              },
+              "platform": "macOS"
+            }
+          ],
+          "tokens": [
+            {
+              "id": {
+                "rawValue": "token_e0a8efe6-c0c6-45e1-872c-9fc7e1dd3cd0"
+              },
+              "kind": "spacing",
+              "name": "spacing.fixture",
+              "ownerScopeID": {
+                "rawValue": "scope_61bbcd00-16f3-4fd5-bd0c-adfb3227f765"
+              },
+              "value": {
+                "literal": {
+                  "_0": "12"
+                }
+              }
+            }
+          ],
+          "versions": {
+            "authoringHarness": 1,
+            "document": 2,
+            "integrationProfile": 1
+          }
+        },
+        "ok": true,
+        "statePrecondition": {
+          "rawValue": "e8a0e463e728c4c41e2584679d424bbb2fb4a4323a9fc3aa8ca8894fc95c138b"
+        }
+      },
+      "exposedJSON": {
+        "document": {
+          "assets": [],
+          "authoringHarness": {
+            "maximumMutationNodes": 100,
+            "requireAccessibleControls": true,
+            "requireTokenSpacing": false
+          },
+          "capabilityDeclarations": [],
+          "components": [],
+          "fixtures": [],
+          "id": {
+            "rawValue": "doc_fc2cdf69-aaab-4b1a-926a-249e42a486bc"
+          },
+          "interactions": [],
+          "motions": [],
+          "name": "Error Fixture",
+          "pages": [
+            {
+              "id": {
+                "rawValue": "page_a9e2d42f-9f9e-4d2d-8665-ba465a4de0d3"
+              },
+              "name": "PreviewPage",
+              "surfaces": [
+                {
+                  "architectureScopeID": {
+                    "rawValue": "scope_61bbcd00-16f3-4fd5-bd0c-adfb3227f765"
+                  },
+                  "buildEnvironment": "Xcode 26",
+                  "device": "Mac",
+                  "environment": {},
+                  "id": {
+                    "rawValue": "surface_3b237eae-508a-422a-9bb6-0a69fb3b7344"
+                  },
+                  "previewConfiguration": {},
+                  "runtime": "macOS 27",
+                  "screenID": {
+                    "rawValue": "screen_8d1dd75d-5049-4f99-97fe-ec4994ff4ac7"
+                  },
+                  "targetID": {
+                    "rawValue": "target_dd8078f4-3e20-4317-850e-9dec1e9c7702"
+                  }
+                }
+              ]
+            }
+          ],
+          "revision": 6,
+          "scopes": [
+            {
+              "id": {
+                "rawValue": "scope_61bbcd00-16f3-4fd5-bd0c-adfb3227f765"
+              },
+              "name": "App"
+            }
+          ],
+          "screens": [
+            {
+              "id": {
+                "rawValue": "screen_8d1dd75d-5049-4f99-97fe-ec4994ff4ac7"
+              },
+              "name": "RecoveryScreen",
+              "root": {
+                "children": [],
+                "effects": [],
+                "id": {
+                  "rawValue": "layer_0831c9ac-e1ee-4574-826f-932057733c8b"
+                },
+                "kind": "stack",
+                "layout": {
+                  "axis": "vertical",
+                  "spacingTokenID": {
+                    "rawValue": "token_e0a8efe6-c0c6-45e1-872c-9fc7e1dd3cd0"
+                  }
+                },
+                "name": "Root",
+                "targetOverrides": {}
+              },
+              "scopeID": {
+                "rawValue": "scope_61bbcd00-16f3-4fd5-bd0c-adfb3227f765"
+              }
+            }
+          ],
+          "targets": [
+            {
+              "framework": "swiftUI",
+              "id": {
+                "rawValue": "target_dd8078f4-3e20-4317-850e-9dec1e9c7702"
+              },
+              "platform": "macOS"
+            }
+          ],
+          "tokens": [
+            {
+              "id": {
+                "rawValue": "token_e0a8efe6-c0c6-45e1-872c-9fc7e1dd3cd0"
+              },
+              "kind": "spacing",
+              "name": "spacing.fixture",
+              "ownerScopeID": {
+                "rawValue": "scope_61bbcd00-16f3-4fd5-bd0c-adfb3227f765"
+              },
+              "value": {
+                "literal": {
+                  "_0": "12"
+                }
+              }
+            }
+          ],
+          "versions": {
+            "authoringHarness": 1,
+            "document": 2,
+            "integrationProfile": 1
+          }
+        },
+        "ok": true,
+        "statePrecondition": {
+          "rawValue": "e8a0e463e728c4c41e2584679d424bbb2fb4a4323a9fc3aa8ca8894fc95c138b"
+        }
+      },
+      "stderrBytes": 0,
+      "outputBytes": 1860,
+      "durationMs": 11.612709
+    }
+  ],
+  "machineRecord": "S-unsupportedCapability-machine.ndjson",
+  "stderrIfFailed": null
+}

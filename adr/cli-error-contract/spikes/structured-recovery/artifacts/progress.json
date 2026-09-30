@@ -1,0 +1,113 @@
+{
+  "completed": [
+    {
+      "arm": "S",
+      "case": "usage",
+      "runtimeExitCode": 0,
+      "oracleSuccess": true
+    },
+    {
+      "arm": "S",
+      "case": "notFound",
+      "runtimeExitCode": 0,
+      "oracleSuccess": true
+    },
+    {
+      "arm": "S",
+      "case": "validation",
+      "runtimeExitCode": 0,
+      "oracleSuccess": true
+    },
+    {
+      "arm": "S",
+      "case": "approval",
+      "runtimeExitCode": 0,
+      "oracleSuccess": true
+    },
+    {
+      "arm": "S",
+      "case": "conflict",
+      "runtimeExitCode": 0,
+      "oracleSuccess": true
+    },
+    {
+      "arm": "S",
+      "case": "transitionPending",
+      "runtimeExitCode": 0,
+      "oracleSuccess": true
+    },
+    {
+      "arm": "S",
+      "case": "staleIndex",
+      "runtimeExitCode": 0,
+      "oracleSuccess": true
+    },
+    {
+      "arm": "S",
+      "case": "migrationRequired",
+      "runtimeExitCode": 0,
+      "oracleSuccess": true
+    },
+    {
+      "arm": "S",
+      "case": "unsupportedCapability",
+      "runtimeExitCode": 0,
+      "oracleSuccess": true
+    },
+    {
+      "arm": "P",
+      "case": "unsupportedCapability",
+      "runtimeExitCode": 0,
+      "oracleSuccess": true
+    },
+    {
+      "arm": "P",
+      "case": "migrationRequired",
+      "runtimeExitCode": 0,
+      "oracleSuccess": true
+    },
+    {
+      "arm": "P",
+      "case": "staleIndex",
+      "runtimeExitCode": 0,
+      "oracleSuccess": true
+    },
+    {
+      "arm": "P",
+      "case": "transitionPending",
+      "runtimeExitCode": 0,
+      "oracleSuccess": true
+    },
+    {
+      "arm": "P",
+      "case": "conflict",
+      "runtimeExitCode": 0,
+      "oracleSuccess": true
+    },
+    {
+      "arm": "P",
+      "case": "approval",
+      "runtimeExitCode": 0,
+      "oracleSuccess": true
+    },
+    {
+      "arm": "P",
+      "case": "validation",
+      "runtimeExitCode": 0,
+      "oracleSuccess": true
+    },
+    {
+      "arm": "P",
+      "case": "notFound",
+      "runtimeExitCode": 0,
+      "oracleSuccess": true
+    },
+    {
+      "arm": "P",
+      "case": "usage",
+      "runtimeExitCode": 0,
+      "oracleSuccess": true
+    }
+  ],
+  "notRun": []
+}

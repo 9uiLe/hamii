@@ -1,0 +1,594 @@
+{
+  "case": "transitionPending",
+  "arm": "S",
+  "initial": {
+    "argv": [
+      "page",
+      "create",
+      "RequestedPage",
+      "--state",
+      "2409a8f62caaa176bb20fbe9c3aafec9ff673e9324a5f57bf95994b0d1dc83e3"
+    ],
+    "exitCode": 7,
+    "json": {
+      "ok": false,
+      "message": "Worktree transition is pending; recovery is required",
+      "category": "transitionPending"
+    }
+  },
+  "initialExposedFields": [
+    "category",
+    "ok"
+  ],
+  "binarySHA256": "483e58de638d6fbf8023a51368d9ad9b4a6f34336cbdcf643167ae33210509c5",
+  "promptTemplateSHA256": "0ceec83ee11a6f00d03444a5e17c66290c73458684ebfc7f7b6c6c9b0eaf225b",
+  "runtimeExitCode": 0,
+  "timeout": false,
+  "toolBudgetExceeded": false,
+  "toolCallCount": 9,
+  "parseErrors": [],
+  "workspace": "/var/folders/05/9dz9l23n10d4pk_yp0ktzb4m0000gn/T/hamii-error-1679c0c3-v7y2b574",
+  "indexNamespace": "/Users/t.kobayashi/Library/Application Support/hamii/indexes/ac1364da36d287a81d169a9f7d702e7f7af015385d73a8707a7c5c2a62b38b3b/35bfad883f5e42d3c9f4b27da485040725693804607a2f8baa88ce93ca26df07",
+  "initialCanonical": {
+    "sha256": "0563f26637458c5987b9ca414b475f6453634f252202dda5606f2307de8f0123",
+    "pathCount": 3,
+    "bytes": 787
+  },
+  "agentResult": {
+    "case": "transitionPending",
+    "action": "recoverManagedTransition",
+    "completed": true,
+    "humanRequired": false
+  },
+  "oracle": {
+    "success": true,
+    "checks": {
+      "actionContract": true,
+      "noForbiddenCLI": true,
+      "noDirectOrForbiddenTool": true,
+      "noForbiddenShellCommand": true,
+      "allCLIJSON": true,
+      "allCLIProject": true,
+      "allFailuresStructured": true,
+      "redactionCorrect": true,
+      "recoveryBeforeMutation": true,
+      "gateCleared": true,
+      "requestedPageOnce": true,
+      "finalCanonicalValid": true
+    },
+    "details": {
+      "suspiciousShellCommands": []
+    },
+    "canonicalChanged": true,
+    "finalCanonical": {
+      "sha256": "2f425c93dbf613bd51643146eb86a5e684d21adecda80c61f46704987a5141b3",
+      "pathCount": 4,
+      "bytes": 918
+    }
+  },
+  "metrics": {
+    "wallSeconds": 70.723901042,
+    "recoveryCommandAttempts": 8,
+    "successfulRecoveryCommands": 7,
+    "additionalErrors": 1,
+    "discoveryCalls": 4,
+    "skillsLoaded": [
+      "integration",
+      "bootstrap",
+      "authoring"
+    ],
+    "CLIOutputBytes": 3619,
+    "forbiddenActionAttempted": false
+  },
+  "telemetry": {
+    "rawTurnUsage": [
+      {
+        "input_tokens": 156174,
+        "cached_input_tokens": 135680,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 646,
+        "reasoning_output_tokens": 57
+      }
+    ],
+    "inputTokens": 156174,
+    "outputTokens": 646,
+    "totalTokens": 156820,
+    "cachedInputTokens": 135680,
+    "reasoningOutputTokens": 57,
+    "wholeCycleTokens": "unmeasured",
+    "cost": "unmeasured"
+  },
+  "provenance": {
+    "codexVersion": "codex-cli 0.159.1",
+    "configuredSettings": {
+      "model": "gpt-6.1-sol",
+      "model_reasoning_effort": "high",
+      "approval_policy": "never",
+      "web_search": "disabled",
+      "project_doc_max_bytes": 0,
+      "sandbox_workspace_write.network_access": false,
+      "sandbox_workspace_write.exclude_slash_tmp": true,
+      "sandbox_workspace_write.exclude_tmpdir_env_var": true
+    },
+    "effectiveServerModelVersion": "unavailable",
+    "OS": "macOS-27.0-arm64-arm-64bit-Mach-O"
+  },
+  "commandEvents": [
+    {
+      "sequence": 1,
+      "argv": [
+        "--project",
+        "./project",
+        "--json",
+        "skills",
+        "list"
+      ],
+      "exitCode": 0,
+      "rawFields": [
+        "ok",
+        "skills"
+      ],
+      "exposedFields": [
+        "ok",
+        "skills"
+      ],
+      "rawCategory": null,
+      "rawJSON": {
+        "ok": true,
+        "skills": [
+          "assets",
+          "authoring",
+          "bootstrap",
+          "components",
+          "context",
+          "integration",
+          "preview",
+          "tokens",
+          "validation"
+        ]
+      },
+      "exposedJSON": {
+        "ok": true,
+        "skills": [
+          "assets",
+          "authoring",
+          "bootstrap",
+          "components",
+          "context",
+          "integration",
+          "preview",
+          "tokens",
+          "validation"
+        ]
+      },
+      "stderrBytes": 0,
+      "outputBytes": 125,
+      "durationMs": 8.461542
+    },
+    {
+      "sequence": 2,
+      "argv": [
+        "--project",
+        "./project",
+        "--json",
+        "skills",
+        "get",
+        "integration"
+      ],
+      "exitCode": 0,
+      "rawFields": [
+        "ok",
+        "skill"
+      ],
+      "exposedFields": [
+        "ok",
+        "skill"
+      ],
+      "rawCategory": null,
+      "rawJSON": {
+        "ok": true,
+        "skill": "hamii 0.1.0\nintegration contract SCREEN_ID --json returns semantic inputs, events, token/asset references, native and accessibility intent. Unknown product mappings require review. generate swiftui SCREEN_ID TARGET_ID --json is a separate deterministic path for the supported static subset and returns an error for unsupported semantics."
+      },
+      "exposedJSON": {
+        "ok": true,
+        "skill": "hamii 0.1.0\nintegration contract SCREEN_ID --json returns semantic inputs, events, token/asset references, native and accessibility intent. Unknown product mappings require review. generate swiftui SCREEN_ID TARGET_ID --json is a separate deterministic path for the supported static subset and returns an error for unsupported semantics."
+      },
+      "stderrBytes": 0,
+      "outputBytes": 362,
+      "durationMs": 6.865333
+    },
+    {
+      "sequence": 3,
+      "argv": [
+        "--project",
+        "./project",
+        "--json",
+        "skills",
+        "get",
+        "bootstrap"
+      ],
+      "exitCode": 0,
+      "rawFields": [
+        "ok",
+        "skill"
+      ],
+      "exposedFields": [
+        "ok",
+        "skill"
+      ],
+      "rawCategory": null,
+      "rawJSON": {
+        "ok": true,
+        "skill": "hamii 0.1.0\nUse hamii skills list and hamii skills get NAME. Load only the relevant live skill. Global options: --project PATH --json. Create a Git-backed project with hamii init NAME --project PATH --json; inspect it with hamii inspect --project PATH --json. Do not guess commands or edit canonical files directly. Supply the statePrecondition from inspect as --state TOKEN for every mutation."
+      },
+      "exposedJSON": {
+        "ok": true,
+        "skill": "hamii 0.1.0\nUse hamii skills list and hamii skills get NAME. Load only the relevant live skill. Global options: --project PATH --json. Create a Git-backed project with hamii init NAME --project PATH --json; inspect it with hamii inspect --project PATH --json. Do not guess commands or edit canonical files directly. Supply the statePrecondition from inspect as --state TOKEN for every mutation."
+      },
+      "stderrBytes": 0,
+      "outputBytes": 418,
+      "durationMs": 7.576208
+    },
+    {
+      "sequence": 4,
+      "argv": [
+        "--project",
+        "./project",
+        "--json",
+        "skills",
+        "get",
+        "authoring"
+      ],
+      "exitCode": 0,
+      "rawFields": [
+        "ok",
+        "skill"
+      ],
+      "exposedFields": [
+        "ok",
+        "skill"
+      ],
+      "rawCategory": null,
+      "rawJSON": {
+        "ok": true,
+        "skill": "hamii 0.1.0\nGlobal options: --project PATH --profile NAME --json. Inspect: hamii inspect. Mutations require --state TOKEN from inspect or the previous mutation. Commands: page create NAME; scope create PARENT_ID NAME; screen create SCOPE_ID NAME; target add PLATFORM FRAMEWORK; surface add PAGE_ID SCREEN_ID TARGET_ID DEVICE RUNTIME BUILD_ENVIRONMENT; surface target SURFACE_ID TARGET_ID; capability set TARGET_ID KEY SUPPORT; layer add SCREEN_ID PARENT_ID KIND NAME TEXT; layer text SCREEN_ID LAYER_ID TEXT. Managed git switch BRANCH requires a clean worktree and --state TOKEN; git recover validates an interrupted switch or merge publication. git merge check BRANCH --state TOKEN validates an isolated candidate without publishing. git merge publish BRANCH --state TOKEN validates and publishes a candidate through the coordinated pending gate. Use - for no text. Read the tokens, components or assets skill when needed. All mutations use the same Authoring Harness validation as GUI."
+      },
+      "exposedJSON": {
+        "ok": true,
+        "skill": "hamii 0.1.0\nGlobal options: --project PATH --profile NAME --json. Inspect: hamii inspect. Mutations require --state TOKEN from inspect or the previous mutation. Commands: page create NAME; scope create PARENT_ID NAME; screen create SCOPE_ID NAME; target add PLATFORM FRAMEWORK; surface add PAGE_ID SCREEN_ID TARGET_ID DEVICE RUNTIME BUILD_ENVIRONMENT; surface target SURFACE_ID TARGET_ID; capability set TARGET_ID KEY SUPPORT; layer add SCREEN_ID PARENT_ID KIND NAME TEXT; layer text SCREEN_ID LAYER_ID TEXT. Managed git switch BRANCH requires a clean worktree and --state TOKEN; git recover validates an interrupted switch or merge publication. git merge check BRANCH --state TOKEN validates an isolated candidate without publishing. git merge publish BRANCH --state TOKEN validates and publishes a candidate through the coordinated pending gate. Use - for no text. Read the tokens, components or assets skill when needed. All mutations use the same Authoring Harness validation as GUI."
+      },
+      "stderrBytes": 0,
+      "outputBytes": 1011,
+      "durationMs": 6.977708
+    },
+    {
+      "sequence": 5,
+      "argv": [
+        "--project",
+        "./project",
+        "--json",
+        "inspect"
+      ],
+      "exitCode": 7,
+      "rawFields": [
+        "category",
+        "message",
+        "ok"
+      ],
+      "exposedFields": [
+        "category",
+        "ok"
+      ],
+      "rawCategory": "transitionPending",
+      "rawJSON": {
+        "ok": false,
+        "message": "Worktree transition is pending; recovery is required",
+        "category": "transitionPending"
+      },
+      "exposedJSON": {
+        "ok": false,
+        "category": "transitionPending"
+      },
+      "stderrBytes": 0,
+      "outputBytes": 44,
+      "durationMs": 7.512542
+    },
+    {
+      "sequence": 6,
+      "argv": [
+        "--project",
+        "./project",
+        "--json",
+        "git",
+        "recover",
+        "--state",
+        "2409a8f62caaa176bb20fbe9c3aafec9ff673e9324a5f57bf95994b0d1dc83e3"
+      ],
+      "exitCode": 0,
+      "rawFields": [
+        "document",
+        "ok",
+        "statePrecondition"
+      ],
+      "exposedFields": [
+        "document",
+        "ok",
+        "statePrecondition"
+      ],
+      "rawCategory": null,
+      "rawJSON": {
+        "document": {
+          "assets": [],
+          "authoringHarness": {
+            "maximumMutationNodes": 100,
+            "requireAccessibleControls": true,
+            "requireTokenSpacing": false
+          },
+          "capabilityDeclarations": [],
+          "components": [],
+          "fixtures": [],
+          "id": {
+            "rawValue": "doc_cca29b77-c882-496e-a647-71b5e2ebbf10"
+          },
+          "interactions": [],
+          "motions": [],
+          "name": "Error Fixture",
+          "pages": [],
+          "revision": 0,
+          "scopes": [
+            {
+              "id": {
+                "rawValue": "scope_10d0f39a-c0b6-4874-9882-079ad9794b46"
+              },
+              "name": "App"
+            }
+          ],
+          "screens": [],
+          "targets": [],
+          "tokens": [],
+          "versions": {
+            "authoringHarness": 1,
+            "document": 2,
+            "integrationProfile": 1
+          }
+        },
+        "ok": true,
+        "statePrecondition": {
+          "rawValue": "2409a8f62caaa176bb20fbe9c3aafec9ff673e9324a5f57bf95994b0d1dc83e3"
+        }
+      },
+      "exposedJSON": {
+        "document": {
+          "assets": [],
+          "authoringHarness": {
+            "maximumMutationNodes": 100,
+            "requireAccessibleControls": true,
+            "requireTokenSpacing": false
+          },
+          "capabilityDeclarations": [],
+          "components": [],
+          "fixtures": [],
+          "id": {
+            "rawValue": "doc_cca29b77-c882-496e-a647-71b5e2ebbf10"
+          },
+          "interactions": [],
+          "motions": [],
+          "name": "Error Fixture",
+          "pages": [],
+          "revision": 0,
+          "scopes": [
+            {
+              "id": {
+                "rawValue": "scope_10d0f39a-c0b6-4874-9882-079ad9794b46"
+              },
+              "name": "App"
+            }
+          ],
+          "screens": [],
+          "targets": [],
+          "tokens": [],
+          "versions": {
+            "authoringHarness": 1,
+            "document": 2,
+            "integrationProfile": 1
+          }
+        },
+        "ok": true,
+        "statePrecondition": {
+          "rawValue": "2409a8f62caaa176bb20fbe9c3aafec9ff673e9324a5f57bf95994b0d1dc83e3"
+        }
+      },
+      "stderrBytes": 0,
+      "outputBytes": 640,
+      "durationMs": 12717.465125
+    },
+    {
+      "sequence": 7,
+      "argv": [
+        "--project",
+        "./project",
+        "--json",
+        "page",
+        "create",
+        "RequestedPage",
+        "--state",
+        "2409a8f62caaa176bb20fbe9c3aafec9ff673e9324a5f57bf95994b0d1dc83e3"
+      ],
+      "exitCode": 0,
+      "rawFields": [
+        "mutation",
+        "ok"
+      ],
+      "exposedFields": [
+        "mutation",
+        "ok"
+      ],
+      "rawCategory": null,
+      "rawJSON": {
+        "mutation": {
+          "diagnostics": [],
+          "patches": [
+            {
+              "entityID": {
+                "rawValue": "page_be38d292-6f6b-4f09-a51c-0ab26a1e04bd"
+              },
+              "newValue": "RequestedPage",
+              "path": "pages"
+            }
+          ],
+          "revision": 1,
+          "statePrecondition": {
+            "rawValue": "38ce57663b9c597633d17b1b3cfd30082b134ae642d7480617709ebbc4a602f1"
+          }
+        },
+        "ok": true
+      },
+      "exposedJSON": {
+        "mutation": {
+          "diagnostics": [],
+          "patches": [
+            {
+              "entityID": {
+                "rawValue": "page_be38d292-6f6b-4f09-a51c-0ab26a1e04bd"
+              },
+              "newValue": "RequestedPage",
+              "path": "pages"
+            }
+          ],
+          "revision": 1,
+          "statePrecondition": {
+            "rawValue": "38ce57663b9c597633d17b1b3cfd30082b134ae642d7480617709ebbc4a602f1"
+          }
+        },
+        "ok": true
+      },
+      "stderrBytes": 0,
+      "outputBytes": 279,
+      "durationMs": 25.20025
+    },
+    {
+      "sequence": 8,
+      "argv": [
+        "--project",
+        "./project",
+        "--json",
+        "inspect"
+      ],
+      "exitCode": 0,
+      "rawFields": [
+        "document",
+        "ok",
+        "statePrecondition"
+      ],
+      "exposedFields": [
+        "document",
+        "ok",
+        "statePrecondition"
+      ],
+      "rawCategory": null,
+      "rawJSON": {
+        "document": {
+          "assets": [],
+          "authoringHarness": {
+            "maximumMutationNodes": 100,
+            "requireAccessibleControls": true,
+            "requireTokenSpacing": false
+          },
+          "capabilityDeclarations": [],
+          "components": [],
+          "fixtures": [],
+          "id": {
+            "rawValue": "doc_cca29b77-c882-496e-a647-71b5e2ebbf10"
+          },
+          "interactions": [],
+          "motions": [],
+          "name": "Error Fixture",
+          "pages": [
+            {
+              "id": {
+                "rawValue": "page_be38d292-6f6b-4f09-a51c-0ab26a1e04bd"
+              },
+              "name": "RequestedPage",
+              "surfaces": []
+            }
+          ],
+          "revision": 1,
+          "scopes": [
+            {
+              "id": {
+                "rawValue": "scope_10d0f39a-c0b6-4874-9882-079ad9794b46"
+              },
+              "name": "App"
+            }
+          ],
+          "screens": [],
+          "targets": [],
+          "tokens": [],
+          "versions": {
+            "authoringHarness": 1,
+            "document": 2,
+            "integrationProfile": 1
+          }
+        },
+        "ok": true,
+        "statePrecondition": {
+          "rawValue": "38ce57663b9c597633d17b1b3cfd30082b134ae642d7480617709ebbc4a602f1"
+        }
+      },
+      "exposedJSON": {
+        "document": {
+          "assets": [],
+          "authoringHarness": {
+            "maximumMutationNodes": 100,
+            "requireAccessibleControls": true,
+            "requireTokenSpacing": false
+          },
+          "capabilityDeclarations": [],
+          "components": [],
+          "fixtures": [],
+          "id": {
+            "rawValue": "doc_cca29b77-c882-496e-a647-71b5e2ebbf10"
+          },
+          "interactions": [],
+          "motions": [],
+          "name": "Error Fixture",
+          "pages": [
+            {
+              "id": {
+                "rawValue": "page_be38d292-6f6b-4f09-a51c-0ab26a1e04bd"
+              },
+              "name": "RequestedPage",
+              "surfaces": []
+            }
+          ],
+          "revision": 1,
+          "scopes": [
+            {
+              "id": {
+                "rawValue": "scope_10d0f39a-c0b6-4874-9882-079ad9794b46"
+              },
+              "name": "App"
+            }
+          ],
+          "screens": [],
+          "targets": [],
+          "tokens": [],
+          "versions": {
+            "authoringHarness": 1,
+            "document": 2,
+            "integrationProfile": 1
+          }
+        },
+        "ok": true,
+        "statePrecondition": {
+          "rawValue": "38ce57663b9c597633d17b1b3cfd30082b134ae642d7480617709ebbc4a602f1"
+        }
+      },
+      "stderrBytes": 0,
+      "outputBytes": 740,
+      "durationMs": 10.730167
+    }
+  ],
+  "machineRecord": "S-transitionPending-machine.ndjson",
+  "stderrIfFailed": null
+}

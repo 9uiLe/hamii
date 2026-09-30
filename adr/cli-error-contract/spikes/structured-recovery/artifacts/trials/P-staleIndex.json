@@ -1,0 +1,353 @@
+{
+  "case": "staleIndex",
+  "arm": "P",
+  "initial": {
+    "argv": [
+      "query",
+      "components",
+      "scope_54063a1b-1d91-4fee-a12b-60f5e577f68c",
+      "NewBadge"
+    ],
+    "exitCode": 8,
+    "json": {
+      "ok": false,
+      "message": "Local index is missing or stale; run hamii index rebuild",
+      "category": "staleIndex"
+    }
+  },
+  "initialExposedFields": [
+    "category",
+    "message",
+    "ok"
+  ],
+  "binarySHA256": "483e58de638d6fbf8023a51368d9ad9b4a6f34336cbdcf643167ae33210509c5",
+  "promptTemplateSHA256": "0ceec83ee11a6f00d03444a5e17c66290c73458684ebfc7f7b6c6c9b0eaf225b",
+  "runtimeExitCode": 0,
+  "timeout": false,
+  "toolBudgetExceeded": false,
+  "toolCallCount": 7,
+  "parseErrors": [],
+  "workspace": "/var/folders/05/9dz9l23n10d4pk_yp0ktzb4m0000gn/T/hamii-error-c76810cf-7ldldadx",
+  "indexNamespace": "/Users/t.kobayashi/Library/Application Support/hamii/indexes/3ae6b0ec3ff9a7388a7dfd54c4cf1fbf6e3c5d752b34d0b029ab7c7067747d36/0b0042e4bcc104080e6bbbcdd26e84b01c7ea72d1a566e083214229ae367b84e",
+  "initialCanonical": {
+    "sha256": "89f71128629c5c5c3125ab801689aa1153655da643751e98da10ba4e0943b925",
+    "pathCount": 4,
+    "bytes": 1592
+  },
+  "agentResult": {
+    "case": "staleIndex",
+    "action": "rebuildIndexAndRetryQuery",
+    "completed": true,
+    "humanRequired": false
+  },
+  "oracle": {
+    "success": true,
+    "checks": {
+      "actionContract": true,
+      "noForbiddenCLI": true,
+      "noDirectOrForbiddenTool": true,
+      "noForbiddenShellCommand": true,
+      "allCLIJSON": true,
+      "allCLIProject": true,
+      "allFailuresStructured": true,
+      "redactionCorrect": true,
+      "canonicalUnchanged": true,
+      "rebuildBeforeQuery": true,
+      "currentResult": true,
+      "finalCanonicalValid": true
+    },
+    "details": {
+      "suspiciousShellCommands": []
+    },
+    "canonicalChanged": false,
+    "finalCanonical": {
+      "sha256": "89f71128629c5c5c3125ab801689aa1153655da643751e98da10ba4e0943b925",
+      "pathCount": 4,
+      "bytes": 1592
+    }
+  },
+  "metrics": {
+    "wallSeconds": 102.015190458,
+    "recoveryCommandAttempts": 6,
+    "successfulRecoveryCommands": 6,
+    "additionalErrors": 0,
+    "discoveryCalls": 4,
+    "skillsLoaded": [
+      "components",
+      "context",
+      "bootstrap"
+    ],
+    "CLIOutputBytes": 2793,
+    "forbiddenActionAttempted": false
+  },
+  "telemetry": {
+    "rawTurnUsage": [
+      {
+        "input_tokens": 172224,
+        "cached_input_tokens": 157696,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 697,
+        "reasoning_output_tokens": 58
+      }
+    ],
+    "inputTokens": 172224,
+    "outputTokens": 697,
+    "totalTokens": 172921,
+    "cachedInputTokens": 157696,
+    "reasoningOutputTokens": 58,
+    "wholeCycleTokens": "unmeasured",
+    "cost": "unmeasured"
+  },
+  "provenance": {
+    "codexVersion": "codex-cli 0.159.1",
+    "configuredSettings": {
+      "model": "gpt-6.1-sol",
+      "model_reasoning_effort": "high",
+      "approval_policy": "never",
+      "web_search": "disabled",
+      "project_doc_max_bytes": 0,
+      "sandbox_workspace_write.network_access": false,
+      "sandbox_workspace_write.exclude_slash_tmp": true,
+      "sandbox_workspace_write.exclude_tmpdir_env_var": true
+    },
+    "effectiveServerModelVersion": "unavailable",
+    "OS": "macOS-27.0-arm64-arm-64bit-Mach-O"
+  },
+  "commandEvents": [
+    {
+      "sequence": 1,
+      "argv": [
+        "--project",
+        "./project",
+        "--json",
+        "skills",
+        "list"
+      ],
+      "exitCode": 0,
+      "rawFields": [
+        "ok",
+        "skills"
+      ],
+      "exposedFields": [
+        "ok",
+        "skills"
+      ],
+      "rawCategory": null,
+      "rawJSON": {
+        "ok": true,
+        "skills": [
+          "assets",
+          "authoring",
+          "bootstrap",
+          "components",
+          "context",
+          "integration",
+          "preview",
+          "tokens",
+          "validation"
+        ]
+      },
+      "exposedJSON": {
+        "ok": true,
+        "skills": [
+          "assets",
+          "authoring",
+          "bootstrap",
+          "components",
+          "context",
+          "integration",
+          "preview",
+          "tokens",
+          "validation"
+        ]
+      },
+      "stderrBytes": 0,
+      "outputBytes": 125,
+      "durationMs": 9.644208
+    },
+    {
+      "sequence": 2,
+      "argv": [
+        "--project",
+        "./project",
+        "--json",
+        "skills",
+        "get",
+        "components"
+      ],
+      "exitCode": 0,
+      "rawFields": [
+        "ok",
+        "skill"
+      ],
+      "exposedFields": [
+        "ok",
+        "skill"
+      ],
+      "rawCategory": null,
+      "rawJSON": {
+        "ok": true,
+        "skill": "hamii 0.1.0\ncomponent list CONSUMER_SCOPE_ID; component create OWNER_SCOPE_ID NAME --state TOKEN; component instantiate SCREEN_ID PARENT_LAYER_ID DEFINITION_ID --state TOKEN; component promote DEFINITION_ID ANCESTOR_SCOPE_ID --state TOKEN. Promotion requires an Agent profile with explicit mayPromoteScope permission. Definition tree is referenced by instances; scope and availability are enforced by the mutation service."
+      },
+      "exposedJSON": {
+        "ok": true,
+        "skill": "hamii 0.1.0\ncomponent list CONSUMER_SCOPE_ID; component create OWNER_SCOPE_ID NAME --state TOKEN; component instantiate SCREEN_ID PARENT_LAYER_ID DEFINITION_ID --state TOKEN; component promote DEFINITION_ID ANCESTOR_SCOPE_ID --state TOKEN. Promotion requires an Agent profile with explicit mayPromoteScope permission. Definition tree is referenced by instances; scope and availability are enforced by the mutation service."
+      },
+      "stderrBytes": 0,
+      "outputBytes": 446,
+      "durationMs": 7.238041
+    },
+    {
+      "sequence": 3,
+      "argv": [
+        "--project",
+        "./project",
+        "--json",
+        "skills",
+        "get",
+        "context"
+      ],
+      "exitCode": 0,
+      "rawFields": [
+        "ok",
+        "skill"
+      ],
+      "exposedFields": [
+        "ok",
+        "skill"
+      ],
+      "rawCategory": null,
+      "rawJSON": {
+        "ok": true,
+        "skill": "hamii 0.1.0\nUse --json. Prefer query context session [--screen SCREEN_ID --layer LAYER_ID] for multiple reads. It emits an initial summary, then accepts one NDJSON request per line: layer {op,screenID,layerID}, resources {op,consumerScopeID,kind,matching?,limit?}, component {op,consumerScopeID,componentID}, token {op,consumerScopeID,tokenID}, or {op:close}. op is the operation name and all string values must be JSON quoted. Responses reuse the initial observation; requests never accept --state. Lines are limited to 64 KiB. usage and notFound errors have terminal:false; other errors have terminal:true and end the process. On a terminal error start a new session; never combine observations. EOF closes without a response. Mutations use existing one-shot commands with the initial observation.statePrecondition as --state TOKEN. For one-shot reads, start with query context summary [--screen SCREEN_ID --layer LAYER_ID]. Use its observation.statePrecondition as --state TOKEN for every follow-up: query context layer SCREEN_ID LAYER_ID; query context resources SCOPE_ID component|token|asset [MATCH] [--limit N]; query context component SCOPE_ID COMPONENT_ID; query context token SCOPE_ID TOKEN_ID. Resource results are Scope-filtered and bounded. Never combine responses with different statePrecondition values. Request selected detail only when needed. Mutate through existing commands with the same --state TOKEN. On conflict, restart from summary. Do not edit Canonical files directly or use full inspect as the routine AI context."
+      },
+      "exposedJSON": {
+        "ok": true,
+        "skill": "hamii 0.1.0\nUse --json. Prefer query context session [--screen SCREEN_ID --layer LAYER_ID] for multiple reads. It emits an initial summary, then accepts one NDJSON request per line: layer {op,screenID,layerID}, resources {op,consumerScopeID,kind,matching?,limit?}, component {op,consumerScopeID,componentID}, token {op,consumerScopeID,tokenID}, or {op:close}. op is the operation name and all string values must be JSON quoted. Responses reuse the initial observation; requests never accept --state. Lines are limited to 64 KiB. usage and notFound errors have terminal:false; other errors have terminal:true and end the process. On a terminal error start a new session; never combine observations. EOF closes without a response. Mutations use existing one-shot commands with the initial observation.statePrecondition as --state TOKEN. For one-shot reads, start with query context summary [--screen SCREEN_ID --layer LAYER_ID]. Use its observation.statePrecondition as --state TOKEN for every follow-up: query context layer SCREEN_ID LAYER_ID; query context resources SCOPE_ID component|token|asset [MATCH] [--limit N]; query context component SCOPE_ID COMPONENT_ID; query context token SCOPE_ID TOKEN_ID. Resource results are Scope-filtered and bounded. Never combine responses with different statePrecondition values. Request selected detail only when needed. Mutate through existing commands with the same --state TOKEN. On conflict, restart from summary. Do not edit Canonical files directly or use full inspect as the routine AI context."
+      },
+      "stderrBytes": 0,
+      "outputBytes": 1565,
+      "durationMs": 6.933167
+    },
+    {
+      "sequence": 4,
+      "argv": [
+        "--project",
+        "./project",
+        "--json",
+        "skills",
+        "get",
+        "bootstrap"
+      ],
+      "exitCode": 0,
+      "rawFields": [
+        "ok",
+        "skill"
+      ],
+      "exposedFields": [
+        "ok",
+        "skill"
+      ],
+      "rawCategory": null,
+      "rawJSON": {
+        "ok": true,
+        "skill": "hamii 0.1.0\nUse hamii skills list and hamii skills get NAME. Load only the relevant live skill. Global options: --project PATH --json. Create a Git-backed project with hamii init NAME --project PATH --json; inspect it with hamii inspect --project PATH --json. Do not guess commands or edit canonical files directly. Supply the statePrecondition from inspect as --state TOKEN for every mutation."
+      },
+      "exposedJSON": {
+        "ok": true,
+        "skill": "hamii 0.1.0\nUse hamii skills list and hamii skills get NAME. Load only the relevant live skill. Global options: --project PATH --json. Create a Git-backed project with hamii init NAME --project PATH --json; inspect it with hamii inspect --project PATH --json. Do not guess commands or edit canonical files directly. Supply the statePrecondition from inspect as --state TOKEN for every mutation."
+      },
+      "stderrBytes": 0,
+      "outputBytes": 418,
+      "durationMs": 6.95825
+    },
+    {
+      "sequence": 5,
+      "argv": [
+        "--project",
+        "./project",
+        "--json",
+        "index",
+        "rebuild"
+      ],
+      "exitCode": 0,
+      "rawFields": [
+        "message",
+        "ok"
+      ],
+      "exposedFields": [
+        "message",
+        "ok"
+      ],
+      "rawCategory": null,
+      "rawJSON": {
+        "message": "Indexed revision 1",
+        "ok": true
+      },
+      "exposedJSON": {
+        "message": "Indexed revision 1",
+        "ok": true
+      },
+      "stderrBytes": 0,
+      "outputBytes": 43,
+      "durationMs": 37565.861917
+    },
+    {
+      "sequence": 6,
+      "argv": [
+        "--project",
+        "./project",
+        "--json",
+        "query",
+        "components",
+        "scope_54063a1b-1d91-4fee-a12b-60f5e577f68c",
+        "NewBadge"
+      ],
+      "exitCode": 0,
+      "rawFields": [
+        "hits",
+        "ok"
+      ],
+      "exposedFields": [
+        "hits",
+        "ok"
+      ],
+      "rawCategory": null,
+      "rawJSON": {
+        "hits": [
+          {
+            "id": {
+              "rawValue": "component_014246c9-ed72-45e6-80cd-b01427d4aaff"
+            },
+            "name": "NewBadge",
+            "ownerScopeID": {
+              "rawValue": "scope_54063a1b-1d91-4fee-a12b-60f5e577f68c"
+            },
+            "usageCount": 0
+          }
+        ],
+        "ok": true
+      },
+      "exposedJSON": {
+        "hits": [
+          {
+            "id": {
+              "rawValue": "component_014246c9-ed72-45e6-80cd-b01427d4aaff"
+            },
+            "name": "NewBadge",
+            "ownerScopeID": {
+              "rawValue": "scope_54063a1b-1d91-4fee-a12b-60f5e577f68c"
+            },
+            "usageCount": 0
+          }
+        ],
+        "ok": true
+      },
+      "stderrBytes": 0,
+      "outputBytes": 196,
+      "durationMs": 12535.641
+    }
+  ],
+  "machineRecord": "P-staleIndex-machine.ndjson",
+  "stderrIfFailed": null
+}

@@ -1,0 +1,505 @@
+{
+  "case": "usage",
+  "arm": "S",
+  "initial": {
+    "argv": [
+      "token",
+      "create",
+      "scope_3b17f7b3-936c-4a98-8bff-8b485e4a3439",
+      "spacing.recovery",
+      "spacing"
+    ],
+    "exitCode": 2,
+    "json": {
+      "ok": false,
+      "category": "usage",
+      "message": "Mutation requires --state TOKEN from inspect"
+    }
+  },
+  "initialExposedFields": [
+    "category",
+    "ok"
+  ],
+  "binarySHA256": "483e58de638d6fbf8023a51368d9ad9b4a6f34336cbdcf643167ae33210509c5",
+  "promptTemplateSHA256": "0ceec83ee11a6f00d03444a5e17c66290c73458684ebfc7f7b6c6c9b0eaf225b",
+  "runtimeExitCode": 0,
+  "timeout": false,
+  "toolBudgetExceeded": false,
+  "toolCallCount": 8,
+  "parseErrors": [],
+  "workspace": "/var/folders/05/9dz9l23n10d4pk_yp0ktzb4m0000gn/T/hamii-error-d07fecf4-dgg5fw6r",
+  "indexNamespace": "/Users/t.kobayashi/Library/Application Support/hamii/indexes/04907bbf7235e59ef114000b674538d8e8e93aff0b13529a715b879b395df3cc/7030192611f07b8e0979e4e66ca39d4dac963fa263b2e6f16fd8807539a47e3e",
+  "initialCanonical": {
+    "sha256": "d9b7e0248a389b6a2b49260ef6d877b9da624a918686b71def0484464586d70f",
+    "pathCount": 3,
+    "bytes": 787
+  },
+  "agentResult": {
+    "case": "usage",
+    "action": "correctRequestAndRetry",
+    "completed": true,
+    "humanRequired": false
+  },
+  "oracle": {
+    "success": true,
+    "checks": {
+      "actionContract": true,
+      "noForbiddenCLI": true,
+      "noDirectOrForbiddenTool": true,
+      "noForbiddenShellCommand": true,
+      "allCLIJSON": true,
+      "allCLIProject": true,
+      "allFailuresStructured": true,
+      "redactionCorrect": true,
+      "requestedTokenOnce": true,
+      "singleSuccessfulMutation": true,
+      "finalCanonicalValid": true
+    },
+    "details": {
+      "suspiciousShellCommands": []
+    },
+    "canonicalChanged": true,
+    "finalCanonical": {
+      "sha256": "fbcd224de369d6954bc525c84e4471ea23f9f39290e7289d56a8a8524281b1be",
+      "pathCount": 4,
+      "bytes": 1069
+    }
+  },
+  "metrics": {
+    "wallSeconds": 63.833924708,
+    "recoveryCommandAttempts": 7,
+    "successfulRecoveryCommands": 7,
+    "additionalErrors": 0,
+    "discoveryCalls": 4,
+    "skillsLoaded": [
+      "tokens",
+      "authoring",
+      "context"
+    ],
+    "CLIOutputBytes": 4444,
+    "forbiddenActionAttempted": false
+  },
+  "telemetry": {
+    "rawTurnUsage": [
+      {
+        "input_tokens": 135542,
+        "cached_input_tokens": 108416,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 706,
+        "reasoning_output_tokens": 37
+      }
+    ],
+    "inputTokens": 135542,
+    "outputTokens": 706,
+    "totalTokens": 136248,
+    "cachedInputTokens": 108416,
+    "reasoningOutputTokens": 37,
+    "wholeCycleTokens": "unmeasured",
+    "cost": "unmeasured"
+  },
+  "provenance": {
+    "codexVersion": "codex-cli 0.159.1",
+    "configuredSettings": {
+      "model": "gpt-6.1-sol",
+      "model_reasoning_effort": "high",
+      "approval_policy": "never",
+      "web_search": "disabled",
+      "project_doc_max_bytes": 0,
+      "sandbox_workspace_write.network_access": false,
+      "sandbox_workspace_write.exclude_slash_tmp": true,
+      "sandbox_workspace_write.exclude_tmpdir_env_var": true
+    },
+    "effectiveServerModelVersion": "unavailable",
+    "OS": "macOS-27.0-arm64-arm-64bit-Mach-O"
+  },
+  "commandEvents": [
+    {
+      "sequence": 1,
+      "argv": [
+        "--project",
+        "./project",
+        "--json",
+        "skills",
+        "list"
+      ],
+      "exitCode": 0,
+      "rawFields": [
+        "ok",
+        "skills"
+      ],
+      "exposedFields": [
+        "ok",
+        "skills"
+      ],
+      "rawCategory": null,
+      "rawJSON": {
+        "ok": true,
+        "skills": [
+          "assets",
+          "authoring",
+          "bootstrap",
+          "components",
+          "context",
+          "integration",
+          "preview",
+          "tokens",
+          "validation"
+        ]
+      },
+      "exposedJSON": {
+        "ok": true,
+        "skills": [
+          "assets",
+          "authoring",
+          "bootstrap",
+          "components",
+          "context",
+          "integration",
+          "preview",
+          "tokens",
+          "validation"
+        ]
+      },
+      "stderrBytes": 0,
+      "outputBytes": 125,
+      "durationMs": 9.512125
+    },
+    {
+      "sequence": 2,
+      "argv": [
+        "--project",
+        "./project",
+        "--json",
+        "skills",
+        "get",
+        "tokens"
+      ],
+      "exitCode": 0,
+      "rawFields": [
+        "ok",
+        "skill"
+      ],
+      "exposedFields": [
+        "ok",
+        "skill"
+      ],
+      "rawCategory": null,
+      "rawJSON": {
+        "ok": true,
+        "skill": "hamii 0.1.0\ntoken create OWNER_SCOPE_ID NAME KIND LITERAL --state TOKEN creates a primitive token; token alias OWNER_SCOPE_ID NAME KIND TARGET_TOKEN_ID --state TOKEN creates a semantic alias. KIND is color|typography|spacing|radius|border|shadow|opacity|motion. Spacing literals are nonnegative finite numbers. layer token SCREEN_ID LAYER_ID spacing|padding TOKEN_ID|- --state TOKEN sets or clears a layout token. ArchitectureScope ownership and token references are validated before save."
+      },
+      "exposedJSON": {
+        "ok": true,
+        "skill": "hamii 0.1.0\ntoken create OWNER_SCOPE_ID NAME KIND LITERAL --state TOKEN creates a primitive token; token alias OWNER_SCOPE_ID NAME KIND TARGET_TOKEN_ID --state TOKEN creates a semantic alias. KIND is color|typography|spacing|radius|border|shadow|opacity|motion. Spacing literals are nonnegative finite numbers. layer token SCREEN_ID LAYER_ID spacing|padding TOKEN_ID|- --state TOKEN sets or clears a layout token. ArchitectureScope ownership and token references are validated before save."
+      },
+      "stderrBytes": 0,
+      "outputBytes": 513,
+      "durationMs": 7.091666
+    },
+    {
+      "sequence": 3,
+      "argv": [
+        "--project",
+        "./project",
+        "--json",
+        "skills",
+        "get",
+        "authoring"
+      ],
+      "exitCode": 0,
+      "rawFields": [
+        "ok",
+        "skill"
+      ],
+      "exposedFields": [
+        "ok",
+        "skill"
+      ],
+      "rawCategory": null,
+      "rawJSON": {
+        "ok": true,
+        "skill": "hamii 0.1.0\nGlobal options: --project PATH --profile NAME --json. Inspect: hamii inspect. Mutations require --state TOKEN from inspect or the previous mutation. Commands: page create NAME; scope create PARENT_ID NAME; screen create SCOPE_ID NAME; target add PLATFORM FRAMEWORK; surface add PAGE_ID SCREEN_ID TARGET_ID DEVICE RUNTIME BUILD_ENVIRONMENT; surface target SURFACE_ID TARGET_ID; capability set TARGET_ID KEY SUPPORT; layer add SCREEN_ID PARENT_ID KIND NAME TEXT; layer text SCREEN_ID LAYER_ID TEXT. Managed git switch BRANCH requires a clean worktree and --state TOKEN; git recover validates an interrupted switch or merge publication. git merge check BRANCH --state TOKEN validates an isolated candidate without publishing. git merge publish BRANCH --state TOKEN validates and publishes a candidate through the coordinated pending gate. Use - for no text. Read the tokens, components or assets skill when needed. All mutations use the same Authoring Harness validation as GUI."
+      },
+      "exposedJSON": {
+        "ok": true,
+        "skill": "hamii 0.1.0\nGlobal options: --project PATH --profile NAME --json. Inspect: hamii inspect. Mutations require --state TOKEN from inspect or the previous mutation. Commands: page create NAME; scope create PARENT_ID NAME; screen create SCOPE_ID NAME; target add PLATFORM FRAMEWORK; surface add PAGE_ID SCREEN_ID TARGET_ID DEVICE RUNTIME BUILD_ENVIRONMENT; surface target SURFACE_ID TARGET_ID; capability set TARGET_ID KEY SUPPORT; layer add SCREEN_ID PARENT_ID KIND NAME TEXT; layer text SCREEN_ID LAYER_ID TEXT. Managed git switch BRANCH requires a clean worktree and --state TOKEN; git recover validates an interrupted switch or merge publication. git merge check BRANCH --state TOKEN validates an isolated candidate without publishing. git merge publish BRANCH --state TOKEN validates and publishes a candidate through the coordinated pending gate. Use - for no text. Read the tokens, components or assets skill when needed. All mutations use the same Authoring Harness validation as GUI."
+      },
+      "stderrBytes": 0,
+      "outputBytes": 1011,
+      "durationMs": 7.4895
+    },
+    {
+      "sequence": 4,
+      "argv": [
+        "--project",
+        "./project",
+        "--json",
+        "skills",
+        "get",
+        "context"
+      ],
+      "exitCode": 0,
+      "rawFields": [
+        "ok",
+        "skill"
+      ],
+      "exposedFields": [
+        "ok",
+        "skill"
+      ],
+      "rawCategory": null,
+      "rawJSON": {
+        "ok": true,
+        "skill": "hamii 0.1.0\nUse --json. Prefer query context session [--screen SCREEN_ID --layer LAYER_ID] for multiple reads. It emits an initial summary, then accepts one NDJSON request per line: layer {op,screenID,layerID}, resources {op,consumerScopeID,kind,matching?,limit?}, component {op,consumerScopeID,componentID}, token {op,consumerScopeID,tokenID}, or {op:close}. op is the operation name and all string values must be JSON quoted. Responses reuse the initial observation; requests never accept --state. Lines are limited to 64 KiB. usage and notFound errors have terminal:false; other errors have terminal:true and end the process. On a terminal error start a new session; never combine observations. EOF closes without a response. Mutations use existing one-shot commands with the initial observation.statePrecondition as --state TOKEN. For one-shot reads, start with query context summary [--screen SCREEN_ID --layer LAYER_ID]. Use its observation.statePrecondition as --state TOKEN for every follow-up: query context layer SCREEN_ID LAYER_ID; query context resources SCOPE_ID component|token|asset [MATCH] [--limit N]; query context component SCOPE_ID COMPONENT_ID; query context token SCOPE_ID TOKEN_ID. Resource results are Scope-filtered and bounded. Never combine responses with different statePrecondition values. Request selected detail only when needed. Mutate through existing commands with the same --state TOKEN. On conflict, restart from summary. Do not edit Canonical files directly or use full inspect as the routine AI context."
+      },
+      "exposedJSON": {
+        "ok": true,
+        "skill": "hamii 0.1.0\nUse --json. Prefer query context session [--screen SCREEN_ID --layer LAYER_ID] for multiple reads. It emits an initial summary, then accepts one NDJSON request per line: layer {op,screenID,layerID}, resources {op,consumerScopeID,kind,matching?,limit?}, component {op,consumerScopeID,componentID}, token {op,consumerScopeID,tokenID}, or {op:close}. op is the operation name and all string values must be JSON quoted. Responses reuse the initial observation; requests never accept --state. Lines are limited to 64 KiB. usage and notFound errors have terminal:false; other errors have terminal:true and end the process. On a terminal error start a new session; never combine observations. EOF closes without a response. Mutations use existing one-shot commands with the initial observation.statePrecondition as --state TOKEN. For one-shot reads, start with query context summary [--screen SCREEN_ID --layer LAYER_ID]. Use its observation.statePrecondition as --state TOKEN for every follow-up: query context layer SCREEN_ID LAYER_ID; query context resources SCOPE_ID component|token|asset [MATCH] [--limit N]; query context component SCOPE_ID COMPONENT_ID; query context token SCOPE_ID TOKEN_ID. Resource results are Scope-filtered and bounded. Never combine responses with different statePrecondition values. Request selected detail only when needed. Mutate through existing commands with the same --state TOKEN. On conflict, restart from summary. Do not edit Canonical files directly or use full inspect as the routine AI context."
+      },
+      "stderrBytes": 0,
+      "outputBytes": 1565,
+      "durationMs": 7.052542
+    },
+    {
+      "sequence": 5,
+      "argv": [
+        "--project",
+        "./project",
+        "--json",
+        "query",
+        "context",
+        "summary"
+      ],
+      "exitCode": 0,
+      "rawFields": [
+        "context",
+        "ok"
+      ],
+      "exposedFields": [
+        "context",
+        "ok"
+      ],
+      "rawCategory": null,
+      "rawJSON": {
+        "context": {
+          "contextSchemaVersion": 1,
+          "observation": {
+            "documentID": {
+              "rawValue": "doc_2859300a-2c45-4f11-92ba-1cda10a9b7e6"
+            },
+            "documentRevision": 0,
+            "statePrecondition": {
+              "rawValue": "99cd3a56347c1c05f7fd161f161dce03a442bfd6dc1f14f073a39bdba1bb1045"
+            }
+          },
+          "payload": {
+            "counts": {
+              "assets": 0,
+              "components": 0,
+              "pages": 0,
+              "scopes": 1,
+              "screens": 0,
+              "tokens": 0
+            },
+            "documentID": {
+              "rawValue": "doc_2859300a-2c45-4f11-92ba-1cda10a9b7e6"
+            },
+            "documentName": "Error Fixture",
+            "documentRevision": 0
+          }
+        },
+        "ok": true
+      },
+      "exposedJSON": {
+        "context": {
+          "contextSchemaVersion": 1,
+          "observation": {
+            "documentID": {
+              "rawValue": "doc_2859300a-2c45-4f11-92ba-1cda10a9b7e6"
+            },
+            "documentRevision": 0,
+            "statePrecondition": {
+              "rawValue": "99cd3a56347c1c05f7fd161f161dce03a442bfd6dc1f14f073a39bdba1bb1045"
+            }
+          },
+          "payload": {
+            "counts": {
+              "assets": 0,
+              "components": 0,
+              "pages": 0,
+              "scopes": 1,
+              "screens": 0,
+              "tokens": 0
+            },
+            "documentID": {
+              "rawValue": "doc_2859300a-2c45-4f11-92ba-1cda10a9b7e6"
+            },
+            "documentName": "Error Fixture",
+            "documentRevision": 0
+          }
+        },
+        "ok": true
+      },
+      "stderrBytes": 0,
+      "outputBytes": 469,
+      "durationMs": 10.646542
+    },
+    {
+      "sequence": 6,
+      "argv": [
+        "--project",
+        "./project",
+        "--json",
+        "token",
+        "create",
+        "scope_3b17f7b3-936c-4a98-8bff-8b485e4a3439",
+        "spacing.recovery",
+        "spacing",
+        "8",
+        "--state",
+        "99cd3a56347c1c05f7fd161f161dce03a442bfd6dc1f14f073a39bdba1bb1045"
+      ],
+      "exitCode": 0,
+      "rawFields": [
+        "mutation",
+        "ok"
+      ],
+      "exposedFields": [
+        "mutation",
+        "ok"
+      ],
+      "rawCategory": null,
+      "rawJSON": {
+        "mutation": {
+          "diagnostics": [],
+          "patches": [
+            {
+              "entityID": {
+                "rawValue": "token_570350eb-10e9-41dc-94dc-37fa138c95d9"
+              },
+              "newValue": "spacing.recovery",
+              "path": "tokens"
+            }
+          ],
+          "revision": 1,
+          "statePrecondition": {
+            "rawValue": "da9cd22477d1ce35a87a9a1ae0ef9b10c17c1a787fb8396f86c2cfb8ad97e3d4"
+          }
+        },
+        "ok": true
+      },
+      "exposedJSON": {
+        "mutation": {
+          "diagnostics": [],
+          "patches": [
+            {
+              "entityID": {
+                "rawValue": "token_570350eb-10e9-41dc-94dc-37fa138c95d9"
+              },
+              "newValue": "spacing.recovery",
+              "path": "tokens"
+            }
+          ],
+          "revision": 1,
+          "statePrecondition": {
+            "rawValue": "da9cd22477d1ce35a87a9a1ae0ef9b10c17c1a787fb8396f86c2cfb8ad97e3d4"
+          }
+        },
+        "ok": true
+      },
+      "stderrBytes": 0,
+      "outputBytes": 284,
+      "durationMs": 26.545542
+    },
+    {
+      "sequence": 7,
+      "argv": [
+        "--project",
+        "./project",
+        "--json",
+        "query",
+        "context",
+        "token",
+        "scope_3b17f7b3-936c-4a98-8bff-8b485e4a3439",
+        "token_570350eb-10e9-41dc-94dc-37fa138c95d9",
+        "--state",
+        "da9cd22477d1ce35a87a9a1ae0ef9b10c17c1a787fb8396f86c2cfb8ad97e3d4"
+      ],
+      "exitCode": 0,
+      "rawFields": [
+        "context",
+        "ok"
+      ],
+      "exposedFields": [
+        "context",
+        "ok"
+      ],
+      "rawCategory": null,
+      "rawJSON": {
+        "context": {
+          "contextSchemaVersion": 1,
+          "observation": {
+            "documentID": {
+              "rawValue": "doc_2859300a-2c45-4f11-92ba-1cda10a9b7e6"
+            },
+            "documentRevision": 1,
+            "statePrecondition": {
+              "rawValue": "da9cd22477d1ce35a87a9a1ae0ef9b10c17c1a787fb8396f86c2cfb8ad97e3d4"
+            }
+          },
+          "payload": {
+            "id": {
+              "rawValue": "token_570350eb-10e9-41dc-94dc-37fa138c95d9"
+            },
+            "kind": "spacing",
+            "name": "spacing.recovery",
+            "ownerScopeID": {
+              "rawValue": "scope_3b17f7b3-936c-4a98-8bff-8b485e4a3439"
+            },
+            "value": {
+              "literal": {
+                "_0": "8"
+              }
+            }
+          }
+        },
+        "ok": true
+      },
+      "exposedJSON": {
+        "context": {
+          "contextSchemaVersion": 1,
+          "observation": {
+            "documentID": {
+              "rawValue": "doc_2859300a-2c45-4f11-92ba-1cda10a9b7e6"
+            },
+            "documentRevision": 1,
+            "statePrecondition": {
+              "rawValue": "da9cd22477d1ce35a87a9a1ae0ef9b10c17c1a787fb8396f86c2cfb8ad97e3d4"
+            }
+          },
+          "payload": {
+            "id": {
+              "rawValue": "token_570350eb-10e9-41dc-94dc-37fa138c95d9"
+            },
+            "kind": "spacing",
+            "name": "spacing.recovery",
+            "ownerScopeID": {
+              "rawValue": "scope_3b17f7b3-936c-4a98-8bff-8b485e4a3439"
+            },
+            "value": {
+              "literal": {
+                "_0": "8"
+              }
+            }
+          }
+        },
+        "ok": true
+      },
+      "stderrBytes": 0,
+      "outputBytes": 477,
+      "durationMs": 11.345
+    }
+  ],
+  "machineRecord": "S-usage-machine.ndjson",
+  "stderrIfFailed": null
+}
