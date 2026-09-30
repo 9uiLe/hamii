@@ -143,9 +143,11 @@ Observation-shape phase: [analysis and conditions](artifacts/observation-shape-a
 
 Save/diff/merge phase: [analysis and conditions](artifacts/save-merge-analysis.md)、[raw matrix](artifacts/save-merge-matrix.json)。1k/10k 各3 repetitions × 5 scenarios × 3 layouts、90 merges。独立 Text edits は全候補で各18 clean、同一 property / same-parent append は各12 conflicts。54 clean merges は双方の変更と無関係な Canonical fields を保持し、current validation が成功した。270 base/A/B round-trip validations が成功。1k の Text replacement payload median は CURRENT 201,642 / MONOLITHIC 366,431 / SUBTREE 66,809 bytes、10k は 2,015,142 / 3,624,431 / 665,309 bytes。production save latency / durable IO ではなく、encoder/indentation を含む payload 比較である。初回 fixture preparation の expected-bytes 拒否も Failure Evidence として保存した。
 
+Serializer control / open-save scaling phase: [analysis and conditions](artifacts/open-save-scaling-analysis.md)、[raw matrix](artifacts/open-save-scaling-matrix.json)。10k の5 scenarios × 4 layouts × 1 repetition (20 merges) は CURRENT-P/N の分類が一致し、共通 Foundation serializer gate が成功。1k/10k の CURRENT-P/N bytes は今回の fixture で一致。1k/10k/50k 各 layout の3 deterministic actual-current-parser round trips と negative ref rejection が成功。Release warm-local production 50k load/observe/mutation save の median は 381.717/394.700/2,134.925 ms (n=10/10/5)。normalized prototype 50k open median は 678–684 ms、encode/write は516–526 msだが、追加 JSON-value pipeline と durability 差があるため production latency と直接比較しない。prototypeの全 inventory encode と changed-file write を分離した。production syscall counts / peak RSS / AI tokens / cost は未計測。事前 routing は **50k viable → partial-load phase**。
+
 ## Conclusion
 
-Observation-shape phase は、今回の同数 Layer fixture に限り、shape 間の一回観測差より、四回応答 workflow と一回観測候補の差が大きい Evidence を得た。candidate は production batch の実装・安全性・性能保証ではない。shard 粒度の Decision は未完了であり、save/diff/merge phase は、今回の fixture で全候補の conflict count が同一である Evidence を得た。SUBTREE の replacement payload / conflict file は小さいが、これだけで production granularity を採用しない。50k/open-save scaling、partial load、複雑な reference edits は未検証。ADR は `Spike Required` のまま維持する。
+Observation-shape phase は、今回の同数 Layer fixture に限り、shape 間の一回観測差より、四回応答 workflow と一回観測候補の差が大きい Evidence を得た。candidate は production batch の実装・安全性・性能保証ではない。shard 粒度の Decision は未完了であり、save/diff/merge phase は、今回の fixture で全候補の conflict count が同一である Evidence を得た。SUBTREE の replacement payload / conflict file は小さいが、これだけで production granularity を採用しない。共通 serializer control と50k/open-save scaling は今回の fixture で完了した。partial load、many-shard scaling、複雑な reference edits は未検証。common full-inventory prototype encode と production durability の境界を維持し、payload差だけで速度改善を主張しない。ADR は `Spike Required` のまま維持する。
 
 ## Artifacts
 
@@ -157,3 +159,9 @@ Observation-shape phase は、今回の同数 Layer fixture に限り、shape �
 - [Initial preparation failure](artifacts/save-merge-initial-failure.json)
 - [Test-only measurement prototype](artifacts/measure-save-merge.py)
 - [Fixture normalization](artifacts/normalize-fixture.swift)
+
+- [Open/save scaling analysis](artifacts/open-save-scaling-analysis.md)
+- [Open/save scaling raw matrix](artifacts/open-save-scaling-matrix.json)
+- [Common Swift serializer / measurement harness](artifacts/measure-open-save-scaling.swift)
+- [Scaling orchestration](artifacts/measure-open-save-scaling.py)
+- [Compile preparation failure](artifacts/open-save-preparation-failures.json)

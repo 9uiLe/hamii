@@ -1,0 +1,3308 @@
+{
+  "aiTotalTokens": "unmeasured",
+  "byteControl": [
+    {
+      "layouts": [
+        {
+          "changedPaths": [
+            "hamii.json",
+            "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+          ],
+          "layout": "CURRENT-P",
+          "replacementBytes": 201642,
+          "totalBytes": 406265
+        },
+        {
+          "changedPaths": [
+            "hamii.json",
+            "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+          ],
+          "layout": "CURRENT-N",
+          "replacementBytes": 201642,
+          "totalBytes": 406265
+        }
+      ],
+      "originalAndNormalizedBytesEqual": true,
+      "scale": 1000
+    },
+    {
+      "layouts": [
+        {
+          "changedPaths": [
+            "hamii.json",
+            "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+          ],
+          "layout": "CURRENT-P",
+          "replacementBytes": 2015142,
+          "totalBytes": 4033265
+        },
+        {
+          "changedPaths": [
+            "hamii.json",
+            "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+          ],
+          "layout": "CURRENT-N",
+          "replacementBytes": 2015142,
+          "totalBytes": 4033265
+        }
+      ],
+      "originalAndNormalizedBytesEqual": true,
+      "scale": 10000
+    }
+  ],
+  "cache": "Release warm-local, one open warm-up per measured API/layout; sequential; no competing full gate",
+  "compilerCommand": [
+    "swiftc",
+    "-O",
+    "-swift-version",
+    "6",
+    "-target",
+    "arm64-apple-macosx14.0",
+    "-I",
+    "/Users/t.kobayashi/orca/hamii/.build/out/Products/Release",
+    "/Users/t.kobayashi/orca/hamii/adr/git-canonical-sharding/spikes/shard-merge-benchmark/artifacts/measure-open-save-scaling.swift",
+    "/Users/t.kobayashi/orca/hamii/.build/out/Products/Release/HamiiCore.o",
+    "/Users/t.kobayashi/orca/hamii/.build/out/Products/Release/HamiiApplication.o",
+    "/Users/t.kobayashi/orca/hamii/.build/out/Products/Release/HamiiFormat.o",
+    "-o",
+    "/var/folders/05/9dz9l23n10d4pk_yp0ktzb4m0000gn/T/hamii-open-save-vzvhgf3n/scaling-probe"
+  ],
+  "control": [
+    {
+      "layouts": [
+        {
+          "appendedOrder": null,
+          "baseOID": "6f95b10ce4dbb8bad015182dbcb6e7c79f73eeb5",
+          "cleanMergeSemanticValidation": true,
+          "conflictPathCount": 0,
+          "conflicts": [],
+          "exitCode": 0,
+          "inputBranchesPreserved": true,
+          "layout": "CURRENT-P",
+          "mergeMs": 44.378,
+          "roundTripValidations": 3,
+          "sourceOID": "84cec58ad36f1ff23eda40d9308933795a06f712",
+          "status": "clean",
+          "targetOID": "5b5262b93a7f599b4a20099cab1ab1af672a1dcd",
+          "writers": [
+            {
+              "changedPathCount": 2,
+              "changedPaths": [
+                "hamii.json",
+                "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+              ],
+              "gitNumstat": [
+                "1\t1\thamii.json",
+                "1\t1\tscreens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+              ],
+              "pathSizes": {
+                "hamii.json": {
+                  "after": 645,
+                  "before": 645
+                },
+                "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json": {
+                  "after": 2014497,
+                  "before": 2014497
+                }
+              },
+              "replacementPayloadBytes": 2015142,
+              "totalBytes": 4033265,
+              "totalPaths": 13
+            },
+            {
+              "changedPathCount": 2,
+              "changedPaths": [
+                "hamii.json",
+                "screens/screen_merge_B.json"
+              ],
+              "gitNumstat": [
+                "1\t1\thamii.json",
+                "1\t1\tscreens/screen_merge_B.json"
+              ],
+              "pathSizes": {
+                "hamii.json": {
+                  "after": 645,
+                  "before": 645
+                },
+                "screens/screen_merge_B.json": {
+                  "after": 2014468,
+                  "before": 2014468
+                }
+              },
+              "replacementPayloadBytes": 2015113,
+              "totalBytes": 4033265,
+              "totalPaths": 13
+            }
+          ]
+        },
+        {
+          "appendedOrder": null,
+          "baseOID": "6f95b10ce4dbb8bad015182dbcb6e7c79f73eeb5",
+          "cleanMergeSemanticValidation": true,
+          "conflictPathCount": 0,
+          "conflicts": [],
+          "exitCode": 0,
+          "inputBranchesPreserved": true,
+          "layout": "CURRENT-N",
+          "mergeMs": 52.784,
+          "roundTripValidations": 3,
+          "sourceOID": "84cec58ad36f1ff23eda40d9308933795a06f712",
+          "status": "clean",
+          "targetOID": "5b5262b93a7f599b4a20099cab1ab1af672a1dcd",
+          "writers": [
+            {
+              "changedPathCount": 2,
+              "changedPaths": [
+                "hamii.json",
+                "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+              ],
+              "gitNumstat": [
+                "1\t1\thamii.json",
+                "1\t1\tscreens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+              ],
+              "pathSizes": {
+                "hamii.json": {
+                  "after": 645,
+                  "before": 645
+                },
+                "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json": {
+                  "after": 2014497,
+                  "before": 2014497
+                }
+              },
+              "replacementPayloadBytes": 2015142,
+              "totalBytes": 4033265,
+              "totalPaths": 13
+            },
+            {
+              "changedPathCount": 2,
+              "changedPaths": [
+                "hamii.json",
+                "screens/screen_merge_B.json"
+              ],
+              "gitNumstat": [
+                "1\t1\thamii.json",
+                "1\t1\tscreens/screen_merge_B.json"
+              ],
+              "pathSizes": {
+                "hamii.json": {
+                  "after": 645,
+                  "before": 645
+                },
+                "screens/screen_merge_B.json": {
+                  "after": 2014468,
+                  "before": 2014468
+                }
+              },
+              "replacementPayloadBytes": 2015113,
+              "totalBytes": 4033265,
+              "totalPaths": 13
+            }
+          ]
+        },
+        {
+          "appendedOrder": null,
+          "baseOID": "c7adfd76ad70de8a7f214e40074b216faaf79833",
+          "cleanMergeSemanticValidation": true,
+          "conflictPathCount": 0,
+          "conflicts": [],
+          "exitCode": 0,
+          "inputBranchesPreserved": true,
+          "layout": "MONOLITHIC-N",
+          "mergeMs": 107.138,
+          "roundTripValidations": 3,
+          "sourceOID": "056b7f2999705a5f2b565c799d30e981e0dcf606",
+          "status": "clean",
+          "targetOID": "b6b1ca72e7a5a6febb2e7a84210cf7285524d982",
+          "writers": [
+            {
+              "changedPathCount": 1,
+              "changedPaths": [
+                "document.json"
+              ],
+              "gitNumstat": [
+                "2\t2\tdocument.json"
+              ],
+              "pathSizes": {
+                "document.json": {
+                  "after": 4354388,
+                  "before": 4354388
+                }
+              },
+              "replacementPayloadBytes": 4354388,
+              "totalBytes": 4354388,
+              "totalPaths": 1
+            },
+            {
+              "changedPathCount": 1,
+              "changedPaths": [
+                "document.json"
+              ],
+              "gitNumstat": [
+                "2\t2\tdocument.json"
+              ],
+              "pathSizes": {
+                "document.json": {
+                  "after": 4354388,
+                  "before": 4354388
+                }
+              },
+              "replacementPayloadBytes": 4354388,
+              "totalBytes": 4354388,
+              "totalPaths": 1
+            }
+          ]
+        },
+        {
+          "appendedOrder": null,
+          "baseOID": "3477aa97487265c00f3ed78aed37efb3a5fef7f2",
+          "cleanMergeSemanticValidation": true,
+          "conflictPathCount": 0,
+          "conflicts": [],
+          "exitCode": 0,
+          "inputBranchesPreserved": true,
+          "layout": "SUBTREE-N",
+          "mergeMs": 39.108,
+          "roundTripValidations": 3,
+          "sourceOID": "24c71c8f350a2c82f5bb8001e64f8b29ed2b4921",
+          "status": "clean",
+          "targetOID": "913d77822bc2fd85bb7ae72e9166b52738a83fa7",
+          "writers": [
+            {
+              "changedPathCount": 2,
+              "changedPaths": [
+                "hamii.json",
+                "subtrees/layer_merge_group_0_0.json"
+              ],
+              "gitNumstat": [
+                "1\t1\thamii.json",
+                "1\t1\tsubtrees/layer_merge_group_0_0.json"
+              ],
+              "pathSizes": {
+                "hamii.json": {
+                  "after": 645,
+                  "before": 645
+                },
+                "subtrees/layer_merge_group_0_0.json": {
+                  "after": 767119,
+                  "before": 767119
+                }
+              },
+              "replacementPayloadBytes": 767764,
+              "totalBytes": 3073795,
+              "totalPaths": 17
+            },
+            {
+              "changedPathCount": 2,
+              "changedPaths": [
+                "hamii.json",
+                "subtrees/layer_merge_group_1_1.json"
+              ],
+              "gitNumstat": [
+                "1\t1\thamii.json",
+                "1\t1\tsubtrees/layer_merge_group_1_1.json"
+              ],
+              "pathSizes": {
+                "hamii.json": {
+                  "after": 645,
+                  "before": 645
+                },
+                "subtrees/layer_merge_group_1_1.json": {
+                  "after": 767119,
+                  "before": 767119
+                }
+              },
+              "replacementPayloadBytes": 767764,
+              "totalBytes": 3073795,
+              "totalPaths": 17
+            }
+          ]
+        }
+      ],
+      "scenario": "different-screen",
+      "status": "complete"
+    },
+    {
+      "layouts": [
+        {
+          "appendedOrder": null,
+          "baseOID": "6f95b10ce4dbb8bad015182dbcb6e7c79f73eeb5",
+          "cleanMergeSemanticValidation": true,
+          "conflictPathCount": 0,
+          "conflicts": [],
+          "exitCode": 0,
+          "inputBranchesPreserved": true,
+          "layout": "CURRENT-P",
+          "mergeMs": 65.253,
+          "roundTripValidations": 3,
+          "sourceOID": "84cec58ad36f1ff23eda40d9308933795a06f712",
+          "status": "clean",
+          "targetOID": "85d6819ba51b891abc79c084be27323b487beea4",
+          "writers": [
+            {
+              "changedPathCount": 2,
+              "changedPaths": [
+                "hamii.json",
+                "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+              ],
+              "gitNumstat": [
+                "1\t1\thamii.json",
+                "1\t1\tscreens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+              ],
+              "pathSizes": {
+                "hamii.json": {
+                  "after": 645,
+                  "before": 645
+                },
+                "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json": {
+                  "after": 2014497,
+                  "before": 2014497
+                }
+              },
+              "replacementPayloadBytes": 2015142,
+              "totalBytes": 4033265,
+              "totalPaths": 13
+            },
+            {
+              "changedPathCount": 2,
+              "changedPaths": [
+                "hamii.json",
+                "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+              ],
+              "gitNumstat": [
+                "1\t1\thamii.json",
+                "1\t1\tscreens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+              ],
+              "pathSizes": {
+                "hamii.json": {
+                  "after": 645,
+                  "before": 645
+                },
+                "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json": {
+                  "after": 2014497,
+                  "before": 2014497
+                }
+              },
+              "replacementPayloadBytes": 2015142,
+              "totalBytes": 4033265,
+              "totalPaths": 13
+            }
+          ]
+        },
+        {
+          "appendedOrder": null,
+          "baseOID": "6f95b10ce4dbb8bad015182dbcb6e7c79f73eeb5",
+          "cleanMergeSemanticValidation": true,
+          "conflictPathCount": 0,
+          "conflicts": [],
+          "exitCode": 0,
+          "inputBranchesPreserved": true,
+          "layout": "CURRENT-N",
+          "mergeMs": 65.907,
+          "roundTripValidations": 3,
+          "sourceOID": "84cec58ad36f1ff23eda40d9308933795a06f712",
+          "status": "clean",
+          "targetOID": "85d6819ba51b891abc79c084be27323b487beea4",
+          "writers": [
+            {
+              "changedPathCount": 2,
+              "changedPaths": [
+                "hamii.json",
+                "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+              ],
+              "gitNumstat": [
+                "1\t1\thamii.json",
+                "1\t1\tscreens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+              ],
+              "pathSizes": {
+                "hamii.json": {
+                  "after": 645,
+                  "before": 645
+                },
+                "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json": {
+                  "after": 2014497,
+                  "before": 2014497
+                }
+              },
+              "replacementPayloadBytes": 2015142,
+              "totalBytes": 4033265,
+              "totalPaths": 13
+            },
+            {
+              "changedPathCount": 2,
+              "changedPaths": [
+                "hamii.json",
+                "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+              ],
+              "gitNumstat": [
+                "1\t1\thamii.json",
+                "1\t1\tscreens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+              ],
+              "pathSizes": {
+                "hamii.json": {
+                  "after": 645,
+                  "before": 645
+                },
+                "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json": {
+                  "after": 2014497,
+                  "before": 2014497
+                }
+              },
+              "replacementPayloadBytes": 2015142,
+              "totalBytes": 4033265,
+              "totalPaths": 13
+            }
+          ]
+        },
+        {
+          "appendedOrder": null,
+          "baseOID": "c7adfd76ad70de8a7f214e40074b216faaf79833",
+          "cleanMergeSemanticValidation": true,
+          "conflictPathCount": 0,
+          "conflicts": [],
+          "exitCode": 0,
+          "inputBranchesPreserved": true,
+          "layout": "MONOLITHIC-N",
+          "mergeMs": 106.573,
+          "roundTripValidations": 3,
+          "sourceOID": "056b7f2999705a5f2b565c799d30e981e0dcf606",
+          "status": "clean",
+          "targetOID": "d8b1a0017d44fa61f0c98b2ea5afd5c2e5f29951",
+          "writers": [
+            {
+              "changedPathCount": 1,
+              "changedPaths": [
+                "document.json"
+              ],
+              "gitNumstat": [
+                "2\t2\tdocument.json"
+              ],
+              "pathSizes": {
+                "document.json": {
+                  "after": 4354388,
+                  "before": 4354388
+                }
+              },
+              "replacementPayloadBytes": 4354388,
+              "totalBytes": 4354388,
+              "totalPaths": 1
+            },
+            {
+              "changedPathCount": 1,
+              "changedPaths": [
+                "document.json"
+              ],
+              "gitNumstat": [
+                "2\t2\tdocument.json"
+              ],
+              "pathSizes": {
+                "document.json": {
+                  "after": 4354388,
+                  "before": 4354388
+                }
+              },
+              "replacementPayloadBytes": 4354388,
+              "totalBytes": 4354388,
+              "totalPaths": 1
+            }
+          ]
+        },
+        {
+          "appendedOrder": null,
+          "baseOID": "3477aa97487265c00f3ed78aed37efb3a5fef7f2",
+          "cleanMergeSemanticValidation": true,
+          "conflictPathCount": 0,
+          "conflicts": [],
+          "exitCode": 0,
+          "inputBranchesPreserved": true,
+          "layout": "SUBTREE-N",
+          "mergeMs": 38.483,
+          "roundTripValidations": 3,
+          "sourceOID": "24c71c8f350a2c82f5bb8001e64f8b29ed2b4921",
+          "status": "clean",
+          "targetOID": "38e42e9bdcf157293c08fb24ac859b31b85a3253",
+          "writers": [
+            {
+              "changedPathCount": 2,
+              "changedPaths": [
+                "hamii.json",
+                "subtrees/layer_merge_group_0_0.json"
+              ],
+              "gitNumstat": [
+                "1\t1\thamii.json",
+                "1\t1\tsubtrees/layer_merge_group_0_0.json"
+              ],
+              "pathSizes": {
+                "hamii.json": {
+                  "after": 645,
+                  "before": 645
+                },
+                "subtrees/layer_merge_group_0_0.json": {
+                  "after": 767119,
+                  "before": 767119
+                }
+              },
+              "replacementPayloadBytes": 767764,
+              "totalBytes": 3073795,
+              "totalPaths": 17
+            },
+            {
+              "changedPathCount": 2,
+              "changedPaths": [
+                "hamii.json",
+                "subtrees/layer_merge_group_0_1.json"
+              ],
+              "gitNumstat": [
+                "1\t1\thamii.json",
+                "1\t1\tsubtrees/layer_merge_group_0_1.json"
+              ],
+              "pathSizes": {
+                "hamii.json": {
+                  "after": 645,
+                  "before": 645
+                },
+                "subtrees/layer_merge_group_0_1.json": {
+                  "after": 767119,
+                  "before": 767119
+                }
+              },
+              "replacementPayloadBytes": 767764,
+              "totalBytes": 3073795,
+              "totalPaths": 17
+            }
+          ]
+        }
+      ],
+      "scenario": "different-subtree",
+      "status": "complete"
+    },
+    {
+      "layouts": [
+        {
+          "appendedOrder": null,
+          "baseOID": "6f95b10ce4dbb8bad015182dbcb6e7c79f73eeb5",
+          "cleanMergeSemanticValidation": true,
+          "conflictPathCount": 0,
+          "conflicts": [],
+          "exitCode": 0,
+          "inputBranchesPreserved": true,
+          "layout": "CURRENT-P",
+          "mergeMs": 65.527,
+          "roundTripValidations": 3,
+          "sourceOID": "84cec58ad36f1ff23eda40d9308933795a06f712",
+          "status": "clean",
+          "targetOID": "ba1a31502d6dffedf5d2e28cd9992bc6760eb5c9",
+          "writers": [
+            {
+              "changedPathCount": 2,
+              "changedPaths": [
+                "hamii.json",
+                "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+              ],
+              "gitNumstat": [
+                "1\t1\thamii.json",
+                "1\t1\tscreens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+              ],
+              "pathSizes": {
+                "hamii.json": {
+                  "after": 645,
+                  "before": 645
+                },
+                "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json": {
+                  "after": 2014497,
+                  "before": 2014497
+                }
+              },
+              "replacementPayloadBytes": 2015142,
+              "totalBytes": 4033265,
+              "totalPaths": 13
+            },
+            {
+              "changedPathCount": 2,
+              "changedPaths": [
+                "hamii.json",
+                "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+              ],
+              "gitNumstat": [
+                "1\t1\thamii.json",
+                "1\t1\tscreens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+              ],
+              "pathSizes": {
+                "hamii.json": {
+                  "after": 645,
+                  "before": 645
+                },
+                "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json": {
+                  "after": 2014497,
+                  "before": 2014497
+                }
+              },
+              "replacementPayloadBytes": 2015142,
+              "totalBytes": 4033265,
+              "totalPaths": 13
+            }
+          ]
+        },
+        {
+          "appendedOrder": null,
+          "baseOID": "6f95b10ce4dbb8bad015182dbcb6e7c79f73eeb5",
+          "cleanMergeSemanticValidation": true,
+          "conflictPathCount": 0,
+          "conflicts": [],
+          "exitCode": 0,
+          "inputBranchesPreserved": true,
+          "layout": "CURRENT-N",
+          "mergeMs": 66.262,
+          "roundTripValidations": 3,
+          "sourceOID": "84cec58ad36f1ff23eda40d9308933795a06f712",
+          "status": "clean",
+          "targetOID": "ba1a31502d6dffedf5d2e28cd9992bc6760eb5c9",
+          "writers": [
+            {
+              "changedPathCount": 2,
+              "changedPaths": [
+                "hamii.json",
+                "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+              ],
+              "gitNumstat": [
+                "1\t1\thamii.json",
+                "1\t1\tscreens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+              ],
+              "pathSizes": {
+                "hamii.json": {
+                  "after": 645,
+                  "before": 645
+                },
+                "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json": {
+                  "after": 2014497,
+                  "before": 2014497
+                }
+              },
+              "replacementPayloadBytes": 2015142,
+              "totalBytes": 4033265,
+              "totalPaths": 13
+            },
+            {
+              "changedPathCount": 2,
+              "changedPaths": [
+                "hamii.json",
+                "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+              ],
+              "gitNumstat": [
+                "1\t1\thamii.json",
+                "1\t1\tscreens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+              ],
+              "pathSizes": {
+                "hamii.json": {
+                  "after": 645,
+                  "before": 645
+                },
+                "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json": {
+                  "after": 2014497,
+                  "before": 2014497
+                }
+              },
+              "replacementPayloadBytes": 2015142,
+              "totalBytes": 4033265,
+              "totalPaths": 13
+            }
+          ]
+        },
+        {
+          "appendedOrder": null,
+          "baseOID": "c7adfd76ad70de8a7f214e40074b216faaf79833",
+          "cleanMergeSemanticValidation": true,
+          "conflictPathCount": 0,
+          "conflicts": [],
+          "exitCode": 0,
+          "inputBranchesPreserved": true,
+          "layout": "MONOLITHIC-N",
+          "mergeMs": 108.456,
+          "roundTripValidations": 3,
+          "sourceOID": "056b7f2999705a5f2b565c799d30e981e0dcf606",
+          "status": "clean",
+          "targetOID": "6ef118015e4768919141610c905b686458d1eddc",
+          "writers": [
+            {
+              "changedPathCount": 1,
+              "changedPaths": [
+                "document.json"
+              ],
+              "gitNumstat": [
+                "2\t2\tdocument.json"
+              ],
+              "pathSizes": {
+                "document.json": {
+                  "after": 4354388,
+                  "before": 4354388
+                }
+              },
+              "replacementPayloadBytes": 4354388,
+              "totalBytes": 4354388,
+              "totalPaths": 1
+            },
+            {
+              "changedPathCount": 1,
+              "changedPaths": [
+                "document.json"
+              ],
+              "gitNumstat": [
+                "2\t2\tdocument.json"
+              ],
+              "pathSizes": {
+                "document.json": {
+                  "after": 4354388,
+                  "before": 4354388
+                }
+              },
+              "replacementPayloadBytes": 4354388,
+              "totalBytes": 4354388,
+              "totalPaths": 1
+            }
+          ]
+        },
+        {
+          "appendedOrder": null,
+          "baseOID": "3477aa97487265c00f3ed78aed37efb3a5fef7f2",
+          "cleanMergeSemanticValidation": true,
+          "conflictPathCount": 0,
+          "conflicts": [],
+          "exitCode": 0,
+          "inputBranchesPreserved": true,
+          "layout": "SUBTREE-N",
+          "mergeMs": 45.539,
+          "roundTripValidations": 3,
+          "sourceOID": "24c71c8f350a2c82f5bb8001e64f8b29ed2b4921",
+          "status": "clean",
+          "targetOID": "83c303f8f564c1ea1d3ac55a58ce4d6f0b388b35",
+          "writers": [
+            {
+              "changedPathCount": 2,
+              "changedPaths": [
+                "hamii.json",
+                "subtrees/layer_merge_group_0_0.json"
+              ],
+              "gitNumstat": [
+                "1\t1\thamii.json",
+                "1\t1\tsubtrees/layer_merge_group_0_0.json"
+              ],
+              "pathSizes": {
+                "hamii.json": {
+                  "after": 645,
+                  "before": 645
+                },
+                "subtrees/layer_merge_group_0_0.json": {
+                  "after": 767119,
+                  "before": 767119
+                }
+              },
+              "replacementPayloadBytes": 767764,
+              "totalBytes": 3073795,
+              "totalPaths": 17
+            },
+            {
+              "changedPathCount": 2,
+              "changedPaths": [
+                "hamii.json",
+                "subtrees/layer_merge_group_0_0.json"
+              ],
+              "gitNumstat": [
+                "1\t1\thamii.json",
+                "1\t1\tsubtrees/layer_merge_group_0_0.json"
+              ],
+              "pathSizes": {
+                "hamii.json": {
+                  "after": 645,
+                  "before": 645
+                },
+                "subtrees/layer_merge_group_0_0.json": {
+                  "after": 767119,
+                  "before": 767119
+                }
+              },
+              "replacementPayloadBytes": 767764,
+              "totalBytes": 3073795,
+              "totalPaths": 17
+            }
+          ]
+        }
+      ],
+      "scenario": "same-subtree-distinct-leaves",
+      "status": "complete"
+    },
+    {
+      "layouts": [
+        {
+          "appendedOrder": null,
+          "baseOID": "6f95b10ce4dbb8bad015182dbcb6e7c79f73eeb5",
+          "cleanMergeSemanticValidation": false,
+          "conflictPathCount": 1,
+          "conflicts": [
+            {
+              "blobBytes": {
+                "base": 2014497,
+                "ours": 2014497,
+                "theirs": 2014497
+              },
+              "markerBlocks": 1,
+              "path": "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+            }
+          ],
+          "exitCode": 1,
+          "inputBranchesPreserved": true,
+          "layout": "CURRENT-P",
+          "mergeMs": 51.255,
+          "roundTripValidations": 3,
+          "sourceOID": "84cec58ad36f1ff23eda40d9308933795a06f712",
+          "status": "conflicted",
+          "targetOID": "b5caa2f1637318869ca99ec6e2635fc4bc91dafb",
+          "writers": [
+            {
+              "changedPathCount": 2,
+              "changedPaths": [
+                "hamii.json",
+                "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+              ],
+              "gitNumstat": [
+                "1\t1\thamii.json",
+                "1\t1\tscreens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+              ],
+              "pathSizes": {
+                "hamii.json": {
+                  "after": 645,
+                  "before": 645
+                },
+                "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json": {
+                  "after": 2014497,
+                  "before": 2014497
+                }
+              },
+              "replacementPayloadBytes": 2015142,
+              "totalBytes": 4033265,
+              "totalPaths": 13
+            },
+            {
+              "changedPathCount": 2,
+              "changedPaths": [
+                "hamii.json",
+                "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+              ],
+              "gitNumstat": [
+                "1\t1\thamii.json",
+                "1\t1\tscreens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+              ],
+              "pathSizes": {
+                "hamii.json": {
+                  "after": 645,
+                  "before": 645
+                },
+                "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json": {
+                  "after": 2014497,
+                  "before": 2014497
+                }
+              },
+              "replacementPayloadBytes": 2015142,
+              "totalBytes": 4033265,
+              "totalPaths": 13
+            }
+          ]
+        },
+        {
+          "appendedOrder": null,
+          "baseOID": "6f95b10ce4dbb8bad015182dbcb6e7c79f73eeb5",
+          "cleanMergeSemanticValidation": false,
+          "conflictPathCount": 1,
+          "conflicts": [
+            {
+              "blobBytes": {
+                "base": 2014497,
+                "ours": 2014497,
+                "theirs": 2014497
+              },
+              "markerBlocks": 1,
+              "path": "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+            }
+          ],
+          "exitCode": 1,
+          "inputBranchesPreserved": true,
+          "layout": "CURRENT-N",
+          "mergeMs": 60.478,
+          "roundTripValidations": 3,
+          "sourceOID": "84cec58ad36f1ff23eda40d9308933795a06f712",
+          "status": "conflicted",
+          "targetOID": "b5caa2f1637318869ca99ec6e2635fc4bc91dafb",
+          "writers": [
+            {
+              "changedPathCount": 2,
+              "changedPaths": [
+                "hamii.json",
+                "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+              ],
+              "gitNumstat": [
+                "1\t1\thamii.json",
+                "1\t1\tscreens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+              ],
+              "pathSizes": {
+                "hamii.json": {
+                  "after": 645,
+                  "before": 645
+                },
+                "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json": {
+                  "after": 2014497,
+                  "before": 2014497
+                }
+              },
+              "replacementPayloadBytes": 2015142,
+              "totalBytes": 4033265,
+              "totalPaths": 13
+            },
+            {
+              "changedPathCount": 2,
+              "changedPaths": [
+                "hamii.json",
+                "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+              ],
+              "gitNumstat": [
+                "1\t1\thamii.json",
+                "1\t1\tscreens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+              ],
+              "pathSizes": {
+                "hamii.json": {
+                  "after": 645,
+                  "before": 645
+                },
+                "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json": {
+                  "after": 2014497,
+                  "before": 2014497
+                }
+              },
+              "replacementPayloadBytes": 2015142,
+              "totalBytes": 4033265,
+              "totalPaths": 13
+            }
+          ]
+        },
+        {
+          "appendedOrder": null,
+          "baseOID": "c7adfd76ad70de8a7f214e40074b216faaf79833",
+          "cleanMergeSemanticValidation": false,
+          "conflictPathCount": 1,
+          "conflicts": [
+            {
+              "blobBytes": {
+                "base": 4354388,
+                "ours": 4354388,
+                "theirs": 4354388
+              },
+              "markerBlocks": 1,
+              "path": "document.json"
+            }
+          ],
+          "exitCode": 1,
+          "inputBranchesPreserved": true,
+          "layout": "MONOLITHIC-N",
+          "mergeMs": 90.271,
+          "roundTripValidations": 3,
+          "sourceOID": "056b7f2999705a5f2b565c799d30e981e0dcf606",
+          "status": "conflicted",
+          "targetOID": "0fde506c750070d571c5c42876e3c94d8879e812",
+          "writers": [
+            {
+              "changedPathCount": 1,
+              "changedPaths": [
+                "document.json"
+              ],
+              "gitNumstat": [
+                "2\t2\tdocument.json"
+              ],
+              "pathSizes": {
+                "document.json": {
+                  "after": 4354388,
+                  "before": 4354388
+                }
+              },
+              "replacementPayloadBytes": 4354388,
+              "totalBytes": 4354388,
+              "totalPaths": 1
+            },
+            {
+              "changedPathCount": 1,
+              "changedPaths": [
+                "document.json"
+              ],
+              "gitNumstat": [
+                "2\t2\tdocument.json"
+              ],
+              "pathSizes": {
+                "document.json": {
+                  "after": 4354388,
+                  "before": 4354388
+                }
+              },
+              "replacementPayloadBytes": 4354388,
+              "totalBytes": 4354388,
+              "totalPaths": 1
+            }
+          ]
+        },
+        {
+          "appendedOrder": null,
+          "baseOID": "3477aa97487265c00f3ed78aed37efb3a5fef7f2",
+          "cleanMergeSemanticValidation": false,
+          "conflictPathCount": 1,
+          "conflicts": [
+            {
+              "blobBytes": {
+                "base": 767119,
+                "ours": 767119,
+                "theirs": 767119
+              },
+              "markerBlocks": 1,
+              "path": "subtrees/layer_merge_group_0_0.json"
+            }
+          ],
+          "exitCode": 1,
+          "inputBranchesPreserved": true,
+          "layout": "SUBTREE-N",
+          "mergeMs": 33.406,
+          "roundTripValidations": 3,
+          "sourceOID": "24c71c8f350a2c82f5bb8001e64f8b29ed2b4921",
+          "status": "conflicted",
+          "targetOID": "d7fb704e40e8a925a00740ad78d0fc2a22b216a1",
+          "writers": [
+            {
+              "changedPathCount": 2,
+              "changedPaths": [
+                "hamii.json",
+                "subtrees/layer_merge_group_0_0.json"
+              ],
+              "gitNumstat": [
+                "1\t1\thamii.json",
+                "1\t1\tsubtrees/layer_merge_group_0_0.json"
+              ],
+              "pathSizes": {
+                "hamii.json": {
+                  "after": 645,
+                  "before": 645
+                },
+                "subtrees/layer_merge_group_0_0.json": {
+                  "after": 767119,
+                  "before": 767119
+                }
+              },
+              "replacementPayloadBytes": 767764,
+              "totalBytes": 3073795,
+              "totalPaths": 17
+            },
+            {
+              "changedPathCount": 2,
+              "changedPaths": [
+                "hamii.json",
+                "subtrees/layer_merge_group_0_0.json"
+              ],
+              "gitNumstat": [
+                "1\t1\thamii.json",
+                "1\t1\tsubtrees/layer_merge_group_0_0.json"
+              ],
+              "pathSizes": {
+                "hamii.json": {
+                  "after": 645,
+                  "before": 645
+                },
+                "subtrees/layer_merge_group_0_0.json": {
+                  "after": 767119,
+                  "before": 767119
+                }
+              },
+              "replacementPayloadBytes": 767764,
+              "totalBytes": 3073795,
+              "totalPaths": 17
+            }
+          ]
+        }
+      ],
+      "scenario": "same-property",
+      "status": "complete"
+    },
+    {
+      "layouts": [
+        {
+          "appendedOrder": null,
+          "baseOID": "6f95b10ce4dbb8bad015182dbcb6e7c79f73eeb5",
+          "cleanMergeSemanticValidation": false,
+          "conflictPathCount": 1,
+          "conflicts": [
+            {
+              "blobBytes": {
+                "base": 2014497,
+                "ours": 2014899,
+                "theirs": 2014899
+              },
+              "markerBlocks": 2,
+              "path": "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+            }
+          ],
+          "exitCode": 1,
+          "inputBranchesPreserved": true,
+          "layout": "CURRENT-P",
+          "mergeMs": 61.624,
+          "roundTripValidations": 3,
+          "sourceOID": "0a31b4eb30411d7df2f45a2fb2e9974013690988",
+          "status": "conflicted",
+          "targetOID": "c0a56e42aa94c60be38d082e32421a159b657e08",
+          "writers": [
+            {
+              "changedPathCount": 2,
+              "changedPaths": [
+                "hamii.json",
+                "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+              ],
+              "gitNumstat": [
+                "1\t1\thamii.json",
+                "20\t0\tscreens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+              ],
+              "pathSizes": {
+                "hamii.json": {
+                  "after": 645,
+                  "before": 645
+                },
+                "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json": {
+                  "after": 2014899,
+                  "before": 2014497
+                }
+              },
+              "replacementPayloadBytes": 2015544,
+              "totalBytes": 4033667,
+              "totalPaths": 13
+            },
+            {
+              "changedPathCount": 2,
+              "changedPaths": [
+                "hamii.json",
+                "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+              ],
+              "gitNumstat": [
+                "1\t1\thamii.json",
+                "20\t0\tscreens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+              ],
+              "pathSizes": {
+                "hamii.json": {
+                  "after": 645,
+                  "before": 645
+                },
+                "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json": {
+                  "after": 2014899,
+                  "before": 2014497
+                }
+              },
+              "replacementPayloadBytes": 2015544,
+              "totalBytes": 4033667,
+              "totalPaths": 13
+            }
+          ]
+        },
+        {
+          "appendedOrder": null,
+          "baseOID": "6f95b10ce4dbb8bad015182dbcb6e7c79f73eeb5",
+          "cleanMergeSemanticValidation": false,
+          "conflictPathCount": 1,
+          "conflicts": [
+            {
+              "blobBytes": {
+                "base": 2014497,
+                "ours": 2014899,
+                "theirs": 2014899
+              },
+              "markerBlocks": 2,
+              "path": "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+            }
+          ],
+          "exitCode": 1,
+          "inputBranchesPreserved": true,
+          "layout": "CURRENT-N",
+          "mergeMs": 61.188,
+          "roundTripValidations": 3,
+          "sourceOID": "0a31b4eb30411d7df2f45a2fb2e9974013690988",
+          "status": "conflicted",
+          "targetOID": "c0a56e42aa94c60be38d082e32421a159b657e08",
+          "writers": [
+            {
+              "changedPathCount": 2,
+              "changedPaths": [
+                "hamii.json",
+                "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+              ],
+              "gitNumstat": [
+                "1\t1\thamii.json",
+                "20\t0\tscreens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+              ],
+              "pathSizes": {
+                "hamii.json": {
+                  "after": 645,
+                  "before": 645
+                },
+                "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json": {
+                  "after": 2014899,
+                  "before": 2014497
+                }
+              },
+              "replacementPayloadBytes": 2015544,
+              "totalBytes": 4033667,
+              "totalPaths": 13
+            },
+            {
+              "changedPathCount": 2,
+              "changedPaths": [
+                "hamii.json",
+                "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+              ],
+              "gitNumstat": [
+                "1\t1\thamii.json",
+                "20\t0\tscreens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+              ],
+              "pathSizes": {
+                "hamii.json": {
+                  "after": 645,
+                  "before": 645
+                },
+                "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json": {
+                  "after": 2014899,
+                  "before": 2014497
+                }
+              },
+              "replacementPayloadBytes": 2015544,
+              "totalBytes": 4033667,
+              "totalPaths": 13
+            }
+          ]
+        },
+        {
+          "appendedOrder": null,
+          "baseOID": "c7adfd76ad70de8a7f214e40074b216faaf79833",
+          "cleanMergeSemanticValidation": false,
+          "conflictPathCount": 1,
+          "conflicts": [
+            {
+              "blobBytes": {
+                "base": 4354388,
+                "ours": 4354822,
+                "theirs": 4354822
+              },
+              "markerBlocks": 2,
+              "path": "document.json"
+            }
+          ],
+          "exitCode": 1,
+          "inputBranchesPreserved": true,
+          "layout": "MONOLITHIC-N",
+          "mergeMs": 88.382,
+          "roundTripValidations": 3,
+          "sourceOID": "151eb2dc6b4402636cb06db864af5151b8def669",
+          "status": "conflicted",
+          "targetOID": "82693ce205dce637b2a1c78ab08891aa478d8602",
+          "writers": [
+            {
+              "changedPathCount": 1,
+              "changedPaths": [
+                "document.json"
+              ],
+              "gitNumstat": [
+                "21\t1\tdocument.json"
+              ],
+              "pathSizes": {
+                "document.json": {
+                  "after": 4354822,
+                  "before": 4354388
+                }
+              },
+              "replacementPayloadBytes": 4354822,
+              "totalBytes": 4354822,
+              "totalPaths": 1
+            },
+            {
+              "changedPathCount": 1,
+              "changedPaths": [
+                "document.json"
+              ],
+              "gitNumstat": [
+                "21\t1\tdocument.json"
+              ],
+              "pathSizes": {
+                "document.json": {
+                  "after": 4354822,
+                  "before": 4354388
+                }
+              },
+              "replacementPayloadBytes": 4354822,
+              "totalBytes": 4354822,
+              "totalPaths": 1
+            }
+          ]
+        },
+        {
+          "appendedOrder": null,
+          "baseOID": "3477aa97487265c00f3ed78aed37efb3a5fef7f2",
+          "cleanMergeSemanticValidation": false,
+          "conflictPathCount": 1,
+          "conflicts": [
+            {
+              "blobBytes": {
+                "base": 767119,
+                "ours": 767425,
+                "theirs": 767425
+              },
+              "markerBlocks": 2,
+              "path": "subtrees/layer_merge_group_0_0.json"
+            }
+          ],
+          "exitCode": 1,
+          "inputBranchesPreserved": true,
+          "layout": "SUBTREE-N",
+          "mergeMs": 43.275,
+          "roundTripValidations": 3,
+          "sourceOID": "4b249d934cacd4a06d3ea3b7c164b7a98b814e71",
+          "status": "conflicted",
+          "targetOID": "bd851ff80725824d8329b3c4489b567004c14f45",
+          "writers": [
+            {
+              "changedPathCount": 2,
+              "changedPaths": [
+                "hamii.json",
+                "subtrees/layer_merge_group_0_0.json"
+              ],
+              "gitNumstat": [
+                "1\t1\thamii.json",
+                "20\t0\tsubtrees/layer_merge_group_0_0.json"
+              ],
+              "pathSizes": {
+                "hamii.json": {
+                  "after": 645,
+                  "before": 645
+                },
+                "subtrees/layer_merge_group_0_0.json": {
+                  "after": 767425,
+                  "before": 767119
+                }
+              },
+              "replacementPayloadBytes": 768070,
+              "totalBytes": 3074101,
+              "totalPaths": 17
+            },
+            {
+              "changedPathCount": 2,
+              "changedPaths": [
+                "hamii.json",
+                "subtrees/layer_merge_group_0_0.json"
+              ],
+              "gitNumstat": [
+                "1\t1\thamii.json",
+                "20\t0\tsubtrees/layer_merge_group_0_0.json"
+              ],
+              "pathSizes": {
+                "hamii.json": {
+                  "after": 645,
+                  "before": 645
+                },
+                "subtrees/layer_merge_group_0_0.json": {
+                  "after": 767425,
+                  "before": 767119
+                }
+              },
+              "replacementPayloadBytes": 768070,
+              "totalBytes": 3074101,
+              "totalPaths": 17
+            }
+          ]
+        }
+      ],
+      "scenario": "same-parent-append",
+      "status": "complete"
+    }
+  ],
+  "cost": "unmeasured",
+  "environment": {
+    "cpuCount": 10,
+    "git": "git version 2.52.0",
+    "loadAtEnd": [
+      3.21044921875,
+      2.4521484375,
+      2.3857421875
+    ],
+    "loadAtStart": [
+      2.4052734375,
+      2.18505859375,
+      2.31640625
+    ],
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "sdk": "27.0",
+    "swift": "Apple Swift version 6.4 (swift-6.4-RELEASE)\nTarget: arm64-apple-macosx27.0.0"
+  },
+  "fingerprints": {
+    "/Users/t.kobayashi/orca/hamii/.build/out/Products/Release/HamiiApplication.o": "a2a508ca1a337b1e9a10be1f137a8bb9d75fd3be34d0d5b7aefeeeebcafae184",
+    "/Users/t.kobayashi/orca/hamii/.build/out/Products/Release/HamiiCore.o": "17e329112458863ac1fb888237074cba91b127f3cc15d184d843bc0e54f83078",
+    "/Users/t.kobayashi/orca/hamii/.build/out/Products/Release/HamiiFormat.o": "badd54757af8abdf037809266e1827f1ed678a287d707e9c7c6701952166678a",
+    "/Users/t.kobayashi/orca/hamii/.build/release/hamii": "dd59e5bfbdf35a631d1c1576837e2432d6d943024f41c2ae887378d736adc336",
+    "/Users/t.kobayashi/orca/hamii/Package.swift": "02545db6e55f0bce760ffb459c143f481897b06261728b6a3ebd776b080b551c",
+    "/Users/t.kobayashi/orca/hamii/adr/git-canonical-sharding/spikes/shard-merge-benchmark/artifacts/measure-open-save-scaling.py": "63f14d4d7881e3319897d15bc44b06220f9284f52f55d755103906aeb350dd04",
+    "/Users/t.kobayashi/orca/hamii/adr/git-canonical-sharding/spikes/shard-merge-benchmark/artifacts/measure-open-save-scaling.swift": "3f7cff623316e126dd440b9c56d65bc88c9dc29e1eaa2d9d5e41268c0be2cb8a",
+    "/Users/t.kobayashi/orca/hamii/adr/git-canonical-sharding/spikes/shard-merge-benchmark/artifacts/measure-save-merge.py": "5398f2dd2e0c3b9557f73e594772219cd61930545614a1969a8fdfe4ec310a91",
+    "/Users/t.kobayashi/orca/hamii/adr/git-canonical-sharding/spikes/shard-merge-benchmark/artifacts/normalize-fixture.swift": "f83b79b82043034fc4cc4cae3d5aa4b911ced63e98b4b78b03b8e0a35c63da15",
+    "/Users/t.kobayashi/orca/hamii/scripts/measure-ai-context.py": "641d373239311c7adf1c78b0ec875ec39252e2c6264156958999328450ba6fd3",
+    "/Users/t.kobayashi/orca/hamii/scripts/measure-shard-observation-shapes.py": "cd9a4949fdc4b717bafbcc0be950e9d323d53b07d50f876c73f8148c715464b1",
+    "/var/folders/05/9dz9l23n10d4pk_yp0ktzb4m0000gn/T/hamii-open-save-vzvhgf3n/scaling-probe": "a8e9f06671d193afab59f3132450728538d176f5c179a3478aabe16e455ed7b7"
+  },
+  "order": {
+    "layouts": [
+      "CURRENT-P",
+      "CURRENT-N",
+      "MONOLITHIC-N",
+      "SUBTREE-N"
+    ],
+    "scales": [
+      1000,
+      10000,
+      50000
+    ]
+  },
+  "peakRSS": "unmeasured",
+  "planCommit": "5434a3ebe03982bf7644380b20cad0582dff70a5",
+  "route": "50k viable; partial-load Evidence next; no Decision",
+  "sampleCounts": {
+    "controlMergePerScenarioLayout": 1,
+    "open": 10,
+    "roundTrip": 3,
+    "save": 5
+  },
+  "scalingAttempts": [
+    {
+      "exitCode": 0,
+      "fixture": {
+        "canonicalBytes": 406265,
+        "canonicalPathCount": 13,
+        "componentCount": 2,
+        "largestShardBytes": 200997,
+        "layerCount": 1000,
+        "medianShardBytes": 283,
+        "screenCount": 2
+      },
+      "result": {
+        "negativeReferenceRejections": [
+          "dangling",
+          "duplicate",
+          "unreachable",
+          "unknown",
+          "identity-mismatch"
+        ],
+        "normalized": [
+          {
+            "currentValidationValid": true,
+            "deterministic": true,
+            "layout": "CURRENT-N",
+            "metadata": {
+              "largestShardBytes": 200997,
+              "medianShardBytes": 283,
+              "pathCount": 13,
+              "totalBytes": 406265
+            },
+            "openSamples": [
+              {
+                "bytesRead": 406265,
+                "decodeMs": 1.8580833566375077,
+                "filesRead": 13,
+                "readMs": 1.8803333514370024,
+                "reconstructMs": 0.10670832125470042,
+                "totalMs": 16.025666671339422,
+                "typedDecodeMs": 10.612458339892328,
+                "validationMs": 1.5654583112336695
+              },
+              {
+                "bytesRead": 406265,
+                "decodeMs": 1.9164583063684404,
+                "filesRead": 13,
+                "readMs": 1.8226666725240648,
+                "reconstructMs": 0.10870833648368716,
+                "totalMs": 16.37962501263246,
+                "typedDecodeMs": 10.93633333221078,
+                "validationMs": 1.590500003658235
+              },
+              {
+                "bytesRead": 406265,
+                "decodeMs": 1.8664166564121842,
+                "filesRead": 13,
+                "readMs": 1.775041630025953,
+                "reconstructMs": 0.10737497359514236,
+                "totalMs": 16.192124981898814,
+                "typedDecodeMs": 10.87220833869651,
+                "validationMs": 1.5685833059251308
+              },
+              {
+                "bytesRead": 406265,
+                "decodeMs": 1.8523749895393848,
+                "filesRead": 13,
+                "readMs": 1.8360000103712082,
+                "reconstructMs": 0.10891666170209646,
+                "totalMs": 16.10895828343928,
+                "typedDecodeMs": 10.747041669674218,
+                "validationMs": 1.5620000194758177
+              },
+              {
+                "bytesRead": 406265,
+                "decodeMs": 1.8687083502300084,
+                "filesRead": 13,
+                "readMs": 1.747500034980476,
+                "reconstructMs": 0.10624999413266778,
+                "totalMs": 15.978833311237395,
+                "typedDecodeMs": 10.668291652109474,
+                "validationMs": 1.5852916985750198
+              },
+              {
+                "bytesRead": 406265,
+                "decodeMs": 1.9675416988320649,
+                "filesRead": 13,
+                "readMs": 1.7694166745059192,
+                "reconstructMs": 0.12370833428576589,
+                "totalMs": 16.180875012651086,
+                "typedDecodeMs": 10.733458329923451,
+                "validationMs": 1.5828749747015536
+              },
+              {
+                "bytesRead": 406265,
+                "decodeMs": 1.8982500187121332,
+                "filesRead": 13,
+                "readMs": 1.7572499928064644,
+                "reconstructMs": 0.11033331975340843,
+                "totalMs": 16.00687502650544,
+                "typedDecodeMs": 10.664583358447999,
+                "validationMs": 1.5736250206828117
+              },
+              {
+                "bytesRead": 406265,
+                "decodeMs": 1.8949583172798157,
+                "filesRead": 13,
+                "readMs": 1.7869583098217845,
+                "reconstructMs": 0.11395831825211644,
+                "totalMs": 16.052791674155742,
+                "typedDecodeMs": 10.68862498505041,
+                "validationMs": 1.5657083131372929
+              },
+              {
+                "bytesRead": 406265,
+                "decodeMs": 1.8752916366793215,
+                "filesRead": 13,
+                "readMs": 1.8048333586193621,
+                "reconstructMs": 0.11183333117514849,
+                "totalMs": 16.001458337996155,
+                "typedDecodeMs": 10.647833347320557,
+                "validationMs": 1.5589999966323376
+              },
+              {
+                "bytesRead": 406265,
+                "decodeMs": 1.8360000103712082,
+                "filesRead": 13,
+                "readMs": 1.7760416376404464,
+                "reconstructMs": 0.10966666741296649,
+                "totalMs": 15.98874997580424,
+                "typedDecodeMs": 10.679541679564863,
+                "validationMs": 1.5847916365601122
+              }
+            ],
+            "productionLoadMs": null,
+            "productionMutationSaveMs": null,
+            "productionObserveMs": null,
+            "roundTripCount": 3,
+            "roundTripValid": true,
+            "saveSamples": [
+              {
+                "changedPathCount": 2,
+                "changedPaths": [
+                  "hamii.json",
+                  "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+                ],
+                "encodeMs": 10.265875025652349,
+                "replacementBytes": 201642,
+                "totalCandidateBytes": 406265,
+                "totalMs": 11.225416674278677,
+                "writeMs": 0.9427082841284573
+              },
+              {
+                "changedPathCount": 2,
+                "changedPaths": [
+                  "hamii.json",
+                  "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+                ],
+                "encodeMs": 10.164458304643631,
+                "replacementBytes": 201642,
+                "totalCandidateBytes": 406265,
+                "totalMs": 10.631125012878329,
+                "writeMs": 0.45158329885452986
+              },
+              {
+                "changedPathCount": 2,
+                "changedPaths": [
+                  "hamii.json",
+                  "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+                ],
+                "encodeMs": 10.239083378110081,
+                "replacementBytes": 201642,
+                "totalCandidateBytes": 406265,
+                "totalMs": 10.666874994058162,
+                "writeMs": 0.4137916839681566
+              },
+              {
+                "changedPathCount": 2,
+                "changedPaths": [
+                  "hamii.json",
+                  "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+                ],
+                "encodeMs": 10.189833352342248,
+                "replacementBytes": 201642,
+                "totalCandidateBytes": 406265,
+                "totalMs": 10.586666641756892,
+                "writeMs": 0.3825000021606684
+              },
+              {
+                "changedPathCount": 2,
+                "changedPaths": [
+                  "hamii.json",
+                  "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+                ],
+                "encodeMs": 10.421249957289547,
+                "replacementBytes": 201642,
+                "totalCandidateBytes": 406265,
+                "totalMs": 11.074708309024572,
+                "writeMs": 0.6314999773167074
+              }
+            ],
+            "serializer": "Foundation.JSONSerialization: sortedKeys/prettyPrinted/withoutEscapingSlashes/LF"
+          },
+          {
+            "currentValidationValid": true,
+            "deterministic": true,
+            "layout": "MONOLITHIC-N",
+            "metadata": {
+              "largestShardBytes": 439388,
+              "medianShardBytes": 439388,
+              "pathCount": 1,
+              "totalBytes": 439388
+            },
+            "openSamples": [
+              {
+                "bytesRead": 439388,
+                "decodeMs": 1.9383750041015446,
+                "filesRead": 1,
+                "readMs": 0.2569166827015579,
+                "reconstructMs": 0.17095834482461214,
+                "totalMs": 14.77354165399447,
+                "typedDecodeMs": 10.837083333171904,
+                "validationMs": 1.5668332925997674
+              },
+              {
+                "bytesRead": 439388,
+                "decodeMs": 1.8783333362080157,
+                "filesRead": 1,
+                "readMs": 0.2744166413322091,
+                "reconstructMs": 0.16758329002186656,
+                "totalMs": 14.490375004243106,
+                "typedDecodeMs": 10.60037495335564,
+                "validationMs": 1.5667916741222143
+              },
+              {
+                "bytesRead": 439388,
+                "decodeMs": 1.8719166982918978,
+                "filesRead": 1,
+                "readMs": 0.25049998657777905,
+                "reconstructMs": 0.1646250020712614,
+                "totalMs": 14.645666698925197,
+                "typedDecodeMs": 10.751500027254224,
+                "validationMs": 1.6039999900385737
+              },
+              {
+                "bytesRead": 439388,
+                "decodeMs": 1.8912916420958936,
+                "filesRead": 1,
+                "readMs": 0.2880416577681899,
+                "reconstructMs": 0.1663750153966248,
+                "totalMs": 14.535083319060504,
+                "typedDecodeMs": 10.621541703585535,
+                "validationMs": 1.5648333355784416
+              },
+              {
+                "bytesRead": 439388,
+                "decodeMs": 1.9529583514668047,
+                "filesRead": 1,
+                "readMs": 0.27745834086090326,
+                "reconstructMs": 0.16670831246301532,
+                "totalMs": 14.657124993391335,
+                "typedDecodeMs": 10.689500020816922,
+                "validationMs": 1.5676666516810656
+              },
+              {
+                "bytesRead": 439388,
+                "decodeMs": 1.8690417055040598,
+                "filesRead": 1,
+                "readMs": 0.25091669522225857,
+                "reconstructMs": 0.16458332538604736,
+                "totalMs": 14.656166662462056,
+                "typedDecodeMs": 10.803500015754253,
+                "validationMs": 1.5649166889488697
+              },
+              {
+                "bytesRead": 439388,
+                "decodeMs": 1.8628750112839043,
+                "filesRead": 1,
+                "readMs": 0.3015417023561895,
+                "reconstructMs": 0.16537500778213143,
+                "totalMs": 14.56474995939061,
+                "typedDecodeMs": 10.647999995853752,
+                "validationMs": 1.5841666609048843
+              },
+              {
+                "bytesRead": 439388,
+                "decodeMs": 1.8784166313707829,
+                "filesRead": 1,
+                "readMs": 0.24716666666790843,
+                "reconstructMs": 0.16375002451241016,
+                "totalMs": 14.480375044513494,
+                "typedDecodeMs": 10.596708336379379,
+                "validationMs": 1.5913749812170863
+              },
+              {
+                "bytesRead": 439388,
+                "decodeMs": 2.032041666097939,
+                "filesRead": 1,
+                "readMs": 0.26699999580159783,
+                "reconstructMs": 0.16754167154431343,
+                "totalMs": 14.894958352670074,
+                "typedDecodeMs": 10.842458344995975,
+                "validationMs": 1.581125019583851
+              },
+              {
+                "bytesRead": 439388,
+                "decodeMs": 1.8845833255909383,
+                "filesRead": 1,
+                "readMs": 0.32741663744673133,
+                "reconstructMs": 0.1659583649598062,
+                "totalMs": 14.610916667152196,
+                "typedDecodeMs": 10.65999997081235,
+                "validationMs": 1.5697499620728195
+              }
+            ],
+            "productionLoadMs": null,
+            "productionMutationSaveMs": null,
+            "productionObserveMs": null,
+            "roundTripCount": 3,
+            "roundTripValid": true,
+            "saveSamples": [
+              {
+                "changedPathCount": 1,
+                "changedPaths": [
+                  "document.json"
+                ],
+                "encodeMs": 10.479416698217392,
+                "replacementBytes": 439388,
+                "totalCandidateBytes": 439388,
+                "totalMs": 11.292250012047589,
+                "writeMs": 0.8112500072456896
+              },
+              {
+                "changedPathCount": 1,
+                "changedPaths": [
+                  "document.json"
+                ],
+                "encodeMs": 10.370166681241244,
+                "replacementBytes": 439388,
+                "totalCandidateBytes": 439388,
+                "totalMs": 10.748166649136692,
+                "writeMs": 0.376458337996155
+              },
+              {
+                "changedPathCount": 1,
+                "changedPaths": [
+                  "document.json"
+                ],
+                "encodeMs": 10.214583307970315,
+                "replacementBytes": 439388,
+                "totalCandidateBytes": 439388,
+                "totalMs": 10.538958362303674,
+                "writeMs": 0.3230416914448142
+              },
+              {
+                "changedPathCount": 1,
+                "changedPaths": [
+                  "document.json"
+                ],
+                "encodeMs": 10.211041662842035,
+                "replacementBytes": 439388,
+                "totalCandidateBytes": 439388,
+                "totalMs": 10.495249996893108,
+                "writeMs": 0.2830000012181699
+              },
+              {
+                "changedPathCount": 1,
+                "changedPaths": [
+                  "document.json"
+                ],
+                "encodeMs": 10.19554166123271,
+                "replacementBytes": 439388,
+                "totalCandidateBytes": 439388,
+                "totalMs": 10.546999983489513,
+                "writeMs": 0.35004166420549154
+              }
+            ],
+            "serializer": "Foundation.JSONSerialization: sortedKeys/prettyPrinted/withoutEscapingSlashes/LF"
+          },
+          {
+            "currentValidationValid": true,
+            "deterministic": true,
+            "layout": "SUBTREE-N",
+            "metadata": {
+              "largestShardBytes": 76369,
+              "medianShardBytes": 524,
+              "pathCount": 17,
+              "totalBytes": 310795
+            },
+            "openSamples": [
+              {
+                "bytesRead": 310795,
+                "decodeMs": 1.7225000192411244,
+                "filesRead": 17,
+                "readMs": 2.165166661143303,
+                "reconstructMs": 0.4073333693668246,
+                "totalMs": 16.612833365797997,
+                "typedDecodeMs": 10.714333329815418,
+                "validationMs": 1.5988750383257866
+              },
+              {
+                "bytesRead": 310795,
+                "decodeMs": 1.7347916727885604,
+                "filesRead": 17,
+                "readMs": 2.218166715465486,
+                "reconstructMs": 0.4189999890513718,
+                "totalMs": 16.636666667182,
+                "typedDecodeMs": 10.679750004783273,
+                "validationMs": 1.5804166323505342
+              },
+              {
+                "bytesRead": 310795,
+                "decodeMs": 1.7726250225678086,
+                "filesRead": 17,
+                "readMs": 2.157916664145887,
+                "reconstructMs": 0.406791630666703,
+                "totalMs": 16.67958335019648,
+                "typedDecodeMs": 10.743666673079133,
+                "validationMs": 1.5943750040605664
+              },
+              {
+                "bytesRead": 310795,
+                "decodeMs": 1.7302916967310011,
+                "filesRead": 17,
+                "readMs": 2.235499967355281,
+                "reconstructMs": 0.4110416630282998,
+                "totalMs": 16.602875024545938,
+                "typedDecodeMs": 10.641041677445173,
+                "validationMs": 1.580208307132125
+              },
+              {
+                "bytesRead": 310795,
+                "decodeMs": 1.7479166854172945,
+                "filesRead": 17,
+                "readMs": 2.184083336032927,
+                "reconstructMs": 0.4096249467693269,
+                "totalMs": 16.738499980419874,
+                "typedDecodeMs": 10.626083356328309,
+                "validationMs": 1.766291621606797
+              },
+              {
+                "bytesRead": 310795,
+                "decodeMs": 1.7588333575986326,
+                "filesRead": 17,
+                "readMs": 2.4893750087358057,
+                "reconstructMs": 0.4237083485350013,
+                "totalMs": 17.106416693422943,
+                "typedDecodeMs": 10.80583332804963,
+                "validationMs": 1.623125048354268
+              },
+              {
+                "bytesRead": 310795,
+                "decodeMs": 1.7437916831113398,
+                "filesRead": 17,
+                "readMs": 2.2176666534505785,
+                "reconstructMs": 0.40841667214408517,
+                "totalMs": 16.524125006981194,
+                "typedDecodeMs": 10.57570829289034,
+                "validationMs": 1.574458321556449
+              },
+              {
+                "bytesRead": 310795,
+                "decodeMs": 1.796833355911076,
+                "filesRead": 17,
+                "readMs": 2.2320833522826433,
+                "reconstructMs": 0.4274167004041374,
+                "totalMs": 16.769083333201706,
+                "typedDecodeMs": 10.729500034358352,
+                "validationMs": 1.5771666658110917
+              },
+              {
+                "bytesRead": 310795,
+                "decodeMs": 1.725083333440125,
+                "filesRead": 17,
+                "readMs": 2.207125013228506,
+                "reconstructMs": 0.40858337888494134,
+                "totalMs": 16.600166680291295,
+                "typedDecodeMs": 10.694500000681728,
+                "validationMs": 1.5606250381097198
+              },
+              {
+                "bytesRead": 310795,
+                "decodeMs": 1.7399166827090085,
+                "filesRead": 17,
+                "readMs": 2.2046249941922724,
+                "reconstructMs": 0.40941667975857854,
+                "totalMs": 16.775291645899415,
+                "typedDecodeMs": 10.836166678927839,
+                "validationMs": 1.5809166943654418
+              }
+            ],
+            "productionLoadMs": null,
+            "productionMutationSaveMs": null,
+            "productionObserveMs": null,
+            "roundTripCount": 3,
+            "roundTripValid": true,
+            "saveSamples": [
+              {
+                "changedPathCount": 2,
+                "changedPaths": [
+                  "hamii.json",
+                  "subtrees/layer_merge_group_0_0.json"
+                ],
+                "encodeMs": 10.267250007018447,
+                "replacementBytes": 77014,
+                "totalCandidateBytes": 310795,
+                "totalMs": 11.138291622046381,
+                "writeMs": 0.8533333893865347
+              },
+              {
+                "changedPathCount": 2,
+                "changedPaths": [
+                  "hamii.json",
+                  "subtrees/layer_merge_group_0_0.json"
+                ],
+                "encodeMs": 10.364749992731959,
+                "replacementBytes": 77014,
+                "totalCandidateBytes": 310795,
+                "totalMs": 10.780875047203153,
+                "writeMs": 0.3978333552367985
+              },
+              {
+                "changedPathCount": 2,
+                "changedPaths": [
+                  "hamii.json",
+                  "subtrees/layer_merge_group_0_0.json"
+                ],
+                "encodeMs": 10.667583381291479,
+                "replacementBytes": 77014,
+                "totalCandidateBytes": 310795,
+                "totalMs": 11.224041692912579,
+                "writeMs": 0.533541664481163
+              },
+              {
+                "changedPathCount": 2,
+                "changedPaths": [
+                  "hamii.json",
+                  "subtrees/layer_merge_group_0_0.json"
+                ],
+                "encodeMs": 10.307874996215105,
+                "replacementBytes": 77014,
+                "totalCandidateBytes": 310795,
+                "totalMs": 10.744999977760017,
+                "writeMs": 0.41937496280297637
+              },
+              {
+                "changedPathCount": 2,
+                "changedPaths": [
+                  "hamii.json",
+                  "subtrees/layer_merge_group_0_0.json"
+                ],
+                "encodeMs": 10.298500012140721,
+                "replacementBytes": 77014,
+                "totalCandidateBytes": 310795,
+                "totalMs": 10.738249984569848,
+                "writeMs": 0.4221666604280472
+              }
+            ],
+            "serializer": "Foundation.JSONSerialization: sortedKeys/prettyPrinted/withoutEscapingSlashes/LF"
+          }
+        ],
+        "peakRSS": null,
+        "peakRSSStatus": "unmeasured",
+        "production": {
+          "bytesRead": null,
+          "filesRead": null,
+          "layout": "CURRENT-P",
+          "loadSamplesMs": [
+            8.803499978967011,
+            8.545083343051374,
+            8.487000013701618,
+            8.422000042628497,
+            8.613583340775222,
+            8.37979168863967,
+            8.385916706174612,
+            8.424458326771855,
+            8.492083346936852,
+            8.376208366826177
+          ],
+          "metadata": {
+            "largestShardBytes": 200997,
+            "medianShardBytes": 283,
+            "pathCount": 13,
+            "totalBytes": 406265
+          },
+          "mutationSaveSamplesMs": [
+            59.84595831250772,
+            54.62775001069531,
+            54.93229167768732,
+            54.766916669905186,
+            54.23945834627375
+          ],
+          "observeSamplesMs": [
+            9.761374967638403,
+            9.640000003855675,
+            9.570375026669353,
+            9.527583315502852,
+            9.568749985191971,
+            9.432166698388755,
+            9.543333319015801,
+            9.532208379823714,
+            9.637416631449014,
+            9.441083355341107
+          ],
+          "readCountsStatus": "unmeasured public Release API"
+        },
+        "scale": 1000
+      },
+      "scale": 1000,
+      "status": "complete"
+    },
+    {
+      "exitCode": 0,
+      "fixture": {
+        "canonicalBytes": 4033265,
+        "canonicalPathCount": 13,
+        "componentCount": 2,
+        "largestShardBytes": 2014497,
+        "layerCount": 10000,
+        "medianShardBytes": 283,
+        "screenCount": 2
+      },
+      "result": {
+        "negativeReferenceRejections": [
+          "dangling",
+          "duplicate",
+          "unreachable",
+          "unknown",
+          "identity-mismatch"
+        ],
+        "normalized": [
+          {
+            "currentValidationValid": true,
+            "deterministic": true,
+            "layout": "CURRENT-N",
+            "metadata": {
+              "largestShardBytes": 2014497,
+              "medianShardBytes": 283,
+              "pathCount": 13,
+              "totalBytes": 4033265
+            },
+            "openSamples": [
+              {
+                "bytesRead": 4033265,
+                "decodeMs": 17.617291654460132,
+                "filesRead": 13,
+                "readMs": 2.587875002063811,
+                "reconstructMs": 0.11604162864387035,
+                "totalMs": 137.39470834843814,
+                "typedDecodeMs": 101.62579169264063,
+                "validationMs": 15.444499964360148
+              },
+              {
+                "bytesRead": 4033265,
+                "decodeMs": 17.46412500506267,
+                "filesRead": 13,
+                "readMs": 2.505333337467164,
+                "reconstructMs": 0.1119583030231297,
+                "totalMs": 137.26008334197104,
+                "typedDecodeMs": 101.7930000089109,
+                "validationMs": 15.382375044282526
+              },
+              {
+                "bytesRead": 4033265,
+                "decodeMs": 17.92783330893144,
+                "filesRead": 13,
+                "readMs": 2.573375008068979,
+                "reconstructMs": 0.11070829350501299,
+                "totalMs": 138.44933337531984,
+                "typedDecodeMs": 102.32816665666178,
+                "validationMs": 15.505083312746137
+              },
+              {
+                "bytesRead": 4033265,
+                "decodeMs": 17.502000031527132,
+                "filesRead": 13,
+                "readMs": 2.511916682124138,
+                "reconstructMs": 0.11679163435474038,
+                "totalMs": 137.4562500277534,
+                "typedDecodeMs": 101.86895832885057,
+                "validationMs": 15.453166677616537
+              },
+              {
+                "bytesRead": 4033265,
+                "decodeMs": 17.43216667091474,
+                "filesRead": 13,
+                "readMs": 2.646500011906028,
+                "reconstructMs": 0.1148333540186286,
+                "totalMs": 138.42787500470877,
+                "typedDecodeMs": 101.72766668256372,
+                "validationMs": 16.497833363246173
+              },
+              {
+                "bytesRead": 4033265,
+                "decodeMs": 17.57491665193811,
+                "filesRead": 13,
+                "readMs": 2.8132916195318103,
+                "reconstructMs": 0.11424999684095383,
+                "totalMs": 137.82729161903262,
+                "typedDecodeMs": 101.80420830147341,
+                "validationMs": 15.515208360739052
+              },
+              {
+                "bytesRead": 4033265,
+                "decodeMs": 17.388458305504173,
+                "filesRead": 13,
+                "readMs": 2.6616666582413018,
+                "reconstructMs": 0.11304166400805116,
+                "totalMs": 137.10866664769128,
+                "typedDecodeMs": 101.68570833047852,
+                "validationMs": 15.256916638463736
+              },
+              {
+                "bytesRead": 4033265,
+                "decodeMs": 17.61629164684564,
+                "filesRead": 13,
+                "readMs": 2.704416634514928,
+                "reconstructMs": 0.11324998922646046,
+                "totalMs": 137.8790833405219,
+                "typedDecodeMs": 102.04529168549925,
+                "validationMs": 15.396291622892022
+              },
+              {
+                "bytesRead": 4033265,
+                "decodeMs": 17.463666677940637,
+                "filesRead": 13,
+                "readMs": 2.597999991849065,
+                "reconstructMs": 0.11262501357123256,
+                "totalMs": 137.8009999752976,
+                "typedDecodeMs": 102.2387917037122,
+                "validationMs": 15.382874989882112
+              },
+              {
+                "bytesRead": 4033265,
+                "decodeMs": 17.40783336572349,
+                "filesRead": 13,
+                "readMs": 2.651083341334015,
+                "reconstructMs": 0.11233327677473426,
+                "totalMs": 138.67541664512828,
+                "typedDecodeMs": 103.17691671662033,
+                "validationMs": 15.324208361562341
+              }
+            ],
+            "productionLoadMs": null,
+            "productionMutationSaveMs": null,
+            "productionObserveMs": null,
+            "roundTripCount": 3,
+            "roundTripValid": true,
+            "saveSamples": [
+              {
+                "changedPathCount": 2,
+                "changedPaths": [
+                  "hamii.json",
+                  "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+                ],
+                "encodeMs": 101.89633333357051,
+                "replacementBytes": 2015142,
+                "totalCandidateBytes": 4033265,
+                "totalMs": 103.81095833145082,
+                "writeMs": 1.7687499639578164
+              },
+              {
+                "changedPathCount": 2,
+                "changedPaths": [
+                  "hamii.json",
+                  "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+                ],
+                "encodeMs": 101.50062496541068,
+                "replacementBytes": 2015142,
+                "totalCandidateBytes": 4033265,
+                "totalMs": 103.3796250121668,
+                "writeMs": 1.7382916412316263
+              },
+              {
+                "changedPathCount": 2,
+                "changedPaths": [
+                  "hamii.json",
+                  "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+                ],
+                "encodeMs": 103.13008329831064,
+                "replacementBytes": 2015142,
+                "totalCandidateBytes": 4033265,
+                "totalMs": 105.31191667541862,
+                "writeMs": 2.04299995675683
+              },
+              {
+                "changedPathCount": 2,
+                "changedPaths": [
+                  "hamii.json",
+                  "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+                ],
+                "encodeMs": 101.11970832804218,
+                "replacementBytes": 2015142,
+                "totalCandidateBytes": 4033265,
+                "totalMs": 102.97391668427736,
+                "writeMs": 1.7114583170041442
+              },
+              {
+                "changedPathCount": 2,
+                "changedPaths": [
+                  "hamii.json",
+                  "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+                ],
+                "encodeMs": 101.29641665844247,
+                "replacementBytes": 2015142,
+                "totalCandidateBytes": 4033265,
+                "totalMs": 103.23970828903839,
+                "writeMs": 1.7970416811294854
+              }
+            ],
+            "serializer": "Foundation.JSONSerialization: sortedKeys/prettyPrinted/withoutEscapingSlashes/LF"
+          },
+          {
+            "currentValidationValid": true,
+            "deterministic": true,
+            "layout": "MONOLITHIC-N",
+            "metadata": {
+              "largestShardBytes": 4354388,
+              "medianShardBytes": 4354388,
+              "pathCount": 1,
+              "totalBytes": 4354388
+            },
+            "openSamples": [
+              {
+                "bytesRead": 4354388,
+                "decodeMs": 18.100291665177792,
+                "filesRead": 1,
+                "readMs": 1.0636666556820273,
+                "reconstructMs": 0.17899996601045132,
+                "totalMs": 135.9703333582729,
+                "typedDecodeMs": 101.20895836735144,
+                "validationMs": 15.414875000715256
+              },
+              {
+                "bytesRead": 4354388,
+                "decodeMs": 17.987958330195397,
+                "filesRead": 1,
+                "readMs": 1.1018749792128801,
+                "reconstructMs": 0.17716671572998166,
+                "totalMs": 136.35637500556186,
+                "typedDecodeMs": 101.7690832959488,
+                "validationMs": 15.312208328396082
+              },
+              {
+                "bytesRead": 4354388,
+                "decodeMs": 18.141291686333716,
+                "filesRead": 1,
+                "readMs": 1.0273333173245192,
+                "reconstructMs": 0.1734166289679706,
+                "totalMs": 136.61033334210515,
+                "typedDecodeMs": 101.81383334565908,
+                "validationMs": 15.447875019162893
+              },
+              {
+                "bytesRead": 4354388,
+                "decodeMs": 17.918625031597912,
+                "filesRead": 1,
+                "readMs": 1.0920833447016776,
+                "reconstructMs": 0.1739166909828782,
+                "totalMs": 137.3558749910444,
+                "typedDecodeMs": 102.09387500071898,
+                "validationMs": 16.07345836237073
+              },
+              {
+                "bytesRead": 4354388,
+                "decodeMs": 18.59087496995926,
+                "filesRead": 1,
+                "readMs": 1.1127916513942182,
+                "reconstructMs": 0.17583335284143686,
+                "totalMs": 138.08862498262897,
+                "typedDecodeMs": 101.49704164359719,
+                "validationMs": 16.708583338186145
+              },
+              {
+                "bytesRead": 4354388,
+                "decodeMs": 17.95249996939674,
+                "filesRead": 1,
+                "readMs": 1.1224999907426536,
+                "reconstructMs": 0.18633331637829542,
+                "totalMs": 136.3133333506994,
+                "typedDecodeMs": 101.73075000056997,
+                "validationMs": 15.317458368372172
+              },
+              {
+                "bytesRead": 4354388,
+                "decodeMs": 17.96020835172385,
+                "filesRead": 1,
+                "readMs": 1.076499989721924,
+                "reconstructMs": 0.17591670621186495,
+                "totalMs": 136.12091669347137,
+                "typedDecodeMs": 101.614041661378,
+                "validationMs": 15.29062498593703
+              },
+              {
+                "bytesRead": 4354388,
+                "decodeMs": 18.186333356425166,
+                "filesRead": 1,
+                "readMs": 1.0756250121630728,
+                "reconstructMs": 0.17583335284143686,
+                "totalMs": 137.798041687347,
+                "typedDecodeMs": 101.88895836472511,
+                "validationMs": 16.465791675727814
+              },
+              {
+                "bytesRead": 4354388,
+                "decodeMs": 17.991458298638463,
+                "filesRead": 1,
+                "readMs": 1.281249977182597,
+                "reconstructMs": 0.17920834943652153,
+                "totalMs": 139.16687498567626,
+                "typedDecodeMs": 102.92420833138749,
+                "validationMs": 16.787208325695246
+              },
+              {
+                "bytesRead": 4354388,
+                "decodeMs": 18.10983329778537,
+                "filesRead": 1,
+                "readMs": 1.0862500057555735,
+                "reconstructMs": 0.17612503143027425,
+                "totalMs": 136.5647083730437,
+                "typedDecodeMs": 101.74974997062236,
+                "validationMs": 15.439208364114165
+              }
+            ],
+            "productionLoadMs": null,
+            "productionMutationSaveMs": null,
+            "productionObserveMs": null,
+            "roundTripCount": 3,
+            "roundTripValid": true,
+            "saveSamples": [
+              {
+                "changedPathCount": 1,
+                "changedPaths": [
+                  "document.json"
+                ],
+                "encodeMs": 101.97558329673484,
+                "replacementBytes": 4354388,
+                "totalCandidateBytes": 4354388,
+                "totalMs": 104.49316666927189,
+                "writeMs": 2.511166676413268
+              },
+              {
+                "changedPathCount": 1,
+                "changedPaths": [
+                  "document.json"
+                ],
+                "encodeMs": 102.20729163847864,
+                "replacementBytes": 4354388,
+                "totalCandidateBytes": 4354388,
+                "totalMs": 104.68104167375714,
+                "writeMs": 2.4654166772961617
+              },
+              {
+                "changedPathCount": 1,
+                "changedPaths": [
+                  "document.json"
+                ],
+                "encodeMs": 104.35470833908767,
+                "replacementBytes": 4354388,
+                "totalCandidateBytes": 4354388,
+                "totalMs": 106.53733334038407,
+                "writeMs": 2.1729583386331797
+              },
+              {
+                "changedPathCount": 1,
+                "changedPaths": [
+                  "document.json"
+                ],
+                "encodeMs": 102.9958333238028,
+                "replacementBytes": 4354388,
+                "totalCandidateBytes": 4354388,
+                "totalMs": 105.42708332650363,
+                "writeMs": 2.4232916766777635
+              },
+              {
+                "changedPathCount": 1,
+                "changedPaths": [
+                  "document.json"
+                ],
+                "encodeMs": 105.71079165674746,
+                "replacementBytes": 4354388,
+                "totalCandidateBytes": 4354388,
+                "totalMs": 108.48966665798798,
+                "writeMs": 2.770333376247436
+              }
+            ],
+            "serializer": "Foundation.JSONSerialization: sortedKeys/prettyPrinted/withoutEscapingSlashes/LF"
+          },
+          {
+            "currentValidationValid": true,
+            "deterministic": true,
+            "layout": "SUBTREE-N",
+            "metadata": {
+              "largestShardBytes": 767119,
+              "medianShardBytes": 524,
+              "pathCount": 17,
+              "totalBytes": 3073795
+            },
+            "openSamples": [
+              {
+                "bytesRead": 3073795,
+                "decodeMs": 16.423750028479844,
+                "filesRead": 17,
+                "readMs": 2.882541622966528,
+                "reconstructMs": 0.4267499898560345,
+                "totalMs": 137.3500416520983,
+                "typedDecodeMs": 102.13754163123667,
+                "validationMs": 15.46595833497122
+              },
+              {
+                "bytesRead": 3073795,
+                "decodeMs": 16.511833353433758,
+                "filesRead": 17,
+                "readMs": 2.939250029157847,
+                "reconstructMs": 0.4217916866764426,
+                "totalMs": 136.6344999987632,
+                "typedDecodeMs": 101.43725003581494,
+                "validationMs": 15.318499994464219
+              },
+              {
+                "bytesRead": 3073795,
+                "decodeMs": 16.48066664347425,
+                "filesRead": 17,
+                "readMs": 2.8487499803304672,
+                "reconstructMs": 0.42716669850051403,
+                "totalMs": 136.94237498566508,
+                "typedDecodeMs": 101.87904170015827,
+                "validationMs": 15.29729162575677
+              },
+              {
+                "bytesRead": 3073795,
+                "decodeMs": 16.43870834959671,
+                "filesRead": 17,
+                "readMs": 2.9539583483710885,
+                "reconstructMs": 0.4240416456013918,
+                "totalMs": 136.61091669928282,
+                "typedDecodeMs": 101.46879166131839,
+                "validationMs": 15.316916687879711
+              },
+              {
+                "bytesRead": 3073795,
+                "decodeMs": 16.5159166790545,
+                "filesRead": 17,
+                "readMs": 2.795708307530731,
+                "reconstructMs": 0.41787500958889723,
+                "totalMs": 137.0114166638814,
+                "typedDecodeMs": 102.0425416645594,
+                "validationMs": 15.228624979499727
+              },
+              {
+                "bytesRead": 3073795,
+                "decodeMs": 16.559541691094637,
+                "filesRead": 17,
+                "readMs": 2.955666626803577,
+                "reconstructMs": 0.4294166574254632,
+                "totalMs": 137.72066665114835,
+                "typedDecodeMs": 101.84641665546224,
+                "validationMs": 15.923624974675477
+              },
+              {
+                "bytesRead": 3073795,
+                "decodeMs": 16.876666632015258,
+                "filesRead": 17,
+                "readMs": 2.9031250160187483,
+                "reconstructMs": 0.4362500039860606,
+                "totalMs": 138.03924998501316,
+                "typedDecodeMs": 102.26566670462489,
+                "validationMs": 15.551458345726132
+              },
+              {
+                "bytesRead": 3073795,
+                "decodeMs": 16.520583361852914,
+                "filesRead": 17,
+                "readMs": 2.8677083319053054,
+                "reconstructMs": 0.4269583150744438,
+                "totalMs": 136.36491663055494,
+                "typedDecodeMs": 101.25175002031028,
+                "validationMs": 15.292666619643569
+              },
+              {
+                "bytesRead": 3073795,
+                "decodeMs": 16.521874989848584,
+                "filesRead": 17,
+                "readMs": 2.785749966278672,
+                "reconstructMs": 0.42470829794183373,
+                "totalMs": 136.13175001228228,
+                "typedDecodeMs": 101.15258337464184,
+                "validationMs": 15.239083324559033
+              },
+              {
+                "bytesRead": 3073795,
+                "decodeMs": 16.417875012848526,
+                "filesRead": 17,
+                "readMs": 2.8526667156256735,
+                "reconstructMs": 0.42645831126719713,
+                "totalMs": 135.95500000519678,
+                "typedDecodeMs": 100.9538333164528,
+                "validationMs": 15.298750018700957
+              }
+            ],
+            "productionLoadMs": null,
+            "productionMutationSaveMs": null,
+            "productionObserveMs": null,
+            "roundTripCount": 3,
+            "roundTripValid": true,
+            "saveSamples": [
+              {
+                "changedPathCount": 2,
+                "changedPaths": [
+                  "hamii.json",
+                  "subtrees/layer_merge_group_0_0.json"
+                ],
+                "encodeMs": 100.87937500793487,
+                "replacementBytes": 767764,
+                "totalCandidateBytes": 3073795,
+                "totalMs": 103.96029165713117,
+                "writeMs": 2.994666632730514
+              },
+              {
+                "changedPathCount": 2,
+                "changedPaths": [
+                  "hamii.json",
+                  "subtrees/layer_merge_group_0_0.json"
+                ],
+                "encodeMs": 101.74062504665926,
+                "replacementBytes": 767764,
+                "totalCandidateBytes": 3073795,
+                "totalMs": 102.77579165995121,
+                "writeMs": 0.9424583404324949
+              },
+              {
+                "changedPathCount": 2,
+                "changedPaths": [
+                  "hamii.json",
+                  "subtrees/layer_merge_group_0_0.json"
+                ],
+                "encodeMs": 100.99620831897482,
+                "replacementBytes": 767764,
+                "totalCandidateBytes": 3073795,
+                "totalMs": 102.38258331082761,
+                "writeMs": 1.2948749936185777
+              },
+              {
+                "changedPathCount": 2,
+                "changedPaths": [
+                  "hamii.json",
+                  "subtrees/layer_merge_group_0_0.json"
+                ],
+                "encodeMs": 100.98187497351319,
+                "replacementBytes": 767764,
+                "totalCandidateBytes": 3073795,
+                "totalMs": 102.33516665175557,
+                "writeMs": 1.2622499489225447
+              },
+              {
+                "changedPathCount": 2,
+                "changedPaths": [
+                  "hamii.json",
+                  "subtrees/layer_merge_group_0_0.json"
+                ],
+                "encodeMs": 100.8286249707453,
+                "replacementBytes": 767764,
+                "totalCandidateBytes": 3073795,
+                "totalMs": 102.14870830532163,
+                "writeMs": 1.2291250168345869
+              }
+            ],
+            "serializer": "Foundation.JSONSerialization: sortedKeys/prettyPrinted/withoutEscapingSlashes/LF"
+          }
+        ],
+        "peakRSS": null,
+        "peakRSSStatus": "unmeasured",
+        "production": {
+          "bytesRead": null,
+          "filesRead": null,
+          "layout": "CURRENT-P",
+          "loadSamplesMs": [
+            76.0619166539982,
+            77.5479999720119,
+            76.94825000362471,
+            76.24945836141706,
+            77.0104166585952,
+            76.35254168417305,
+            76.18091662880033,
+            76.141583325807,
+            76.28054165979847,
+            76.37779170181602
+          ],
+          "metadata": {
+            "largestShardBytes": 2014497,
+            "medianShardBytes": 283,
+            "pathCount": 13,
+            "totalBytes": 4033265
+          },
+          "mutationSaveSamplesMs": [
+            435.38108334178105,
+            432.9305000137538,
+            432.24720837315544,
+            431.0795000055805,
+            431.6727083642036
+          ],
+          "observeSamplesMs": [
+            79.87929170485586,
+            79.74387501599267,
+            80.35804168321192,
+            79.35716665815562,
+            79.40254168352112,
+            81.00820833351463,
+            79.34566662879661,
+            80.43375000124797,
+            81.36979170376435,
+            79.28662502672523
+          ],
+          "readCountsStatus": "unmeasured public Release API"
+        },
+        "scale": 10000
+      },
+      "scale": 10000,
+      "status": "complete"
+    },
+    {
+      "exitCode": 0,
+      "fixture": {
+        "canonicalBytes": 20173249,
+        "canonicalPathCount": 13,
+        "componentCount": 2,
+        "largestShardBytes": 10084489,
+        "layerCount": 50000,
+        "medianShardBytes": 283,
+        "screenCount": 2
+      },
+      "result": {
+        "negativeReferenceRejections": [
+          "dangling",
+          "duplicate",
+          "unreachable",
+          "unknown",
+          "identity-mismatch"
+        ],
+        "normalized": [
+          {
+            "currentValidationValid": true,
+            "deterministic": true,
+            "layout": "CURRENT-N",
+            "metadata": {
+              "largestShardBytes": 10084489,
+              "medianShardBytes": 283,
+              "pathCount": 13,
+              "totalBytes": 20173249
+            },
+            "openSamples": [
+              {
+                "bytesRead": 20173249,
+                "decodeMs": 87.39258331479505,
+                "filesRead": 13,
+                "readMs": 5.458208324853331,
+                "reconstructMs": 0.11812499724328518,
+                "totalMs": 684.0748332906514,
+                "typedDecodeMs": 508.39491665828973,
+                "validationMs": 82.70620834082365
+              },
+              {
+                "bytesRead": 20173249,
+                "decodeMs": 87.2146250330843,
+                "filesRead": 13,
+                "readMs": 5.3602083353325725,
+                "reconstructMs": 0.11933333007618785,
+                "totalMs": 684.1594583238475,
+                "typedDecodeMs": 509.44470829563215,
+                "validationMs": 82.01458334224299
+              },
+              {
+                "bytesRead": 20173249,
+                "decodeMs": 87.19179168110713,
+                "filesRead": 13,
+                "readMs": 5.110458354465663,
+                "reconstructMs": 0.1218749675899744,
+                "totalMs": 691.1999583244324,
+                "typedDecodeMs": 517.245625029318,
+                "validationMs": 81.52666670503095
+              },
+              {
+                "bytesRead": 20173249,
+                "decodeMs": 87.46441669063643,
+                "filesRead": 13,
+                "readMs": 5.366916710045189,
+                "reconstructMs": 0.12016663094982505,
+                "totalMs": 682.6805000309832,
+                "typedDecodeMs": 509.3192916829139,
+                "validationMs": 80.40566666750237
+              },
+              {
+                "bytesRead": 20173249,
+                "decodeMs": 87.20725000603124,
+                "filesRead": 13,
+                "readMs": 5.280833342112601,
+                "reconstructMs": 0.12608332326635718,
+                "totalMs": 687.0774166891351,
+                "typedDecodeMs": 508.46958335023373,
+                "validationMs": 85.98954166518524
+              },
+              {
+                "bytesRead": 20173249,
+                "decodeMs": 88.5183333302848,
+                "filesRead": 13,
+                "readMs": 5.360750015825033,
+                "reconstructMs": 0.12154167052358389,
+                "totalMs": 679.6472916612402,
+                "typedDecodeMs": 505.40204165736213,
+                "validationMs": 80.2408333402127
+              },
+              {
+                "bytesRead": 20173249,
+                "decodeMs": 87.0149583206512,
+                "filesRead": 13,
+                "readMs": 5.318749987054616,
+                "reconstructMs": 0.12062495807185769,
+                "totalMs": 687.869708344806,
+                "typedDecodeMs": 514.7192917065695,
+                "validationMs": 80.68641665158793
+              },
+              {
+                "bytesRead": 20173249,
+                "decodeMs": 87.41470833774656,
+                "filesRead": 13,
+                "readMs": 5.579041666351259,
+                "reconstructMs": 0.11920835822820663,
+                "totalMs": 683.651750034187,
+                "typedDecodeMs": 509.8816250101663,
+                "validationMs": 80.64300002297387
+              },
+              {
+                "bytesRead": 20173249,
+                "decodeMs": 87.88308332441375,
+                "filesRead": 13,
+                "readMs": 5.502249987330288,
+                "reconstructMs": 0.11729169636964798,
+                "totalMs": 682.5647500227205,
+                "typedDecodeMs": 508.35525000002235,
+                "validationMs": 80.70254168706015
+              },
+              {
+                "bytesRead": 20173249,
+                "decodeMs": 87.37837499938905,
+                "filesRead": 13,
+                "readMs": 5.303916637785733,
+                "reconstructMs": 0.13662496348842978,
+                "totalMs": 682.7733750105835,
+                "typedDecodeMs": 509.56370832864195,
+                "validationMs": 80.38104168372229
+              }
+            ],
+            "productionLoadMs": null,
+            "productionMutationSaveMs": null,
+            "productionObserveMs": null,
+            "roundTripCount": 3,
+            "roundTripValid": true,
+            "saveSamples": [
+              {
+                "changedPathCount": 2,
+                "changedPaths": [
+                  "hamii.json",
+                  "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+                ],
+                "encodeMs": 520.4277083394118,
+                "replacementBytes": 10085134,
+                "totalCandidateBytes": 20173249,
+                "totalMs": 526.3479999848641,
+                "writeMs": 3.700666653458029
+              },
+              {
+                "changedPathCount": 2,
+                "changedPaths": [
+                  "hamii.json",
+                  "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+                ],
+                "encodeMs": 513.8743750285357,
+                "replacementBytes": 10085134,
+                "totalCandidateBytes": 20173249,
+                "totalMs": 519.0877916757017,
+                "writeMs": 3.7771666538901627
+              },
+              {
+                "changedPathCount": 2,
+                "changedPaths": [
+                  "hamii.json",
+                  "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+                ],
+                "encodeMs": 513.9865416567773,
+                "replacementBytes": 10085134,
+                "totalCandidateBytes": 20173249,
+                "totalMs": 518.6696666642092,
+                "writeMs": 3.7067499943077564
+              },
+              {
+                "changedPathCount": 2,
+                "changedPaths": [
+                  "hamii.json",
+                  "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+                ],
+                "encodeMs": 513.5465000057593,
+                "replacementBytes": 10085134,
+                "totalCandidateBytes": 20173249,
+                "totalMs": 518.3172500110231,
+                "writeMs": 3.8001666544005275
+              },
+              {
+                "changedPathCount": 2,
+                "changedPaths": [
+                  "hamii.json",
+                  "screens/screen_935fdcb4-6a68-4aad-b4cf-bd829f0ea8a9.json"
+                ],
+                "encodeMs": 513.4064999874681,
+                "replacementBytes": 10085134,
+                "totalCandidateBytes": 20173249,
+                "totalMs": 518.659666646272,
+                "writeMs": 4.281624977011234
+              }
+            ],
+            "serializer": "Foundation.JSONSerialization: sortedKeys/prettyPrinted/withoutEscapingSlashes/LF"
+          },
+          {
+            "currentValidationValid": true,
+            "deterministic": true,
+            "layout": "MONOLITHIC-N",
+            "metadata": {
+              "largestShardBytes": 21774372,
+              "medianShardBytes": 21774372,
+              "pathCount": 1,
+              "totalBytes": 21774372
+            },
+            "openSamples": [
+              {
+                "bytesRead": 21774372,
+                "decodeMs": 90.92362498631701,
+                "filesRead": 1,
+                "readMs": 3.930083359591663,
+                "reconstructMs": 0.1814583665691316,
+                "totalMs": 685.9511666698381,
+                "typedDecodeMs": 508.7471666629426,
+                "validationMs": 82.16366666601971
+              },
+              {
+                "bytesRead": 21774372,
+                "decodeMs": 89.5354583626613,
+                "filesRead": 1,
+                "readMs": 3.718874999321997,
+                "reconstructMs": 0.17962499987334013,
+                "totalMs": 680.9650416835211,
+                "typedDecodeMs": 507.0817500236444,
+                "validationMs": 80.44487499864772
+              },
+              {
+                "bytesRead": 21774372,
+                "decodeMs": 89.95091664837673,
+                "filesRead": 1,
+                "readMs": 3.7913750275038183,
+                "reconstructMs": 0.1818750170059502,
+                "totalMs": 686.099624959752,
+                "typedDecodeMs": 511.74133335007355,
+                "validationMs": 80.42979164747521
+              },
+              {
+                "bytesRead": 21774372,
+                "decodeMs": 89.71291669877246,
+                "filesRead": 1,
+                "readMs": 3.8160000112839043,
+                "reconstructMs": 0.1827083178795874,
+                "totalMs": 680.5509999976493,
+                "typedDecodeMs": 506.44104165257886,
+                "validationMs": 80.38524998119101
+              },
+              {
+                "bytesRead": 21774372,
+                "decodeMs": 89.78429168928415,
+                "filesRead": 1,
+                "readMs": 3.767124959267676,
+                "reconstructMs": 0.1804166822694242,
+                "totalMs": 682.8173333196901,
+                "typedDecodeMs": 508.50233336677775,
+                "validationMs": 80.57554170954973
+              },
+              {
+                "bytesRead": 21774372,
+                "decodeMs": 89.94041668483987,
+                "filesRead": 1,
+                "readMs": 3.814208321273327,
+                "reconstructMs": 0.17879169899970293,
+                "totalMs": 687.3864583321847,
+                "typedDecodeMs": 508.68541665840894,
+                "validationMs": 84.75737494882196
+              },
+              {
+                "bytesRead": 21774372,
+                "decodeMs": 89.50437500607222,
+                "filesRead": 1,
+                "readMs": 3.8271250086836517,
+                "reconstructMs": 0.20266661886125803,
+                "totalMs": 682.5720833730884,
+                "typedDecodeMs": 508.55904165655375,
+                "validationMs": 80.47179167624563
+              },
+              {
+                "bytesRead": 21774372,
+                "decodeMs": 90.76245833421126,
+                "filesRead": 1,
+                "readMs": 3.7490000249817967,
+                "reconstructMs": 0.19212497863918543,
+                "totalMs": 686.6325416485779,
+                "typedDecodeMs": 510.88270830223337,
+                "validationMs": 81.03649999247864
+              },
+              {
+                "bytesRead": 21774372,
+                "decodeMs": 90.28687496902421,
+                "filesRead": 1,
+                "readMs": 3.7508750101551414,
+                "reconstructMs": 0.18779165111482143,
+                "totalMs": 685.6335833435878,
+                "typedDecodeMs": 510.7510833768174,
+                "validationMs": 80.65183332655579
+              },
+              {
+                "bytesRead": 21774372,
+                "decodeMs": 90.49570834031329,
+                "filesRead": 1,
+                "readMs": 3.8256249972619116,
+                "reconstructMs": 0.18166663357988,
+                "totalMs": 682.2384166298434,
+                "typedDecodeMs": 506.9625416654162,
+                "validationMs": 80.76754165813327
+              }
+            ],
+            "productionLoadMs": null,
+            "productionMutationSaveMs": null,
+            "productionObserveMs": null,
+            "roundTripCount": 3,
+            "roundTripValid": true,
+            "saveSamples": [
+              {
+                "changedPathCount": 1,
+                "changedPaths": [
+                  "document.json"
+                ],
+                "encodeMs": 514.8963750107214,
+                "replacementBytes": 21774372,
+                "totalCandidateBytes": 21774372,
+                "totalMs": 524.7107917093672,
+                "writeMs": 9.79587499750778
+              },
+              {
+                "changedPathCount": 1,
+                "changedPaths": [
+                  "document.json"
+                ],
+                "encodeMs": 516.271083324682,
+                "replacementBytes": 21774372,
+                "totalCandidateBytes": 21774372,
+                "totalMs": 525.9561249986291,
+                "writeMs": 9.679041686467826
+              },
+              {
+                "changedPathCount": 1,
+                "changedPaths": [
+                  "document.json"
+                ],
+                "encodeMs": 518.4975833399221,
+                "replacementBytes": 21774372,
+                "totalCandidateBytes": 21774372,
+                "totalMs": 528.4377500065602,
+                "writeMs": 9.924291633069515
+              },
+              {
+                "changedPathCount": 1,
+                "changedPaths": [
+                  "document.json"
+                ],
+                "encodeMs": 514.7496666759253,
+                "replacementBytes": 21774372,
+                "totalCandidateBytes": 21774372,
+                "totalMs": 526.0744583210908,
+                "writeMs": 11.307791690342128
+              },
+              {
+                "changedPathCount": 1,
+                "changedPaths": [
+                  "document.json"
+                ],
+                "encodeMs": 514.7285416605882,
+                "replacementBytes": 21774372,
+                "totalCandidateBytes": 21774372,
+                "totalMs": 524.358291644603,
+                "writeMs": 9.61666664807126
+              }
+            ],
+            "serializer": "Foundation.JSONSerialization: sortedKeys/prettyPrinted/withoutEscapingSlashes/LF"
+          },
+          {
+            "currentValidationValid": true,
+            "deterministic": true,
+            "layout": "SUBTREE-N",
+            "metadata": {
+              "largestShardBytes": 3842115,
+              "medianShardBytes": 524,
+              "pathCount": 17,
+              "totalBytes": 15373779
+            },
+            "openSamples": [
+              {
+                "bytesRead": 15373779,
+                "decodeMs": 82.34437496867031,
+                "filesRead": 17,
+                "readMs": 4.988958360627294,
+                "reconstructMs": 0.4463749937713146,
+                "totalMs": 677.5761250173673,
+                "typedDecodeMs": 508.84312501875684,
+                "validationMs": 80.94145834911615
+              },
+              {
+                "bytesRead": 15373779,
+                "decodeMs": 82.27770833764225,
+                "filesRead": 17,
+                "readMs": 5.208041635341942,
+                "reconstructMs": 0.4442083300091326,
+                "totalMs": 678.3094583079219,
+                "typedDecodeMs": 509.99641668749973,
+                "validationMs": 80.37533331662416
+              },
+              {
+                "bytesRead": 15373779,
+                "decodeMs": 82.5394166749902,
+                "filesRead": 17,
+                "readMs": 5.095166678074747,
+                "reconstructMs": 0.44608331518247724,
+                "totalMs": 677.6861249818467,
+                "typedDecodeMs": 509.3777500442229,
+                "validationMs": 80.21812501829118
+              },
+              {
+                "bytesRead": 15373779,
+                "decodeMs": 82.83920836402103,
+                "filesRead": 17,
+                "readMs": 5.2430000505410135,
+                "reconstructMs": 0.44895836617797613,
+                "totalMs": 683.3719999995083,
+                "typedDecodeMs": 510.8475416782312,
+                "validationMs": 83.98587501142174
+              },
+              {
+                "bytesRead": 15373779,
+                "decodeMs": 82.41233334410936,
+                "filesRead": 17,
+                "readMs": 5.051958316471428,
+                "reconstructMs": 0.46087498776614666,
+                "totalMs": 678.3468750072643,
+                "typedDecodeMs": 510.4093750123866,
+                "validationMs": 80.00066666863859
+              },
+              {
+                "bytesRead": 15373779,
+                "decodeMs": 84.2047916376032,
+                "filesRead": 17,
+                "readMs": 5.130541627295315,
+                "reconstructMs": 0.4627500311471522,
+                "totalMs": 678.1007083482109,
+                "typedDecodeMs": 508.56733333785087,
+                "validationMs": 79.72279167734087
+              },
+              {
+                "bytesRead": 15373779,
+                "decodeMs": 83.56620837002993,
+                "filesRead": 17,
+                "readMs": 5.2342917188070714,
+                "reconstructMs": 0.4647083696909249,
+                "totalMs": 682.7219583210535,
+                "typedDecodeMs": 511.10837497981265,
+                "validationMs": 82.34137500403449
+              },
+              {
+                "bytesRead": 15373779,
+                "decodeMs": 82.71437499206513,
+                "filesRead": 17,
+                "readMs": 5.043125012889504,
+                "reconstructMs": 0.4479166818782687,
+                "totalMs": 677.4093749700114,
+                "typedDecodeMs": 509.3991250032559,
+                "validationMs": 79.79599997634068
+              },
+              {
+                "bytesRead": 15373779,
+                "decodeMs": 84.60095833288506,
+                "filesRead": 17,
+                "readMs": 4.194958368316293,
+                "reconstructMs": 0.44795835856348276,
+                "totalMs": 678.260708344169,
+                "typedDecodeMs": 509.0467083500698,
+                "validationMs": 79.95724998181686
+              },
+              {
+                "bytesRead": 15373779,
+                "decodeMs": 83.188499964308,
+                "filesRead": 17,
+                "readMs": 5.366500001400709,
+                "reconstructMs": 0.44391670962795615,
+                "totalMs": 680.8188332943246,
+                "typedDecodeMs": 511.0563749913126,
+                "validationMs": 80.75520832790062
+              }
+            ],
+            "productionLoadMs": null,
+            "productionMutationSaveMs": null,
+            "productionObserveMs": null,
+            "roundTripCount": 3,
+            "roundTripValid": true,
+            "saveSamples": [
+              {
+                "changedPathCount": 2,
+                "changedPaths": [
+                  "hamii.json",
+                  "subtrees/layer_merge_group_0_0.json"
+                ],
+                "encodeMs": 510.5142499669455,
+                "replacementBytes": 3842760,
+                "totalCandidateBytes": 15373779,
+                "totalMs": 514.5406249794178,
+                "writeMs": 2.7876250096596777
+              },
+              {
+                "changedPathCount": 2,
+                "changedPaths": [
+                  "hamii.json",
+                  "subtrees/layer_merge_group_0_0.json"
+                ],
+                "encodeMs": 509.6933332970366,
+                "replacementBytes": 3842760,
+                "totalCandidateBytes": 15373779,
+                "totalMs": 513.1875416846015,
+                "writeMs": 2.2475833538919687
+              },
+              {
+                "changedPathCount": 2,
+                "changedPaths": [
+                  "hamii.json",
+                  "subtrees/layer_merge_group_0_0.json"
+                ],
+                "encodeMs": 517.5109999836423,
+                "replacementBytes": 3842760,
+                "totalCandidateBytes": 15373779,
+                "totalMs": 521.582541638054,
+                "writeMs": 2.819083340000361
+              },
+              {
+                "changedPathCount": 2,
+                "changedPaths": [
+                  "hamii.json",
+                  "subtrees/layer_merge_group_0_0.json"
+                ],
+                "encodeMs": 512.2706666588783,
+                "replacementBytes": 3842760,
+                "totalCandidateBytes": 15373779,
+                "totalMs": 517.1239583287388,
+                "writeMs": 3.618166665546596
+              },
+              {
+                "changedPathCount": 2,
+                "changedPaths": [
+                  "hamii.json",
+                  "subtrees/layer_merge_group_0_0.json"
+                ],
+                "encodeMs": 511.71566668199375,
+                "replacementBytes": 3842760,
+                "totalCandidateBytes": 15373779,
+                "totalMs": 515.936583338771,
+                "writeMs": 2.7655416633933783
+              }
+            ],
+            "serializer": "Foundation.JSONSerialization: sortedKeys/prettyPrinted/withoutEscapingSlashes/LF"
+          }
+        ],
+        "peakRSS": null,
+        "peakRSSStatus": "unmeasured",
+        "production": {
+          "bytesRead": null,
+          "filesRead": null,
+          "layout": "CURRENT-P",
+          "loadSamplesMs": [
+            381.8873333511874,
+            384.344499965664,
+            386.5500833489932,
+            380.0503333332017,
+            380.50299999304116,
+            432.9332916531712,
+            383.10729165095836,
+            381.5467083477415,
+            380.60724997194484,
+            381.0534999938682
+          ],
+          "metadata": {
+            "largestShardBytes": 10084489,
+            "medianShardBytes": 283,
+            "pathCount": 13,
+            "totalBytes": 20173249
+          },
+          "mutationSaveSamplesMs": [
+            2139.1395416576415,
+            2137.255500012543,
+            2134.925291640684,
+            2126.6527916304767,
+            2124.0240416955203
+          ],
+          "observeSamplesMs": [
+            396.88275003572926,
+            392.5843333126977,
+            396.3062916882336,
+            395.74445836478844,
+            392.26391667034477,
+            402.48758328380063,
+            393.4254583436996,
+            393.96570838289335,
+            395.4340416821651,
+            392.7995416452177
+          ],
+          "readCountsStatus": "unmeasured public Release API"
+        },
+        "scale": 50000
+      },
+      "scale": 50000,
+      "status": "complete"
+    }
+  ],
+  "serializerControlGate": "passed",
+  "sourceCommit": "5434a3ebe03982bf7644380b20cad0582dff70a5",
+  "status": "complete"
+}

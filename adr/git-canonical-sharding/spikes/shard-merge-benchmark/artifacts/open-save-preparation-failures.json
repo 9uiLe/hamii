@@ -1,0 +1,14 @@
+{
+  "attempts": [
+    {
+      "stage": "prototypeCompile",
+      "status": "failed",
+      "exitCode": 1,
+      "prototypeSHA256": "0c3f6c9b7b00af47393e5ac29361eecc1fa5f344cb1152727cf19146cb2fbc28",
+      "command": "swiftc -O -swift-version 6 -I .build/release ... HamiiCore.o HamiiApplication.o HamiiFormat.o",
+      "diagnostic": "main actor-isolated let 'fm' can not be referenced from a nonisolated context",
+      "resolution": "Use local FileManager in synchronous functions; preserve Swift 6 checking",
+      "measuredTrialCount": 0
+    }
+  ]
+}
