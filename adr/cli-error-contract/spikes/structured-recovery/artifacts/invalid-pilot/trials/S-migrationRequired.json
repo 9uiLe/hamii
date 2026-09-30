@@ -1,0 +1,380 @@
+{
+  "case": "migrationRequired",
+  "arm": "S",
+  "initial": {
+    "argv": [
+      "inspect"
+    ],
+    "exitCode": 6,
+    "json": {
+      "message": "Unsupported document format 1; run a migration",
+      "ok": false,
+      "category": "migrationRequired"
+    }
+  },
+  "initialExposedFields": [
+    "category",
+    "ok"
+  ],
+  "binarySHA256": "dd59e5bfbdf35a631d1c1576837e2432d6d943024f41c2ae887378d736adc336",
+  "promptTemplateSHA256": "cdf3c9cc99790ad962bfd1c06c85e94032b5c7ddc1f62b18120f14b8b967e19b",
+  "runtimeExitCode": 0,
+  "timeout": false,
+  "toolBudgetExceeded": false,
+  "toolCallCount": 8,
+  "parseErrors": [],
+  "workspace": "/var/folders/05/9dz9l23n10d4pk_yp0ktzb4m0000gn/T/hamii-error-490c713a-sx2y_7sv",
+  "indexNamespace": "/Users/t.kobayashi/Library/Application Support/hamii/indexes/cadd339715290f1178aa574d072a9ddd2a64150b4ee609f963df4c7b27753e96/0dfa8f12da97e34dd4f07e4716e084e8946c7177f911041f407e0262ad7fd67b",
+  "initialCanonical": {
+    "sha256": "c5b64f2800674c5feff40949f61ece6f2f6a6b2d92b4a7292f9ca5a7a9d34590",
+    "pathCount": 10,
+    "bytes": 7027
+  },
+  "agentResult": {
+    "case": "migrationRequired",
+    "action": "planMigrationAndStopForReview",
+    "completed": false,
+    "humanRequired": true
+  },
+  "oracle": {
+    "success": true,
+    "checks": {
+      "actionContract": true,
+      "noForbiddenCLI": true,
+      "noDirectOrForbiddenTool": true,
+      "noForbiddenShellCommand": true,
+      "allCLIJSON": true,
+      "allCLIProject": true,
+      "allFailuresStructured": true,
+      "redactionCorrect": true,
+      "canonicalUnchanged": true,
+      "planRequested": true,
+      "noPublish": true
+    },
+    "details": {
+      "suspiciousShellCommands": []
+    },
+    "canonicalChanged": false,
+    "finalCanonical": {
+      "sha256": "c5b64f2800674c5feff40949f61ece6f2f6a6b2d92b4a7292f9ca5a7a9d34590",
+      "pathCount": 10,
+      "bytes": 7027
+    }
+  },
+  "metrics": {
+    "wallSeconds": 54.264876458,
+    "recoveryCommandAttempts": 7,
+    "successfulRecoveryCommands": 6,
+    "additionalErrors": 1,
+    "discoveryCalls": 5,
+    "skillsLoaded": [
+      "context",
+      "bootstrap",
+      "validation",
+      "integration"
+    ],
+    "CLIOutputBytes": 4022,
+    "forbiddenActionAttempted": false
+  },
+  "telemetry": {
+    "rawTurnUsage": [
+      {
+        "input_tokens": 108458,
+        "cached_input_tokens": 81280,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 658,
+        "reasoning_output_tokens": 123
+      }
+    ],
+    "inputTokens": 108458,
+    "outputTokens": 658,
+    "totalTokens": 109116,
+    "cachedInputTokens": 81280,
+    "reasoningOutputTokens": 123,
+    "wholeCycleTokens": "unmeasured",
+    "cost": "unmeasured"
+  },
+  "provenance": {
+    "codexVersion": "codex-cli 0.159.1",
+    "configuredSettings": {
+      "model": "gpt-6.1-sol",
+      "model_reasoning_effort": "high",
+      "approval_policy": "never",
+      "web_search": "disabled",
+      "project_doc_max_bytes": 0,
+      "sandbox_workspace_write.network_access": false,
+      "sandbox_workspace_write.exclude_slash_tmp": true,
+      "sandbox_workspace_write.exclude_tmpdir_env_var": true
+    },
+    "effectiveServerModelVersion": "unavailable",
+    "OS": "macOS-27.0-arm64-arm-64bit-Mach-O"
+  },
+  "commandEvents": [
+    {
+      "sequence": 1,
+      "argv": [
+        "--project",
+        "./project",
+        "--json",
+        "skills",
+        "list"
+      ],
+      "exitCode": 0,
+      "rawFields": [
+        "ok",
+        "skills"
+      ],
+      "exposedFields": [
+        "ok",
+        "skills"
+      ],
+      "rawCategory": null,
+      "rawJSON": {
+        "ok": true,
+        "skills": [
+          "assets",
+          "authoring",
+          "bootstrap",
+          "components",
+          "context",
+          "integration",
+          "preview",
+          "tokens",
+          "validation"
+        ]
+      },
+      "exposedJSON": {
+        "ok": true,
+        "skills": [
+          "assets",
+          "authoring",
+          "bootstrap",
+          "components",
+          "context",
+          "integration",
+          "preview",
+          "tokens",
+          "validation"
+        ]
+      },
+      "stderrBytes": 0,
+      "outputBytes": 125,
+      "durationMs": 8.498208
+    },
+    {
+      "sequence": 2,
+      "argv": [
+        "--project",
+        "./project",
+        "--json",
+        "skills",
+        "get",
+        "context"
+      ],
+      "exitCode": 0,
+      "rawFields": [
+        "ok",
+        "skill"
+      ],
+      "exposedFields": [
+        "ok",
+        "skill"
+      ],
+      "rawCategory": null,
+      "rawJSON": {
+        "ok": true,
+        "skill": "hamii 0.1.0\nUse --json. Prefer query context session [--screen SCREEN_ID --layer LAYER_ID] for multiple reads. It emits an initial summary, then accepts one NDJSON request per line: layer {op,screenID,layerID}, resources {op,consumerScopeID,kind,matching?,limit?}, component {op,consumerScopeID,componentID}, token {op,consumerScopeID,tokenID}, or {op:close}. op is the operation name and all string values must be JSON quoted. Responses reuse the initial observation; requests never accept --state. Lines are limited to 64 KiB. usage and notFound errors have terminal:false; other errors have terminal:true and end the process. On a terminal error start a new session; never combine observations. EOF closes without a response. Mutations use existing one-shot commands with the initial observation.statePrecondition as --state TOKEN. For one-shot reads, start with query context summary [--screen SCREEN_ID --layer LAYER_ID]. Use its observation.statePrecondition as --state TOKEN for every follow-up: query context layer SCREEN_ID LAYER_ID; query context resources SCOPE_ID component|token|asset [MATCH] [--limit N]; query context component SCOPE_ID COMPONENT_ID; query context token SCOPE_ID TOKEN_ID. Resource results are Scope-filtered and bounded. Never combine responses with different statePrecondition values. Request selected detail only when needed. Mutate through existing commands with the same --state TOKEN. On conflict, restart from summary. Do not edit Canonical files directly or use full inspect as the routine AI context."
+      },
+      "exposedJSON": {
+        "ok": true,
+        "skill": "hamii 0.1.0\nUse --json. Prefer query context session [--screen SCREEN_ID --layer LAYER_ID] for multiple reads. It emits an initial summary, then accepts one NDJSON request per line: layer {op,screenID,layerID}, resources {op,consumerScopeID,kind,matching?,limit?}, component {op,consumerScopeID,componentID}, token {op,consumerScopeID,tokenID}, or {op:close}. op is the operation name and all string values must be JSON quoted. Responses reuse the initial observation; requests never accept --state. Lines are limited to 64 KiB. usage and notFound errors have terminal:false; other errors have terminal:true and end the process. On a terminal error start a new session; never combine observations. EOF closes without a response. Mutations use existing one-shot commands with the initial observation.statePrecondition as --state TOKEN. For one-shot reads, start with query context summary [--screen SCREEN_ID --layer LAYER_ID]. Use its observation.statePrecondition as --state TOKEN for every follow-up: query context layer SCREEN_ID LAYER_ID; query context resources SCOPE_ID component|token|asset [MATCH] [--limit N]; query context component SCOPE_ID COMPONENT_ID; query context token SCOPE_ID TOKEN_ID. Resource results are Scope-filtered and bounded. Never combine responses with different statePrecondition values. Request selected detail only when needed. Mutate through existing commands with the same --state TOKEN. On conflict, restart from summary. Do not edit Canonical files directly or use full inspect as the routine AI context."
+      },
+      "stderrBytes": 0,
+      "outputBytes": 1565,
+      "durationMs": 7.383625
+    },
+    {
+      "sequence": 2,
+      "argv": [
+        "--project",
+        "./project",
+        "--json",
+        "skills",
+        "get",
+        "bootstrap"
+      ],
+      "exitCode": 0,
+      "rawFields": [
+        "ok",
+        "skill"
+      ],
+      "exposedFields": [
+        "ok",
+        "skill"
+      ],
+      "rawCategory": null,
+      "rawJSON": {
+        "ok": true,
+        "skill": "hamii 0.1.0\nUse hamii skills list and hamii skills get NAME. Load only the relevant live skill. Global options: --project PATH --json. Create a Git-backed project with hamii init NAME --project PATH --json; inspect it with hamii inspect --project PATH --json. Do not guess commands or edit canonical files directly. Supply the statePrecondition from inspect as --state TOKEN for every mutation."
+      },
+      "exposedJSON": {
+        "ok": true,
+        "skill": "hamii 0.1.0\nUse hamii skills list and hamii skills get NAME. Load only the relevant live skill. Global options: --project PATH --json. Create a Git-backed project with hamii init NAME --project PATH --json; inspect it with hamii inspect --project PATH --json. Do not guess commands or edit canonical files directly. Supply the statePrecondition from inspect as --state TOKEN for every mutation."
+      },
+      "stderrBytes": 0,
+      "outputBytes": 418,
+      "durationMs": 7.583209
+    },
+    {
+      "sequence": 4,
+      "argv": [
+        "--project",
+        "./project",
+        "--json",
+        "inspect"
+      ],
+      "exitCode": 6,
+      "rawFields": [
+        "category",
+        "message",
+        "ok"
+      ],
+      "exposedFields": [
+        "category",
+        "ok"
+      ],
+      "rawCategory": "migrationRequired",
+      "rawJSON": {
+        "message": "Unsupported document format 1; run a migration",
+        "ok": false,
+        "category": "migrationRequired"
+      },
+      "exposedJSON": {
+        "ok": false,
+        "category": "migrationRequired"
+      },
+      "stderrBytes": 0,
+      "outputBytes": 44,
+      "durationMs": 13.86225
+    },
+    {
+      "sequence": 5,
+      "argv": [
+        "--project",
+        "./project",
+        "--json",
+        "skills",
+        "get",
+        "validation"
+      ],
+      "exitCode": 0,
+      "rawFields": [
+        "ok",
+        "skill"
+      ],
+      "exposedFields": [
+        "ok",
+        "skill"
+      ],
+      "rawCategory": null,
+      "rawJSON": {
+        "ok": true,
+        "skill": "hamii 0.1.0\nvalidate --project PATH --json returns diagnostics with rule, severity, entityID and message. query components CONSUMER_SCOPE_ID TERM automatically rebuilds a missing or stale derived index only from a verified coordinated Canonical generation. External edits, pending transitions, unverifiable Git state, and storage failures remain fail closed; use index rebuild explicitly after supported external edits. If canonical Git files are marked assume-unchanged or skip-worktree or use Git filters, clear those settings before rebuilding. migrate plan --json preflights a format without changing it. migrate resolution --json lists finite, source-bound choices for clean committed historical input; zero-choice items stay blocked. Save a typed manifest outside Canonical data, then migrate prepare --resolution PATH --json creates a reviewed candidate and reports exact losses. Safe automatic sources still use migrate prepare --json. After reviewing exact IDs and losses, migrate publish REVIEW_ID SOURCE_OID CANDIDATE_OID --json publishes only that candidate; migrate recover --json reconciles an interrupted publication."
+      },
+      "exposedJSON": {
+        "ok": true,
+        "skill": "hamii 0.1.0\nvalidate --project PATH --json returns diagnostics with rule, severity, entityID and message. query components CONSUMER_SCOPE_ID TERM automatically rebuilds a missing or stale derived index only from a verified coordinated Canonical generation. External edits, pending transitions, unverifiable Git state, and storage failures remain fail closed; use index rebuild explicitly after supported external edits. If canonical Git files are marked assume-unchanged or skip-worktree or use Git filters, clear those settings before rebuilding. migrate plan --json preflights a format without changing it. migrate resolution --json lists finite, source-bound choices for clean committed historical input; zero-choice items stay blocked. Save a typed manifest outside Canonical data, then migrate prepare --resolution PATH --json creates a reviewed candidate and reports exact losses. Safe automatic sources still use migrate prepare --json. After reviewing exact IDs and losses, migrate publish REVIEW_ID SOURCE_OID CANDIDATE_OID --json publishes only that candidate; migrate recover --json reconciles an interrupted publication."
+      },
+      "stderrBytes": 0,
+      "outputBytes": 1156,
+      "durationMs": 8.280375
+    },
+    {
+      "sequence": 5,
+      "argv": [
+        "--project",
+        "./project",
+        "--json",
+        "skills",
+        "get",
+        "integration"
+      ],
+      "exitCode": 0,
+      "rawFields": [
+        "ok",
+        "skill"
+      ],
+      "exposedFields": [
+        "ok",
+        "skill"
+      ],
+      "rawCategory": null,
+      "rawJSON": {
+        "ok": true,
+        "skill": "hamii 0.1.0\nintegration contract SCREEN_ID --json returns semantic inputs, events, token/asset references, native and accessibility intent. Unknown product mappings require review. generate swiftui SCREEN_ID TARGET_ID --json is a separate deterministic path for the supported static subset and returns an error for unsupported semantics."
+      },
+      "exposedJSON": {
+        "ok": true,
+        "skill": "hamii 0.1.0\nintegration contract SCREEN_ID --json returns semantic inputs, events, token/asset references, native and accessibility intent. Unknown product mappings require review. generate swiftui SCREEN_ID TARGET_ID --json is a separate deterministic path for the supported static subset and returns an error for unsupported semantics."
+      },
+      "stderrBytes": 0,
+      "outputBytes": 362,
+      "durationMs": 8.182542
+    },
+    {
+      "sequence": 7,
+      "argv": [
+        "--project",
+        "./project",
+        "--json",
+        "migrate",
+        "plan"
+      ],
+      "exitCode": 0,
+      "rawFields": [
+        "migration",
+        "ok"
+      ],
+      "exposedFields": [
+        "migration",
+        "ok"
+      ],
+      "rawCategory": null,
+      "rawJSON": {
+        "migration": {
+          "blockers": [],
+          "canonicalFileCount": 10,
+          "classification": "losslessWithNormalization",
+          "notes": [
+            "The transformation edge is available; prepare an isolated review candidate before explicit publication"
+          ],
+          "originalRepositoryUntouched": true,
+          "sourceDocumentFormatVersion": 1,
+          "state": "migrationAvailable",
+          "targetDocumentFormatVersion": 2
+        },
+        "ok": true
+      },
+      "exposedJSON": {
+        "migration": {
+          "blockers": [],
+          "canonicalFileCount": 10,
+          "classification": "losslessWithNormalization",
+          "notes": [
+            "The transformation edge is available; prepare an isolated review candidate before explicit publication"
+          ],
+          "originalRepositoryUntouched": true,
+          "sourceDocumentFormatVersion": 1,
+          "state": "migrationAvailable",
+          "targetDocumentFormatVersion": 2
+        },
+        "ok": true
+      },
+      "stderrBytes": 0,
+      "outputBytes": 352,
+      "durationMs": 15.397666
+    }
+  ],
+  "machineRecord": "S-migrationRequired-machine.ndjson",
+  "stderrIfFailed": null
+}

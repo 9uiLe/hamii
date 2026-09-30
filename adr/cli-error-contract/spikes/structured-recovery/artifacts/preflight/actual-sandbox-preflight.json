@@ -1,0 +1,207 @@
+{
+  "notAgentTrial": true,
+  "results": [
+    {
+      "case": "transitionPending",
+      "accepted": true,
+      "initialExit": 7,
+      "initialCategory": "transitionPending",
+      "runtimeExit": 0,
+      "elapsedSeconds": 27.574437999981456,
+      "workspace": "/var/folders/05/9dz9l23n10d4pk_yp0ktzb4m0000gn/T/hamii-error-sandbox-preflight-59de7849-wp4glz4r",
+      "indexNamespace": "/Users/t.kobayashi/Library/Application Support/hamii/indexes/714fe92eb77a4e16bd33c1cc806f317967663e49dd78296eebfc28202d2604fc/eb8a374c3e5c639a44fd5f933c3b8af18cc29e5e354f5fd19ecd38d635ed7424",
+      "binarySHA256": "483e58de638d6fbf8023a51368d9ad9b4a6f34336cbdcf643167ae33210509c5",
+      "pwd": "/private/var/folders/05/9dz9l23n10d4pk_yp0ktzb4m0000gn/T/hamii-error-sandbox-preflight-59de7849-wp4glz4r",
+      "resolvedProjectRoot": "/private/var/folders/05/9dz9l23n10d4pk_yp0ktzb4m0000gn/T/hamii-error-sandbox-preflight-59de7849-wp4glz4r/project",
+      "gitToplevelFromOperator": "/private/var/folders/05/9dz9l23n10d4pk_yp0ktzb4m0000gn/T/hamii-error-sandbox-preflight-59de7849-wp4glz4r/project",
+      "recoveryCLIEvents": [
+        {
+          "sequence": 1,
+          "argv": [
+            "--project",
+            "./project",
+            "--json",
+            "git",
+            "recover"
+          ],
+          "exitCode": 0,
+          "rawFields": [
+            "document",
+            "ok",
+            "statePrecondition"
+          ],
+          "exposedFields": [
+            "document",
+            "ok",
+            "statePrecondition"
+          ],
+          "rawCategory": null,
+          "rawJSON": {
+            "document": {
+              "assets": [],
+              "authoringHarness": {
+                "maximumMutationNodes": 100,
+                "requireAccessibleControls": true,
+                "requireTokenSpacing": false
+              },
+              "capabilityDeclarations": [],
+              "components": [],
+              "fixtures": [],
+              "id": {
+                "rawValue": "doc_06f0c322-4741-4eca-ad01-ed446b0f617c"
+              },
+              "interactions": [],
+              "motions": [],
+              "name": "Error Fixture",
+              "pages": [],
+              "revision": 0,
+              "scopes": [
+                {
+                  "id": {
+                    "rawValue": "scope_3271f09b-7329-4694-8967-7565bbe64bb6"
+                  },
+                  "name": "App"
+                }
+              ],
+              "screens": [],
+              "targets": [],
+              "tokens": [],
+              "versions": {
+                "authoringHarness": 1,
+                "document": 2,
+                "integrationProfile": 1
+              }
+            },
+            "ok": true,
+            "statePrecondition": {
+              "rawValue": "05f14ea04c76e39d0b20d3d691cc994c38a789c0216239f96a68c21e5faa3f8a"
+            }
+          },
+          "exposedJSON": {
+            "document": {
+              "assets": [],
+              "authoringHarness": {
+                "maximumMutationNodes": 100,
+                "requireAccessibleControls": true,
+                "requireTokenSpacing": false
+              },
+              "capabilityDeclarations": [],
+              "components": [],
+              "fixtures": [],
+              "id": {
+                "rawValue": "doc_06f0c322-4741-4eca-ad01-ed446b0f617c"
+              },
+              "interactions": [],
+              "motions": [],
+              "name": "Error Fixture",
+              "pages": [],
+              "revision": 0,
+              "scopes": [
+                {
+                  "id": {
+                    "rawValue": "scope_3271f09b-7329-4694-8967-7565bbe64bb6"
+                  },
+                  "name": "App"
+                }
+              ],
+              "screens": [],
+              "targets": [],
+              "tokens": [],
+              "versions": {
+                "authoringHarness": 1,
+                "document": 2,
+                "integrationProfile": 1
+              }
+            },
+            "ok": true,
+            "statePrecondition": {
+              "rawValue": "05f14ea04c76e39d0b20d3d691cc994c38a789c0216239f96a68c21e5faa3f8a"
+            }
+          },
+          "stderrBytes": 0,
+          "outputBytes": 640,
+          "durationMs": 12596.513
+        }
+      ],
+      "sandboxCommands": [
+        {
+          "command": "/bin/zsh -lc './hamii --project ./project --json git recover'",
+          "exit": 0,
+          "output": "{\"document\":{\"assets\":[],\"authoringHarness\":{\"maximumMutationNodes\":100,\"requireAccessibleControls\":true,\"requireTokenSpacing\":false},\"capabilityDeclarations\":[],\"components\":[],\"fixtures\":[],\"id\":{\"rawValue\":\"doc_06f0c322-4741-4eca-ad01-ed446b0f617c\"},\"interactions\":[],\"motions\":[],\"name\":\"Error Fixture\",\"pages\":[],\"revision\":0,\"scopes\":[{\"id\":{\"rawValue\":\"scope_3271f09b-7329-4694-8967-7565bbe64bb6\"},\"name\":\"App\"}],\"screens\":[],\"targets\":[],\"tokens\":[],\"versions\":{\"authoringHarness\":1,\"document\":2,\"integrationProfile\":1}},\"ok\":true,\"statePrecondition\":{\"rawValue\":\"05f14ea04c76e39d0b20d3d691cc994c38a789c0216239f96a68c21e5faa3f8a\"}}\n"
+        }
+      ],
+      "runtimeStderr": "",
+      "machineLog": "not retained: operator-only runtime transcript",
+      "relevantEnvironment": {
+        "OS": "macOS-27.0-arm64-arm-64bit-Mach-O",
+        "sandbox": "workspace-write",
+        "networkAccess": false,
+        "excludeSlashTmp": true,
+        "excludeTmpdirEnvVar": true
+      }
+    },
+    {
+      "case": "staleIndex",
+      "accepted": true,
+      "initialExit": 8,
+      "initialCategory": "staleIndex",
+      "runtimeExit": 0,
+      "elapsedSeconds": 53.542231792001985,
+      "workspace": "/var/folders/05/9dz9l23n10d4pk_yp0ktzb4m0000gn/T/hamii-error-sandbox-preflight-b8c3d3ae-d771v94q",
+      "indexNamespace": "/Users/t.kobayashi/Library/Application Support/hamii/indexes/a52a9c47ee5b8737b8995ec565d92a392f05ea1c8dab768affe67a6f0ad0373a/454e2609f1b2446b4e8fc2cad0f7ddb1eb8db32a54ba27ae3e427559360f9561",
+      "binarySHA256": "483e58de638d6fbf8023a51368d9ad9b4a6f34336cbdcf643167ae33210509c5",
+      "pwd": "/private/var/folders/05/9dz9l23n10d4pk_yp0ktzb4m0000gn/T/hamii-error-sandbox-preflight-b8c3d3ae-d771v94q",
+      "resolvedProjectRoot": "/private/var/folders/05/9dz9l23n10d4pk_yp0ktzb4m0000gn/T/hamii-error-sandbox-preflight-b8c3d3ae-d771v94q/project",
+      "gitToplevelFromOperator": "/private/var/folders/05/9dz9l23n10d4pk_yp0ktzb4m0000gn/T/hamii-error-sandbox-preflight-b8c3d3ae-d771v94q/project",
+      "recoveryCLIEvents": [
+        {
+          "sequence": 1,
+          "argv": [
+            "--project",
+            "./project",
+            "--json",
+            "index",
+            "rebuild"
+          ],
+          "exitCode": 0,
+          "rawFields": [
+            "message",
+            "ok"
+          ],
+          "exposedFields": [
+            "message",
+            "ok"
+          ],
+          "rawCategory": null,
+          "rawJSON": {
+            "message": "Indexed revision 1",
+            "ok": true
+          },
+          "exposedJSON": {
+            "message": "Indexed revision 1",
+            "ok": true
+          },
+          "stderrBytes": 0,
+          "outputBytes": 43,
+          "durationMs": 37142.477666
+        }
+      ],
+      "sandboxCommands": [
+        {
+          "command": "/bin/zsh -lc './hamii --project ./project --json index rebuild'",
+          "exit": 0,
+          "output": "{\"message\":\"Indexed revision 1\",\"ok\":true}\n"
+        }
+      ],
+      "runtimeStderr": "",
+      "machineLog": "not retained: operator-only runtime transcript",
+      "relevantEnvironment": {
+        "OS": "macOS-27.0-arm64-arm-64bit-Mach-O",
+        "sandbox": "workspace-write",
+        "networkAccess": false,
+        "excludeSlashTmp": true,
+        "excludeTmpdirEnvVar": true
+      }
+    }
+  ]
+}

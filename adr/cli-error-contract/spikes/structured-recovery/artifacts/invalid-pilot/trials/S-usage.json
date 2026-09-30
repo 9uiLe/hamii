@@ -1,0 +1,544 @@
+{
+  "case": "usage",
+  "arm": "S",
+  "initial": {
+    "argv": [
+      "token",
+      "create",
+      "scope_ba44f071-1fd1-45fd-b54c-45de90e40e47",
+      "spacing.recovery",
+      "spacing"
+    ],
+    "exitCode": 2,
+    "json": {
+      "ok": false,
+      "message": "Mutation requires --state TOKEN from inspect",
+      "category": "usage"
+    }
+  },
+  "initialExposedFields": [
+    "category",
+    "ok"
+  ],
+  "binarySHA256": "dd59e5bfbdf35a631d1c1576837e2432d6d943024f41c2ae887378d736adc336",
+  "promptTemplateSHA256": "cdf3c9cc99790ad962bfd1c06c85e94032b5c7ddc1f62b18120f14b8b967e19b",
+  "runtimeExitCode": 0,
+  "timeout": false,
+  "toolBudgetExceeded": false,
+  "toolCallCount": 7,
+  "parseErrors": [],
+  "workspace": "/var/folders/05/9dz9l23n10d4pk_yp0ktzb4m0000gn/T/hamii-error-f875286f-bjgs7ff6",
+  "indexNamespace": "/Users/t.kobayashi/Library/Application Support/hamii/indexes/fbe36f66f86d20d644942ee93b57c4a992390c89a748c001212bd1ed1a2359df/4cec73aef674e9f8441432da0db3ccb88d2e98cc0482fd244d0119b49f0258b4",
+  "initialCanonical": {
+    "sha256": "11d35a48c054f018cdd26ec3086674a967d6ac09cd68e1c5f93a08ceb307c2fe",
+    "pathCount": 3,
+    "bytes": 787
+  },
+  "agentResult": {
+    "case": "usage",
+    "action": "fixInputAndRetry",
+    "completed": true,
+    "humanRequired": false
+  },
+  "oracle": {
+    "success": true,
+    "checks": {
+      "actionContract": true,
+      "noForbiddenCLI": true,
+      "noDirectOrForbiddenTool": true,
+      "noForbiddenShellCommand": true,
+      "allCLIJSON": true,
+      "allCLIProject": true,
+      "allFailuresStructured": true,
+      "redactionCorrect": true,
+      "requestedTokenOnce": true,
+      "singleSuccessfulMutation": true,
+      "finalCanonicalValid": true
+    },
+    "details": {
+      "suspiciousShellCommands": []
+    },
+    "canonicalChanged": true,
+    "finalCanonical": {
+      "sha256": "c5fd80f1e0b8e9b29184a64bbd0c68e68ab81cc93ee40d5f45231d8ff167b2ba",
+      "pathCount": 4,
+      "bytes": 1069
+    }
+  },
+  "metrics": {
+    "wallSeconds": 52.984706375,
+    "recoveryCommandAttempts": 6,
+    "successfulRecoveryCommands": 6,
+    "additionalErrors": 0,
+    "discoveryCalls": 3,
+    "skillsLoaded": [
+      "authoring",
+      "tokens"
+    ],
+    "CLIOutputBytes": 3424,
+    "forbiddenActionAttempted": false
+  },
+  "telemetry": {
+    "rawTurnUsage": [
+      {
+        "input_tokens": 112057,
+        "cached_input_tokens": 97408,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 616,
+        "reasoning_output_tokens": 51
+      }
+    ],
+    "inputTokens": 112057,
+    "outputTokens": 616,
+    "totalTokens": 112673,
+    "cachedInputTokens": 97408,
+    "reasoningOutputTokens": 51,
+    "wholeCycleTokens": "unmeasured",
+    "cost": "unmeasured"
+  },
+  "provenance": {
+    "codexVersion": "codex-cli 0.159.1",
+    "configuredSettings": {
+      "model": "gpt-6.1-sol",
+      "model_reasoning_effort": "high",
+      "approval_policy": "never",
+      "web_search": "disabled",
+      "project_doc_max_bytes": 0,
+      "sandbox_workspace_write.network_access": false,
+      "sandbox_workspace_write.exclude_slash_tmp": true,
+      "sandbox_workspace_write.exclude_tmpdir_env_var": true
+    },
+    "effectiveServerModelVersion": "unavailable",
+    "OS": "macOS-27.0-arm64-arm-64bit-Mach-O"
+  },
+  "commandEvents": [
+    {
+      "sequence": 1,
+      "argv": [
+        "--project",
+        "./project",
+        "--json",
+        "skills",
+        "list"
+      ],
+      "exitCode": 0,
+      "rawFields": [
+        "ok",
+        "skills"
+      ],
+      "exposedFields": [
+        "ok",
+        "skills"
+      ],
+      "rawCategory": null,
+      "rawJSON": {
+        "ok": true,
+        "skills": [
+          "assets",
+          "authoring",
+          "bootstrap",
+          "components",
+          "context",
+          "integration",
+          "preview",
+          "tokens",
+          "validation"
+        ]
+      },
+      "exposedJSON": {
+        "ok": true,
+        "skills": [
+          "assets",
+          "authoring",
+          "bootstrap",
+          "components",
+          "context",
+          "integration",
+          "preview",
+          "tokens",
+          "validation"
+        ]
+      },
+      "stderrBytes": 0,
+      "outputBytes": 125,
+      "durationMs": 7.395042
+    },
+    {
+      "sequence": 2,
+      "argv": [
+        "--project",
+        "./project",
+        "--json",
+        "skills",
+        "get",
+        "authoring"
+      ],
+      "exitCode": 0,
+      "rawFields": [
+        "ok",
+        "skill"
+      ],
+      "exposedFields": [
+        "ok",
+        "skill"
+      ],
+      "rawCategory": null,
+      "rawJSON": {
+        "ok": true,
+        "skill": "hamii 0.1.0\nGlobal options: --project PATH --profile NAME --json. Inspect: hamii inspect. Mutations require --state TOKEN from inspect or the previous mutation. Commands: page create NAME; scope create PARENT_ID NAME; screen create SCOPE_ID NAME; target add PLATFORM FRAMEWORK; surface add PAGE_ID SCREEN_ID TARGET_ID DEVICE RUNTIME BUILD_ENVIRONMENT; surface target SURFACE_ID TARGET_ID; capability set TARGET_ID KEY SUPPORT; layer add SCREEN_ID PARENT_ID KIND NAME TEXT; layer text SCREEN_ID LAYER_ID TEXT. Managed git switch BRANCH requires a clean worktree and --state TOKEN; git recover validates an interrupted switch or merge publication. git merge check BRANCH --state TOKEN validates an isolated candidate without publishing. git merge publish BRANCH --state TOKEN validates and publishes a candidate through the coordinated pending gate. Use - for no text. Read the tokens, components or assets skill when needed. All mutations use the same Authoring Harness validation as GUI."
+      },
+      "exposedJSON": {
+        "ok": true,
+        "skill": "hamii 0.1.0\nGlobal options: --project PATH --profile NAME --json. Inspect: hamii inspect. Mutations require --state TOKEN from inspect or the previous mutation. Commands: page create NAME; scope create PARENT_ID NAME; screen create SCOPE_ID NAME; target add PLATFORM FRAMEWORK; surface add PAGE_ID SCREEN_ID TARGET_ID DEVICE RUNTIME BUILD_ENVIRONMENT; surface target SURFACE_ID TARGET_ID; capability set TARGET_ID KEY SUPPORT; layer add SCREEN_ID PARENT_ID KIND NAME TEXT; layer text SCREEN_ID LAYER_ID TEXT. Managed git switch BRANCH requires a clean worktree and --state TOKEN; git recover validates an interrupted switch or merge publication. git merge check BRANCH --state TOKEN validates an isolated candidate without publishing. git merge publish BRANCH --state TOKEN validates and publishes a candidate through the coordinated pending gate. Use - for no text. Read the tokens, components or assets skill when needed. All mutations use the same Authoring Harness validation as GUI."
+      },
+      "stderrBytes": 0,
+      "outputBytes": 1011,
+      "durationMs": 7.34
+    },
+    {
+      "sequence": 2,
+      "argv": [
+        "--project",
+        "./project",
+        "--json",
+        "skills",
+        "get",
+        "tokens"
+      ],
+      "exitCode": 0,
+      "rawFields": [
+        "ok",
+        "skill"
+      ],
+      "exposedFields": [
+        "ok",
+        "skill"
+      ],
+      "rawCategory": null,
+      "rawJSON": {
+        "ok": true,
+        "skill": "hamii 0.1.0\ntoken create OWNER_SCOPE_ID NAME KIND LITERAL --state TOKEN creates a primitive token; token alias OWNER_SCOPE_ID NAME KIND TARGET_TOKEN_ID --state TOKEN creates a semantic alias. KIND is color|typography|spacing|radius|border|shadow|opacity|motion. Spacing literals are nonnegative finite numbers. layer token SCREEN_ID LAYER_ID spacing|padding TOKEN_ID|- --state TOKEN sets or clears a layout token. ArchitectureScope ownership and token references are validated before save."
+      },
+      "exposedJSON": {
+        "ok": true,
+        "skill": "hamii 0.1.0\ntoken create OWNER_SCOPE_ID NAME KIND LITERAL --state TOKEN creates a primitive token; token alias OWNER_SCOPE_ID NAME KIND TARGET_TOKEN_ID --state TOKEN creates a semantic alias. KIND is color|typography|spacing|radius|border|shadow|opacity|motion. Spacing literals are nonnegative finite numbers. layer token SCREEN_ID LAYER_ID spacing|padding TOKEN_ID|- --state TOKEN sets or clears a layout token. ArchitectureScope ownership and token references are validated before save."
+      },
+      "stderrBytes": 0,
+      "outputBytes": 513,
+      "durationMs": 7.114541
+    },
+    {
+      "sequence": 4,
+      "argv": [
+        "--project",
+        "./project",
+        "--json",
+        "inspect"
+      ],
+      "exitCode": 0,
+      "rawFields": [
+        "document",
+        "ok",
+        "statePrecondition"
+      ],
+      "exposedFields": [
+        "document",
+        "ok",
+        "statePrecondition"
+      ],
+      "rawCategory": null,
+      "rawJSON": {
+        "document": {
+          "assets": [],
+          "authoringHarness": {
+            "maximumMutationNodes": 100,
+            "requireAccessibleControls": true,
+            "requireTokenSpacing": false
+          },
+          "capabilityDeclarations": [],
+          "components": [],
+          "fixtures": [],
+          "id": {
+            "rawValue": "doc_dd182433-b5ab-42c0-bdf7-916c99c9edc1"
+          },
+          "interactions": [],
+          "motions": [],
+          "name": "Error Fixture",
+          "pages": [],
+          "revision": 0,
+          "scopes": [
+            {
+              "id": {
+                "rawValue": "scope_ba44f071-1fd1-45fd-b54c-45de90e40e47"
+              },
+              "name": "App"
+            }
+          ],
+          "screens": [],
+          "targets": [],
+          "tokens": [],
+          "versions": {
+            "authoringHarness": 1,
+            "document": 2,
+            "integrationProfile": 1
+          }
+        },
+        "ok": true,
+        "statePrecondition": {
+          "rawValue": "ba711594b9aee3284c80c204505681cb527859b64740b364346fe3f6fe90c8e0"
+        }
+      },
+      "exposedJSON": {
+        "document": {
+          "assets": [],
+          "authoringHarness": {
+            "maximumMutationNodes": 100,
+            "requireAccessibleControls": true,
+            "requireTokenSpacing": false
+          },
+          "capabilityDeclarations": [],
+          "components": [],
+          "fixtures": [],
+          "id": {
+            "rawValue": "doc_dd182433-b5ab-42c0-bdf7-916c99c9edc1"
+          },
+          "interactions": [],
+          "motions": [],
+          "name": "Error Fixture",
+          "pages": [],
+          "revision": 0,
+          "scopes": [
+            {
+              "id": {
+                "rawValue": "scope_ba44f071-1fd1-45fd-b54c-45de90e40e47"
+              },
+              "name": "App"
+            }
+          ],
+          "screens": [],
+          "targets": [],
+          "tokens": [],
+          "versions": {
+            "authoringHarness": 1,
+            "document": 2,
+            "integrationProfile": 1
+          }
+        },
+        "ok": true,
+        "statePrecondition": {
+          "rawValue": "ba711594b9aee3284c80c204505681cb527859b64740b364346fe3f6fe90c8e0"
+        }
+      },
+      "stderrBytes": 0,
+      "outputBytes": 640,
+      "durationMs": 11.929833
+    },
+    {
+      "sequence": 5,
+      "argv": [
+        "--project",
+        "./project",
+        "--json",
+        "token",
+        "create",
+        "scope_ba44f071-1fd1-45fd-b54c-45de90e40e47",
+        "spacing.recovery",
+        "spacing",
+        "8",
+        "--state",
+        "ba711594b9aee3284c80c204505681cb527859b64740b364346fe3f6fe90c8e0"
+      ],
+      "exitCode": 0,
+      "rawFields": [
+        "mutation",
+        "ok"
+      ],
+      "exposedFields": [
+        "mutation",
+        "ok"
+      ],
+      "rawCategory": null,
+      "rawJSON": {
+        "mutation": {
+          "diagnostics": [],
+          "patches": [
+            {
+              "entityID": {
+                "rawValue": "token_1d16a9f5-8b94-4cb3-a205-7c83e0acf88d"
+              },
+              "newValue": "spacing.recovery",
+              "path": "tokens"
+            }
+          ],
+          "revision": 1,
+          "statePrecondition": {
+            "rawValue": "152a10c35ceca37de09c79d3b4bf1d76ff7e3a876735920e4a7ee436ccbe3916"
+          }
+        },
+        "ok": true
+      },
+      "exposedJSON": {
+        "mutation": {
+          "diagnostics": [],
+          "patches": [
+            {
+              "entityID": {
+                "rawValue": "token_1d16a9f5-8b94-4cb3-a205-7c83e0acf88d"
+              },
+              "newValue": "spacing.recovery",
+              "path": "tokens"
+            }
+          ],
+          "revision": 1,
+          "statePrecondition": {
+            "rawValue": "152a10c35ceca37de09c79d3b4bf1d76ff7e3a876735920e4a7ee436ccbe3916"
+          }
+        },
+        "ok": true
+      },
+      "stderrBytes": 0,
+      "outputBytes": 284,
+      "durationMs": 26.947958
+    },
+    {
+      "sequence": 6,
+      "argv": [
+        "--project",
+        "./project",
+        "--json",
+        "inspect"
+      ],
+      "exitCode": 0,
+      "rawFields": [
+        "document",
+        "ok",
+        "statePrecondition"
+      ],
+      "exposedFields": [
+        "document",
+        "ok",
+        "statePrecondition"
+      ],
+      "rawCategory": null,
+      "rawJSON": {
+        "document": {
+          "assets": [],
+          "authoringHarness": {
+            "maximumMutationNodes": 100,
+            "requireAccessibleControls": true,
+            "requireTokenSpacing": false
+          },
+          "capabilityDeclarations": [],
+          "components": [],
+          "fixtures": [],
+          "id": {
+            "rawValue": "doc_dd182433-b5ab-42c0-bdf7-916c99c9edc1"
+          },
+          "interactions": [],
+          "motions": [],
+          "name": "Error Fixture",
+          "pages": [],
+          "revision": 1,
+          "scopes": [
+            {
+              "id": {
+                "rawValue": "scope_ba44f071-1fd1-45fd-b54c-45de90e40e47"
+              },
+              "name": "App"
+            }
+          ],
+          "screens": [],
+          "targets": [],
+          "tokens": [
+            {
+              "id": {
+                "rawValue": "token_1d16a9f5-8b94-4cb3-a205-7c83e0acf88d"
+              },
+              "kind": "spacing",
+              "name": "spacing.recovery",
+              "ownerScopeID": {
+                "rawValue": "scope_ba44f071-1fd1-45fd-b54c-45de90e40e47"
+              },
+              "value": {
+                "literal": {
+                  "_0": "8"
+                }
+              }
+            }
+          ],
+          "versions": {
+            "authoringHarness": 1,
+            "document": 2,
+            "integrationProfile": 1
+          }
+        },
+        "ok": true,
+        "statePrecondition": {
+          "rawValue": "152a10c35ceca37de09c79d3b4bf1d76ff7e3a876735920e4a7ee436ccbe3916"
+        }
+      },
+      "exposedJSON": {
+        "document": {
+          "assets": [],
+          "authoringHarness": {
+            "maximumMutationNodes": 100,
+            "requireAccessibleControls": true,
+            "requireTokenSpacing": false
+          },
+          "capabilityDeclarations": [],
+          "components": [],
+          "fixtures": [],
+          "id": {
+            "rawValue": "doc_dd182433-b5ab-42c0-bdf7-916c99c9edc1"
+          },
+          "interactions": [],
+          "motions": [],
+          "name": "Error Fixture",
+          "pages": [],
+          "revision": 1,
+          "scopes": [
+            {
+              "id": {
+                "rawValue": "scope_ba44f071-1fd1-45fd-b54c-45de90e40e47"
+              },
+              "name": "App"
+            }
+          ],
+          "screens": [],
+          "targets": [],
+          "tokens": [
+            {
+              "id": {
+                "rawValue": "token_1d16a9f5-8b94-4cb3-a205-7c83e0acf88d"
+              },
+              "kind": "spacing",
+              "name": "spacing.recovery",
+              "ownerScopeID": {
+                "rawValue": "scope_ba44f071-1fd1-45fd-b54c-45de90e40e47"
+              },
+              "value": {
+                "literal": {
+                  "_0": "8"
+                }
+              }
+            }
+          ],
+          "versions": {
+            "authoringHarness": 1,
+            "document": 2,
+            "integrationProfile": 1
+          }
+        },
+        "ok": true,
+        "statePrecondition": {
+          "rawValue": "152a10c35ceca37de09c79d3b4bf1d76ff7e3a876735920e4a7ee436ccbe3916"
+        }
+      },
+      "stderrBytes": 0,
+      "outputBytes": 851,
+      "durationMs": 10.802125
+    }
+  ],
+  "machineRecord": "S-usage-machine.ndjson",
+  "stderrIfFailed": null
+}

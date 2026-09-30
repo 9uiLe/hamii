@@ -1,0 +1,69 @@
+{
+  "completed": [
+    {
+      "arm": "S",
+      "case": "usage",
+      "runtimeExitCode": 0,
+      "oracleSuccess": true
+    },
+    {
+      "arm": "S",
+      "case": "notFound",
+      "runtimeExitCode": 0,
+      "oracleSuccess": true
+    },
+    {
+      "arm": "S",
+      "case": "validation",
+      "runtimeExitCode": 0,
+      "oracleSuccess": false
+    },
+    {
+      "arm": "S",
+      "case": "approval",
+      "runtimeExitCode": 0,
+      "oracleSuccess": true
+    },
+    {
+      "arm": "S",
+      "case": "conflict",
+      "runtimeExitCode": 0,
+      "oracleSuccess": true
+    },
+    {
+      "arm": "S",
+      "case": "transitionPending",
+      "runtimeExitCode": 0,
+      "oracleSuccess": false
+    },
+    {
+      "arm": "S",
+      "case": "staleIndex",
+      "runtimeExitCode": 0,
+      "oracleSuccess": false
+    },
+    {
+      "arm": "S",
+      "case": "migrationRequired",
+      "runtimeExitCode": 0,
+      "oracleSuccess": true
+    },
+    {
+      "arm": "S",
+      "case": "unsupportedCapability",
+      "runtimeExitCode": -15,
+      "oracleSuccess": true
+    }
+  ],
+  "notRun": [
+    "P:unsupportedCapability",
+    "P:migrationRequired",
+    "P:staleIndex",
+    "P:transitionPending",
+    "P:conflict",
+    "P:approval",
+    "P:validation",
+    "P:notFound",
+    "P:usage"
+  ]
+}

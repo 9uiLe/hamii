@@ -1,0 +1,59 @@
+{
+  "notAgentTrial": true,
+  "normalShellOperatorRecoveryCases": 9,
+  "categoryAndExitPairs": [
+    {
+      "case": "usage",
+      "category": "usage",
+      "exit": 2
+    },
+    {
+      "case": "notFound",
+      "category": "notFound",
+      "exit": 2
+    },
+    {
+      "case": "validation",
+      "category": "validation",
+      "exit": 5
+    },
+    {
+      "case": "approval",
+      "category": "approval",
+      "exit": 4
+    },
+    {
+      "case": "conflict",
+      "category": "conflict",
+      "exit": 3
+    },
+    {
+      "case": "transitionPending",
+      "category": "transitionPending",
+      "exit": 7
+    },
+    {
+      "case": "staleIndex",
+      "category": "staleIndex",
+      "exit": 8
+    },
+    {
+      "case": "migrationRequired",
+      "category": "migrationRequired",
+      "exit": 6
+    },
+    {
+      "case": "unsupportedCapability",
+      "category": "unsupportedCapability",
+      "exit": 9
+    }
+  ],
+  "proxyTreatments": 18,
+  "proxyExactPasses": 18,
+  "oracleCases": 9,
+  "oraclePositivePasses": 9,
+  "oracleNegativePasses": 9,
+  "shellExecutableControls": 7,
+  "shellAuditManagedGitAllowed": true,
+  "shellAuditRawGitRejected": true
+}

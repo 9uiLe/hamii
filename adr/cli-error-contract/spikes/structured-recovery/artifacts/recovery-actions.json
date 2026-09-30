@@ -2,9 +2,9 @@
   "version": 1,
   "resultSchema": {"case": "case identifier", "action": "one allowed action label", "completed": "boolean", "humanRequired": "boolean"},
   "expected": {
-    "usage": ["fixInputAndRetry", true, false],
+    "usage": ["correctRequestAndRetry", true, false],
     "notFound": ["rediscoverResource", true, false],
-    "validation": ["fixSemanticInputAndRetry", true, false],
+    "validation": ["correctRequestAndRetry", true, false],
     "approval": ["requestApprovalAndStop", false, true],
     "conflict": ["reobserveAndRetrySameIntent", true, false],
     "transitionPending": ["recoverManagedTransition", true, false],
