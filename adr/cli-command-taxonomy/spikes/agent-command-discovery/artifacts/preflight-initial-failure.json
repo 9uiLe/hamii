@@ -1,9 +1,0 @@
-{
-  "notAgentTrial": true,
-  "attempts": 2,
-  "candidate": "CURRENT",
-  "failure": "Oracle assumed computed TargetPlan.canPreview was serialized. Actual wire result uses top-level ok and previewPlan diagnostics. Correct predicate retains supported-plan criterion and checks exact Surface/Screen/Target IDs plus zero diagnostics.",
-  "failedChecks": [
-    "T4.preview"
-  ]
-}
