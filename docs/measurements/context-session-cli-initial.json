@@ -1,0 +1,3163 @@
+{
+  "acceptance": {
+    "allShapes": [
+      "L",
+      "S",
+      "C"
+    ],
+    "sessionMedianRatioMaximum": 0.7,
+    "tasks": [
+      "T2",
+      "T3"
+    ]
+  },
+  "allThresholdsPassed": true,
+  "completed": true,
+  "completedAt": "2026-09-30T00:56:30.757356+00:00",
+  "environment": {
+    "binary": "/Users/t.kobayashi/orca/hamii/.build/out/Products/Release/hamii",
+    "binarySHA256": "dd59e5bfbdf35a631d1c1576837e2432d6d943024f41c2ae887378d736adc336",
+    "cache": "warm local filesystem; no disk session cache",
+    "concurrentFullGate": false,
+    "configuration": "release",
+    "cpuCount": 10,
+    "loadAverageAtEnd": [
+      2.94384765625,
+      2.6767578125,
+      2.580078125
+    ],
+    "loadAverageAtStart": [
+      2.35498046875,
+      2.54736328125,
+      2.5322265625
+    ],
+    "machine": "arm64",
+    "os": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "parallelWorkflows": 1,
+    "python": "3.14.6",
+    "swift": "Apple Swift version 6.4 (swift-6.4-RELEASE)\nTarget: arm64-apple-macosx27.0.0"
+  },
+  "measurementScriptSHA256": "12b9b26cc8d1f0f711fc413f5a290c93b78aba58fa11dfbd3cbcb6ab2b702036",
+  "schemaVersion": 1,
+  "scope": {
+    "aiModelCost": "unmeasured",
+    "aiTotalTokens": "unmeasured",
+    "contextOutputBytes": "UTF-8 sorted-key context object, without Output envelope/newline",
+    "counts": "structural counts verified by Application tests; not runtime instrumentation",
+    "llmTaskSuccess": "unmeasured",
+    "order": "paired; alternating CURRENT/SESSION first",
+    "runsPerShapeTaskCandidate": 10,
+    "timer": "process launch to last required response; close/fixture preparation excluded"
+  },
+  "shapes": {
+    "C": {
+      "fixture": {
+        "canonicalBytes": 2913736,
+        "canonicalPathCount": 112,
+        "componentCount": 102,
+        "largestShardBytes": 29092,
+        "layerCount": 10002,
+        "medianShardBytes": 29092.0,
+        "screenCount": 1
+      },
+      "ids": {
+        "componentID": "component_2a484db0-5cfe-49c7-8507-4b6f4e6179ec",
+        "parentLayerID": "layer_4bf75164-4280-49e3-a764-240a93cba3f1",
+        "scopeID": "scope_aad9f327-c771-48bb-8330-81c696365e51",
+        "screenID": "screen_38aa9baf-2a70-493b-890d-e334d92d65df",
+        "textLayerID": "layer_3cc82881-d29a-4cae-b06b-756eb6c9d173",
+        "tokenID": "token_fb29f755-bd2d-4770-878f-fe32a7d44b63"
+      },
+      "tasks": {
+        "T1": {
+          "acceptancePassed": null,
+          "pairs": [
+            {
+              "CURRENT": {
+                "contextOutputBytes": 1243,
+                "elapsedMs": 212.612584,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 2,
+                "processCount": 2,
+                "responseCount": 2,
+                "responseSHA256": "5d9de1f42dfa0a4eaba5d1978798e2b9099021d8e371e1f881aed71875d42072",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 1289
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 1243,
+                "elapsedMs": 110.655416,
+                "freshnessVerificationCount": 1,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 2,
+                "responseSHA256": "5d9de1f42dfa0a4eaba5d1978798e2b9099021d8e371e1f881aed71875d42072",
+                "stdinRequestBytes": 127,
+                "stdoutBytes": 1289
+              },
+              "iteration": 1,
+              "order": [
+                "CURRENT",
+                "SESSION"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 1243,
+                "elapsedMs": 213.000042,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 2,
+                "processCount": 2,
+                "responseCount": 2,
+                "responseSHA256": "5d9de1f42dfa0a4eaba5d1978798e2b9099021d8e371e1f881aed71875d42072",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 1289
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 1243,
+                "elapsedMs": 113.80525,
+                "freshnessVerificationCount": 1,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 2,
+                "responseSHA256": "5d9de1f42dfa0a4eaba5d1978798e2b9099021d8e371e1f881aed71875d42072",
+                "stdinRequestBytes": 127,
+                "stdoutBytes": 1289
+              },
+              "iteration": 2,
+              "order": [
+                "SESSION",
+                "CURRENT"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 1243,
+                "elapsedMs": 212.651458,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 2,
+                "processCount": 2,
+                "responseCount": 2,
+                "responseSHA256": "5d9de1f42dfa0a4eaba5d1978798e2b9099021d8e371e1f881aed71875d42072",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 1289
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 1243,
+                "elapsedMs": 110.856583,
+                "freshnessVerificationCount": 1,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 2,
+                "responseSHA256": "5d9de1f42dfa0a4eaba5d1978798e2b9099021d8e371e1f881aed71875d42072",
+                "stdinRequestBytes": 127,
+                "stdoutBytes": 1289
+              },
+              "iteration": 3,
+              "order": [
+                "CURRENT",
+                "SESSION"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 1243,
+                "elapsedMs": 213.131083,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 2,
+                "processCount": 2,
+                "responseCount": 2,
+                "responseSHA256": "5d9de1f42dfa0a4eaba5d1978798e2b9099021d8e371e1f881aed71875d42072",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 1289
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 1243,
+                "elapsedMs": 111.023375,
+                "freshnessVerificationCount": 1,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 2,
+                "responseSHA256": "5d9de1f42dfa0a4eaba5d1978798e2b9099021d8e371e1f881aed71875d42072",
+                "stdinRequestBytes": 127,
+                "stdoutBytes": 1289
+              },
+              "iteration": 4,
+              "order": [
+                "SESSION",
+                "CURRENT"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 1243,
+                "elapsedMs": 216.926042,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 2,
+                "processCount": 2,
+                "responseCount": 2,
+                "responseSHA256": "5d9de1f42dfa0a4eaba5d1978798e2b9099021d8e371e1f881aed71875d42072",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 1289
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 1243,
+                "elapsedMs": 112.877084,
+                "freshnessVerificationCount": 1,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 2,
+                "responseSHA256": "5d9de1f42dfa0a4eaba5d1978798e2b9099021d8e371e1f881aed71875d42072",
+                "stdinRequestBytes": 127,
+                "stdoutBytes": 1289
+              },
+              "iteration": 5,
+              "order": [
+                "CURRENT",
+                "SESSION"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 1243,
+                "elapsedMs": 212.815417,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 2,
+                "processCount": 2,
+                "responseCount": 2,
+                "responseSHA256": "5d9de1f42dfa0a4eaba5d1978798e2b9099021d8e371e1f881aed71875d42072",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 1289
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 1243,
+                "elapsedMs": 111.155958,
+                "freshnessVerificationCount": 1,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 2,
+                "responseSHA256": "5d9de1f42dfa0a4eaba5d1978798e2b9099021d8e371e1f881aed71875d42072",
+                "stdinRequestBytes": 127,
+                "stdoutBytes": 1289
+              },
+              "iteration": 6,
+              "order": [
+                "SESSION",
+                "CURRENT"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 1243,
+                "elapsedMs": 214.370042,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 2,
+                "processCount": 2,
+                "responseCount": 2,
+                "responseSHA256": "5d9de1f42dfa0a4eaba5d1978798e2b9099021d8e371e1f881aed71875d42072",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 1289
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 1243,
+                "elapsedMs": 113.218959,
+                "freshnessVerificationCount": 1,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 2,
+                "responseSHA256": "5d9de1f42dfa0a4eaba5d1978798e2b9099021d8e371e1f881aed71875d42072",
+                "stdinRequestBytes": 127,
+                "stdoutBytes": 1289
+              },
+              "iteration": 7,
+              "order": [
+                "CURRENT",
+                "SESSION"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 1243,
+                "elapsedMs": 216.006375,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 2,
+                "processCount": 2,
+                "responseCount": 2,
+                "responseSHA256": "5d9de1f42dfa0a4eaba5d1978798e2b9099021d8e371e1f881aed71875d42072",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 1289
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 1243,
+                "elapsedMs": 114.543375,
+                "freshnessVerificationCount": 1,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 2,
+                "responseSHA256": "5d9de1f42dfa0a4eaba5d1978798e2b9099021d8e371e1f881aed71875d42072",
+                "stdinRequestBytes": 127,
+                "stdoutBytes": 1289
+              },
+              "iteration": 8,
+              "order": [
+                "SESSION",
+                "CURRENT"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 1243,
+                "elapsedMs": 304.844292,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 2,
+                "processCount": 2,
+                "responseCount": 2,
+                "responseSHA256": "5d9de1f42dfa0a4eaba5d1978798e2b9099021d8e371e1f881aed71875d42072",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 1289
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 1243,
+                "elapsedMs": 114.227625,
+                "freshnessVerificationCount": 1,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 2,
+                "responseSHA256": "5d9de1f42dfa0a4eaba5d1978798e2b9099021d8e371e1f881aed71875d42072",
+                "stdinRequestBytes": 127,
+                "stdoutBytes": 1289
+              },
+              "iteration": 9,
+              "order": [
+                "CURRENT",
+                "SESSION"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 1243,
+                "elapsedMs": 213.199833,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 2,
+                "processCount": 2,
+                "responseCount": 2,
+                "responseSHA256": "5d9de1f42dfa0a4eaba5d1978798e2b9099021d8e371e1f881aed71875d42072",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 1289
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 1243,
+                "elapsedMs": 112.696958,
+                "freshnessVerificationCount": 1,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 2,
+                "responseSHA256": "5d9de1f42dfa0a4eaba5d1978798e2b9099021d8e371e1f881aed71875d42072",
+                "stdinRequestBytes": 127,
+                "stdoutBytes": 1289
+              },
+              "iteration": 10,
+              "order": [
+                "SESSION",
+                "CURRENT"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            }
+          ],
+          "sessionCurrentMedianRatio": 0.5291055223403034,
+          "summary": {
+            "CURRENT": {
+              "maxMs": 304.844292,
+              "medianMs": 213.165458,
+              "minMs": 212.612584
+            },
+            "SESSION": {
+              "maxMs": 114.543375,
+              "medianMs": 112.787021,
+              "minMs": 110.655416
+            }
+          }
+        },
+        "T2": {
+          "acceptancePassed": true,
+          "pairs": [
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2776,
+                "elapsedMs": 434.48075,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "cdfff59b54482bf451691e81c8136886e0de62831eb95ecdf647f48bb4cc90b6",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2868
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2776,
+                "elapsedMs": 127.333083,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "cdfff59b54482bf451691e81c8136886e0de62831eb95ecdf647f48bb4cc90b6",
+                "stdinRequestBytes": 397,
+                "stdoutBytes": 2868
+              },
+              "iteration": 1,
+              "order": [
+                "CURRENT",
+                "SESSION"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2776,
+                "elapsedMs": 431.964708,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "cdfff59b54482bf451691e81c8136886e0de62831eb95ecdf647f48bb4cc90b6",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2868
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2776,
+                "elapsedMs": 127.695542,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "cdfff59b54482bf451691e81c8136886e0de62831eb95ecdf647f48bb4cc90b6",
+                "stdinRequestBytes": 397,
+                "stdoutBytes": 2868
+              },
+              "iteration": 2,
+              "order": [
+                "SESSION",
+                "CURRENT"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2776,
+                "elapsedMs": 431.751834,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "cdfff59b54482bf451691e81c8136886e0de62831eb95ecdf647f48bb4cc90b6",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2868
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2776,
+                "elapsedMs": 126.884625,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "cdfff59b54482bf451691e81c8136886e0de62831eb95ecdf647f48bb4cc90b6",
+                "stdinRequestBytes": 397,
+                "stdoutBytes": 2868
+              },
+              "iteration": 3,
+              "order": [
+                "CURRENT",
+                "SESSION"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2776,
+                "elapsedMs": 429.133292,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "cdfff59b54482bf451691e81c8136886e0de62831eb95ecdf647f48bb4cc90b6",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2868
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2776,
+                "elapsedMs": 128.387917,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "cdfff59b54482bf451691e81c8136886e0de62831eb95ecdf647f48bb4cc90b6",
+                "stdinRequestBytes": 397,
+                "stdoutBytes": 2868
+              },
+              "iteration": 4,
+              "order": [
+                "SESSION",
+                "CURRENT"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2776,
+                "elapsedMs": 436.730959,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "cdfff59b54482bf451691e81c8136886e0de62831eb95ecdf647f48bb4cc90b6",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2868
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2776,
+                "elapsedMs": 126.824792,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "cdfff59b54482bf451691e81c8136886e0de62831eb95ecdf647f48bb4cc90b6",
+                "stdinRequestBytes": 397,
+                "stdoutBytes": 2868
+              },
+              "iteration": 5,
+              "order": [
+                "CURRENT",
+                "SESSION"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2776,
+                "elapsedMs": 429.821083,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "cdfff59b54482bf451691e81c8136886e0de62831eb95ecdf647f48bb4cc90b6",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2868
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2776,
+                "elapsedMs": 129.451084,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "cdfff59b54482bf451691e81c8136886e0de62831eb95ecdf647f48bb4cc90b6",
+                "stdinRequestBytes": 397,
+                "stdoutBytes": 2868
+              },
+              "iteration": 6,
+              "order": [
+                "SESSION",
+                "CURRENT"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2776,
+                "elapsedMs": 431.640542,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "cdfff59b54482bf451691e81c8136886e0de62831eb95ecdf647f48bb4cc90b6",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2868
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2776,
+                "elapsedMs": 126.602416,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "cdfff59b54482bf451691e81c8136886e0de62831eb95ecdf647f48bb4cc90b6",
+                "stdinRequestBytes": 397,
+                "stdoutBytes": 2868
+              },
+              "iteration": 7,
+              "order": [
+                "CURRENT",
+                "SESSION"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2776,
+                "elapsedMs": 433.002584,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "cdfff59b54482bf451691e81c8136886e0de62831eb95ecdf647f48bb4cc90b6",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2868
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2776,
+                "elapsedMs": 128.469542,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "cdfff59b54482bf451691e81c8136886e0de62831eb95ecdf647f48bb4cc90b6",
+                "stdinRequestBytes": 397,
+                "stdoutBytes": 2868
+              },
+              "iteration": 8,
+              "order": [
+                "SESSION",
+                "CURRENT"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2776,
+                "elapsedMs": 431.49025,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "cdfff59b54482bf451691e81c8136886e0de62831eb95ecdf647f48bb4cc90b6",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2868
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2776,
+                "elapsedMs": 128.929875,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "cdfff59b54482bf451691e81c8136886e0de62831eb95ecdf647f48bb4cc90b6",
+                "stdinRequestBytes": 397,
+                "stdoutBytes": 2868
+              },
+              "iteration": 9,
+              "order": [
+                "CURRENT",
+                "SESSION"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2776,
+                "elapsedMs": 429.749125,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "cdfff59b54482bf451691e81c8136886e0de62831eb95ecdf647f48bb4cc90b6",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2868
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2776,
+                "elapsedMs": 127.130958,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "cdfff59b54482bf451691e81c8136886e0de62831eb95ecdf647f48bb4cc90b6",
+                "stdinRequestBytes": 397,
+                "stdoutBytes": 2868
+              },
+              "iteration": 10,
+              "order": [
+                "SESSION",
+                "CURRENT"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            }
+          ],
+          "sessionCurrentMedianRatio": 0.29537975095578095,
+          "summary": {
+            "CURRENT": {
+              "maxMs": 436.730959,
+              "medianMs": 431.696188,
+              "minMs": 429.133292
+            },
+            "SESSION": {
+              "maxMs": 129.451084,
+              "medianMs": 127.5143125,
+              "minMs": 126.602416
+            }
+          }
+        },
+        "T3": {
+          "acceptancePassed": true,
+          "pairs": [
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2299,
+                "elapsedMs": 471.288792,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "2486438ee7879e1c02cf15affc93dd7ec40b61bdd01c22492a227f862542d501",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2391
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2299,
+                "elapsedMs": 130.95125,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "2486438ee7879e1c02cf15affc93dd7ec40b61bdd01c22492a227f862542d501",
+                "stdinRequestBytes": 387,
+                "stdoutBytes": 2391
+              },
+              "iteration": 1,
+              "order": [
+                "CURRENT",
+                "SESSION"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2299,
+                "elapsedMs": 431.048667,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "2486438ee7879e1c02cf15affc93dd7ec40b61bdd01c22492a227f862542d501",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2391
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2299,
+                "elapsedMs": 127.734958,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "2486438ee7879e1c02cf15affc93dd7ec40b61bdd01c22492a227f862542d501",
+                "stdinRequestBytes": 387,
+                "stdoutBytes": 2391
+              },
+              "iteration": 2,
+              "order": [
+                "SESSION",
+                "CURRENT"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2299,
+                "elapsedMs": 431.662041,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "2486438ee7879e1c02cf15affc93dd7ec40b61bdd01c22492a227f862542d501",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2391
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2299,
+                "elapsedMs": 126.015792,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "2486438ee7879e1c02cf15affc93dd7ec40b61bdd01c22492a227f862542d501",
+                "stdinRequestBytes": 387,
+                "stdoutBytes": 2391
+              },
+              "iteration": 3,
+              "order": [
+                "CURRENT",
+                "SESSION"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2299,
+                "elapsedMs": 433.763083,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "2486438ee7879e1c02cf15affc93dd7ec40b61bdd01c22492a227f862542d501",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2391
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2299,
+                "elapsedMs": 124.975375,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "2486438ee7879e1c02cf15affc93dd7ec40b61bdd01c22492a227f862542d501",
+                "stdinRequestBytes": 387,
+                "stdoutBytes": 2391
+              },
+              "iteration": 4,
+              "order": [
+                "SESSION",
+                "CURRENT"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2299,
+                "elapsedMs": 427.377667,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "2486438ee7879e1c02cf15affc93dd7ec40b61bdd01c22492a227f862542d501",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2391
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2299,
+                "elapsedMs": 124.093125,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "2486438ee7879e1c02cf15affc93dd7ec40b61bdd01c22492a227f862542d501",
+                "stdinRequestBytes": 387,
+                "stdoutBytes": 2391
+              },
+              "iteration": 5,
+              "order": [
+                "CURRENT",
+                "SESSION"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2299,
+                "elapsedMs": 429.944333,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "2486438ee7879e1c02cf15affc93dd7ec40b61bdd01c22492a227f862542d501",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2391
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2299,
+                "elapsedMs": 127.466708,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "2486438ee7879e1c02cf15affc93dd7ec40b61bdd01c22492a227f862542d501",
+                "stdinRequestBytes": 387,
+                "stdoutBytes": 2391
+              },
+              "iteration": 6,
+              "order": [
+                "SESSION",
+                "CURRENT"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2299,
+                "elapsedMs": 429.317833,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "2486438ee7879e1c02cf15affc93dd7ec40b61bdd01c22492a227f862542d501",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2391
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2299,
+                "elapsedMs": 125.906167,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "2486438ee7879e1c02cf15affc93dd7ec40b61bdd01c22492a227f862542d501",
+                "stdinRequestBytes": 387,
+                "stdoutBytes": 2391
+              },
+              "iteration": 7,
+              "order": [
+                "CURRENT",
+                "SESSION"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2299,
+                "elapsedMs": 432.463625,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "2486438ee7879e1c02cf15affc93dd7ec40b61bdd01c22492a227f862542d501",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2391
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2299,
+                "elapsedMs": 125.4255,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "2486438ee7879e1c02cf15affc93dd7ec40b61bdd01c22492a227f862542d501",
+                "stdinRequestBytes": 387,
+                "stdoutBytes": 2391
+              },
+              "iteration": 8,
+              "order": [
+                "SESSION",
+                "CURRENT"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2299,
+                "elapsedMs": 428.558833,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "2486438ee7879e1c02cf15affc93dd7ec40b61bdd01c22492a227f862542d501",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2391
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2299,
+                "elapsedMs": 125.964084,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "2486438ee7879e1c02cf15affc93dd7ec40b61bdd01c22492a227f862542d501",
+                "stdinRequestBytes": 387,
+                "stdoutBytes": 2391
+              },
+              "iteration": 9,
+              "order": [
+                "CURRENT",
+                "SESSION"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2299,
+                "elapsedMs": 432.202333,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "2486438ee7879e1c02cf15affc93dd7ec40b61bdd01c22492a227f862542d501",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2391
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2299,
+                "elapsedMs": 127.163917,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "2486438ee7879e1c02cf15affc93dd7ec40b61bdd01c22492a227f862542d501",
+                "stdinRequestBytes": 387,
+                "stdoutBytes": 2391
+              },
+              "iteration": 10,
+              "order": [
+                "SESSION",
+                "CURRENT"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            }
+          ],
+          "sessionCurrentMedianRatio": 0.2920792261685941,
+          "summary": {
+            "CURRENT": {
+              "maxMs": 471.288792,
+              "medianMs": 431.35535400000003,
+              "minMs": 427.377667
+            },
+            "SESSION": {
+              "maxMs": 130.95125,
+              "medianMs": 125.989938,
+              "minMs": 124.093125
+            }
+          }
+        }
+      }
+    },
+    "L": {
+      "fixture": {
+        "canonicalBytes": 2832248,
+        "canonicalPathCount": 12,
+        "componentCount": 2,
+        "largestShardBytes": 2827948,
+        "layerCount": 10002,
+        "medianShardBytes": 274.5,
+        "screenCount": 1
+      },
+      "ids": {
+        "componentID": "component_2a484db0-5cfe-49c7-8507-4b6f4e6179ec",
+        "parentLayerID": "layer_4bf75164-4280-49e3-a764-240a93cba3f1",
+        "scopeID": "scope_aad9f327-c771-48bb-8330-81c696365e51",
+        "screenID": "screen_38aa9baf-2a70-493b-890d-e334d92d65df",
+        "textLayerID": "layer_3cc82881-d29a-4cae-b06b-756eb6c9d173",
+        "tokenID": "token_fb29f755-bd2d-4770-878f-fe32a7d44b63"
+      },
+      "tasks": {
+        "T1": {
+          "acceptancePassed": null,
+          "pairs": [
+            {
+              "CURRENT": {
+                "contextOutputBytes": 1241,
+                "elapsedMs": 190.9815,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 2,
+                "processCount": 2,
+                "responseCount": 2,
+                "responseSHA256": "50467fb0ac5f8cf9620de9881ba7cf77022f2c2c06562299b557e70a5da9f964",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 1287
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 1241,
+                "elapsedMs": 95.573042,
+                "freshnessVerificationCount": 1,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 2,
+                "responseSHA256": "50467fb0ac5f8cf9620de9881ba7cf77022f2c2c06562299b557e70a5da9f964",
+                "stdinRequestBytes": 127,
+                "stdoutBytes": 1287
+              },
+              "iteration": 1,
+              "order": [
+                "CURRENT",
+                "SESSION"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 1241,
+                "elapsedMs": 187.739167,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 2,
+                "processCount": 2,
+                "responseCount": 2,
+                "responseSHA256": "50467fb0ac5f8cf9620de9881ba7cf77022f2c2c06562299b557e70a5da9f964",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 1287
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 1241,
+                "elapsedMs": 96.295208,
+                "freshnessVerificationCount": 1,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 2,
+                "responseSHA256": "50467fb0ac5f8cf9620de9881ba7cf77022f2c2c06562299b557e70a5da9f964",
+                "stdinRequestBytes": 127,
+                "stdoutBytes": 1287
+              },
+              "iteration": 2,
+              "order": [
+                "SESSION",
+                "CURRENT"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 1241,
+                "elapsedMs": 189.908333,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 2,
+                "processCount": 2,
+                "responseCount": 2,
+                "responseSHA256": "50467fb0ac5f8cf9620de9881ba7cf77022f2c2c06562299b557e70a5da9f964",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 1287
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 1241,
+                "elapsedMs": 96.39525,
+                "freshnessVerificationCount": 1,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 2,
+                "responseSHA256": "50467fb0ac5f8cf9620de9881ba7cf77022f2c2c06562299b557e70a5da9f964",
+                "stdinRequestBytes": 127,
+                "stdoutBytes": 1287
+              },
+              "iteration": 3,
+              "order": [
+                "CURRENT",
+                "SESSION"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 1241,
+                "elapsedMs": 188.126166,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 2,
+                "processCount": 2,
+                "responseCount": 2,
+                "responseSHA256": "50467fb0ac5f8cf9620de9881ba7cf77022f2c2c06562299b557e70a5da9f964",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 1287
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 1241,
+                "elapsedMs": 94.916583,
+                "freshnessVerificationCount": 1,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 2,
+                "responseSHA256": "50467fb0ac5f8cf9620de9881ba7cf77022f2c2c06562299b557e70a5da9f964",
+                "stdinRequestBytes": 127,
+                "stdoutBytes": 1287
+              },
+              "iteration": 4,
+              "order": [
+                "SESSION",
+                "CURRENT"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 1241,
+                "elapsedMs": 188.922833,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 2,
+                "processCount": 2,
+                "responseCount": 2,
+                "responseSHA256": "50467fb0ac5f8cf9620de9881ba7cf77022f2c2c06562299b557e70a5da9f964",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 1287
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 1241,
+                "elapsedMs": 94.335458,
+                "freshnessVerificationCount": 1,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 2,
+                "responseSHA256": "50467fb0ac5f8cf9620de9881ba7cf77022f2c2c06562299b557e70a5da9f964",
+                "stdinRequestBytes": 127,
+                "stdoutBytes": 1287
+              },
+              "iteration": 5,
+              "order": [
+                "CURRENT",
+                "SESSION"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 1241,
+                "elapsedMs": 189.526291,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 2,
+                "processCount": 2,
+                "responseCount": 2,
+                "responseSHA256": "50467fb0ac5f8cf9620de9881ba7cf77022f2c2c06562299b557e70a5da9f964",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 1287
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 1241,
+                "elapsedMs": 95.422375,
+                "freshnessVerificationCount": 1,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 2,
+                "responseSHA256": "50467fb0ac5f8cf9620de9881ba7cf77022f2c2c06562299b557e70a5da9f964",
+                "stdinRequestBytes": 127,
+                "stdoutBytes": 1287
+              },
+              "iteration": 6,
+              "order": [
+                "SESSION",
+                "CURRENT"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 1241,
+                "elapsedMs": 186.076375,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 2,
+                "processCount": 2,
+                "responseCount": 2,
+                "responseSHA256": "50467fb0ac5f8cf9620de9881ba7cf77022f2c2c06562299b557e70a5da9f964",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 1287
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 1241,
+                "elapsedMs": 95.163917,
+                "freshnessVerificationCount": 1,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 2,
+                "responseSHA256": "50467fb0ac5f8cf9620de9881ba7cf77022f2c2c06562299b557e70a5da9f964",
+                "stdinRequestBytes": 127,
+                "stdoutBytes": 1287
+              },
+              "iteration": 7,
+              "order": [
+                "CURRENT",
+                "SESSION"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 1241,
+                "elapsedMs": 188.1585,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 2,
+                "processCount": 2,
+                "responseCount": 2,
+                "responseSHA256": "50467fb0ac5f8cf9620de9881ba7cf77022f2c2c06562299b557e70a5da9f964",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 1287
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 1241,
+                "elapsedMs": 99.066542,
+                "freshnessVerificationCount": 1,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 2,
+                "responseSHA256": "50467fb0ac5f8cf9620de9881ba7cf77022f2c2c06562299b557e70a5da9f964",
+                "stdinRequestBytes": 127,
+                "stdoutBytes": 1287
+              },
+              "iteration": 8,
+              "order": [
+                "SESSION",
+                "CURRENT"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 1241,
+                "elapsedMs": 191.041917,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 2,
+                "processCount": 2,
+                "responseCount": 2,
+                "responseSHA256": "50467fb0ac5f8cf9620de9881ba7cf77022f2c2c06562299b557e70a5da9f964",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 1287
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 1241,
+                "elapsedMs": 97.531791,
+                "freshnessVerificationCount": 1,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 2,
+                "responseSHA256": "50467fb0ac5f8cf9620de9881ba7cf77022f2c2c06562299b557e70a5da9f964",
+                "stdinRequestBytes": 127,
+                "stdoutBytes": 1287
+              },
+              "iteration": 9,
+              "order": [
+                "CURRENT",
+                "SESSION"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 1241,
+                "elapsedMs": 191.130583,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 2,
+                "processCount": 2,
+                "responseCount": 2,
+                "responseSHA256": "50467fb0ac5f8cf9620de9881ba7cf77022f2c2c06562299b557e70a5da9f964",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 1287
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 1241,
+                "elapsedMs": 93.783375,
+                "freshnessVerificationCount": 1,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 2,
+                "responseSHA256": "50467fb0ac5f8cf9620de9881ba7cf77022f2c2c06562299b557e70a5da9f964",
+                "stdinRequestBytes": 127,
+                "stdoutBytes": 1287
+              },
+              "iteration": 10,
+              "order": [
+                "SESSION",
+                "CURRENT"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            }
+          ],
+          "sessionCurrentMedianRatio": 0.5046792419051814,
+          "summary": {
+            "CURRENT": {
+              "maxMs": 191.130583,
+              "medianMs": 189.224562,
+              "minMs": 186.076375
+            },
+            "SESSION": {
+              "maxMs": 99.066542,
+              "medianMs": 95.4977085,
+              "minMs": 93.783375
+            }
+          }
+        },
+        "T2": {
+          "acceptancePassed": true,
+          "pairs": [
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2777,
+                "elapsedMs": 381.528041,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "03bf0734fe9f449dbec6982aa993c313fb2733147977023842751e44de46e72d",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2869
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2777,
+                "elapsedMs": 101.498125,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "03bf0734fe9f449dbec6982aa993c313fb2733147977023842751e44de46e72d",
+                "stdinRequestBytes": 397,
+                "stdoutBytes": 2869
+              },
+              "iteration": 1,
+              "order": [
+                "CURRENT",
+                "SESSION"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2777,
+                "elapsedMs": 382.472916,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "03bf0734fe9f449dbec6982aa993c313fb2733147977023842751e44de46e72d",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2869
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2777,
+                "elapsedMs": 101.069583,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "03bf0734fe9f449dbec6982aa993c313fb2733147977023842751e44de46e72d",
+                "stdinRequestBytes": 397,
+                "stdoutBytes": 2869
+              },
+              "iteration": 2,
+              "order": [
+                "SESSION",
+                "CURRENT"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2777,
+                "elapsedMs": 383.330541,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "03bf0734fe9f449dbec6982aa993c313fb2733147977023842751e44de46e72d",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2869
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2777,
+                "elapsedMs": 100.473542,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "03bf0734fe9f449dbec6982aa993c313fb2733147977023842751e44de46e72d",
+                "stdinRequestBytes": 397,
+                "stdoutBytes": 2869
+              },
+              "iteration": 3,
+              "order": [
+                "CURRENT",
+                "SESSION"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2777,
+                "elapsedMs": 381.25075,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "03bf0734fe9f449dbec6982aa993c313fb2733147977023842751e44de46e72d",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2869
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2777,
+                "elapsedMs": 101.564167,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "03bf0734fe9f449dbec6982aa993c313fb2733147977023842751e44de46e72d",
+                "stdinRequestBytes": 397,
+                "stdoutBytes": 2869
+              },
+              "iteration": 4,
+              "order": [
+                "SESSION",
+                "CURRENT"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2777,
+                "elapsedMs": 378.874458,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "03bf0734fe9f449dbec6982aa993c313fb2733147977023842751e44de46e72d",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2869
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2777,
+                "elapsedMs": 100.934833,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "03bf0734fe9f449dbec6982aa993c313fb2733147977023842751e44de46e72d",
+                "stdinRequestBytes": 397,
+                "stdoutBytes": 2869
+              },
+              "iteration": 5,
+              "order": [
+                "CURRENT",
+                "SESSION"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2777,
+                "elapsedMs": 382.839458,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "03bf0734fe9f449dbec6982aa993c313fb2733147977023842751e44de46e72d",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2869
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2777,
+                "elapsedMs": 100.741208,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "03bf0734fe9f449dbec6982aa993c313fb2733147977023842751e44de46e72d",
+                "stdinRequestBytes": 397,
+                "stdoutBytes": 2869
+              },
+              "iteration": 6,
+              "order": [
+                "SESSION",
+                "CURRENT"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2777,
+                "elapsedMs": 377.580958,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "03bf0734fe9f449dbec6982aa993c313fb2733147977023842751e44de46e72d",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2869
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2777,
+                "elapsedMs": 101.924583,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "03bf0734fe9f449dbec6982aa993c313fb2733147977023842751e44de46e72d",
+                "stdinRequestBytes": 397,
+                "stdoutBytes": 2869
+              },
+              "iteration": 7,
+              "order": [
+                "CURRENT",
+                "SESSION"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2777,
+                "elapsedMs": 385.560583,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "03bf0734fe9f449dbec6982aa993c313fb2733147977023842751e44de46e72d",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2869
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2777,
+                "elapsedMs": 100.8295,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "03bf0734fe9f449dbec6982aa993c313fb2733147977023842751e44de46e72d",
+                "stdinRequestBytes": 397,
+                "stdoutBytes": 2869
+              },
+              "iteration": 8,
+              "order": [
+                "SESSION",
+                "CURRENT"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2777,
+                "elapsedMs": 376.5275,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "03bf0734fe9f449dbec6982aa993c313fb2733147977023842751e44de46e72d",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2869
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2777,
+                "elapsedMs": 99.540542,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "03bf0734fe9f449dbec6982aa993c313fb2733147977023842751e44de46e72d",
+                "stdinRequestBytes": 397,
+                "stdoutBytes": 2869
+              },
+              "iteration": 9,
+              "order": [
+                "CURRENT",
+                "SESSION"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2777,
+                "elapsedMs": 382.501583,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "03bf0734fe9f449dbec6982aa993c313fb2733147977023842751e44de46e72d",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2869
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2777,
+                "elapsedMs": 101.672541,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "03bf0734fe9f449dbec6982aa993c313fb2733147977023842751e44de46e72d",
+                "stdinRequestBytes": 397,
+                "stdoutBytes": 2869
+              },
+              "iteration": 10,
+              "order": [
+                "SESSION",
+                "CURRENT"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            }
+          ],
+          "sessionCurrentMedianRatio": 0.2644033546675256,
+          "summary": {
+            "CURRENT": {
+              "maxMs": 385.560583,
+              "medianMs": 382.0004785,
+              "minMs": 376.5275
+            },
+            "SESSION": {
+              "maxMs": 101.924583,
+              "medianMs": 101.002208,
+              "minMs": 99.540542
+            }
+          }
+        },
+        "T3": {
+          "acceptancePassed": true,
+          "pairs": [
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2300,
+                "elapsedMs": 381.392667,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "bc9f3b59ede0063680a55c57e478838d535f7417490c58ebe5975592e2495254",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2392
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2300,
+                "elapsedMs": 103.1355,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "bc9f3b59ede0063680a55c57e478838d535f7417490c58ebe5975592e2495254",
+                "stdinRequestBytes": 387,
+                "stdoutBytes": 2392
+              },
+              "iteration": 1,
+              "order": [
+                "CURRENT",
+                "SESSION"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2300,
+                "elapsedMs": 378.568416,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "bc9f3b59ede0063680a55c57e478838d535f7417490c58ebe5975592e2495254",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2392
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2300,
+                "elapsedMs": 100.538083,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "bc9f3b59ede0063680a55c57e478838d535f7417490c58ebe5975592e2495254",
+                "stdinRequestBytes": 387,
+                "stdoutBytes": 2392
+              },
+              "iteration": 2,
+              "order": [
+                "SESSION",
+                "CURRENT"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2300,
+                "elapsedMs": 380.01075,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "bc9f3b59ede0063680a55c57e478838d535f7417490c58ebe5975592e2495254",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2392
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2300,
+                "elapsedMs": 103.227708,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "bc9f3b59ede0063680a55c57e478838d535f7417490c58ebe5975592e2495254",
+                "stdinRequestBytes": 387,
+                "stdoutBytes": 2392
+              },
+              "iteration": 3,
+              "order": [
+                "CURRENT",
+                "SESSION"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2300,
+                "elapsedMs": 381.131084,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "bc9f3b59ede0063680a55c57e478838d535f7417490c58ebe5975592e2495254",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2392
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2300,
+                "elapsedMs": 99.593625,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "bc9f3b59ede0063680a55c57e478838d535f7417490c58ebe5975592e2495254",
+                "stdinRequestBytes": 387,
+                "stdoutBytes": 2392
+              },
+              "iteration": 4,
+              "order": [
+                "SESSION",
+                "CURRENT"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2300,
+                "elapsedMs": 382.796083,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "bc9f3b59ede0063680a55c57e478838d535f7417490c58ebe5975592e2495254",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2392
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2300,
+                "elapsedMs": 102.170458,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "bc9f3b59ede0063680a55c57e478838d535f7417490c58ebe5975592e2495254",
+                "stdinRequestBytes": 387,
+                "stdoutBytes": 2392
+              },
+              "iteration": 5,
+              "order": [
+                "CURRENT",
+                "SESSION"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2300,
+                "elapsedMs": 380.200083,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "bc9f3b59ede0063680a55c57e478838d535f7417490c58ebe5975592e2495254",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2392
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2300,
+                "elapsedMs": 101.047416,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "bc9f3b59ede0063680a55c57e478838d535f7417490c58ebe5975592e2495254",
+                "stdinRequestBytes": 387,
+                "stdoutBytes": 2392
+              },
+              "iteration": 6,
+              "order": [
+                "SESSION",
+                "CURRENT"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2300,
+                "elapsedMs": 380.029333,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "bc9f3b59ede0063680a55c57e478838d535f7417490c58ebe5975592e2495254",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2392
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2300,
+                "elapsedMs": 103.620917,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "bc9f3b59ede0063680a55c57e478838d535f7417490c58ebe5975592e2495254",
+                "stdinRequestBytes": 387,
+                "stdoutBytes": 2392
+              },
+              "iteration": 7,
+              "order": [
+                "CURRENT",
+                "SESSION"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2300,
+                "elapsedMs": 381.451208,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "bc9f3b59ede0063680a55c57e478838d535f7417490c58ebe5975592e2495254",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2392
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2300,
+                "elapsedMs": 99.798,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "bc9f3b59ede0063680a55c57e478838d535f7417490c58ebe5975592e2495254",
+                "stdinRequestBytes": 387,
+                "stdoutBytes": 2392
+              },
+              "iteration": 8,
+              "order": [
+                "SESSION",
+                "CURRENT"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2300,
+                "elapsedMs": 381.512708,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "bc9f3b59ede0063680a55c57e478838d535f7417490c58ebe5975592e2495254",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2392
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2300,
+                "elapsedMs": 102.456625,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "bc9f3b59ede0063680a55c57e478838d535f7417490c58ebe5975592e2495254",
+                "stdinRequestBytes": 387,
+                "stdoutBytes": 2392
+              },
+              "iteration": 9,
+              "order": [
+                "CURRENT",
+                "SESSION"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2300,
+                "elapsedMs": 377.388375,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "bc9f3b59ede0063680a55c57e478838d535f7417490c58ebe5975592e2495254",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2392
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2300,
+                "elapsedMs": 102.906542,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "bc9f3b59ede0063680a55c57e478838d535f7417490c58ebe5975592e2495254",
+                "stdinRequestBytes": 387,
+                "stdoutBytes": 2392
+              },
+              "iteration": 10,
+              "order": [
+                "SESSION",
+                "CURRENT"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            }
+          ],
+          "sessionCurrentMedianRatio": 0.26877539219407787,
+          "summary": {
+            "CURRENT": {
+              "maxMs": 382.796083,
+              "medianMs": 380.6655835,
+              "minMs": 377.388375
+            },
+            "SESSION": {
+              "maxMs": 103.620917,
+              "medianMs": 102.3135415,
+              "minMs": 99.593625
+            }
+          }
+        }
+      }
+    },
+    "S": {
+      "fixture": {
+        "canonicalBytes": 2887615,
+        "canonicalPathCount": 111,
+        "componentCount": 2,
+        "largestShardBytes": 30036,
+        "layerCount": 10002,
+        "medianShardBytes": 28821,
+        "screenCount": 100
+      },
+      "ids": {
+        "componentID": "component_2a484db0-5cfe-49c7-8507-4b6f4e6179ec",
+        "parentLayerID": "layer_4bf75164-4280-49e3-a764-240a93cba3f1",
+        "scopeID": "scope_aad9f327-c771-48bb-8330-81c696365e51",
+        "screenID": "screen_38aa9baf-2a70-493b-890d-e334d92d65df",
+        "textLayerID": "layer_3cc82881-d29a-4cae-b06b-756eb6c9d173",
+        "tokenID": "token_fb29f755-bd2d-4770-878f-fe32a7d44b63"
+      },
+      "tasks": {
+        "T1": {
+          "acceptancePassed": null,
+          "pairs": [
+            {
+              "CURRENT": {
+                "contextOutputBytes": 1243,
+                "elapsedMs": 210.156125,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 2,
+                "processCount": 2,
+                "responseCount": 2,
+                "responseSHA256": "03c829faea2d74820ccb8e5556a25d73d040761b4a473ee03efd8c5bb0d2495d",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 1289
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 1243,
+                "elapsedMs": 112.318625,
+                "freshnessVerificationCount": 1,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 2,
+                "responseSHA256": "03c829faea2d74820ccb8e5556a25d73d040761b4a473ee03efd8c5bb0d2495d",
+                "stdinRequestBytes": 127,
+                "stdoutBytes": 1289
+              },
+              "iteration": 1,
+              "order": [
+                "CURRENT",
+                "SESSION"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 1243,
+                "elapsedMs": 210.4145,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 2,
+                "processCount": 2,
+                "responseCount": 2,
+                "responseSHA256": "03c829faea2d74820ccb8e5556a25d73d040761b4a473ee03efd8c5bb0d2495d",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 1289
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 1243,
+                "elapsedMs": 109.972208,
+                "freshnessVerificationCount": 1,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 2,
+                "responseSHA256": "03c829faea2d74820ccb8e5556a25d73d040761b4a473ee03efd8c5bb0d2495d",
+                "stdinRequestBytes": 127,
+                "stdoutBytes": 1289
+              },
+              "iteration": 2,
+              "order": [
+                "SESSION",
+                "CURRENT"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 1243,
+                "elapsedMs": 214.088625,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 2,
+                "processCount": 2,
+                "responseCount": 2,
+                "responseSHA256": "03c829faea2d74820ccb8e5556a25d73d040761b4a473ee03efd8c5bb0d2495d",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 1289
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 1243,
+                "elapsedMs": 111.282,
+                "freshnessVerificationCount": 1,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 2,
+                "responseSHA256": "03c829faea2d74820ccb8e5556a25d73d040761b4a473ee03efd8c5bb0d2495d",
+                "stdinRequestBytes": 127,
+                "stdoutBytes": 1289
+              },
+              "iteration": 3,
+              "order": [
+                "CURRENT",
+                "SESSION"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 1243,
+                "elapsedMs": 211.020666,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 2,
+                "processCount": 2,
+                "responseCount": 2,
+                "responseSHA256": "03c829faea2d74820ccb8e5556a25d73d040761b4a473ee03efd8c5bb0d2495d",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 1289
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 1243,
+                "elapsedMs": 110.140916,
+                "freshnessVerificationCount": 1,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 2,
+                "responseSHA256": "03c829faea2d74820ccb8e5556a25d73d040761b4a473ee03efd8c5bb0d2495d",
+                "stdinRequestBytes": 127,
+                "stdoutBytes": 1289
+              },
+              "iteration": 4,
+              "order": [
+                "SESSION",
+                "CURRENT"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 1243,
+                "elapsedMs": 212.469417,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 2,
+                "processCount": 2,
+                "responseCount": 2,
+                "responseSHA256": "03c829faea2d74820ccb8e5556a25d73d040761b4a473ee03efd8c5bb0d2495d",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 1289
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 1243,
+                "elapsedMs": 110.267541,
+                "freshnessVerificationCount": 1,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 2,
+                "responseSHA256": "03c829faea2d74820ccb8e5556a25d73d040761b4a473ee03efd8c5bb0d2495d",
+                "stdinRequestBytes": 127,
+                "stdoutBytes": 1289
+              },
+              "iteration": 5,
+              "order": [
+                "CURRENT",
+                "SESSION"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 1243,
+                "elapsedMs": 209.24575,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 2,
+                "processCount": 2,
+                "responseCount": 2,
+                "responseSHA256": "03c829faea2d74820ccb8e5556a25d73d040761b4a473ee03efd8c5bb0d2495d",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 1289
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 1243,
+                "elapsedMs": 113.227459,
+                "freshnessVerificationCount": 1,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 2,
+                "responseSHA256": "03c829faea2d74820ccb8e5556a25d73d040761b4a473ee03efd8c5bb0d2495d",
+                "stdinRequestBytes": 127,
+                "stdoutBytes": 1289
+              },
+              "iteration": 6,
+              "order": [
+                "SESSION",
+                "CURRENT"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 1243,
+                "elapsedMs": 210.853375,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 2,
+                "processCount": 2,
+                "responseCount": 2,
+                "responseSHA256": "03c829faea2d74820ccb8e5556a25d73d040761b4a473ee03efd8c5bb0d2495d",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 1289
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 1243,
+                "elapsedMs": 110.48575,
+                "freshnessVerificationCount": 1,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 2,
+                "responseSHA256": "03c829faea2d74820ccb8e5556a25d73d040761b4a473ee03efd8c5bb0d2495d",
+                "stdinRequestBytes": 127,
+                "stdoutBytes": 1289
+              },
+              "iteration": 7,
+              "order": [
+                "CURRENT",
+                "SESSION"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 1243,
+                "elapsedMs": 211.298291,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 2,
+                "processCount": 2,
+                "responseCount": 2,
+                "responseSHA256": "03c829faea2d74820ccb8e5556a25d73d040761b4a473ee03efd8c5bb0d2495d",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 1289
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 1243,
+                "elapsedMs": 111.994167,
+                "freshnessVerificationCount": 1,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 2,
+                "responseSHA256": "03c829faea2d74820ccb8e5556a25d73d040761b4a473ee03efd8c5bb0d2495d",
+                "stdinRequestBytes": 127,
+                "stdoutBytes": 1289
+              },
+              "iteration": 8,
+              "order": [
+                "SESSION",
+                "CURRENT"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 1243,
+                "elapsedMs": 213.894333,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 2,
+                "processCount": 2,
+                "responseCount": 2,
+                "responseSHA256": "03c829faea2d74820ccb8e5556a25d73d040761b4a473ee03efd8c5bb0d2495d",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 1289
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 1243,
+                "elapsedMs": 111.42275,
+                "freshnessVerificationCount": 1,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 2,
+                "responseSHA256": "03c829faea2d74820ccb8e5556a25d73d040761b4a473ee03efd8c5bb0d2495d",
+                "stdinRequestBytes": 127,
+                "stdoutBytes": 1289
+              },
+              "iteration": 9,
+              "order": [
+                "CURRENT",
+                "SESSION"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 1243,
+                "elapsedMs": 209.69375,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 2,
+                "processCount": 2,
+                "responseCount": 2,
+                "responseSHA256": "03c829faea2d74820ccb8e5556a25d73d040761b4a473ee03efd8c5bb0d2495d",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 1289
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 1243,
+                "elapsedMs": 110.336917,
+                "freshnessVerificationCount": 1,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 2,
+                "responseSHA256": "03c829faea2d74820ccb8e5556a25d73d040761b4a473ee03efd8c5bb0d2495d",
+                "stdinRequestBytes": 127,
+                "stdoutBytes": 1289
+              },
+              "iteration": 10,
+              "order": [
+                "SESSION",
+                "CURRENT"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            }
+          ],
+          "sessionCurrentMedianRatio": 0.5256728986555491,
+          "summary": {
+            "CURRENT": {
+              "maxMs": 214.088625,
+              "medianMs": 210.93702050000002,
+              "minMs": 209.24575
+            },
+            "SESSION": {
+              "maxMs": 113.227459,
+              "medianMs": 110.88387499999999,
+              "minMs": 109.972208
+            }
+          }
+        },
+        "T2": {
+          "acceptancePassed": true,
+          "pairs": [
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2777,
+                "elapsedMs": 424.733542,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "19e5d8eb3775de170ce7950b9e422b7be014b6a79be7cc53560bb87c785fb20a",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2869
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2777,
+                "elapsedMs": 124.807208,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "19e5d8eb3775de170ce7950b9e422b7be014b6a79be7cc53560bb87c785fb20a",
+                "stdinRequestBytes": 397,
+                "stdoutBytes": 2869
+              },
+              "iteration": 1,
+              "order": [
+                "CURRENT",
+                "SESSION"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2777,
+                "elapsedMs": 428.062875,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "19e5d8eb3775de170ce7950b9e422b7be014b6a79be7cc53560bb87c785fb20a",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2869
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2777,
+                "elapsedMs": 124.375084,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "19e5d8eb3775de170ce7950b9e422b7be014b6a79be7cc53560bb87c785fb20a",
+                "stdinRequestBytes": 397,
+                "stdoutBytes": 2869
+              },
+              "iteration": 2,
+              "order": [
+                "SESSION",
+                "CURRENT"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2777,
+                "elapsedMs": 425.6755,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "19e5d8eb3775de170ce7950b9e422b7be014b6a79be7cc53560bb87c785fb20a",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2869
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2777,
+                "elapsedMs": 121.953542,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "19e5d8eb3775de170ce7950b9e422b7be014b6a79be7cc53560bb87c785fb20a",
+                "stdinRequestBytes": 397,
+                "stdoutBytes": 2869
+              },
+              "iteration": 3,
+              "order": [
+                "CURRENT",
+                "SESSION"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2777,
+                "elapsedMs": 426.043792,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "19e5d8eb3775de170ce7950b9e422b7be014b6a79be7cc53560bb87c785fb20a",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2869
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2777,
+                "elapsedMs": 123.511958,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "19e5d8eb3775de170ce7950b9e422b7be014b6a79be7cc53560bb87c785fb20a",
+                "stdinRequestBytes": 397,
+                "stdoutBytes": 2869
+              },
+              "iteration": 4,
+              "order": [
+                "SESSION",
+                "CURRENT"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2777,
+                "elapsedMs": 425.116084,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "19e5d8eb3775de170ce7950b9e422b7be014b6a79be7cc53560bb87c785fb20a",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2869
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2777,
+                "elapsedMs": 124.4775,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "19e5d8eb3775de170ce7950b9e422b7be014b6a79be7cc53560bb87c785fb20a",
+                "stdinRequestBytes": 397,
+                "stdoutBytes": 2869
+              },
+              "iteration": 5,
+              "order": [
+                "CURRENT",
+                "SESSION"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2777,
+                "elapsedMs": 425.704583,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "19e5d8eb3775de170ce7950b9e422b7be014b6a79be7cc53560bb87c785fb20a",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2869
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2777,
+                "elapsedMs": 127.004875,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "19e5d8eb3775de170ce7950b9e422b7be014b6a79be7cc53560bb87c785fb20a",
+                "stdinRequestBytes": 397,
+                "stdoutBytes": 2869
+              },
+              "iteration": 6,
+              "order": [
+                "SESSION",
+                "CURRENT"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2777,
+                "elapsedMs": 426.345792,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "19e5d8eb3775de170ce7950b9e422b7be014b6a79be7cc53560bb87c785fb20a",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2869
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2777,
+                "elapsedMs": 127.372583,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "19e5d8eb3775de170ce7950b9e422b7be014b6a79be7cc53560bb87c785fb20a",
+                "stdinRequestBytes": 397,
+                "stdoutBytes": 2869
+              },
+              "iteration": 7,
+              "order": [
+                "CURRENT",
+                "SESSION"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2777,
+                "elapsedMs": 426.208,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "19e5d8eb3775de170ce7950b9e422b7be014b6a79be7cc53560bb87c785fb20a",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2869
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2777,
+                "elapsedMs": 123.55025,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "19e5d8eb3775de170ce7950b9e422b7be014b6a79be7cc53560bb87c785fb20a",
+                "stdinRequestBytes": 397,
+                "stdoutBytes": 2869
+              },
+              "iteration": 8,
+              "order": [
+                "SESSION",
+                "CURRENT"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2777,
+                "elapsedMs": 425.977541,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "19e5d8eb3775de170ce7950b9e422b7be014b6a79be7cc53560bb87c785fb20a",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2869
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2777,
+                "elapsedMs": 125.862208,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "19e5d8eb3775de170ce7950b9e422b7be014b6a79be7cc53560bb87c785fb20a",
+                "stdinRequestBytes": 397,
+                "stdoutBytes": 2869
+              },
+              "iteration": 9,
+              "order": [
+                "CURRENT",
+                "SESSION"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2777,
+                "elapsedMs": 424.211958,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "19e5d8eb3775de170ce7950b9e422b7be014b6a79be7cc53560bb87c785fb20a",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2869
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2777,
+                "elapsedMs": 126.052959,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "19e5d8eb3775de170ce7950b9e422b7be014b6a79be7cc53560bb87c785fb20a",
+                "stdinRequestBytes": 397,
+                "stdoutBytes": 2869
+              },
+              "iteration": 10,
+              "order": [
+                "SESSION",
+                "CURRENT"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            }
+          ],
+          "sessionCurrentMedianRatio": 0.2926968888688335,
+          "summary": {
+            "CURRENT": {
+              "maxMs": 428.062875,
+              "medianMs": 425.84106199999997,
+              "minMs": 424.211958
+            },
+            "SESSION": {
+              "maxMs": 127.372583,
+              "medianMs": 124.64235400000001,
+              "minMs": 121.953542
+            }
+          }
+        },
+        "T3": {
+          "acceptancePassed": true,
+          "pairs": [
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2300,
+                "elapsedMs": 423.092458,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "34e10a1a8172e1f675a7693c794b9b62845adc6cabb6966d9858a5bc5fc502ec",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2392
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2300,
+                "elapsedMs": 122.817166,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "34e10a1a8172e1f675a7693c794b9b62845adc6cabb6966d9858a5bc5fc502ec",
+                "stdinRequestBytes": 387,
+                "stdoutBytes": 2392
+              },
+              "iteration": 1,
+              "order": [
+                "CURRENT",
+                "SESSION"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2300,
+                "elapsedMs": 428.37675,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "34e10a1a8172e1f675a7693c794b9b62845adc6cabb6966d9858a5bc5fc502ec",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2392
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2300,
+                "elapsedMs": 124.234583,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "34e10a1a8172e1f675a7693c794b9b62845adc6cabb6966d9858a5bc5fc502ec",
+                "stdinRequestBytes": 387,
+                "stdoutBytes": 2392
+              },
+              "iteration": 2,
+              "order": [
+                "SESSION",
+                "CURRENT"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2300,
+                "elapsedMs": 426.555125,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "34e10a1a8172e1f675a7693c794b9b62845adc6cabb6966d9858a5bc5fc502ec",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2392
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2300,
+                "elapsedMs": 123.423583,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "34e10a1a8172e1f675a7693c794b9b62845adc6cabb6966d9858a5bc5fc502ec",
+                "stdinRequestBytes": 387,
+                "stdoutBytes": 2392
+              },
+              "iteration": 3,
+              "order": [
+                "CURRENT",
+                "SESSION"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2300,
+                "elapsedMs": 426.048958,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "34e10a1a8172e1f675a7693c794b9b62845adc6cabb6966d9858a5bc5fc502ec",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2392
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2300,
+                "elapsedMs": 127.278916,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "34e10a1a8172e1f675a7693c794b9b62845adc6cabb6966d9858a5bc5fc502ec",
+                "stdinRequestBytes": 387,
+                "stdoutBytes": 2392
+              },
+              "iteration": 4,
+              "order": [
+                "SESSION",
+                "CURRENT"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2300,
+                "elapsedMs": 427.31575,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "34e10a1a8172e1f675a7693c794b9b62845adc6cabb6966d9858a5bc5fc502ec",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2392
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2300,
+                "elapsedMs": 125.877667,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "34e10a1a8172e1f675a7693c794b9b62845adc6cabb6966d9858a5bc5fc502ec",
+                "stdinRequestBytes": 387,
+                "stdoutBytes": 2392
+              },
+              "iteration": 5,
+              "order": [
+                "CURRENT",
+                "SESSION"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2300,
+                "elapsedMs": 426.103291,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "34e10a1a8172e1f675a7693c794b9b62845adc6cabb6966d9858a5bc5fc502ec",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2392
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2300,
+                "elapsedMs": 124.501083,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "34e10a1a8172e1f675a7693c794b9b62845adc6cabb6966d9858a5bc5fc502ec",
+                "stdinRequestBytes": 387,
+                "stdoutBytes": 2392
+              },
+              "iteration": 6,
+              "order": [
+                "SESSION",
+                "CURRENT"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2300,
+                "elapsedMs": 429.455166,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "34e10a1a8172e1f675a7693c794b9b62845adc6cabb6966d9858a5bc5fc502ec",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2392
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2300,
+                "elapsedMs": 124.665042,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "34e10a1a8172e1f675a7693c794b9b62845adc6cabb6966d9858a5bc5fc502ec",
+                "stdinRequestBytes": 387,
+                "stdoutBytes": 2392
+              },
+              "iteration": 7,
+              "order": [
+                "CURRENT",
+                "SESSION"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2300,
+                "elapsedMs": 427.978583,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "34e10a1a8172e1f675a7693c794b9b62845adc6cabb6966d9858a5bc5fc502ec",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2392
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2300,
+                "elapsedMs": 124.748708,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "34e10a1a8172e1f675a7693c794b9b62845adc6cabb6966d9858a5bc5fc502ec",
+                "stdinRequestBytes": 387,
+                "stdoutBytes": 2392
+              },
+              "iteration": 8,
+              "order": [
+                "SESSION",
+                "CURRENT"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2300,
+                "elapsedMs": 426.40425,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "34e10a1a8172e1f675a7693c794b9b62845adc6cabb6966d9858a5bc5fc502ec",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2392
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2300,
+                "elapsedMs": 126.873667,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "34e10a1a8172e1f675a7693c794b9b62845adc6cabb6966d9858a5bc5fc502ec",
+                "stdinRequestBytes": 387,
+                "stdoutBytes": 2392
+              },
+              "iteration": 9,
+              "order": [
+                "CURRENT",
+                "SESSION"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            },
+            {
+              "CURRENT": {
+                "contextOutputBytes": 2300,
+                "elapsedMs": 425.994084,
+                "freshnessVerificationCount": 0,
+                "fullObservationCount": 4,
+                "processCount": 4,
+                "responseCount": 4,
+                "responseSHA256": "34e10a1a8172e1f675a7693c794b9b62845adc6cabb6966d9858a5bc5fc502ec",
+                "stdinRequestBytes": 0,
+                "stdoutBytes": 2392
+              },
+              "SESSION": {
+                "closeRequestBytesExcluded": 15,
+                "contextOutputBytes": 2300,
+                "elapsedMs": 127.904458,
+                "freshnessVerificationCount": 3,
+                "fullObservationCount": 1,
+                "processCount": 1,
+                "responseCount": 4,
+                "responseSHA256": "34e10a1a8172e1f675a7693c794b9b62845adc6cabb6966d9858a5bc5fc502ec",
+                "stdinRequestBytes": 387,
+                "stdoutBytes": 2392
+              },
+              "iteration": 10,
+              "order": [
+                "SESSION",
+                "CURRENT"
+              ],
+              "payloadEquivalent": true,
+              "rawOutputEquivalent": true
+            }
+          ],
+          "sessionCurrentMedianRatio": 0.2924098817719191,
+          "summary": {
+            "CURRENT": {
+              "maxMs": 429.455166,
+              "medianMs": 426.47968749999995,
+              "minMs": 423.092458
+            },
+            "SESSION": {
+              "maxMs": 127.904458,
+              "medianMs": 124.706875,
+              "minMs": 122.817166
+            }
+          }
+        }
+      }
+    }
+  },
+  "sourceCommit": "2d7d7815238511ba93018d0e30ebc39900b61de0",
+  "sourceDiff": "",
+  "startedAt": "2026-09-30T00:55:42.599339+00:00",
+  "workingTreeStatus": "?? scripts/measure-context-session-cli.py"
+}

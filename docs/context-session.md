@@ -27,3 +27,5 @@ EOF exits 0 without an additional response. `close` returns `{"ok":true,"message
 Mutations use existing one-shot commands with `--state TOKEN`, using the summary's `context.observation.statePrecondition.rawValue`. `ProjectService` revalidates the token at mutation time; the read session does not authorize writes. Never combine responses from different observations. Use `hamii skills get context --json` for installed-version guidance.
 
 Regression checks: `python3 scripts/test-context-session.py --binary .build/debug/hamii`. The full XCTest gate runs these real-process checks through `ContextSessionCLITests`; Application tests additionally check exact observation/verification counts and failure invalidation.
+
+[Release comparison](context-session-performance.md) records paired CURRENT/SESSION retrieval time, equivalent payloads and unmeasured token/cost boundaries.
