@@ -26,7 +26,7 @@ Times are milliseconds. Each row has ten pairs. Min/max show the observed range;
 | C | T2 | 432.820 (429.253–433.803) | 127.553 (126.487–131.360) | 0.295 |
 | C | T3 | 431.725 (427.843–435.420) | 125.575 (124.760–127.180) | 0.291 |
 
-The precommitted criterion in [the ADR](../adr/context-observation-reuse/ADR.md) is SESSION median ≤70% of CURRENT for both T2 and T3 in every shape. All six final-round comparisons pass (ratios 0.265–0.295). The initial round also passes, with ratios 0.264–0.295. T1 is reported without a threshold. These results support this Release warm-local retrieval path; they do not establish cold-cache, hosted-runner, arbitrary external-writer or large-Project guarantees.
+The precommitted comparison criterion is SESSION median ≤70% of CURRENT for both T2 and T3 in every shape. All six final-round comparisons pass (ratios 0.265–0.295). The initial round also passes, with ratios 0.264–0.295. T1 is reported without a threshold. These results support this Release warm-local retrieval path; they do not establish cold-cache, hosted-runner, arbitrary external-writer or large-Project guarantees.
 
 ## Output, work and cost
 
