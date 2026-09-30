@@ -1,5 +1,6 @@
 import CryptoKit
 import Foundation
+import HamiiFormat
 
 struct GitCanonicalRevisionProfile {
     let stageMilliseconds: [String: Double]
@@ -224,30 +225,7 @@ public struct GitCanonicalRevisionCalculator: CanonicalRevisionCalculating {
     }
 
     private static func git(_ root: URL, _ arguments: [String], input: Data? = nil) throws -> (status: Int32, output: Data) {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/git")
-        process.arguments = ["-C", root.path] + arguments
-        let pipe = Pipe()
-        process.standardOutput = pipe
-        process.standardError = pipe
-        var inputFile: URL?
-        var inputHandle: FileHandle?
-        if let input {
-            let file = FileManager.default.temporaryDirectory.appendingPathComponent("hamii-git-attrs-\(UUID().uuidString)")
-            try input.write(to: file)
-            inputFile = file
-        }
-        defer {
-            try? inputHandle?.close()
-            if let inputFile { try? FileManager.default.removeItem(at: inputFile) }
-        }
-        if let inputFile {
-            inputHandle = try FileHandle(forReadingFrom: inputFile)
-            process.standardInput = inputHandle
-        }
-        try process.run()
-        let output = pipe.fileHandleForReading.readDataToEndOfFile()
-        process.waitUntilExit()
-        return (process.terminationStatus, output)
+        let result = try GitProcess.run(at: root, arguments, input: input)
+        return (result.status, result.stdout)
     }
 }

@@ -220,17 +220,12 @@ package enum GitCommand {
     }
 
     package static func runData(at worktree: URL, _ arguments: [String]) throws -> Data {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/git")
-        process.arguments = ["-C", worktree.path] + arguments
-        let output = Pipe()
-        process.standardOutput = output
-        process.standardError = output
-        try process.run()
-        let bytes = output.fileHandleForReading.readDataToEndOfFile()
-        process.waitUntilExit()
-        let message = String(decoding: bytes, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
-        guard process.terminationStatus == 0 else { throw ManagedGitError.commandFailed(message) }
-        return bytes
+        let result = try GitProcess.run(at: worktree, arguments)
+        guard result.status == 0 else {
+            let diagnostic = result.stderr.isEmpty ? result.stdout : result.stderr
+            let message = String(decoding: diagnostic, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
+            throw ManagedGitError.commandFailed(message)
+        }
+        return result.stdout
     }
 }
