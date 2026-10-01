@@ -121,7 +121,7 @@ final class SwiftUIGeneratorCapabilityTests: XCTestCase {
         assertUnsupported(image, at: image.screens[0].root.id)
     }
 
-    func testStackSpacingAndInteractionStayBlockedWhilePaddingLowers() throws {
+    func testNonStackSpacingAndInteractionStayBlockedWhilePaddingLowers() throws {
         let root = Layer(id: EntityID("layer_root"), name: "Text", payload: .text(TextLayerPayload(value: "Hello")))
         var project = document(root: root)
         declare([CapabilityKeys.legacyText], in: &project)
@@ -131,8 +131,10 @@ final class SwiftUIGeneratorCapabilityTests: XCTestCase {
         var spacing = project
         spacing.screens[0].root.layout.spacingTokenID = tokenID
         declare([CapabilityKeys.spacingToken], in: &spacing)
-        XCTAssertEqual(DocumentValidator.validate(spacing), [])
-        assertUnsupported(spacing, at: root.id)
+        XCTAssertTrue(DocumentValidator.validate(spacing).contains { $0.rule == "layout.spacingKind" && $0.entityID == root.id })
+        XCTAssertThrowsError(try generate(spacing)) { error in
+            guard case GenerationError.invalidDocument = error else { return XCTFail("Expected invalid document, got \(error)") }
+        }
 
         var padding = project
         padding.screens[0].root.effects = [.padding(tokenID: tokenID)]
@@ -147,6 +149,123 @@ final class SwiftUIGeneratorCapabilityTests: XCTestCase {
         declare([CapabilityKeys.interactionRuntime], in: &interaction)
         XCTAssertEqual(DocumentValidator.validate(interaction), [])
         assertUnsupported(interaction, at: root.id)
+    }
+
+    func testStackSpacingDeclarationsAxisAndNilSource() throws {
+        let tokenID = EntityID("space_twelve")
+        let child = Layer(id: EntityID("child"), name: "Child", payload: .text(TextLayerPayload(value: "Hello")))
+        let root = Layer(id: EntityID("stack"), name: "Stack", payload: .stack, children: [child])
+        var project = document(root: root)
+        project.tokens = [DesignToken(id: tokenID, name: "Spacing", kind: .spacing,
+                                      ownerScopeID: project.scopes[0].id, value: .literal("12"))]
+        declare([CapabilityKeys.stackContainer, CapabilityKeys.textVisual], in: &project)
+        let sourceWithoutSpacing = try generate(project)
+        XCTAssertEqual(sourceWithoutSpacing,
+                       "import SwiftUI\n\nstruct HamiiScreen_screen_main: View {\n    var body: some View {\n        VStack {\n            Text(\"Hello\")\n        }\n    }\n}\n")
+
+        project.screens[0].root.layout.spacingTokenID = tokenID
+        XCTAssertEqual(DocumentValidator.validate(project), [])
+        assertUnsupported(project, at: root.id)
+        declare([CapabilityKeys.legacySpacing], in: &project)
+        XCTAssertTrue(try generate(project).contains("VStack(spacing: 12.0) {"))
+
+        declare([CapabilityKeys.spacingToken], in: &project, support: .unsupported)
+        assertUnsupported(project, at: root.id)
+        project.capabilityDeclarations[project.capabilityDeclarations.count - 1].support = .exact
+        XCTAssertTrue(try generate(project).contains("VStack(spacing: 12.0) {"))
+
+        project.screens[0].root.layout.axis = .horizontal
+        XCTAssertTrue(try generate(project).contains("HStack(spacing: 12.0) {"))
+        project.tokens[0].value = .literal("0")
+        XCTAssertTrue(try generate(project).contains("HStack(spacing: 0.0) {"))
+    }
+
+    func testNestedStackSpacingAndPaddingRemainSeparate() throws {
+        let child = Layer(id: EntityID("child_stack"), name: "Child", payload: .stack,
+                          children: [Layer(id: EntityID("text"), name: "Text", payload: .text(TextLayerPayload(value: "Hi")))],
+                          layout: Layout(axis: .horizontal, spacingTokenID: EntityID("four")))
+        let root = Layer(id: EntityID("parent_stack"), name: "Parent", payload: .stack, children: [child],
+                         layout: Layout(axis: .vertical, spacingTokenID: EntityID("eight")),
+                         effects: [.padding(tokenID: EntityID("twelve"))])
+        var project = document(root: root)
+        let scope = project.scopes[0].id
+        project.tokens = [
+            DesignToken(id: EntityID("four"), name: "Four", kind: .spacing, ownerScopeID: scope, value: .literal("4")),
+            DesignToken(id: EntityID("eight"), name: "Eight", kind: .spacing, ownerScopeID: scope, value: .literal("8")),
+            DesignToken(id: EntityID("twelve"), name: "Twelve", kind: .spacing, ownerScopeID: scope, value: .literal("12"))
+        ]
+        declare([CapabilityKeys.stackContainer, CapabilityKeys.textVisual, CapabilityKeys.spacingToken, CapabilityKeys.paddingEffect], in: &project)
+        XCTAssertEqual(DocumentValidator.validate(project), [])
+        let source = try generate(project)
+        XCTAssertTrue(source.contains("VStack(spacing: 8.0) {\n            HStack(spacing: 4.0) {"))
+        XCTAssertTrue(source.contains("        }\n            .padding(12.0)"))
+        XCTAssertEqual(source.components(separatedBy: ".padding(12.0)").count - 1, 1)
+    }
+
+    func testComponentStackSpacingResolvesAliasOnce() throws {
+        let base = EntityID("base")
+        let alias = EntityID("alias")
+        let root = Layer(id: EntityID("definition_stack"), name: "Definition", payload: .stack,
+                         children: [Layer(id: EntityID("definition_text"), name: "Text", payload: .text(TextLayerPayload(value: "Hi")))],
+                         layout: Layout(spacingTokenID: alias))
+        let instance = Layer(id: EntityID("instance"), name: "Instance",
+                             payload: .componentInstance(ComponentInstanceLayerPayload(instance: ComponentInstance(definitionID: EntityID("card")))))
+        var project = document(root: instance)
+        let scope = project.scopes[0].id
+        project.components = [ComponentDefinition(id: EntityID("card"), name: "Card", ownerScopeID: scope, root: root)]
+        project.tokens = [
+            DesignToken(id: base, name: "Base", kind: .spacing, ownerScopeID: scope, value: .literal("16")),
+            DesignToken(id: alias, name: "Alias", kind: .spacing, ownerScopeID: scope, value: .reference(base))
+        ]
+        declare([CapabilityKeys.componentInstance, CapabilityKeys.stackContainer, CapabilityKeys.textVisual,
+                 CapabilityKeys.spacingToken], in: &project)
+        XCTAssertEqual(DocumentValidator.validate(project), [])
+        let source = try generate(project)
+        XCTAssertEqual(source.components(separatedBy: "VStack(spacing: 16.0)").count - 1, 1)
+    }
+
+    func testNonStackSpacingFailsClosedForVisualLayers() {
+        let tokenID = EntityID("space")
+        let assetID = EntityID("system_asset")
+        let payloads: [LayerPayload] = [
+            .text(TextLayerPayload(value: "Hello")),
+            .button(ButtonLayerPayload(label: "Go")),
+            .image(ImageLayerPayload(assetID: assetID)),
+            .overlay,
+            .scroll
+        ]
+        for payload in payloads {
+            let root = Layer(id: EntityID("root"), name: "Root", payload: payload,
+                             layout: Layout(spacingTokenID: tokenID))
+            var project = document(root: root)
+            let scope = project.scopes[0].id
+            project.tokens = [DesignToken(id: tokenID, name: "Spacing", kind: .spacing,
+                                          ownerScopeID: scope, value: .literal("4"))]
+            project.assets = [Asset(id: assetID, name: "System", ownerScopeID: scope,
+                                    mediaType: "image/system", source: .system(name: "star"))]
+            declare([CapabilityKeys.spacingToken], in: &project)
+            XCTAssertTrue(DocumentValidator.validate(project).contains { $0.rule == "layout.spacingKind" && $0.entityID == root.id })
+            XCTAssertThrowsError(try generate(project)) { error in
+                guard case GenerationError.invalidDocument = error else { return XCTFail("Expected invalid document, got \(error)") }
+            }
+        }
+    }
+
+    func testInvalidStackSpacingTokenFailsClosed() {
+        let tokenID = EntityID("space")
+        let root = Layer(id: EntityID("stack"), name: "Stack", payload: .stack,
+                         layout: Layout(spacingTokenID: tokenID))
+        var project = document(root: root)
+        declare([CapabilityKeys.stackContainer, CapabilityKeys.spacingToken], in: &project)
+        let scope = project.scopes[0].id
+        for value in [TokenValue.literal("-2"), .literal("nan"), .literal("inf"), .reference(EntityID("missing"))] {
+            project.tokens = [DesignToken(id: tokenID, name: "Invalid", kind: .spacing, ownerScopeID: scope, value: value)]
+            XCTAssertTrue(DocumentValidator.validate(project).contains { $0.rule == "token.layoutValue" })
+            XCTAssertThrowsError(try generate(project))
+        }
+        project.tokens = [DesignToken(id: tokenID, name: "Wrong kind", kind: .color, ownerScopeID: scope, value: .literal("4"))]
+        XCTAssertTrue(DocumentValidator.validate(project).contains { $0.rule == "token.layoutValue" })
+        XCTAssertThrowsError(try generate(project))
     }
 
     func testPaddingKeepsStoredOrderAndResolvesAlias() throws {

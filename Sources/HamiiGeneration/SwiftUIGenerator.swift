@@ -28,7 +28,8 @@ public enum SwiftUIGeneratorCapabilityCatalog {
     public static let supportedKeys: Set<CapabilityKey> = [
         CapabilityKeys.stackContainer, CapabilityKeys.overlayVisual, CapabilityKeys.scrollContainer,
         CapabilityKeys.textVisual, CapabilityKeys.buttonVisual, CapabilityKeys.imageVisual,
-        CapabilityKeys.systemAssetMapping, CapabilityKeys.componentInstance, CapabilityKeys.paddingEffect
+        CapabilityKeys.systemAssetMapping, CapabilityKeys.componentInstance, CapabilityKeys.paddingEffect,
+        CapabilityKeys.spacingToken
     ]
     public static let catalog = CapabilityCatalog(supportedKeys: supportedKeys, legacyAliases: CapabilityRegistry.aliases(for: supportedKeys))
 }
@@ -94,7 +95,17 @@ public enum SwiftUIGenerator {
             let open: String
             if case .overlay = layer.payload { open = "ZStack {" }
             else if case .scroll = layer.payload { open = "ScrollView {" }
-            else { open = layer.layout.axis == .horizontal ? "HStack {" : "VStack {" }
+            else {
+                let stack = layer.layout.axis == .horizontal ? "HStack" : "VStack"
+                if let tokenID = layer.layout.spacingTokenID {
+                    guard let value = TokenResolver.spacing(tokenID, in: document.tokens) else {
+                        throw GenerationError.unsupported(layer.id, "Stack spacing token does not resolve to spacing")
+                    }
+                    open = "\(stack)(spacing: \(value)) {"
+                } else {
+                    open = "\(stack) {"
+                }
+            }
             let children = try layer.children.map { try render($0, document: document, indent: indent + 1) }.joined(separator: "\n")
             return prefix + open + "\n" + children + "\n" + prefix + "}"
         case .componentInstance(let payload):
