@@ -26,13 +26,23 @@ An external explicit profile file is a control for comparison, but it cannot be 
 
 ## Current Hypothesis
 
-**Tentative, not a decision:** Screen shard ownership may require fewer new Canonical path, transaction, and identity rules. Output anchoring and v1→Current migration composition must be demonstrated before selecting it.
+Resolved by the decision below. Screen shard ownership has the smaller Canonical path, transaction, and identity change surface in the tested repository.
+
+## Decision
+
+**Adopt Option 1: Screen shard ownership.** Product-independent typed semantic sources, declared outputs, and relations belong to `Screen` and persist in its existing `screens/<screenID>.json` Canonical shard. A relation edit changes that Screen shard's Canonical bytes. The installed CanonicalSnapshot, ClientPrecondition, Git freshness, and transaction journal boundaries already include this path. The current v2 decoder discards unknown Screen fields, so production storage requires Document Format v3 and a strict reader/version gate; no semantic field may be written under the v2 marker.
+
+The initial output anchor schema supports direct Screen-owned Layers and Component definition-owned Layers addressed through an ordered instance occurrence path. Each Component frame carries its instance Layer ID, expected definition ID, and root-to-instance Layer path in its owning Screen or raw definition; the final target carries definition-owned Layer ID and property. Validation must check both raw definition ownership and the tree produced by `ComponentResolver`. A resolved-only lookup can mistake slot-injected content for definition-owned output. Slot-injected output anchors are unsupported in the initial schema and must be rejected. Variant resolution must verify the resolved value and binding separately: the current Variant model changes text values, not bindings.
+
+Missing or stale instance paths, wrong or missing definition, missing target, unsupported property, binding mismatch, duplicate output identity, duplicate physical anchor, and dangling relation references fail closed. Distinct physical outputs may share one semantic source. Anchors and declarations contain no Product Repository symbols; Product mappings remain in the Integration Profile.
+
+The sidecar option isolates relation-only diffs, but the measured unregistered sidecar changed neither production Snapshot identity nor client token. To make it safe would require simultaneous extension of Canonical path enumeration, document ownership/orphan checks, transaction journal, Git freshness, and migration input. The available diff-isolation evidence does not justify this added durable protocol surface. The [layout Spike](spikes/canonical-layout-and-v3/SPIKE.md) records the concrete boundary comparison; the [Component anchor Spike](spikes/component-output-anchor/SPIKE.md) records repeated/nested instance and fail-closed anchor results.
 
 ## Unknowns
 
-- Which output declaration shape gives a stable, unique link to an existing binding/input without coupling to Product code?
-- Which layout yields exact semantic round-trip and complete contract projection with the smaller durable transaction surface?
-- What validation and migration runtime boundaries must change together for Current Format v3?
+- Which exact v3 Codable schema and production extraction APIs best implement the chosen ownership and anchor boundary?
+- Which production validation diagnostics and atomic journal checkpoints are needed for new Screen bytes?
+- How will Current v3 migration candidate/review/publication compose older edges? This independent decision is tracked in [Migration Edge Composition](../migration-edge-composition/ADR.md).
 
 ## Required Evidence
 
@@ -40,8 +50,14 @@ An external explicit profile file is a control for comparison, but it cannot be 
 
 ## Decision Criteria
 
-Select an ownership model only after evidence demonstrates unique output anchors, fail-closed references, exact semantic round-trip, complete extraction into the screen contract, Canonical identity change on a relation edit, strict v2/v3 reader separation, and explicit crash/journal boundary changes. A noninventive v2→v3 edge and safe v1→Current path remain implementation prerequisites; the independent composition/publication decision belongs to [Migration Edge Composition](../migration-edge-composition/ADR.md). Preserve the [Product Integration Contract decision](../product-integration-contract/ADR.md) and its `Needs Resolution` rule.
+Ownership is decided from the measured existing Screen path coverage, sidecar observation gap, candidate semantic round-trip, occurrence-safe anchor validation, and candidate identity change when relation bytes are included. The chosen implementation must add production extraction/validation, strict v3 reader separation, and a noninventive v2→v3 edge. A safe v1→Current path remains blocked on [Migration Edge Composition](../migration-edge-composition/ADR.md). Preserve the [Product Integration Contract decision](../product-integration-contract/ADR.md) and its `Needs Resolution` rule.
+
+## Implementation Gates
+
+- Screen semantics old/new bytes must participate in the existing Canonical transaction journal. Stop/recover tests at prepared, ready, individual shard apply, and manifest switch must recover relation bytes wholly to old or new state, with matching Snapshot identity and ClientPrecondition. These are implementation completion gates, not a reason to reopen the ownership decision.
+- Production validation and contract extraction must reject all invalid anchors and relation references named in the Decision. Repeated and nested instances must remain distinct; slot-injected content remains unsupported.
+- Current v3 must reject raw historical repositories until isolated migration completes. Migration must add no inferred relation. The separate Migration ADR decides edge composition and publication.
 
 ## Status
 
-Spike Required
+Implementation Required
