@@ -35,7 +35,6 @@ Status: 検証中。各 Spike は fixture、対象 OS/SDK/Xcode、実行 command
 - [External change detection](../adr/git-external-write-coordination/spikes/external-change-detection/SPIKE.md)
 - [Concurrent worktree merge](../adr/git-external-write-coordination/spikes/concurrent-worktree-merge/SPIKE.md)
 - [Host/source conformance](../adr/native-preview-parity/spikes/host-source-conformance/SPIKE.md)
-- [Native-semantic IR の最小 taxonomy](../adr/native-semantic-ir/spikes/minimal-ir/SPIKE.md)
 - [Frame capture and revision fidelity](../adr/preview-frame-capture/spikes/frame-latency/SPIKE.md)
 - [Host session and recovery](../adr/preview-host-transport/spikes/session-recovery/SPIKE.md)
 - [Preview input routing](../adr/preview-input-forwarding/spikes/input-routing/SPIKE.md)
