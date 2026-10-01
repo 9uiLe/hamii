@@ -48,7 +48,9 @@ with tempfile.TemporaryDirectory(prefix="hamii-cli-") as directory:
     validation_skill = run("skills", "get", "validation")["skill"]
     assert "validate --project PATH --json" in validation_skill
     assert "query components CONSUMER_SCOPE_ID TERM" in validation_skill
-    assert "preview plan SURFACE_ID" in run("skills", "get", "preview")["skill"]
+    preview_skill = run("skills", "get", "preview")["skill"]
+    assert "preview plan SURFACE_ID" in preview_skill
+    assert "macOS SwiftUI only" in preview_skill
     integration_skill = run("skills", "get", "integration")["skill"]
     assert "integration contract SCREEN_ID" in integration_skill
     assert "generate swiftui SCREEN_ID TARGET_ID" in integration_skill

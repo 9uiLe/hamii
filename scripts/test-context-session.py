@@ -96,6 +96,10 @@ def main():
             mutate('capability', 'set', target, 'layout.stack.container', 'exact')
             mutate('capability', 'set', target, 'component.text.visual', 'exact')
             mutate('layer', 'token', screen, screen_object['root']['id']['rawValue'], 'spacing', spacing)
+            ios_target = mutate('target', 'add', 'iOS', 'swiftUI')
+            ios_surface = mutate('surface', 'add', page, screen, ios_target, 'iPhone', 'iOS 27', 'iOS SDK')
+            for key in ('layout.stack.container', 'component.text.visual', 'layout.spacingToken'):
+                mutate('capability', 'set', ios_target, key, 'exact')
             private_scope = mutate('scope', 'create', scope, 'Private')
             private_component = mutate('component', 'create', private_scope, 'PrivateBadge')
             selection = ['--screen', screen, '--layer', layer]
@@ -105,6 +109,7 @@ def main():
                 ({'op':'component', 'consumerScopeID':scope, 'componentID':component}, ['component', scope, component]),
                 ({'op':'token', 'consumerScopeID':scope, 'tokenID':spacing}, ['token', scope, spacing]),
                 ({'op':'surface', 'surfaceID':surface}, ['surface', surface]),
+                ({'op':'surface', 'surfaceID':ios_surface}, ['surface', ios_surface]),
             ]
             session, initial = start(root, *selection)
             summary_bytes = command(str(binary), '--project', str(root), '--json', 'query', 'context', 'summary', *selection).rstrip(b'\n')
@@ -124,6 +129,21 @@ def main():
             assert surface_context['payload']['losses']['totalCount'] >= 1
             assert surface_context['payload']['capabilityAllowed'] is False
             assert surface_context['payload']['previewReady'] is False
+            ios_context = session.send({'op':'surface', 'surfaceID':ios_surface})['context']['payload']
+            assert ios_context['profile']['platform'] == 'iOS'
+            assert ios_context['profile']['framework'] == 'swiftUI'
+            assert ios_context['capabilityAllowed'] is False
+            assert ios_context['previewReady'] is False
+            assert ios_context['losses']['totalCount'] >= 1
+            assert all(loss['support'] == 'unsupported' and loss['loss'] == 'unsupported'
+                       and loss['reason'] == 'Native Preview capability coverage is not registered for this target profile'
+                       for loss in ios_context['losses']['items'])
+            assert any(item['rule'] == 'preview.targetProfile' for item in ios_context['previewDiagnostics']['items'])
+            ios_plan = cli(root, 'preview', 'plan', ios_surface, expected=5)
+            assert ios_plan['ok'] is False and ios_plan['category'] == 'unsupportedCapability'
+            # TargetPlan serializes diagnostics; Output.ok is the CLI readiness decision.
+            assert 'canPreview' not in ios_plan['previewPlan']
+            assert any(item['rule'] == 'preview.targetProfile' for item in ios_plan['previewPlan']['diagnostics'])
             missing_state = cli(root, 'query', 'context', 'surface', surface, expected=2)
             assert missing_state['category'] == 'usage' and 'context' not in missing_state
             missing_one_shot = cli(root, 'query', 'context', 'surface', 'missing', '--state', s0, expected=2)
@@ -208,7 +228,7 @@ def main():
             session.finish(7)
             failed = cli(root,'query','context','session',expected=7)
             assert failed['terminal'] is True and 'context' not in failed
-        print(json.dumps({'status':'passed','normalOperations':6,'usageCases':len(malformed),
+        print(json.dumps({'status':'passed','normalOperations':7,'usageCases':len(malformed),
                           'staleWriter':True,'sameRevisionSwitch':True,'pendingGate':True,
                           'epochCorruption':True,'restart':True,'boundedLineRecovery':True}))
     finally:

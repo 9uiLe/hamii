@@ -36,33 +36,33 @@ final class CapabilityContractTests: XCTestCase {
             CapabilityConsumerProfile(platform: .macOS, framework: .swiftUI)
         ])
 
-        for (platform, framework) in [
-            (Platform.iOS, Framework.swiftUI),
-            (.macOS, .uiKit),
-            (.android, .jetpackCompose),
-            (.macOS, .composeMultiplatform)
-        ] {
-            document.targets[0].platform = platform
-            document.targets[0].framework = framework
-            var surface = initialSurface
-            surface.runtime = "\(platform.rawValue) 27"
-            XCTAssertEqual(DocumentValidator.validate(document), [])
-            let report = NativePreviewCapabilityAnalysis.report(
-                screen: document.screens[0], document: document, surface: surface, target: document.targets[0],
-                approvedApproximationKeys: [CapabilityKeys.textVisual]
-            )
-            XCTAssertFalse(NativePreviewCapabilityCatalog.isApplicable(to: report.profile))
-            XCTAssertFalse(report.consumerApplicable)
-            XCTAssertFalse(report.allowed)
-            XCTAssertEqual(report.items.map(\.support), [.unsupported])
-            XCTAssertEqual(report.items.map(\.loss), [.unsupported])
-            XCTAssertEqual(report.items[0].reason, NativePreviewCapabilityCatalog.profileUnavailableReason)
-            let plan = TargetPlanner.plan(surface: surface, document: document, approvedApproximationKeys: [CapabilityKeys.textVisual])
-            XCTAssertFalse(plan.canPreview)
-            XCTAssertEqual(plan.diagnostics.filter { $0.rule == "preview.targetProfile" }.count, 1)
-            XCTAssertEqual(plan.diagnostics.filter { $0.rule == "capability.unsupported" }.count, 0)
+        for platform in [Platform.iOS, .macOS, .android] {
+            for framework in [Framework.swiftUI, .uiKit, .jetpackCompose, .composeMultiplatform] {
+                if platform == .macOS && framework == .swiftUI { continue }
+                document.targets[0].platform = platform
+                document.targets[0].framework = framework
+                var surface = initialSurface
+                surface.runtime = "\(platform.rawValue) 27"
+                XCTAssertEqual(DocumentValidator.validate(document), [])
+                let report = NativePreviewCapabilityAnalysis.report(
+                    screen: document.screens[0], document: document, surface: surface, target: document.targets[0],
+                    approvedApproximationKeys: [CapabilityKeys.textVisual]
+                )
+                XCTAssertFalse(NativePreviewCapabilityCatalog.isApplicable(to: report.profile))
+                XCTAssertFalse(report.consumerApplicable)
+                XCTAssertFalse(report.allowed)
+                XCTAssertEqual(report.items.map(\.support), [.unsupported])
+                XCTAssertEqual(report.items.map(\.loss), [.unsupported])
+                XCTAssertEqual(report.items[0].reason, NativePreviewCapabilityCatalog.profileUnavailableReason)
+                let plan = TargetPlanner.plan(surface: surface, document: document, approvedApproximationKeys: [CapabilityKeys.textVisual])
+                XCTAssertFalse(plan.canPreview)
+                XCTAssertEqual(plan.diagnostics.filter { $0.rule == "preview.targetProfile" }.count, 1)
+                XCTAssertEqual(plan.diagnostics.filter { $0.rule == "capability.unsupported" }.count, 0)
+            }
         }
 
+        document.targets[0].platform = .iOS
+        document.targets[0].framework = .swiftUI
         document.capabilityDeclarations[0].support = .approximate
         let blockedApproximation = NativePreviewCapabilityAnalysis.report(
             screen: document.screens[0], document: document, surface: initialSurface, target: document.targets[0],
@@ -71,10 +71,12 @@ final class CapabilityContractTests: XCTestCase {
         XCTAssertFalse(blockedApproximation.allowed)
         XCTAssertEqual(blockedApproximation.items.map(\.loss), [.unsupported])
 
+        document.targets[0].platform = .macOS
         document.capabilityDeclarations = []
         let missing = NativePreviewCapabilityAnalysis.report(
             screen: document.screens[0], document: document, surface: initialSurface, target: document.targets[0]
         )
+        XCTAssertTrue(missing.consumerApplicable)
         XCTAssertFalse(missing.allowed)
         XCTAssertEqual(missing.items.map(\.loss), [.unsupported])
 
