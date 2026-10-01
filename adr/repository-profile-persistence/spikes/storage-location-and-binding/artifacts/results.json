@@ -1,0 +1,46 @@
+{
+  "concurrentSaveGitTransition": "not tested: no production Profile writer exists",
+  "externalFile": {
+    "currentPlanAccepted": true,
+    "currentPlanAcceptedAfterExternalEdit": true,
+    "externalEditChangedBytes": true,
+    "gitAuthorityWithoutExplicitBinding": false,
+    "sameInitialBytesAsProductFile": true
+  },
+  "hamiiRootShard": {
+    "checkoutRestoredClientPrecondition": true,
+    "checkoutRestoredProfileBytes": true,
+    "clientPreconditionChanged": false,
+    "currentPlanAccepted": true,
+    "gitBranchChangedProfileBytes": true,
+    "gitBranchPreservedClientPrecondition": true,
+    "note": "Current Canonical path list does not include root Profile",
+    "profileBytesChanged": true
+  },
+  "invalidInputs": {
+    "malformed": "contract",
+    "missing": "storage",
+    "unsupportedProfileVersion": "migrationRequired"
+  },
+  "productRepositoryFile": {
+    "baseCommit": "a63e4afc16ba21a419bb0f67fed7ca1a1fc3c99f",
+    "baseProfileBlob": "004010a90c7fc558d90c340da084dcf67d341527",
+    "branchCheckoutReproducedProfileBytes": true,
+    "currentPlanAcceptedAfterSourceChange": true,
+    "exactCommitBindingFalsePositiveForUnrelatedCommit": true,
+    "mappingChangedCommit": "4916db80095493ac872f2d127a6db4a811578d15",
+    "mappingChangedProfileBlob": "37f6e3ce953bfe0550cb939484d9e0d6c98da434",
+    "mappingOnlyReviewDiff": "hamii-integration-profile.json",
+    "profileBlobAfterSourceChange": "004010a90c7fc558d90c340da084dcf67d341527",
+    "sourceChangedCommit": "db18be4cfc9f258b7d4d10158633a83348adf017",
+    "testOnlyExactBindingRejectsSourceAndMappingChanges": true,
+    "unrelatedDocumentationCommit": "a50cdbbdce527d9db3af029a6a2b377f3b1876a5"
+  },
+  "tool": "locally built hamii CLI; temporary Git repositories",
+  "wrongRepository": {
+    "currentPlanAccepted": true,
+    "otherCommit": "4e14aaff42e700bfb18cd1d15491f52ad9f0a54e",
+    "productCommit": "a63e4afc16ba21a419bb0f67fed7ca1a1fc3c99f",
+    "testOnlyExactBindingRejects": true
+  }
+}
