@@ -1,0 +1,22 @@
+{
+  "schema": "spike-repository-mapping-v1",
+  "target": "Team MINO iOS dca2202f4be21869190d19bbcf223eb8646a2acd",
+  "mappingStatus": "proposed integration mapping, not existing production state",
+  "semanticSources": {
+    "profile.renderable": {
+      "plan": "retain whether a last-known Profile exists across first load, refresh loading, and refresh failure",
+      "evidence": "ProfileMainStore.swift ProfileMainState.init(profile:) and profileLoaded/profileLoadFailed; ProfileCoordinator.swift cached profile initialization",
+      "requiresImplementation": true
+    },
+    "profile.displayName": {
+      "plan": "Profile.nickname through ProfileMainState.nickname",
+      "evidence": "Domain Profile.nickname; ProfileMainStore.swift initial and profileLoaded assignment",
+      "requiresImplementation": false
+    },
+    "profile.createdAt": {
+      "plan": "Profile.createdAt retained with the last-known Profile across refresh",
+      "evidence": "Domain Profile.createdAt exists; ProfileMainState currently drops this field",
+      "requiresImplementation": true
+    }
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "schema": "spike-oracle-v1",
+  "transform": {
+    "id": "membershipDate-ko-utc-v1",
+    "calendar": "gregorian",
+    "timezone": "UTC",
+    "format": "yyyy년 M월 d일 가입",
+    "scope": "Spike-only deterministic copy; not final Product copy"
+  },
+  "cases": [
+    {
+      "id": "P0",
+      "condition": "first load without renderable profile",
+      "sources": {"profile.renderable": false, "profile.displayName": null, "profile.createdAt": null},
+      "expected": {"I01": {"visible": false, "value": null}, "I02": {"visible": false, "value": null}}
+    },
+    {
+      "id": "P1",
+      "condition": "refresh loading with last-known profile",
+      "sources": {"profile.renderable": true, "profile.displayName": "하나", "profile.createdAt": "2024-04-05T12:00:00Z"},
+      "expected": {"I01": {"visible": true, "value": "하나"}, "I02": {"visible": true, "value": "2024년 4월 5일 가입"}}
+    },
+    {
+      "id": "P2",
+      "condition": "refresh failure with last-known profile",
+      "sources": {"profile.renderable": true, "profile.displayName": "하나", "profile.createdAt": "2024-04-05T12:00:00Z"},
+      "expected": {"I01": {"visible": true, "value": "하나"}, "I02": {"visible": true, "value": "2024년 4월 5일 가입"}}
+    },
+    {
+      "id": "P3",
+      "condition": "loaded profile with nil createdAt",
+      "sources": {"profile.renderable": true, "profile.displayName": "민지", "profile.createdAt": null},
+      "expected": {"I01": {"visible": true, "value": "민지"}, "I02": {"visible": true, "value": "가입일 정보 없음"}}
+    },
+    {
+      "id": "P4",
+      "condition": "loaded profile with nonnil createdAt",
+      "sources": {"profile.renderable": true, "profile.displayName": "민지", "profile.createdAt": "2025-01-02T15:30:00Z"},
+      "expected": {"I01": {"visible": true, "value": "민지"}, "I02": {"visible": true, "value": "2025년 1월 2일 가입"}}
+    }
+  ]
+}

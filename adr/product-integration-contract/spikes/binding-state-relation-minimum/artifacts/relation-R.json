@@ -1,0 +1,24 @@
+{
+  "schema": "spike-typed-relation-v1",
+  "semanticSources": {
+    "profile.renderable": "Bool",
+    "profile.displayName": "String?",
+    "profile.createdAt": "Instant?"
+  },
+  "relations": [
+    {
+      "output": "I01",
+      "source": "profile.displayName",
+      "visibleWhen": {"source": "profile.renderable", "equals": true},
+      "whenNil": {"kind": "needsResolution"},
+      "transform": "identity"
+    },
+    {
+      "output": "I02",
+      "source": "profile.createdAt",
+      "visibleWhen": {"source": "profile.renderable", "equals": true},
+      "whenNil": {"kind": "literal", "value": "가입일 정보 없음"},
+      "transform": "membershipDate-ko-utc-v1"
+    }
+  ]
+}

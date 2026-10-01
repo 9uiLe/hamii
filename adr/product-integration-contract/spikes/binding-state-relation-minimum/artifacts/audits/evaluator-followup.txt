@@ -1,0 +1,21 @@
+# Evaluator follow-up audit
+
+Audit window: 2026-10-01T12:15:20Z–2026-10-01T12:15:56Z (UTC). Scope: only `adr/product-integration-contract/spikes/binding-state-relation-minimum/artifacts/`. No repository files were edited.
+
+## Previous findings
+
+- **Resolved — exact P0–P4 × I01/I02 coverage.** `evaluate.py:98-123` requires exactly five unique case IDs, all three source keys, both expected output keys, and well-shaped expectations; `evaluate.py:214-216` invokes it in the CLI path. Replacing P4 with a second P3 in memory was rejected with `oracle must cover five unique states` at 2026-10-01T12:15:56Z. The built-in mutation is at `evaluate.py:218-231`.
+- **Resolved for the stated syntactic guard — empty mapping fails closed.** `evaluate.py:126-146` accepts a semantic mapping only with nonempty `plan`/`evidence` strings and a Boolean `requiresImplementation`. `evaluate.py:187-191` now checks an empty `profile.renderable` entry. My separate in-memory test returned `needsResolution` in all ten cells for R and G at 2026-10-01T12:15:56Z. This still does not verify that the proposed mapping has been implemented, as accurately labeled by `repository-mapping.json:4,6-9,16-19` and `evaluation.json:191,379`.
+- **Resolved for candidate type declarations — Product-specific types are rejected.** `evaluate.py:16,28-40,51-74` checks the exact semantic source types and graph output types. In-memory `Product.Profile.createdAt` in R and `Product.String` in G were rejected with `R semantic source types` and `G output types` respectively at 2026-10-01T12:15:56Z. The built-in mutations are at `evaluate.py:220-231`. Architecture leakage remains a bounded five-symbol text scan (`evaluate.py:197-198`), correctly named `boundedProductSymbolScanMatches` in `evaluation.json:190,378`; it should not be interpreted as a universal architecture proof.
+- **Resolved as a claim-scope issue — runtime limits are explicit.** The report says dependencies are derivable without an update-trigger field, `runtimeUpdatePropagationTested: false`, and `mappingStatus: proposed simulation, not production validation` (`evaluate.py:199-207`; `evaluation.json:187-191,375-379`). P1/P2 remain equal prepopulated snapshots (`oracle.json:18-27`), so cache retention and propagation remain untested rather than guaranteed.
+
+## Rerun and remaining gap
+
+- **Pass:** Running `evaluate.py` at 2026-10-01T12:15:38Z yielded R and G 10/10, reported the three built-in guard checks, and was structurally equal to saved `evaluation.json`. The negative mapping and Product type mutations above were independently replayed.
+- **Low — serialized output order is nondeterministic.** `normalize_graph` initializes `grouped` from the set `OUTPUTS` (`evaluate.py:62`), which determines insertion order of G's `sourceDependencies` via `evaluate.py:199-205`. My replay differed byte-for-byte from saved `evaluation.json` only in whether G lists `I01` or `I02` first (`evaluation.json:365-373`); parsed JSON equality was `True`. For reproducible artifacts, initialize output keyed dictionaries with `sorted(OUTPUTS)` or serialize with `sort_keys=True`. This does not affect the oracle verdict.
+
+No medium finding remains within the revised evaluator's stated simulation scope. Production cache behavior and the proposed repository mapping still require implementation-level evidence.
+
+## Final reproducibility verification
+
+At 2026-10-01T12:17:08Z UTC, `evaluate.py:62` iterated `sorted(OUTPUTS)`. Two fresh evaluator runs and the saved `evaluation.json` had the same SHA-256 hash, `6ebcbf04917751eecf9e1272650f31b7eabd94e500f25ff89dcf4162d62a21a6`; both byte comparisons returned equal. The low serialization-order finding above is resolved. No evaluator issue remains within the stated Spike simulation scope; production cache behavior and mapping implementation are still outside this verification.

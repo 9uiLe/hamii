@@ -1,0 +1,14 @@
+{
+  "schema": "spike-transform-registry-v1",
+  "transforms": {
+    "identity": {"input": "String", "output": "String"},
+    "membershipDate-ko-utc-v1": {
+      "input": "Instant",
+      "output": "String",
+      "calendar": "gregorian",
+      "timezone": "UTC",
+      "format": "yyyy년 M월 d일 가입",
+      "scope": "Spike-only deterministic copy, not final Product copy"
+    }
+  }
+}

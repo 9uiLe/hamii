@@ -1,0 +1,390 @@
+{
+  "schema": "spike-evaluation-v1",
+  "guardChecks": [
+    "duplicate P3 replacing P4 rejected",
+    "Product type in R rejected",
+    "Product type in G rejected"
+  ],
+  "reports": [
+    {
+      "candidate": "R",
+      "rows": [
+        {
+          "case": "P0",
+          "output": "I01",
+          "classification": "sufficient",
+          "actual": {
+            "status": "sufficient",
+            "visible": false,
+            "value": null
+          },
+          "expected": {
+            "visible": false,
+            "value": null
+          },
+          "matchesOracle": true
+        },
+        {
+          "case": "P0",
+          "output": "I02",
+          "classification": "sufficient",
+          "actual": {
+            "status": "sufficient",
+            "visible": false,
+            "value": null
+          },
+          "expected": {
+            "visible": false,
+            "value": null
+          },
+          "matchesOracle": true
+        },
+        {
+          "case": "P1",
+          "output": "I01",
+          "classification": "sufficient",
+          "actual": {
+            "status": "sufficient",
+            "visible": true,
+            "value": "하나"
+          },
+          "expected": {
+            "visible": true,
+            "value": "하나"
+          },
+          "matchesOracle": true
+        },
+        {
+          "case": "P1",
+          "output": "I02",
+          "classification": "sufficient",
+          "actual": {
+            "status": "sufficient",
+            "visible": true,
+            "value": "2024년 4월 5일 가입"
+          },
+          "expected": {
+            "visible": true,
+            "value": "2024년 4월 5일 가입"
+          },
+          "matchesOracle": true
+        },
+        {
+          "case": "P2",
+          "output": "I01",
+          "classification": "sufficient",
+          "actual": {
+            "status": "sufficient",
+            "visible": true,
+            "value": "하나"
+          },
+          "expected": {
+            "visible": true,
+            "value": "하나"
+          },
+          "matchesOracle": true
+        },
+        {
+          "case": "P2",
+          "output": "I02",
+          "classification": "sufficient",
+          "actual": {
+            "status": "sufficient",
+            "visible": true,
+            "value": "2024년 4월 5일 가입"
+          },
+          "expected": {
+            "visible": true,
+            "value": "2024년 4월 5일 가입"
+          },
+          "matchesOracle": true
+        },
+        {
+          "case": "P3",
+          "output": "I01",
+          "classification": "sufficient",
+          "actual": {
+            "status": "sufficient",
+            "visible": true,
+            "value": "민지"
+          },
+          "expected": {
+            "visible": true,
+            "value": "민지"
+          },
+          "matchesOracle": true
+        },
+        {
+          "case": "P3",
+          "output": "I02",
+          "classification": "sufficient",
+          "actual": {
+            "status": "sufficient",
+            "visible": true,
+            "value": "가입일 정보 없음"
+          },
+          "expected": {
+            "visible": true,
+            "value": "가입일 정보 없음"
+          },
+          "matchesOracle": true
+        },
+        {
+          "case": "P4",
+          "output": "I01",
+          "classification": "sufficient",
+          "actual": {
+            "status": "sufficient",
+            "visible": true,
+            "value": "민지"
+          },
+          "expected": {
+            "visible": true,
+            "value": "민지"
+          },
+          "matchesOracle": true
+        },
+        {
+          "case": "P4",
+          "output": "I02",
+          "classification": "sufficient",
+          "actual": {
+            "status": "sufficient",
+            "visible": true,
+            "value": "2025년 1월 2일 가입"
+          },
+          "expected": {
+            "visible": true,
+            "value": "2025년 1월 2일 가입"
+          },
+          "matchesOracle": true
+        }
+      ],
+      "matchedCells": 10,
+      "totalCells": 10,
+      "missingRenderableMapping": "needsResolution in all 10 cells",
+      "emptyRenderableMapping": "needsResolution in all 10 cells",
+      "wrongFallbackDetected": true,
+      "semanticPrimitives": [
+        "typed semantic source",
+        "output",
+        "visibility predicate",
+        "value source",
+        "nil behavior",
+        "transform"
+      ],
+      "sharedEvaluationPolicy": [
+        "missing Repository mapping -> Needs Resolution"
+      ],
+      "sourceDependencies": {
+        "I01": [
+          "profile.displayName",
+          "profile.renderable"
+        ],
+        "I02": [
+          "profile.createdAt",
+          "profile.renderable"
+        ]
+      },
+      "sourceDependenciesDerivableWithoutUpdateTriggerField": true,
+      "runtimeUpdatePropagationTested": false,
+      "duplicatedVisibilityRules": 1,
+      "boundedProductSymbolScanMatches": [],
+      "mappingStatus": "proposed simulation, not production validation",
+      "jsonBytesUtf8": 685,
+      "nodeCount": null,
+      "edgeCount": null,
+      "relationCount": 2
+    },
+    {
+      "candidate": "G",
+      "rows": [
+        {
+          "case": "P0",
+          "output": "I01",
+          "classification": "sufficient",
+          "actual": {
+            "status": "sufficient",
+            "visible": false,
+            "value": null
+          },
+          "expected": {
+            "visible": false,
+            "value": null
+          },
+          "matchesOracle": true
+        },
+        {
+          "case": "P0",
+          "output": "I02",
+          "classification": "sufficient",
+          "actual": {
+            "status": "sufficient",
+            "visible": false,
+            "value": null
+          },
+          "expected": {
+            "visible": false,
+            "value": null
+          },
+          "matchesOracle": true
+        },
+        {
+          "case": "P1",
+          "output": "I01",
+          "classification": "sufficient",
+          "actual": {
+            "status": "sufficient",
+            "visible": true,
+            "value": "하나"
+          },
+          "expected": {
+            "visible": true,
+            "value": "하나"
+          },
+          "matchesOracle": true
+        },
+        {
+          "case": "P1",
+          "output": "I02",
+          "classification": "sufficient",
+          "actual": {
+            "status": "sufficient",
+            "visible": true,
+            "value": "2024년 4월 5일 가입"
+          },
+          "expected": {
+            "visible": true,
+            "value": "2024년 4월 5일 가입"
+          },
+          "matchesOracle": true
+        },
+        {
+          "case": "P2",
+          "output": "I01",
+          "classification": "sufficient",
+          "actual": {
+            "status": "sufficient",
+            "visible": true,
+            "value": "하나"
+          },
+          "expected": {
+            "visible": true,
+            "value": "하나"
+          },
+          "matchesOracle": true
+        },
+        {
+          "case": "P2",
+          "output": "I02",
+          "classification": "sufficient",
+          "actual": {
+            "status": "sufficient",
+            "visible": true,
+            "value": "2024년 4월 5일 가입"
+          },
+          "expected": {
+            "visible": true,
+            "value": "2024년 4월 5일 가입"
+          },
+          "matchesOracle": true
+        },
+        {
+          "case": "P3",
+          "output": "I01",
+          "classification": "sufficient",
+          "actual": {
+            "status": "sufficient",
+            "visible": true,
+            "value": "민지"
+          },
+          "expected": {
+            "visible": true,
+            "value": "민지"
+          },
+          "matchesOracle": true
+        },
+        {
+          "case": "P3",
+          "output": "I02",
+          "classification": "sufficient",
+          "actual": {
+            "status": "sufficient",
+            "visible": true,
+            "value": "가입일 정보 없음"
+          },
+          "expected": {
+            "visible": true,
+            "value": "가입일 정보 없음"
+          },
+          "matchesOracle": true
+        },
+        {
+          "case": "P4",
+          "output": "I01",
+          "classification": "sufficient",
+          "actual": {
+            "status": "sufficient",
+            "visible": true,
+            "value": "민지"
+          },
+          "expected": {
+            "visible": true,
+            "value": "민지"
+          },
+          "matchesOracle": true
+        },
+        {
+          "case": "P4",
+          "output": "I02",
+          "classification": "sufficient",
+          "actual": {
+            "status": "sufficient",
+            "visible": true,
+            "value": "2025년 1월 2일 가입"
+          },
+          "expected": {
+            "visible": true,
+            "value": "2025년 1월 2일 가입"
+          },
+          "matchesOracle": true
+        }
+      ],
+      "matchedCells": 10,
+      "totalCells": 10,
+      "missingRenderableMapping": "needsResolution in all 10 cells",
+      "emptyRenderableMapping": "needsResolution in all 10 cells",
+      "wrongFallbackDetected": true,
+      "semanticPrimitives": [
+        "typed semantic source",
+        "output",
+        "visibility predicate",
+        "value source",
+        "nil behavior",
+        "transform"
+      ],
+      "sharedEvaluationPolicy": [
+        "missing Repository mapping -> Needs Resolution"
+      ],
+      "sourceDependencies": {
+        "I01": [
+          "profile.displayName",
+          "profile.renderable"
+        ],
+        "I02": [
+          "profile.createdAt",
+          "profile.renderable"
+        ]
+      },
+      "sourceDependenciesDerivableWithoutUpdateTriggerField": true,
+      "runtimeUpdatePropagationTested": false,
+      "duplicatedVisibilityRules": 1,
+      "boundedProductSymbolScanMatches": [],
+      "mappingStatus": "proposed simulation, not production validation",
+      "jsonBytesUtf8": 902,
+      "nodeCount": 5,
+      "edgeCount": 4,
+      "relationCount": null
+    }
+  ]
+}

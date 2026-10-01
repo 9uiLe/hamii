@@ -1,0 +1,16 @@
+{
+  "schema": "spike-annotated-graph-v1",
+  "nodes": [
+    {"id": "profile.renderable", "kind": "semanticSource", "type": "Bool"},
+    {"id": "profile.displayName", "kind": "semanticSource", "type": "String?"},
+    {"id": "profile.createdAt", "kind": "semanticSource", "type": "Instant?"},
+    {"id": "I01", "kind": "output", "type": "String"},
+    {"id": "I02", "kind": "output", "type": "String"}
+  ],
+  "edges": [
+    {"from": "profile.renderable", "to": "I01", "role": "visibility", "equals": true},
+    {"from": "profile.displayName", "to": "I01", "role": "value", "whenNil": {"kind": "needsResolution"}, "transform": "identity"},
+    {"from": "profile.renderable", "to": "I02", "role": "visibility", "equals": true},
+    {"from": "profile.createdAt", "to": "I02", "role": "value", "whenNil": {"kind": "literal", "value": "가입일 정보 없음"}, "transform": "membershipDate-ko-utc-v1"}
+  ]
+}
