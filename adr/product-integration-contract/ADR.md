@@ -18,11 +18,25 @@ component 単位 contract、screen 単位 contract、dependency graph 付き con
 
 ## Current Hypothesis
 
-**未確定:** UI intent の semantic contract と repository profile を渡せば、AI は異なる product architecture に適応できる可能性がある。検証した profile-state case では typed binding relation が graph と同じ意味を表したが、これだけで contract 外枠の採否は決めない。
+**検証時点の仮説（Decision ではない）:** UI intent の semantic contract と repository profile を渡せば、AI は異なる product architecture に適応できる可能性がある。State semantics は typed relation だけで表せる可能性がある。
+
+## Decision
+
+**Screen-level semantic contract を正式な Product Integration Contract の外枠とし、その中に typed state/binding relations を持たせる。** Component-level contract と full dependency graph は必須の canonical contract 構造にしない。Component 化そのものは禁止しない。Product Repository の componentization は Repository Profile と integration 実装側で判断する。
+
+Screen contract は Product 非依存の UI semantic intent を所有する。既存の inputs / events / tokens / assets / native / accessibility に加え、typed relation は semantic output と semantic source の関係、visibility predicate、nil behavior、必要な semantic transform を表す。`profile.displayName`、`profile.createdAt`、`profile.renderable` のような semantic source は contract に属する。`Profile.nickname`、TCA/MVI/MVVM の State/Reducer、Router、Swift file path などの Product 固有の表現を contract に入れない。Repository Profile が semantic source / event / token / asset / native requirement と対象 Repository の model / action / route / source を対応付ける。
+
+独立した `updateTrigger` field は必須にしない。[binding-state-relation-minimum Spike](spikes/binding-state-relation-minimum/SPIKE.md) では relation の source dependencies から更新対象を識別できたが、runtime 更新伝播は未検証である。Full graph は禁止せず、複雑な multi-source semantics で typed relation が一意性を保てない実証が出たときに再評価する。
+
+**`Needs Resolution` は fail-closed integration result であり advisory warning ではない。** Mapping の欠落・空・不正、semantic source の解決不能、複数候補による曖昧さ、required transform の実装不能、既存 Product behavior と requested semantic の衝突では、その unresolved semantic に依存する code change を生成しない。AI は source 名の類似から mapping を推測せず、衝突時に overlay / fallback / replacement を無断選択しない。特に I03 の system-image avatar と Product avatar art の衝突は `Needs Resolution` とする。無関係の semantic まで常に全面停止するかはこの Decision では固定しない。部分適用するなら、依存関係を機械的に検査し、unresolved semantic に依存する patch を拒否する。
+
+**理由:** [repository-mapping Spike](spikes/repository-mapping/SPIKE.md) と [existing-profile-state Spike](spikes/existing-profile-state/SPIKE.md) は複数 Repository / contract 表現で source-level mapping と build を確認し、component-level 外枠や graph 外枠を必須とする差を示さなかった。[independent-diff-review Spike](spikes/independent-diff-review/SPIKE.md) は3方式すべてに I03 の contract/Product conflict と修正負担を見つけた。[state-semantics-self-sufficiency Spike](spikes/state-semantics-self-sufficiency/SPIKE.md) は3方式すべてが state 名・edge だけでは不十分と確認した。[binding-state-relation-minimum Spike](spikes/binding-state-relation-minimum/SPIKE.md)（Evidence commit `155f8144fd6cfdb824a0f1f42250d37194ea3672`）では typed relation R と annotated graph G が P0–P4 × I01/I02 の10セルを同じく表現し、mapping 欠落は両方 fail closed だった。この範囲で G 固有 topology は追加の意味を提供しなかった。現行 [IntegrationContract](../../Sources/HamiiIntegration/IntegrationContract.swift) も screen を integration entry point としている。この Evidence から、screen 外枠に不足する typed relation を加える設計を採用する。
+
+**実装完了前の検証条件:** typed relation の extraction / serialization round-trip、deterministic planning、missing / empty / ambiguous mapping の fail-closed、P0 first load と P1 cached refresh と P2 refresh failure の区別、P3 nil fallback、P4 nonnil transform、I03 conflict rejection、既存 edit route の grounded mapping、実 Product の build/test、runtime の表示・event・accessibility を確認する。Cache と update propagation、calendar/time-zone/copy、Source mapping の Product 実装が正しく動くことも検証する。Human correction は未計測と明記し、agent review を Human review に読み替えない。これらの validation は contract 粒度 Decision の撤回条件ではなく、production 実装を完成させる条件である。
 
 ## Unknowns
 
-残る判断は、state-aware typed relation をどの contract 外枠に組み込み、必要な UI intent をどの粒度で渡すか。新しい表示・イベントの runtime behavior と Human correction は未計測であり、production 化前の検証範囲を明示する必要がある。I03 の system-image avatar intent と既存 Product semantics の衝突は shape-independent `Needs Resolution` として扱う候補であり、visual resolution は未実施。既存 profile state / edit route への mapping は reducer/store Repository の独立3試行で検証した。Blind review は全差分で I03 の未達または partial mapping を見つけ、I02 の empty-profile behavior は reviewer 間で判定が異なった。Contract-only probe では3方式すべてが S0/S1/S2 の意味を一意に伝えられず、続く typed relation / annotated graph 比較では P0–P4 を分けて10セルの意味を両候補で表現した。Human correction 未計測は、それ自体を Decision 阻止条件にはしない。
+Production typed relation の schema、extraction / planner への接続、Repository Profile の mapping 検証、Product 統合と runtime 確認は未実装。I03 の具体的 visual 解決と Human correction は未計測である。I02 empty-profile behavior は independent reviewer 間で判定が異なったが、P0–P4 oracle では profile presence と cached refresh を分けて扱った。Runtime behavior と final Product copy の検証は必要であり、この Decision の Evidence 範囲を超える。
 
 ## Required Evidence
 
@@ -30,8 +44,8 @@ component 単位 contract、screen 単位 contract、dependency graph 付き con
 
 ## Decision Criteria
 
-[spikes/repository-mapping/SPIKE.md](spikes/repository-mapping/SPIKE.md) の成功・失敗基準に照らして選択肢を比較し、採用する方式と残る制約を記録する。判断と結果を commit した後に、必要な実装・検証と現行 docs への反映を完了する。削除は [ADR workflow](../../docs/adr-workflow.md) の全条件を満たすまで行わない。
+上の Decision を別 commit の production 実装・検証と現行 docs に反映する。実装完了前の検証条件を満たし、未解決の follow-up がなく、Decision / Spike result が Git history に残った後にだけ [ADR workflow](../../docs/adr-workflow.md) に従って削除する。
 
 ## Status
 
-Ready for Decision
+Implementation Required
