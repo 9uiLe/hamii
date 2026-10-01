@@ -43,12 +43,34 @@ public struct IntegrationProfile: Codable, Equatable {
     public var assetMappings: [EntityID: String]
     public var routingMappings: [String: String]
     public var stateMappings: [String: String]
+    public var nativeMappings: [String: String]
     public var codeModificationPolicy: [String]
     public init(repositoryName: String) {
         formatVersion = 1; self.repositoryName = repositoryName
         architectureRules = []; componentMappings = [:]; tokenMappings = [:]
-        assetMappings = [:]; routingMappings = [:]; stateMappings = [:]
+        assetMappings = [:]; routingMappings = [:]; stateMappings = [:]; nativeMappings = [:]
         codeModificationPolicy = []
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case formatVersion, repositoryName, architectureRules, componentMappings
+        case tokenMappings, assetMappings, routingMappings, stateMappings
+        case nativeMappings, codeModificationPolicy
+    }
+
+    public init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        formatVersion = try values.decode(Int.self, forKey: .formatVersion)
+        repositoryName = try values.decode(String.self, forKey: .repositoryName)
+        architectureRules = try values.decode([String].self, forKey: .architectureRules)
+        componentMappings = try values.decode([EntityID: String].self, forKey: .componentMappings)
+        tokenMappings = try values.decode([EntityID: String].self, forKey: .tokenMappings)
+        assetMappings = try values.decode([EntityID: String].self, forKey: .assetMappings)
+        routingMappings = try values.decode([String: String].self, forKey: .routingMappings)
+        stateMappings = try values.decode([String: String].self, forKey: .stateMappings)
+        nativeMappings = values.contains(.nativeMappings)
+            ? try values.decode([String: String].self, forKey: .nativeMappings) : [:]
+        codeModificationPolicy = try values.decode([String].self, forKey: .codeModificationPolicy)
     }
 }
 

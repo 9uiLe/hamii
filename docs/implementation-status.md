@@ -18,7 +18,7 @@ Spacing Token は GUI と CLI から作成・参照・Stack spacing / Layer の�
 
 Current IR の typed payload、Stack spacing、順序付き padding effect、Screen-level system semantics は実装済みです。`nativeIntent` と `targetOverrides` は Current Format v2 の opaque field として保持します。両方とも Preview / Generator の supported capability ではなく、Exact declaration でも利用を拒否します。Product repository 固有の native mapping は Integration Contract 側の論点です。
 
-Product Integration Contract は Screen-level の optional typed state/binding relation と fail-closed planning core を持ちます。既存 CLI contract の JSON field は維持し、現行 IR から抽出できない relation を推測して出力しません。Planner は mapping/relation/transform の unresolved issue と影響を受ける output を報告できます。IR からの relation 抽出と保存、IntegrationProfile の canonical persistence、Product repository adapter、runtime display/event/accessibility の検証は未実装です。
+Product Integration Contract は Screen-level の optional typed state/binding relation と fail-closed planning core を持ちます。既存 CLI contract の JSON field は維持し、現行 IR から抽出できない relation を推測して出力しません。Planner は mapping/relation/transform の unresolved issue と影響を受ける output を報告できます。Repository Profile v1 は明示された外部 file path から read-only で読み込め、CLI の `integration plan` は resolved と Needs Resolution を structured output と exit status で区別します。IR からの relation 抽出と保存、IntegrationProfile の hamii-managed canonical writer、Product repository adapter、runtime display/event/accessibility の検証は未実装です。
 
 `bash scripts/check.sh` は実装済み契約を検証します。この検証だけでは Native Preview parity、次の format change に対する migration safety、production integration の品質は証明できません。これらは [Technical Spikes](spikes.md) に紐づく実験で測定します。
 

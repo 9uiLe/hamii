@@ -14,6 +14,8 @@
 | 8 | `staleIndex` | Index freshness cannot be established |
 | 9 | `unsupportedCapability` | Unsupported UI capability |
 
+`integration plan SCREEN_ID --integration-profile PATH --json` reads only the explicit Repository Profile file. A resolved plan returns exit 0 and `ok:true`. Needs Resolution returns exit 5, `category:"contract"`, `ok:false`, and still includes `integrationPlan`, `resolutionIssues`, and `blockedOutputs`. A profile or Document integration-profile version mismatch returns `migrationRequired` / exit 6; malformed v1 profile content returns `contract` / exit 5. An unreadable explicit path returns `storage` / exit 7. The profile file is not a hamii Canonical shard.
+
 The optional `message` is a human-readable diagnostic. Automation must not parse its wording to choose a recovery action. Exit codes alone do not determine whether retry is safe. Obtain command instructions from the installed `hamii skills list` / `skills get` and inspect the category and available structured fields. For an unknown category, do not automatically mutate or retry; stop and surface the failure for review. The tested nine-category recovery matrix supports this contract for those cases only; it does not assign retry behavior to every category in the table.
 
 `terminal`, when present, is a context-session transport signal. In that session, `usage` and `notFound` responses may be nonterminal; a terminal error ends the session. One-shot commands generally omit `terminal`, and omission does not mean `false`. See [Context session](context-session.md) for its request and resync rules.

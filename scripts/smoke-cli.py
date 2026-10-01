@@ -53,10 +53,47 @@ with tempfile.TemporaryDirectory(prefix="hamii-cli-") as directory:
     assert "macOS SwiftUI only" in preview_skill
     integration_skill = run("skills", "get", "integration")["skill"]
     assert "integration contract SCREEN_ID" in integration_skill
+    assert "integration plan SCREEN_ID --integration-profile PATH" in integration_skill
     assert "generate swiftui SCREEN_ID TARGET_ID" in integration_skill
     scope = created["document"]["scopes"][0]["id"]["rawValue"]
     added = mutate("screen", "create", scope, "Profile")
     assert added["mutation"]["revision"] == 1
+    screen_id = run("inspect")["document"]["screens"][0]["id"]["rawValue"]
+    integration_profile = {
+        "formatVersion": 1, "repositoryName": "Product", "architectureRules": [],
+        "componentMappings": [], "tokenMappings": [], "assetMappings": [],
+        "routingMappings": {}, "stateMappings": {}, "nativeMappings": {},
+        "codeModificationPolicy": [],
+    }
+    with tempfile.TemporaryDirectory(prefix="hamii-integration-profile-") as profile_dir:
+        profile_file = Path(profile_dir) / "profile.json"
+        profile_file.write_text(json.dumps(integration_profile))
+        resolved = run("integration", "plan", screen_id, "--integration-profile", str(profile_file))
+        assert resolved["ok"] and resolved["integrationPlan"]["resolutionIssues"] == []
+        assert resolved["resolutionIssues"] == [] and resolved["blockedOutputs"] == []
+        profile_file.write_text(json.dumps({**integration_profile, "formatVersion": 2}))
+        wrong_version = subprocess.run(
+            [str(binary), "--project", directory, "--json", "integration", "plan", screen_id,
+             "--integration-profile", str(profile_file)], capture_output=True, text=True, timeout=15,
+        )
+        assert wrong_version.returncode == 6 and json.loads(wrong_version.stdout)["category"] == "migrationRequired"
+        duplicate_profile = subprocess.run(
+            [str(binary), "--project", directory, "--json", "integration", "plan", screen_id,
+             "--integration-profile", str(profile_file), "--integration-profile", str(profile_file)],
+            capture_output=True, text=True, timeout=15,
+        )
+        assert duplicate_profile.returncode == 2 and json.loads(duplicate_profile.stdout)["category"] == "usage"
+        unreadable_profile = subprocess.run(
+            [str(binary), "--project", directory, "--json", "integration", "plan", screen_id,
+             "--integration-profile", str(Path(profile_dir) / "missing.json")],
+            capture_output=True, text=True, timeout=15,
+        )
+        assert unreadable_profile.returncode == 7 and json.loads(unreadable_profile.stdout)["category"] == "storage"
+    omitted_profile = subprocess.run(
+        [str(binary), "--project", directory, "--json", "integration", "plan", screen_id],
+        capture_output=True, text=True, timeout=15,
+    )
+    assert omitted_profile.returncode == 2 and json.loads(omitted_profile.stdout)["category"] == "usage"
     old_state = created["statePrecondition"]["rawValue"]
     stale_client = subprocess.run(
         [str(binary), "--project", directory, "--json", "page", "create", "Stale", "--state", old_state],
@@ -80,6 +117,31 @@ with tempfile.TemporaryDirectory(prefix="hamii-cli-") as directory:
     }, contract
     assert contract["screenID"]["rawValue"] == screen["id"]["rawValue"]
     assert contract["assetIDs"] == [{"rawValue": asset["id"]["rawValue"]}]
+    with tempfile.TemporaryDirectory(prefix="hamii-integration-profile-") as profile_dir:
+        profile_file = Path(profile_dir) / "profile.json"
+        profile_file.write_text(json.dumps(integration_profile))
+        unresolved = subprocess.run(
+            [str(binary), "--project", directory, "--json", "integration", "plan", screen_id,
+             "--integration-profile", str(profile_file)], capture_output=True, text=True, timeout=15,
+        )
+        assert unresolved.returncode == 5, unresolved.stdout + unresolved.stderr
+        payload = json.loads(unresolved.stdout)
+        assert payload["ok"] is False and payload["category"] == "contract"
+        assert payload["integrationPlan"]["unresolvedMappings"] == [f"asset:{asset['id']['rawValue']}"]
+        assert payload["resolutionIssues"] == [{
+            "code": "missingMapping", "semanticID": f"asset:{asset['id']['rawValue']}"}]
+        assert payload["blockedOutputs"] == []
+        duplicate_asset = {**integration_profile, "assetMappings": [
+            {"rawValue": asset["id"]["rawValue"]}, "Product.AvatarA",
+            {"rawValue": asset["id"]["rawValue"]}, "Product.AvatarB",
+        ]}
+        profile_file.write_text(json.dumps(duplicate_asset))
+        ambiguous = subprocess.run(
+            [str(binary), "--project", directory, "--json", "integration", "plan", screen_id,
+             "--integration-profile", str(profile_file)], capture_output=True, text=True, timeout=15,
+        )
+        assert ambiguous.returncode == 5, ambiguous.stdout + ambiguous.stderr
+        assert json.loads(ambiguous.stdout)["category"] == "contract"
     primitive = mutate("token", "create", scope, "spacing.base", "spacing", "8")
     assert primitive["mutation"]["revision"] == 4
     primitive_id = primitive["mutation"]["patches"][0]["entityID"]["rawValue"]

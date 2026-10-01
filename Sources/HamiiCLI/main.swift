@@ -73,6 +73,9 @@ private struct Output: Encodable {
     var hits: [ComponentHit]?
     var generated: GeneratedSource?
     var contract: IntegrationContract?
+    var integrationPlan: IntegrationPlan?
+    var resolutionIssues: [IntegrationResolutionIssue]?
+    var blockedOutputs: [SemanticOutputKey]?
     var migration: MigrationPlan?
     var migrationResolution: MigrationResolutionReport?
     var migrationReview: MigrationReviewPackage?
@@ -81,12 +84,14 @@ private struct Output: Encodable {
     var mergeCheck: MergeCheck?
     var context: ContextCLIOutput?
     var terminal: Bool?
-    init(ok: Bool, category: String? = nil, message: String? = nil, blockers: [String]? = nil, document: Document? = nil, statePrecondition: ClientPrecondition? = nil, mutation: MutationResult? = nil, components: [ComponentDefinition]? = nil, skills: [String]? = nil, skill: String? = nil, diagnostics: [Diagnostic]? = nil, hits: [ComponentHit]? = nil, generated: GeneratedSource? = nil, contract: IntegrationContract? = nil, migration: MigrationPlan? = nil, migrationResolution: MigrationResolutionReport? = nil, migrationReview: MigrationReviewPackage? = nil, migrationPublication: MigrationPublicationResult? = nil, previewPlan: TargetPlan? = nil, mergeCheck: MergeCheck? = nil, context: ContextCLIOutput? = nil, terminal: Bool? = nil) {
+    init(ok: Bool, category: String? = nil, message: String? = nil, blockers: [String]? = nil, document: Document? = nil, statePrecondition: ClientPrecondition? = nil, mutation: MutationResult? = nil, components: [ComponentDefinition]? = nil, skills: [String]? = nil, skill: String? = nil, diagnostics: [Diagnostic]? = nil, hits: [ComponentHit]? = nil, generated: GeneratedSource? = nil, contract: IntegrationContract? = nil, integrationPlan: IntegrationPlan? = nil, resolutionIssues: [IntegrationResolutionIssue]? = nil, blockedOutputs: [SemanticOutputKey]? = nil, migration: MigrationPlan? = nil, migrationResolution: MigrationResolutionReport? = nil, migrationReview: MigrationReviewPackage? = nil, migrationPublication: MigrationPublicationResult? = nil, previewPlan: TargetPlan? = nil, mergeCheck: MergeCheck? = nil, context: ContextCLIOutput? = nil, terminal: Bool? = nil) {
         self.ok = ok; self.category = category; self.message = message; self.blockers = blockers; self.document = document
         self.statePrecondition = statePrecondition
         self.mutation = mutation; self.components = components; self.skills = skills
         self.skill = skill; self.diagnostics = diagnostics; self.hits = hits
-        self.generated = generated; self.contract = contract; self.migration = migration
+        self.generated = generated; self.contract = contract; self.integrationPlan = integrationPlan
+        self.resolutionIssues = resolutionIssues; self.blockedOutputs = blockedOutputs
+        self.migration = migration
         self.migrationResolution = migrationResolution; self.migrationReview = migrationReview
         self.migrationPublication = migrationPublication
         self.previewPlan = previewPlan
@@ -104,7 +109,7 @@ private enum CLI {
         "tokens": "hamii \(version)\ntoken create OWNER_SCOPE_ID NAME KIND LITERAL --state TOKEN creates a primitive token; token alias OWNER_SCOPE_ID NAME KIND TARGET_TOKEN_ID --state TOKEN creates a semantic alias. KIND is color|typography|spacing|radius|border|shadow|opacity|motion. Spacing literals are nonnegative finite numbers. layer token SCREEN_ID LAYER_ID spacing|padding TOKEN_ID|- --state TOKEN sets or clears a layout token. ArchitectureScope ownership and token references are validated before save.",
         "components": "hamii \(version)\ncomponent list CONSUMER_SCOPE_ID; component create OWNER_SCOPE_ID NAME --state TOKEN; component instantiate SCREEN_ID PARENT_LAYER_ID DEFINITION_ID --state TOKEN; component promote DEFINITION_ID ANCESTOR_SCOPE_ID --state TOKEN. Promotion requires an Agent profile with explicit mayPromoteScope permission. Definition tree is referenced by instances; scope and availability are enforced by the mutation service. For availability reasons, obtain query context summary, then query context component-availability SCOPE_ID [MATCH] [--limit N] --state TOKEN; the result includes ruleID and blockingComponentID for unavailable definitions.",
         "validation": "hamii \(version)\nvalidate --project PATH --json returns diagnostics with rule, severity, entityID and message. query components CONSUMER_SCOPE_ID TERM automatically rebuilds a missing or stale derived index only from a verified coordinated Canonical generation. External edits, pending transitions, unverifiable Git state, and storage failures remain fail closed; use index rebuild explicitly after supported external edits. If canonical Git files are marked assume-unchanged or skip-worktree or use Git filters, clear those settings before rebuilding. migrate plan --json preflights a format without changing it. migrate resolution --json lists finite, source-bound choices for clean committed historical input; zero-choice items stay blocked. Save a typed manifest outside Canonical data, then migrate prepare --resolution PATH --json creates a reviewed candidate and reports exact losses. Safe automatic sources still use migrate prepare --json. After reviewing exact IDs and losses, migrate publish REVIEW_ID SOURCE_OID CANDIDATE_OID --json publishes only that candidate; migrate recover --json reconciles an interrupted publication.",
-        "integration": "hamii \(version)\nintegration contract SCREEN_ID --json returns semantic inputs, events, token/asset references, native and accessibility intent. Unknown product mappings require review. generate swiftui SCREEN_ID TARGET_ID --json is a separate deterministic path for the supported static subset and returns an error for unsupported semantics.",
+        "integration": "hamii \(version)\nintegration contract SCREEN_ID --json returns semantic inputs, events, token/asset references, native and accessibility intent. integration plan SCREEN_ID --integration-profile PATH --json reads an explicitly selected v1 Repository Profile. Exit 0 means resolved; exit 5/category contract returns integrationPlan, resolutionIssues and blockedOutputs for Needs Resolution. Do not guess mappings or edit canonical files directly. generate swiftui SCREEN_ID TARGET_ID --json is a separate deterministic path for the supported static subset and returns an error for unsupported semantics.",
         "assets": "hamii \(version)\nasset import SCOPE_ID NAME MEDIA_TYPE SOURCE_PATH --storage git --state TOKEN writes a SHA-256 addressed repository blob and Asset metadata. Large binary Git/LFS policy is unresolved; choose Git storage explicitly. layer image SCREEN_ID PARENT_ID ASSET_ID NAME --state TOKEN adds an image reference. Run validate --json to check blob integrity. Remote caches and thumbnails are not canonical data.",
         "preview": "hamii \(version)\npreview plan SURFACE_ID --json checks declared target capabilities and semantic support for one AppSurface. The current Native Preview capability catalog applies to macOS SwiftUI only; other target profiles fail closed even with Exact declarations because Native Preview coverage is not registered for them. This does not assert that their framework APIs are unsupported. A successful plan reports that the IR is supported; an installed and running Native Preview Host is a separate requirement. iOS Simulator and Android Hosts are not yet implemented.",
         "context": "hamii \(version)\nUse --json. Prefer query context session [--screen SCREEN_ID --layer LAYER_ID] for multiple reads. It emits an initial summary, then accepts one NDJSON request per line: layer {op,screenID,layerID}, resources {op,consumerScopeID,kind,matching?,limit?}, componentAvailability {op,consumerScopeID,matching?,limit?}, component {op,consumerScopeID,componentID}, token {op,consumerScopeID,tokenID}, surface {op,surfaceID}, or {op:close}. op is the operation name and all string values must be JSON quoted. Responses reuse the initial observation; requests never accept --state. Lines are limited to 64 KiB. usage and notFound errors have terminal:false; other errors have terminal:true and end the process. On a terminal error start a new session; never combine observations. EOF closes without a response. Mutations use existing one-shot commands with the initial observation.statePrecondition as --state TOKEN. For one-shot reads, start with query context summary [--screen SCREEN_ID --layer LAYER_ID]. Use its observation.statePrecondition as --state TOKEN for every follow-up: query context layer SCREEN_ID LAYER_ID; query context resources SCOPE_ID component|token|asset [MATCH] [--limit N]; query context component-availability SCOPE_ID [MATCH] [--limit N]; query context component SCOPE_ID COMPONENT_ID; query context token SCOPE_ID TOKEN_ID; query context surface SURFACE_ID. Surface detail includes bounded capability losses and Preview Plan diagnostics; it does not prove Native Preview Host availability. Resource results are Scope-filtered and bounded. Component availability is a separate bounded read including unavailable components and stable rule/blocker IDs; it does not change resources semantics. Never combine responses with different statePrecondition values. Request selected detail only when needed. Mutate through existing commands with the same --state TOKEN. On conflict, restart from summary. Do not edit Canonical files directly or use full inspect as the routine AI context."
@@ -200,7 +205,14 @@ private enum CLI {
         let limitText = takeOption("--limit", from: &args)
         let selectedScreenText = takeOption("--screen", from: &args)
         let selectedLayerText = takeOption("--layer", from: &args)
+        guard args.filter({ $0 == "--integration-profile" }).count <= 1 else {
+            throw CLIError(category: "usage", message: "Duplicate --integration-profile")
+        }
+        let integrationProfilePath = takeOption("--integration-profile", from: &args)
         guard let verb = args.first else { throw CLIError(category: "usage", message: usage) }
+        guard integrationProfilePath == nil || (args.count == 3 && args[0] == "integration" && args[1] == "plan") else {
+            throw CLIError(category: "usage", message: "--integration-profile is valid only for integration plan")
+        }
         guard resolutionPath == nil || args == ["migrate", "prepare"] else {
             throw CLIError(category: "usage", message: "--resolution is valid only for migrate prepare")
         }
@@ -404,6 +416,20 @@ private enum CLI {
         if args.count == 3 && args[0] == "integration" && args[1] == "contract" {
             return Output(ok: true, contract: try IntegrationContracts.make(screenID: EntityID(args[2]), document: service.document()))
         }
+        if args.count == 3 && args[0] == "integration" && args[1] == "plan" {
+            guard let integrationProfilePath, !integrationProfilePath.isEmpty,
+                  !integrationProfilePath.hasPrefix("--") else {
+                throw CLIError(category: "usage", message: "integration plan requires --integration-profile PATH")
+            }
+            let document = try service.document()
+            try IntegrationProfileFile.requireDocumentVersion(document.versions.integrationProfile)
+            let contract = try IntegrationContracts.make(screenID: EntityID(args[2]), document: document)
+            let profile = try IntegrationProfileFile.load(at: URL(fileURLWithPath: integrationProfilePath))
+            let plan = IntegrationContracts.plan(contract, profile: profile)
+            return Output(ok: !plan.needsResolution, category: plan.needsResolution ? "contract" : nil,
+                          integrationPlan: plan, resolutionIssues: plan.resolutionIssues,
+                          blockedOutputs: plan.blockedOutputs)
+        }
         if args.count == 3 && args[0] == "preview" && args[1] == "plan" {
             let document = try service.document()
             guard let surface = document.pages.flatMap(\.surfaces).first(where: { $0.id == EntityID(args[2]) }) else {
@@ -470,7 +496,7 @@ private enum CLI {
         return Output(ok: true, mutation: result)
     }
 
-    static let usage = "hamii [--project PATH] [--profile NAME] [--json] <version|init NAME|inspect|validate|git switch BRANCH|git recover|git merge check BRANCH|git merge publish BRANCH|preview plan SURFACE_ID|migrate plan|migrate resolution|migrate prepare [--resolution PATH]|migrate publish REVIEW_ID SOURCE_OID CANDIDATE_OID|migrate recover|skills list|get NAME|index rebuild|query components SCOPE_ID TERM|query context session [--screen ID --layer ID]|query context summary [--screen ID --layer ID]|query context layer SCREEN_ID LAYER_ID --state TOKEN|query context resources SCOPE_ID component|token|asset [MATCH] [--limit N] --state TOKEN|query context component-availability SCOPE_ID [MATCH] [--limit N] --state TOKEN|query context component SCOPE_ID COMPONENT_ID --state TOKEN|query context token SCOPE_ID TOKEN_ID --state TOKEN|query context surface SURFACE_ID --state TOKEN|generate swiftui SCREEN_ID TARGET_ID|integration contract SCREEN_ID|page create NAME|scope create PARENT_ID NAME|screen create SCOPE_ID NAME|target add PLATFORM FRAMEWORK|surface add PAGE_ID SCREEN_ID TARGET_ID DEVICE RUNTIME BUILD_ENVIRONMENT|surface target SURFACE_ID TARGET_ID|capability set TARGET_ID KEY SUPPORT|asset import SCOPE_ID NAME MEDIA_TYPE SOURCE_PATH --storage git|layer add SCREEN_ID PARENT_ID KIND NAME TEXT|layer text SCREEN_ID LAYER_ID TEXT|layer token SCREEN_ID LAYER_ID spacing|padding TOKEN_ID|-|token create SCOPE_ID NAME KIND VALUE|token alias SCOPE_ID NAME KIND TOKEN_ID|layer image SCREEN_ID PARENT_ID ASSET_ID NAME|component create SCOPE_ID NAME|component list SCOPE_ID|component instantiate SCREEN_ID PARENT_ID DEFINITION_ID|component promote DEFINITION_ID ANCESTOR_SCOPE_ID> [--state TOKEN]"
+    static let usage = "hamii [--project PATH] [--profile NAME] [--json] <version|init NAME|inspect|validate|git switch BRANCH|git recover|git merge check BRANCH|git merge publish BRANCH|preview plan SURFACE_ID|migrate plan|migrate resolution|migrate prepare [--resolution PATH]|migrate publish REVIEW_ID SOURCE_OID CANDIDATE_OID|migrate recover|skills list|get NAME|index rebuild|query components SCOPE_ID TERM|query context session [--screen ID --layer ID]|query context summary [--screen ID --layer ID]|query context layer SCREEN_ID LAYER_ID --state TOKEN|query context resources SCOPE_ID component|token|asset [MATCH] [--limit N] --state TOKEN|query context component-availability SCOPE_ID [MATCH] [--limit N] --state TOKEN|query context component SCOPE_ID COMPONENT_ID --state TOKEN|query context token SCOPE_ID TOKEN_ID --state TOKEN|query context surface SURFACE_ID --state TOKEN|generate swiftui SCREEN_ID TARGET_ID|integration contract SCREEN_ID|integration plan SCREEN_ID --integration-profile PATH|page create NAME|scope create PARENT_ID NAME|screen create SCOPE_ID NAME|target add PLATFORM FRAMEWORK|surface add PAGE_ID SCREEN_ID TARGET_ID DEVICE RUNTIME BUILD_ENVIRONMENT|surface target SURFACE_ID TARGET_ID|capability set TARGET_ID KEY SUPPORT|asset import SCOPE_ID NAME MEDIA_TYPE SOURCE_PATH --storage git|layer add SCREEN_ID PARENT_ID KIND NAME TEXT|layer text SCREEN_ID LAYER_ID TEXT|layer token SCREEN_ID LAYER_ID spacing|padding TOKEN_ID|-|token create SCOPE_ID NAME KIND VALUE|token alias SCOPE_ID NAME KIND TOKEN_ID|layer image SCREEN_ID PARENT_ID ASSET_ID NAME|component create SCOPE_ID NAME|component list SCOPE_ID|component instantiate SCREEN_ID PARENT_ID DEFINITION_ID|component promote DEFINITION_ID ANCESTOR_SCOPE_ID> [--state TOKEN]"
 
     static func takeOption(_ name: String, from args: inout [String]) -> String? {
         guard let index = args.firstIndex(of: name), args.indices.contains(index + 1) else { return nil }
@@ -534,6 +560,12 @@ private func failureOutput(_ error: Error, terminal: Bool? = nil) -> (Output, In
     case is IndexError: category = "index"; code = 7
     case is GenerationError: category = "unsupportedCapability"; code = 9
     case is ContractError: category = "contract"; code = 5
+    case let value as IntegrationProfileFileError:
+        switch value {
+        case .unsupportedVersion: category = "migrationRequired"; code = 6
+        case .unreadable: category = "storage"; code = 7
+        case .invalid: category = "contract"; code = 5
+        }
     case is MigrationPreflightError: category = "migration"; code = 6
     case let value as MigrationPreparationError:
         switch value {
@@ -585,6 +617,8 @@ do {
         print(generated.source)
     } else if let contract = output.contract {
         print("\(contract.name): \(contract.inputs.count) inputs, \(contract.events.count) events")
+    } else if let plan = output.integrationPlan {
+        print(plan.needsResolution ? "Integration plan needs resolution: \(plan.resolutionIssues.count) issues" : "Integration plan resolved")
     } else if let migration = output.migration {
         print("Document format \(migration.sourceDocumentFormatVersion): \(migration.state)")
     } else if let review = output.migrationReview {

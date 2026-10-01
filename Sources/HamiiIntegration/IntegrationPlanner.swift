@@ -2,7 +2,7 @@ import Foundation
 import HamiiCore
 
 public enum IntegrationMappingKind: String, Codable, Hashable, Sendable {
-    case input, event, token, asset, source
+    case input, event, token, asset, native, source
 }
 
 public struct IntegrationMappingKey: Codable, Hashable, Sendable {
@@ -73,6 +73,9 @@ public enum IntegrationPlanner {
         for asset in Set(contract.assetIDs).sorted(by: { $0.rawValue < $1.rawValue }) {
             append(.asset, asset.rawValue, profile.assetMappings[asset])
         }
+        for intent in Set(contract.nativeIntents).sorted() {
+            append(.native, intent, profile.nativeMappings[intent])
+        }
         for source in Set((contract.semanticSources ?? []).map(\.key)).sorted() {
             append(.source, source.rawValue, profile.stateMappings[source.rawValue])
         }
@@ -86,6 +89,7 @@ public enum IntegrationPlanner {
         for event in contract.events { required.insert(.init(kind: .event, semanticID: event)) }
         for token in contract.tokenIDs { required.insert(.init(kind: .token, semanticID: token.rawValue)) }
         for asset in contract.assetIDs { required.insert(.init(kind: .asset, semanticID: asset.rawValue)) }
+        for intent in contract.nativeIntents { required.insert(.init(kind: .native, semanticID: intent)) }
         for source in contract.semanticSources ?? [] {
             required.insert(.init(kind: .source, semanticID: source.key.rawValue))
         }
@@ -154,7 +158,7 @@ public enum IntegrationPlanner {
                 blocked.insert(output)
             }
         }
-        // The legacy input/event/token/asset lists have no output-level dependency
+        // The legacy input/event/token/asset/native lists have no output-level dependency
         // edges. Until those edges are represented, partial application cannot
         // prove independence from an unresolved legacy resource.
         if badMappings.contains(where: { $0.kind != .source }) {
