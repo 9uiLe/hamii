@@ -141,7 +141,9 @@ public enum MigrationResolutionFailure: Error, CustomStringConvertible {
 extension MigrationRegistry {
     public static func resolutionReport(_ source: MigrationFileSet,
                                         sourceBinding: MigrationResolutionSourceBinding) throws -> MigrationResolutionReport {
-        guard sourceBinding.sourceFormatVersion == 1, sourceBinding.targetFormatVersion == 2 else {
+        guard sourceBinding.sourceFormatVersion == 1, sourceBinding.targetFormatVersion == 2,
+              try FormatV1.markers(in: source.files) == 1,
+              try route(from: 1, to: 2).edgePath == ["1->2"] else {
             throw MigrationResolutionFailure.invalidManifest
         }
         let analysis = try analyze(source)

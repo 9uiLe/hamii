@@ -94,6 +94,16 @@ final class MigrationResolutionProductionTests: XCTestCase {
         return document.versions.document == 2 && DocumentValidator.validate(document).isEmpty
     }
 
+    func testResolutionCannotApplyWhenItsEdgeIsAbsentFromRoute() throws {
+        let current = try MigrationRegistry.transform(MigrationFileSet(files: source())).files
+        let currentBinding = binding(current.files)
+        let irrelevant = MigrationResolutionManifest(source: currentBinding, decisions: [])
+        XCTAssertThrowsError(try MigrationRegistry.resolutionReport(current,
+            sourceBinding: currentBinding))
+        XCTAssertThrowsError(try MigrationRegistry.transform(current, applying: irrelevant,
+            actualSourceBinding: currentBinding))
+    }
+
     func testDistinctAndEquivalentSpacingChoicesStayExplicit() throws {
         for equivalent in [false, true] {
             var files = try source()

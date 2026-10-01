@@ -42,12 +42,16 @@ public struct MigrationCandidate {
 
 public enum MigrationEdgeFailure: Error, CustomStringConvertible {
     case invalidInput(String)
+    case invalidCatalog(String)
+    case invalidReceipt(String)
     case noPath(source: Int, target: Int)
     case requiresResolution([MigrationDiagnostic])
 
     public var description: String {
         switch self {
         case .invalidInput(let detail): "Invalid Canonical input: \(detail)"
+        case .invalidCatalog(let detail): "Invalid migration edge catalog: \(detail)"
+        case .invalidReceipt(let detail): "Invalid migration edge receipt: \(detail)"
         case .noPath(let source, let target): "No installed migration edge from \(source) to \(target)"
         case .requiresResolution(let diagnostics): diagnostics.map(\.blocker).joined(separator: "; ")
         }
@@ -57,16 +61,22 @@ public enum MigrationEdgeFailure: Error, CustomStringConvertible {
 /// Production edge registry. Only Format v1 → Current Format v2 is installed.
 public enum MigrationRegistry {
     public static let currentDocumentFormatVersion = 2
-    public static let installedEdges = [MigrationEdge(sourceVersion: 1, targetVersion: 2)]
+    private static let v1ToV2 = MigrationEdge(sourceVersion: 1, targetVersion: 2)
+    public static let installedEdges = [v1ToV2]
+
+    public static func route(from source: Int, to target: Int = currentDocumentFormatVersion) throws -> MigrationRoute {
+        try MigrationRouteResolver.resolve(from: source, to: target, catalog: installedEdges)
+    }
 
     public static func analyze(_ source: MigrationFileSet, to target: Int = currentDocumentFormatVersion) throws -> MigrationAnalysis {
         let version = try FormatV1.markers(in: source.files)
-        guard version == target || version == 1 && target == 2 else {
-            throw MigrationEdgeFailure.noPath(source: version, target: target)
-        }
-        if version == target {
+        let route = try route(from: version, to: target)
+        if route.edges.isEmpty {
             return MigrationAnalysis(sourceVersion: version, targetVersion: target,
                                      classification: nil, diagnostics: [], edgeAvailable: false)
+        }
+        guard route.edges == [v1ToV2] else {
+            throw MigrationEdgeFailure.noPath(source: version, target: target)
         }
         let diagnostics = try FormatV1.analyze(source.files)
         return MigrationAnalysis(sourceVersion: version, targetVersion: target,
@@ -82,18 +92,11 @@ public enum MigrationRegistry {
                                       edgePath: [], classification: nil, diagnostics: [],
                                       resolutionDecisions: [], losses: [], remainingUnresolved: [])
         }
+        let route = try route(from: analysis.sourceVersion, to: target)
         let files = try FormatV1.upgrade(source.files)
         return MigrationCandidate(files: MigrationFileSet(files: files), sourceVersion: analysis.sourceVersion,
-                                  targetVersion: target, edgePath: ["1->2"],
+                                  targetVersion: target, edgePath: route.edgePath,
                                   classification: .losslessWithNormalization, diagnostics: [],
                                   resolutionDecisions: [], losses: [], remainingUnresolved: [])
-    }
-}
-
-public struct MigrationEdge: Codable, Equatable, Sendable {
-    public let sourceVersion: Int
-    public let targetVersion: Int
-    public init(sourceVersion: Int, targetVersion: Int) {
-        self.sourceVersion = sourceVersion; self.targetVersion = targetVersion
     }
 }
