@@ -26,7 +26,7 @@ contract の粒度を選ぶための独立比較、実 Product の profile state
 
 ## Required Evidence
 
-[spikes/repository-mapping/SPIKE.md](spikes/repository-mapping/SPIKE.md) は2つの実 SwiftUI Repository × 3表現を測り、全 final patch で source-level semantic traceability と build を確認した。試行は同一 AI の逐次実行で Human correction は未計測のため、方式の採否はまだ決めない。独立 review と、既存 profile state を持つ reducer/store Repository の mapping、new-action runtime validation を必要な追加 Evidence として絞る。Spike prototype は production adapter ではない。
+[spikes/repository-mapping/SPIKE.md](spikes/repository-mapping/SPIKE.md) は2つの実 SwiftUI Repository × 3表現を測り、全 final patch で source-level semantic traceability と build を確認した。試行は同一 AI の逐次実行で Human correction は未計測のため、方式の採否はまだ決めない。[spikes/existing-profile-state/SPIKE.md](spikes/existing-profile-state/SPIKE.md) では既存 profile state / edit route を持つ reducer/store Repository に対象を絞り、同じ3表現を独立 context で比較する。独立 review と new-action runtime validation は、その結果を踏まえて必要性を判断する。Spike prototype は production adapter ではない。
 
 ## Decision Criteria
 

@@ -1,0 +1,28 @@
+{
+  "definition": "ProfileHeader",
+  "api": {
+    "properties": [
+      "I01 displayName",
+      "I02 secondaryText",
+      "I03 avatar"
+    ],
+    "bindings": [
+      "I09 displayNameSource -> I01",
+      "I10 secondaryTextSource -> I02"
+    ],
+    "events": [
+      "I04 editProfile"
+    ],
+    "states": [
+      "I08 normal"
+    ]
+  },
+  "implementationIntent": [
+    "I05 spacing.profileHeader = 12 pt",
+    "I06 avatarLabel = Profile avatar for {displayName}",
+    "I07 navigation.system"
+  ],
+  "repositoryMapping": [
+    "I11 editProfileDestination: source discovery required"
+  ]
+}
