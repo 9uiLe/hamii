@@ -24,25 +24,37 @@ How should the Migration subsystem compose multiple reviewed format edges into o
 
 ## Current Hypothesis
 
-**Tentative, not a decision:** ordered adjacent edges may reuse the installed v1→v2 transform with less duplicated historical knowledge. The existing review and recovery records must still prove every edge and the exact final candidate.
+Resolved by the decision below. The ordered-edge Spike supports reusing the installed v1→v2 transform while retaining one final candidate-based publication.
+
+## Decision
+
+**Adopt Option 1: explicit ordered adjacent edges.** From historical source format `S` to Current format `C`, install exactly one edge for every `S→S+1, S+1→S+2, …, C-1→C` step. Missing or duplicate adjacent edges, nonadjacent/backward/self edges, and catalogs offering more than one route fail closed. No shortest-path, priority, direct-edge preference, or general graph traversal is part of this contract. A future requirement that cannot be expressed as an adjacent chain requires a separate decision.
+
+Each edge owns only its declared input/output formats. Human resolution, loss audit, and classification belong to that edge; a resolution for an edge absent from the selected route is rejected. The v1→v2 edge keeps its existing source-bound resolution meaning. An edge must not reinterpret decisions made by an earlier edge or infer missing semantic relations. Historical models remain in the Migration subsystem, outside Current Core.
+
+The final review binds the original source ref, commit OID, tree OID, Canonical identity and format; final Current target format; exact ordered edge IDs and receipts; each receipt's input/output identity and classification; edge-local resolutions and losses; final candidate commit/tree/Canonical identity; changed paths; and immutable retention ref. Adjacent receipts must satisfy `previous.outputIdentity == next.inputIdentity`. Publisher and recovery independently rerun the entire installed route from the original source commit, compare receipts/audit/final bytes with the reviewed immutable candidate, and reject a changed source or path. Intermediate formats are never a publication state.
+
+Git source-ref compare-and-swap remains the sole Canonical publication commit point. Before CAS, recovery retains the original historical source; after CAS, it rolls forward to the validated final Current candidate. A ref matching neither old nor candidate remains gated. Current-format queries are refused until final Current validation and a matching derived Index are complete. Index failure does not roll back Canonical publication.
+
+Existing review-record formats 1 and 2 retain their single-edge interpretation. Composed routes require a new review-record format; old records are never silently reinterpreted as multi-edge reviews. Its numeric version and Swift field layout are implementation details. This decision does not establish SIGKILL or power-loss durability; those require production validation and the existing durability boundary.
 
 ## Unknowns
 
-- How are missing or ambiguous routes rejected, and how is a route kept stable between preflight, review, publish, and recovery?
-- How are v1→v2 resolution decisions bound when the final review target is v3?
-- How are per-edge loss classifications and exact final bytes represented and verified?
-- How do source changes, candidate tampering, stop/restart, and ref CAS affect a composed publication?
-- Which existing review-record versions remain readable without introducing historical schemas into Current Core?
+The route decision is complete. Production implementation and validation still need:
+
+- Edge registry, receipt type, and new composed review-record layout that preserves the installed v1→v2 behavior.
+- One checked full-route replay path shared by candidate preparation, publisher, and recovery.
+- Stop/restart checks, strict Current-v3 validation, and Index binding before enabling a v1/v2→v3 route.
 
 ## Required Evidence
 
-The [Ordered Edge Publication Spike](spikes/ordered-edge-publication/SPIKE.md) exercised the installed v1→v2 edge plus a synthetic 2→3 edge in a test-only route/review/Git publication/recovery harness. It covered v1→2→3 and v2→3, explicit v1 resolution, route ambiguity, source/intermediate/candidate/review tampering, exception stops on both sides of ref CAS, unchanged unrelated bytes, and an Index identity/generation double. The [Screen layout Spike](../screen-semantic-relation-persistence/spikes/canonical-layout-and-v3/SPIKE.md) had previously established only test-local sequential transform composability. Production still installs no v1→3 route and cannot read v3; this evidence supports a decision, not an implementation claim.
+The [Ordered Edge Publication Spike](spikes/ordered-edge-publication/SPIKE.md) exercised the installed v1→v2 edge plus a synthetic 2→3 edge in a test-only route/review/Git publication/recovery harness. It covered v1→2→3 and v2→3, explicit v1 resolution, route ambiguity, source/intermediate/candidate/review tampering, exception stops on both sides of ref CAS, unchanged unrelated bytes, and an Index identity/generation double. Independent review added regression cases for historical-source/Current-query separation, resolution outside the route, and pending-record misclassification; the corrected focused run passed 8 tests. The [Screen layout Spike](../screen-semantic-relation-persistence/spikes/canonical-layout-and-v3/SPIKE.md) had previously established only test-local sequential transform composability. Production still installs no v1→3 route and cannot read v3; this evidence supports the route decision, not an implementation claim.
 
 ## Decision Criteria
 
 Choose a route model only if it deterministically produces one final Current candidate, proves all edge classifications and resolutions in review, preserves unrelated bytes, rejects changed source or path, and recovers without exposing a partially migrated project. Compare implementation complexity and long-term cost of each option using the focused evidence.
 
-The focused comparison below separates measured behavior from projected maintenance cost; no option is selected yet.
+The focused comparison below separates measured behavior from projected maintenance cost. Option 1 was selected because it reused the installed 1→2 edge and met the tested route, review, and publication invariants without requiring a duplicate direct transform or general graph policy.
 
 | Option | Evidence and correctness conditions | Implementation and long-term cost |
 |---|---|---|
@@ -50,6 +62,13 @@ The focused comparison below separates measured behavior from projected maintena
 | Direct source→Current edges | Not prototyped. Each supported historical source would need its own reviewed route and proof that shared historical decisions and loss accounting match. | A new Current format would require source-specific composite transforms. Duplication and drift are plausible costs inferred from the current installed 1→2 edge, not measured. |
 | Constrained installed-edge graph | The test-only resolver rejected missing, ambiguous, backward, self, and duplicate edges; it used a deliberately narrow increasing-version rule. Graph-level publication semantics were not separately prototyped. | Allows reuse of installed edges, but catalog validation and stable path selection/review binding add policy surface. Cost relative to explicit adjacent routes remains unmeasured. |
 
+## Implementation Gates
+
+- Production `HamiiMigrations` must represent ordered adjacent routes and per-edge receipts. The existing v1→v2 transform and resolution behavior must pass unchanged through the one-edge route before any v3 edge is installed.
+- Candidate preparation, review, publication, and recovery must share full-route replay from the exact original source. A new composed review-record format must be strict; existing formats 1 and 2 must retain their single-edge meanings.
+- A future v3 edge must use a strict Current-v3 validator and an Index built from the exact final CanonicalSnapshot. Pre-CAS historical abort must not permit Current queries; post-CAS recovery must not publish intermediate v2 or mismatched Index state.
+- Production stop/restart and tamper tests must cover the committed publication protocol. SIGKILL evidence is distinct from the separate [Power-loss ADR](../canonical-power-loss-durability/ADR.md).
+
 ## Status
 
-Ready for Decision
+Implementation Required
