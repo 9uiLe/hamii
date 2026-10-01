@@ -256,18 +256,30 @@ public final class MigrationPublisher {
         guard CanonicalByteIdentity.compute(files: historical.files).rawValue == review.sourceCanonicalIdentity else {
             throw MigrationPublicationError.sourceChanged
         }
-        let binding = MigrationResolutionSourceBinding(sourceOID: review.sourceOID,
-            sourceCanonicalIdentity: review.sourceCanonicalIdentity,
-            sourceFormatVersion: review.sourceFormatVersion, targetFormatVersion: review.targetFormatVersion)
-        let resolved = try MigrationRegistry.transform(historical, applying: audit.manifest,
-            actualSourceBinding: binding)
+        let replay = try replaySource(historical, review: review)
+        guard let resolved = replay.singleEdgeCandidate else { throw MigrationPublicationError.candidateMismatch }
         guard resolved.classification == review.classification,
               resolved.losses == audit.losses,
               resolved.resolutionDecisions == audit.decisions,
               resolved.remainingUnresolved.isEmpty,
-              resolved.files.files == (try MigrationRepositoryInput.load(from: candidateRoot)).files else {
+              replay.finalFiles.files == (try MigrationRepositoryInput.load(from: candidateRoot)).files else {
             throw MigrationPublicationError.candidateMismatch
         }
+    }
+
+    private func replaySource(_ historical: MigrationFileSet,
+                              review: MigrationReviewPackage) throws -> MigrationRouteReplayResult {
+        let route = try MigrationRegistry.route(from: review.sourceFormatVersion,
+                                                to: review.targetFormatVersion)
+        guard route.edgePath == review.edgePath else { throw MigrationPublicationError.candidateMismatch }
+        let binding = review.resolutionAudit.map { _ in
+            MigrationResolutionSourceBinding(sourceOID: review.sourceOID,
+                sourceCanonicalIdentity: review.sourceCanonicalIdentity,
+                sourceFormatVersion: review.sourceFormatVersion,
+                targetFormatVersion: review.targetFormatVersion)
+        }
+        return try MigrationRouteReplay.run(historical, route: route,
+            resolution: review.resolutionAudit?.manifest, sourceBinding: binding)
     }
 
     private func validateSource(_ review: MigrationReviewPackage) throws {
@@ -285,23 +297,20 @@ public final class MigrationPublisher {
               try historicalRevision(historical) == review.sourceDocumentRevision else {
             throw MigrationPublicationError.sourceChanged
         }
-        if let audit = review.resolutionAudit {
-            let binding = MigrationResolutionSourceBinding(sourceOID: review.sourceOID,
-                sourceCanonicalIdentity: review.sourceCanonicalIdentity,
-                sourceFormatVersion: review.sourceFormatVersion, targetFormatVersion: review.targetFormatVersion)
-            guard let resolved = try? MigrationRegistry.transform(historical, applying: audit.manifest,
-                      actualSourceBinding: binding),
-                  resolved.classification == review.classification,
-                  resolved.losses == audit.losses,
-                  resolved.resolutionDecisions == audit.decisions,
-                  resolved.remainingUnresolved.isEmpty else {
-                throw MigrationPublicationError.sourceChanged
-            }
-        } else {
+        if review.resolutionAudit == nil {
             guard analysis.automaticCandidateEligible,
                   analysis.classification == .losslessWithNormalization else {
                 throw MigrationPublicationError.sourceChanged
             }
+        }
+        guard let replay = try? replaySource(historical, review: review),
+              let resolved = replay.singleEdgeCandidate,
+              resolved.classification == review.classification,
+              resolved.resolutionDecisions == (review.resolutionAudit?.decisions ?? []),
+              resolved.losses == (review.resolutionAudit?.losses ?? []),
+              resolved.remainingUnresolved.isEmpty,
+              CanonicalByteIdentity.compute(files: replay.finalFiles.files).rawValue == review.validation.canonicalSnapshotIdentity else {
+            throw MigrationPublicationError.sourceChanged
         }
     }
 

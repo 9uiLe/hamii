@@ -127,15 +127,18 @@ public final class MigrationCandidatePreparer {
         guard CanonicalByteIdentity.compute(files: historical.files) == source.identity else {
             throw MigrationPreparationError.staleSource
         }
-        let candidate: MigrationCandidate
-        if let resolution {
-            candidate = try MigrationRegistry.transform(historical, applying: resolution,
-                actualSourceBinding: binding(source))
-        } else {
+        if resolution == nil {
             guard analysis.automaticCandidateEligible, analysis.classification == .losslessWithNormalization else {
                 throw MigrationPreparationError.migrationUnavailable(analysis.diagnostics.map(\.blocker))
             }
-            candidate = try MigrationRegistry.transform(historical)
+        }
+        let route = try MigrationRegistry.route(from: analysis.sourceVersion)
+        let replay = try MigrationRouteReplay.run(historical, route: route, resolution: resolution,
+            sourceBinding: resolution == nil ? nil : binding(source))
+        guard let candidate = replay.singleEdgeCandidate,
+              replay.receipts.count == 1,
+              replay.finalFiles.files == candidate.files.files else {
+            throw MigrationPreparationError.invalidCandidate("Current review format requires one installed edge")
         }
         guard candidate.remainingUnresolved.isEmpty,
               candidate.classification == .losslessWithNormalization || candidate.classification == .potentiallyLossy else {

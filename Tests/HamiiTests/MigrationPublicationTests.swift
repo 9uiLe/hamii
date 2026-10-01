@@ -197,8 +197,8 @@ final class MigrationPublicationTests: XCTestCase {
         XCTAssertFalse(WorktreeCoordinator(root: root).migrationPublicationPending())
     }
 
-    func testSourceMoveAndUnrecoveredJournalRejectBeforePending() throws {
-        for scenario in ["sourceMove", "journal"] {
+    func testSourceMoveCanonicalByteChangeAndUnrecoveredJournalRejectBeforePending() throws {
+        for scenario in ["sourceMove", "canonicalBytes", "journal"] {
             let root = try fixture()
             defer { try? FileManager.default.removeItem(at: root) }
             let review = try MigrationCandidatePreparer().prepare(repository: root)
@@ -207,6 +207,11 @@ final class MigrationPublicationTests: XCTestCase {
                 _ = try git(root, "add", "external.txt")
                 _ = try git(root, "-c", "user.name=Test", "-c", "user.email=test@localhost",
                             "commit", "-q", "-m", "external")
+            } else if scenario == "canonicalBytes" {
+                let manifest = root.appendingPathComponent("hamii.json")
+                var bytes = try Data(contentsOf: manifest)
+                bytes.append(0x20)
+                try bytes.write(to: manifest)
             } else {
                 try Data().write(to: root.appendingPathComponent(".hamii/transaction.prepare"))
             }
