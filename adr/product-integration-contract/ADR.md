@@ -36,6 +36,8 @@ Screen contract は Product 非依存の UI semantic intent を所有する。�
 
 ## Unknowns
 
+Core IR からの relation extraction / Canonical persistence は [Screen Semantic Relation Persistence ADR](../screen-semantic-relation-persistence/ADR.md) の判断待ち。
+
 Production typed relation の schema と fail-closed planning core は実装済み。Core IR からの relation extraction / canonical persistence、Repository Profile の hamii-managed 保存、Product Repository に対する mapping の実在・衝突検証、Product 統合と runtime 確認は未実装。明示された外部 Profile v1 file の read-only loading と CLI planning は実装済み。I03 の具体的 visual 解決と Human correction は未計測である。I02 empty-profile behavior は independent reviewer 間で判定が異なったが、P0–P4 oracle では profile presence と cached refresh を分けて扱った。Runtime behavior と final Product copy の検証は必要であり、この Decision の Evidence 範囲を超える。
 
 ## Required Evidence
