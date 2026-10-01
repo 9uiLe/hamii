@@ -14,7 +14,8 @@ if target.exists():
 
 shutil.copyfile(artifact / "OrderedEdgePublicationSpikeTests.swift", target)
 try:
-    result = subprocess.run(["swift", "test", "--filter", "OrderedEdgePublicationSpikeTests"], cwd=repository)
+    test_filter = sys.argv[1] if len(sys.argv) == 2 else "OrderedEdgePublicationSpikeTests"
+    result = subprocess.run(["swift", "test", "--filter", test_filter], cwd=repository)
 finally:
     target.unlink()
 sys.exit(result.returncode)

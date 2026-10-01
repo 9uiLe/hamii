@@ -42,6 +42,14 @@ The [Ordered Edge Publication Spike](spikes/ordered-edge-publication/SPIKE.md) e
 
 Choose a route model only if it deterministically produces one final Current candidate, proves all edge classifications and resolutions in review, preserves unrelated bytes, rejects changed source or path, and recovers without exposing a partially migrated project. Compare implementation complexity and long-term cost of each option using the focused evidence.
 
+The focused comparison below separates measured behavior from projected maintenance cost; no option is selected yet.
+
+| Option | Evidence and correctness conditions | Implementation and long-term cost |
+|---|---|---|
+| Ordered adjacent edges | The test-only 1→2→3 and 2→3 paths produced one final candidate, bound receipts/resolutions, and recovered across tested CAS stops. Each installed edge must preserve its declared input/output identity and classification. | Reuses the installed 1→2 transform. Review and recovery must retain and replay every intermediate receipt; this protocol is additional implementation work, not a production result. |
+| Direct source→Current edges | Not prototyped. Each supported historical source would need its own reviewed route and proof that shared historical decisions and loss accounting match. | A new Current format would require source-specific composite transforms. Duplication and drift are plausible costs inferred from the current installed 1→2 edge, not measured. |
+| Constrained installed-edge graph | The test-only resolver rejected missing, ambiguous, backward, self, and duplicate edges; it used a deliberately narrow increasing-version rule. Graph-level publication semantics were not separately prototyped. | Allows reuse of installed edges, but catalog validation and stable path selection/review binding add policy surface. Cost relative to explicit adjacent routes remains unmeasured. |
+
 ## Status
 
 Ready for Decision

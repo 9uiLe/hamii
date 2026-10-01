@@ -110,6 +110,9 @@ private enum SpikeEdges {
 
     static func compose(_ source: [String: Data], route: [SpikeEdge],
                         sourceOID: String, resolution: MigrationResolutionManifest? = nil) throws -> ComposedFiles {
+        guard resolution == nil || route.contains(where: { $0.source == 1 && $0.target == 2 }) else {
+            throw SpikeFailure.mismatch
+        }
         var files = source
         var receipts: [EdgeReceipt] = []
         var decisions: [MigrationResolutionDecision] = []
@@ -238,8 +241,27 @@ private final class SpikePublisher {
 
     var isPending: Bool { FileManager.default.fileExists(atPath: pendingURL.path) }
 
+    private func reviewBytes(_ review: SpikeReview) throws -> Data {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        return try encoder.encode(review)
+    }
+
     func requireReady() throws {
         if isPending { throw SpikeFailure.mismatch }
+    }
+
+    func requireCurrentQueryReady() throws {
+        try requireReady()
+        let files = try SpikeRepository.bytes(root)
+        let state = try SpikeEdges.validateV3(files)
+        guard let index = try readIndex(), !index.id.isEmpty,
+              index.sourceCanonicalIdentity == SpikeEdges.identity(files),
+              index.sourceGeneration == 2,
+              index.documentID == state.id,
+              index.documentRevision == state.revision else {
+            throw SpikeFailure.mismatch
+        }
     }
 
     func prepare(resolution: MigrationResolutionManifest? = nil,
@@ -300,7 +322,7 @@ private final class SpikePublisher {
             candidateIdentity: SpikeEdges.identity(composed.final), changedPaths: changed,
             retentionRef: retained)
         try FileManager.default.createDirectory(at: reviewURL.deletingLastPathComponent(), withIntermediateDirectories: true)
-        try JSONEncoder().encode(review).write(to: reviewURL, options: .atomic)
+        try reviewBytes(review).write(to: reviewURL, options: .atomic)
         return review
     }
 
@@ -348,7 +370,7 @@ private final class SpikePublisher {
 
     func publish(_ review: SpikeReview, stopAt: String? = nil) throws {
         let reviewed = try Data(contentsOf: reviewURL)
-        guard reviewed == (try JSONEncoder().encode(review)) else { throw SpikeFailure.mismatch }
+        guard reviewed == (try reviewBytes(review)) else { throw SpikeFailure.mismatch }
         try validate(review)
         let pending = SpikePending(review: review, sourceGeneration: 1, candidateGeneration: 2)
         try JSONEncoder().encode(pending).write(to: pendingURL, options: .atomic)
@@ -378,11 +400,16 @@ private final class SpikePublisher {
         }
         let pending = try JSONDecoder().decode(SpikePending.self, from: Data(contentsOf: pendingURL))
         let review = pending.review
+        guard review.sourceOID != review.candidateOID,
+              try Data(contentsOf: reviewURL) == reviewBytes(review) else {
+            throw SpikeFailure.mismatch
+        }
         guard try SpikeRepository.git(root, ["symbolic-ref", "HEAD"]) == review.sourceRef else {
             throw SpikeFailure.unknownSource
         }
         let head = try SpikeRepository.git(root, ["rev-parse", "HEAD"])
         if head == review.sourceOID {
+            try validateCommittedCandidate(review)
             guard try SpikeRepository.git(root, ["status", "--porcelain=v1", "--untracked-files=all"]).isEmpty,
                   SpikeEdges.identity(try SpikeRepository.bytes(root)) == review.sourceIdentity else {
                 throw SpikeFailure.unknownSource
@@ -556,6 +583,10 @@ final class OrderedEdgePublicationSpikeTests: XCTestCase {
         let manifest = try resolvedManifest(directory)
         XCTAssertEqual(manifest.sourceFormatVersion, 1)
         XCTAssertEqual(manifest.targetFormatVersion, 2)
+        let v2Directory = try root(version: 2)
+        defer { try? FileManager.default.removeItem(at: v2Directory) }
+        XCTAssertThrowsError(try SpikePublisher(root: v2Directory).prepare(resolution: manifest),
+                             "resolution for an edge outside the selected route")
         let review = try publisher.prepare(resolution: manifest)
         XCTAssertEqual(review.targetFormat, 3)
         XCTAssertEqual(review.receipts.map(\.edgeID), ["1->2", "2->3"])
@@ -654,6 +685,7 @@ final class OrderedEdgePublicationSpikeTests: XCTestCase {
                 }
                 XCTAssertTrue(publisher.isPending)
                 XCTAssertThrowsError(try publisher.requireReady())
+                XCTAssertThrowsError(try publisher.requireCurrentQueryReady())
                 let head = try SpikeRepository.git(directory, ["rev-parse", "HEAD"])
                 XCTAssertEqual(head, stop == "S1" ? review.sourceOID : review.candidateOID)
                 if stop == "S2" { XCTAssertNotEqual(SpikeEdges.identity(try SpikeRepository.bytes(directory)), review.candidateIdentity) }
@@ -668,6 +700,8 @@ final class OrderedEdgePublicationSpikeTests: XCTestCase {
                 if stop == "S1" {
                     XCTAssertEqual(try SpikeEdges.format(SpikeRepository.bytes(directory)), version)
                     XCTAssertNil(try restarted.readIndex())
+                    XCTAssertThrowsError(try restarted.requireCurrentQueryReady(),
+                                         "historical source retained, Current query unavailable")
                 } else {
                     let final = try SpikeRepository.bytes(directory)
                     XCTAssertEqual(SpikeEdges.identity(final), review.candidateIdentity)
@@ -679,6 +713,21 @@ final class OrderedEdgePublicationSpikeTests: XCTestCase {
                     XCTAssertEqual(index.documentRevision, state.revision)
                     if stop == "S5" { XCTAssertEqual(index, beforeIndex) }
                     XCTAssertEqual(try restarted.readIndex(), index)
+                    XCTAssertNoThrow(try restarted.requireCurrentQueryReady())
+                    if stop == "S5" {
+                        let indexURL = directory.appendingPathComponent(".hamii/spike-index.json")
+                        let originalIndex = try Data(contentsOf: indexURL)
+                        try FileManager.default.removeItem(at: indexURL)
+                        XCTAssertThrowsError(try SpikePublisher(root: directory).requireCurrentQueryReady(),
+                                             "no pending, but missing Index on restart")
+                        var wrongGeneration = index
+                        wrongGeneration.sourceGeneration += 1
+                        try JSONEncoder().encode(wrongGeneration).write(to: indexURL, options: .atomic)
+                        XCTAssertThrowsError(try SpikePublisher(root: directory).requireCurrentQueryReady(),
+                                             "no pending, but wrong source generation")
+                        try originalIndex.write(to: indexURL, options: .atomic)
+                        XCTAssertNoThrow(try SpikePublisher(root: directory).requireCurrentQueryReady())
+                    }
                 }
                 print("SPIKE stop=\(stop) sourceFormat=\(version) sourceOID=\(review.sourceOID) finalOID=\(review.candidateOID) finalIdentity=\(review.candidateIdentity) recovered=\(recovered)")
             }
@@ -742,5 +791,27 @@ final class OrderedEdgePublicationSpikeTests: XCTestCase {
         try original.write(to: record, options: .atomic)
         XCTAssertEqual(try SpikePublisher(root: directory).recover(), review.candidateOID)
         XCTAssertFalse(SpikePublisher(root: directory).isPending)
+    }
+
+    func testPendingRecordCannotReclassifyPublishedCandidateAsOldSource() throws {
+        let directory = try root(version: 1)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let publisher = SpikePublisher(root: directory)
+        let review = try publisher.prepare()
+        XCTAssertThrowsError(try publisher.publish(review, stopAt: "S3")) {
+            XCTAssertEqual($0 as? SpikeFailure, .stopped("S3"))
+        }
+        let record = directory.appendingPathComponent(".hamii/migration-publication.pending.json")
+        let original = try Data(contentsOf: record)
+        var pending = try JSONDecoder().decode(SpikePending.self, from: original)
+        pending.review.sourceOID = review.candidateOID
+        pending.review.sourceIdentity = review.candidateIdentity
+        try JSONEncoder().encode(pending).write(to: record, options: .atomic)
+        XCTAssertThrowsError(try SpikePublisher(root: directory).recover())
+        XCTAssertTrue(SpikePublisher(root: directory).isPending)
+        XCTAssertThrowsError(try SpikePublisher(root: directory).requireCurrentQueryReady())
+        try original.write(to: record, options: .atomic)
+        XCTAssertEqual(try SpikePublisher(root: directory).recover(), review.candidateOID)
+        XCTAssertNoThrow(try SpikePublisher(root: directory).requireCurrentQueryReady())
     }
 }
