@@ -1,0 +1,30 @@
+{
+  "cases": {
+    "branchNameOnlyAtSameCommit": "current",
+    "documentationCommit": "staleProductCommit",
+    "exactCommitReplay": "current",
+    "hamiiMutation": "staleHamiiObservation",
+    "initial": "current",
+    "mappingCommit": "staleProductCommit",
+    "replayAfterTransition": "current",
+    "sourceCommit": "staleProductCommit",
+    "stagedSource": "dirty",
+    "symlinkProfileCapture": "rejected",
+    "unstagedSource": "dirty",
+    "untrackedProductFile": "dirty",
+    "wrongRepository": "wrongRepository"
+  },
+  "exactCommitBindingRejectsUnrelatedDocumentationChange": true,
+  "immutableGitObjectSource": true,
+  "mutableWorktreeCheckToPatchRace": "not tested; must not patch live worktree from this proof",
+  "receiptFields": [
+    "hamiiObservation",
+    "productCommit",
+    "productRoots",
+    "profileBlob",
+    "profilePath",
+    "profileSHA256"
+  ],
+  "remoteForkTrust": "not tested",
+  "testOnly": true
+}

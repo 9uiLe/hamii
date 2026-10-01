@@ -38,7 +38,7 @@ Where should a Product-specific Repository Profile be persisted, and what reposi
 
 ## Required Evidence
 
-The [Storage Location and Binding Spike](spikes/storage-location-and-binding/SPIKE.md) compares the same Profile v1 under each placement. It must exercise checkout/branch switch, Product commit changes, mapping diffs, concurrent hamii save/Git transition, repository identity, malformed and missing inputs, and independent Profile versioning. Record what is observed separately from inferred guarantees.
+The [Storage Location and Binding Spike](spikes/storage-location-and-binding/SPIKE.md) compares the same Profile v1 under each placement. The [Product Repository Binding Spike](spikes/product-repository-binding/SPIKE.md) tests an immutable-source receipt with dirty, wrong-repository, replay, and branch cases. Concurrent hamii save/Product Git transition and Product patch publication remain separate untested boundaries. Record what is observed separately from inferred guarantees.
 
 ## Decision Criteria
 
