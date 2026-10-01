@@ -83,6 +83,17 @@ public struct CapabilityProfile: Codable, Equatable {
     }
 }
 
+/// Platform and framework coverage owned by a particular capability consumer.
+/// Runtime-version coverage is a separate decision.
+public struct CapabilityConsumerProfile: Hashable, Sendable {
+    public let platform: Platform
+    public let framework: Framework
+    public init(platform: Platform, framework: Framework) {
+        self.platform = platform
+        self.framework = framework
+    }
+}
+
 public enum CapabilityLossKind: String, Codable {
     case none, approvedApproximation, approvalRequired, unsupported, externalIntegration
 }
@@ -98,16 +109,18 @@ public struct CapabilityLoss: Codable, Equatable {
 public struct CapabilityLossReport: Codable, Equatable {
     public var profile: CapabilityProfile
     public var items: [CapabilityLoss]
-    public var allowed: Bool { items.allSatisfy(\.allowed) }
+    public var consumerApplicable: Bool
+    public var allowed: Bool { consumerApplicable && items.allSatisfy(\.allowed) }
 
-    private enum CodingKeys: String, CodingKey { case profile, items, allowed }
-    public init(profile: CapabilityProfile, items: [CapabilityLoss]) {
-        self.profile = profile; self.items = items
+    private enum CodingKeys: String, CodingKey { case profile, items, consumerApplicable, allowed }
+    public init(profile: CapabilityProfile, items: [CapabilityLoss], consumerApplicable: Bool) {
+        self.profile = profile; self.items = items; self.consumerApplicable = consumerApplicable
     }
     public init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         profile = try values.decode(CapabilityProfile.self, forKey: .profile)
         items = try values.decode([CapabilityLoss].self, forKey: .items)
+        consumerApplicable = try values.decode(Bool.self, forKey: .consumerApplicable)
         let recorded = try values.decode(Bool.self, forKey: .allowed)
         guard recorded == allowed else {
             throw DecodingError.dataCorruptedError(forKey: .allowed, in: values, debugDescription: "Capability report allowance disagrees with item results")
@@ -117,6 +130,7 @@ public struct CapabilityLossReport: Codable, Equatable {
         var values = encoder.container(keyedBy: CodingKeys.self)
         try values.encode(profile, forKey: .profile)
         try values.encode(items, forKey: .items)
+        try values.encode(consumerApplicable, forKey: .consumerApplicable)
         try values.encode(allowed, forKey: .allowed)
     }
 }
@@ -222,10 +236,13 @@ public struct CapabilityCatalog: Sendable {
     public var legacyAliases: [CapabilityKey: CapabilityKey]
     /// A runtime-sensitive requirement is never allowed by a profile without an observed runtime.
     public var runtimeSensitiveKeys: Set<CapabilityKey>
-    public init(supportedKeys: Set<CapabilityKey>, legacyAliases: [CapabilityKey: CapabilityKey] = [:], runtimeSensitiveKeys: Set<CapabilityKey> = []) {
+    /// Present when this consumer has no verified implementation for the target profile.
+    public var unavailableReason: String?
+    public init(supportedKeys: Set<CapabilityKey>, legacyAliases: [CapabilityKey: CapabilityKey] = [:], runtimeSensitiveKeys: Set<CapabilityKey> = [], unavailableReason: String? = nil) {
         self.supportedKeys = supportedKeys
         self.legacyAliases = legacyAliases
         self.runtimeSensitiveKeys = runtimeSensitiveKeys
+        self.unavailableReason = unavailableReason
     }
 }
 
@@ -247,6 +264,15 @@ public enum BasicCapabilityAliases {
 
 /// This subset describes the implemented Preview semantics. It is not an API coverage claim for every target OS.
 public enum NativePreviewCapabilityCatalog {
+    public static let applicableProfiles: Set<CapabilityConsumerProfile> = [
+        CapabilityConsumerProfile(platform: .macOS, framework: .swiftUI)
+    ]
+    public static let profileUnavailableReason = "Native Preview capability coverage is not registered for this target profile"
+
+    public static func isApplicable(to profile: CapabilityProfile) -> Bool {
+        applicableProfiles.contains(CapabilityConsumerProfile(platform: profile.platform, framework: profile.framework))
+    }
+
     public static let supportedKeys: Set<CapabilityKey> = [
         CapabilityKeys.stackContainer, CapabilityKeys.overlayVisual, CapabilityKeys.scrollContainer,
         CapabilityKeys.textVisual, CapabilityKeys.buttonVisual, CapabilityKeys.buttonEventEmit,
@@ -257,6 +283,12 @@ public enum NativePreviewCapabilityCatalog {
     ]
 
     public static let catalog = CapabilityCatalog(supportedKeys: supportedKeys, legacyAliases: BasicCapabilityAliases.map)
+
+    public static func catalog(for profile: CapabilityProfile) -> CapabilityCatalog {
+        isApplicable(to: profile) ? catalog : CapabilityCatalog(
+            supportedKeys: [], unavailableReason: profileUnavailableReason
+        )
+    }
 }
 
 /// Evaluates requirements without inspecting a Layer tree. Missing and ambiguous declarations fail closed.
@@ -274,7 +306,10 @@ public enum CapabilityEvaluator {
             let declaration = matching.count == 1 ? matching[0] : nil
             let support: CapabilitySupport
             let reason: String
-            if catalog.runtimeSensitiveKeys.contains(requirement.key) && (profile.runtime?.isEmpty != false) {
+            if let unavailableReason = catalog.unavailableReason {
+                support = .unsupported
+                reason = unavailableReason
+            } else if catalog.runtimeSensitiveKeys.contains(requirement.key) && (profile.runtime?.isEmpty != false) {
                 support = .unsupported
                 reason = "An observed runtime is required for this semantic capability"
             } else if !catalog.supportedKeys.contains(requirement.key) {
@@ -311,19 +346,20 @@ public enum CapabilityEvaluator {
             }
             return CapabilityLoss(requirement: requirement, support: support, allowed: allowed, loss: loss, reason: reason)
         }
-        return CapabilityLossReport(profile: profile, items: items)
+        return CapabilityLossReport(profile: profile, items: items, consumerApplicable: catalog.unavailableReason == nil)
     }
 }
 
 public enum NativePreviewCapabilityAnalysis {
     public static func report(screen: Screen, document: Document, surface: AppSurface, target: Target, approvedApproximationKeys: Set<CapabilityKey> = []) -> CapabilityLossReport {
         let extraction = SemanticRequirementExtractor.extract(screen: screen, document: document)
+        let profile = CapabilityProfile(target: target, surface: surface)
         return CapabilityEvaluator.evaluate(
             requirements: extraction.requirements,
-            profile: CapabilityProfile(target: target, surface: surface),
+            profile: profile,
             declarations: document.capabilityDeclarations,
             approvedApproximationKeys: approvedApproximationKeys,
-            catalog: NativePreviewCapabilityCatalog.catalog
+            catalog: NativePreviewCapabilityCatalog.catalog(for: profile)
         )
     }
 }
@@ -354,14 +390,14 @@ public enum TargetPlanner {
         diagnostics += extraction.bindings.filter { !$0.hasFallback && fixture?.values[$0.path] == nil }.map {
             Diagnostic("preview.fixture", "Text binding has no fixture value or fallback", entityID: $0.sourceEntityID)
         }
-        let report = CapabilityEvaluator.evaluate(
-            requirements: extraction.requirements,
-            profile: CapabilityProfile(target: target, surface: surface),
-            declarations: document.capabilityDeclarations,
-            approvedApproximationKeys: approvedApproximationKeys,
-            catalog: NativePreviewCapabilityCatalog.catalog
+        let report = NativePreviewCapabilityAnalysis.report(
+            screen: screen, document: document, surface: surface, target: target,
+            approvedApproximationKeys: approvedApproximationKeys
         )
-        diagnostics += report.items.filter { !$0.allowed }.map { loss in
+        if !report.consumerApplicable {
+            diagnostics.append(Diagnostic("preview.targetProfile", NativePreviewCapabilityCatalog.profileUnavailableReason, entityID: surface.id))
+        } else {
+            diagnostics += report.items.filter { !$0.allowed }.map { loss in
             let key = loss.requirement.key
             let rule: String
             if key == CapabilityKeys.interactionRuntime { rule = "preview.interaction" }
@@ -372,6 +408,7 @@ public enum TargetPlanner {
             else if loss.loss == .externalIntegration { rule = "capability.externalIntegration" }
             else { rule = "capability.unsupported" }
             return Diagnostic(rule, "Capability \(key): \(loss.reason)", entityID: loss.requirement.sourceEntityID)
+            }
         }
         return TargetPlan(surfaceID: surface.id, targetID: surface.targetID, screenID: screen.id, diagnostics: diagnostics)
     }

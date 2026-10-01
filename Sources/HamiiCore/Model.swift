@@ -115,8 +115,8 @@ public enum NavigationConfiguration: Codable, Equatable {
     case custom(layerID: EntityID)
 }
 
-public enum Platform: String, Codable { case iOS, macOS, android }
-public enum Framework: String, Codable { case swiftUI, uiKit, jetpackCompose, composeMultiplatform }
+public enum Platform: String, Codable, Hashable, Sendable { case iOS, macOS, android }
+public enum Framework: String, Codable, Hashable, Sendable { case swiftUI, uiKit, jetpackCompose, composeMultiplatform }
 
 public struct Target: Codable, Equatable, Identifiable {
     public var id: EntityID

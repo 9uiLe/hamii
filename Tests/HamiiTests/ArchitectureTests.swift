@@ -551,12 +551,12 @@ final class ArchitectureTests: XCTestCase {
     func testTargetPlanBlocksUndeclaredAndUnapprovedCapabilities() throws {
         var document = Document(name: "Preview")
         let scopeID = try XCTUnwrap(document.scopes.first?.id)
-        let target = Target(id: EntityID("target_ios"), platform: .iOS, framework: .swiftUI)
+        let target = Target(id: EntityID("target_macos"), platform: .macOS, framework: .swiftUI)
         document.targets = [target]
         let root = Layer(id: EntityID("layer_root"), kind: .stack, name: "Root", children: [Layer(id: EntityID("layer_text"), kind: .text, name: "Title", text: "Hello")])
         let screen = Screen(id: EntityID("screen_main"), name: "Main", scopeID: scopeID, root: root)
         document.screens = [screen]
-        let surface = AppSurface(id: EntityID("surface_ios"), targetID: target.id, device: "iPhone", runtime: "iOS 26", buildEnvironment: "iOS SDK 26", screenID: screen.id, architectureScopeID: scopeID)
+        let surface = AppSurface(id: EntityID("surface_macos"), targetID: target.id, device: "Mac", runtime: "macOS 27", buildEnvironment: "macOS SDK", screenID: screen.id, architectureScopeID: scopeID)
         document.capabilityDeclarations = [CapabilityDeclaration(targetID: target.id, key: CapabilityKey("layout.stack"), support: .portable)]
         let missing = TargetPlanner.plan(surface: surface, document: document)
         XCTAssertFalse(missing.canPreview)

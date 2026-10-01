@@ -20,6 +20,73 @@ final class CapabilityContractTests: XCTestCase {
         document.capabilityDeclarations += keys.map { CapabilityDeclaration(targetID: targetID, key: $0, support: support) }
     }
 
+    func testNativePreviewCatalogAppliesOnlyToVerifiedTargetProfile() {
+        let root = Layer(id: EntityID("layer_text"), name: "Text", payload: .text(TextLayerPayload(value: "Hello")))
+        let (initial, initialSurface) = fixture(root: root)
+        var document = initial
+        declare([CapabilityKeys.textVisual], in: &document)
+        let macReport = NativePreviewCapabilityAnalysis.report(
+            screen: document.screens[0], document: document, surface: initialSurface, target: document.targets[0]
+        )
+        XCTAssertTrue(macReport.consumerApplicable)
+        XCTAssertTrue(macReport.allowed)
+        XCTAssertEqual(macReport.items.map(\.loss), [.none])
+        XCTAssertTrue(TargetPlanner.plan(surface: initialSurface, document: document).canPreview)
+        XCTAssertEqual(NativePreviewCapabilityCatalog.applicableProfiles, [
+            CapabilityConsumerProfile(platform: .macOS, framework: .swiftUI)
+        ])
+
+        for (platform, framework) in [
+            (Platform.iOS, Framework.swiftUI),
+            (.macOS, .uiKit),
+            (.android, .jetpackCompose),
+            (.macOS, .composeMultiplatform)
+        ] {
+            document.targets[0].platform = platform
+            document.targets[0].framework = framework
+            var surface = initialSurface
+            surface.runtime = "\(platform.rawValue) 27"
+            XCTAssertEqual(DocumentValidator.validate(document), [])
+            let report = NativePreviewCapabilityAnalysis.report(
+                screen: document.screens[0], document: document, surface: surface, target: document.targets[0],
+                approvedApproximationKeys: [CapabilityKeys.textVisual]
+            )
+            XCTAssertFalse(NativePreviewCapabilityCatalog.isApplicable(to: report.profile))
+            XCTAssertFalse(report.consumerApplicable)
+            XCTAssertFalse(report.allowed)
+            XCTAssertEqual(report.items.map(\.support), [.unsupported])
+            XCTAssertEqual(report.items.map(\.loss), [.unsupported])
+            XCTAssertEqual(report.items[0].reason, NativePreviewCapabilityCatalog.profileUnavailableReason)
+            let plan = TargetPlanner.plan(surface: surface, document: document, approvedApproximationKeys: [CapabilityKeys.textVisual])
+            XCTAssertFalse(plan.canPreview)
+            XCTAssertEqual(plan.diagnostics.filter { $0.rule == "preview.targetProfile" }.count, 1)
+            XCTAssertEqual(plan.diagnostics.filter { $0.rule == "capability.unsupported" }.count, 0)
+        }
+
+        document.capabilityDeclarations[0].support = .approximate
+        let blockedApproximation = NativePreviewCapabilityAnalysis.report(
+            screen: document.screens[0], document: document, surface: initialSurface, target: document.targets[0],
+            approvedApproximationKeys: [CapabilityKeys.textVisual]
+        )
+        XCTAssertFalse(blockedApproximation.allowed)
+        XCTAssertEqual(blockedApproximation.items.map(\.loss), [.unsupported])
+
+        document.capabilityDeclarations = []
+        let missing = NativePreviewCapabilityAnalysis.report(
+            screen: document.screens[0], document: document, surface: initialSurface, target: document.targets[0]
+        )
+        XCTAssertFalse(missing.allowed)
+        XCTAssertEqual(missing.items.map(\.loss), [.unsupported])
+
+        // An empty requirement set cannot make an inapplicable consumer current.
+        let empty = CapabilityEvaluator.evaluate(
+            requirements: [], profile: blockedApproximation.profile,
+            declarations: document.capabilityDeclarations,
+            catalog: NativePreviewCapabilityCatalog.catalog(for: blockedApproximation.profile)
+        )
+        XCTAssertFalse(empty.allowed)
+    }
+
     func testExtractorFindsCurrentIRSemanticsWithoutTargetPolicy() throws {
         let tokenID = EntityID("token_space")
         let assetID = EntityID("asset_symbol")
