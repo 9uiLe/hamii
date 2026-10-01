@@ -1,8 +1,10 @@
+import HamiiCore
 import HamiiFormat
 import HamiiMigrations
 
-/// Replays installed edges over exact captured Canonical bytes. Git observation,
-/// candidate publication, and Current-format validation remain with the caller.
+/// Replays installed edges over exact captured Canonical bytes. The v2→v3
+/// output is strictly decoded and semantically validated here; Git observation
+/// and candidate publication remain with the caller.
 struct MigrationRouteReplayResult {
     let finalFiles: MigrationFileSet
     let receipts: [MigrationEdgeReceipt]
@@ -50,6 +52,7 @@ enum MigrationRouteReplay {
                   resolutions.updateValue(input, forKey: input.edgeID) == nil,
                   input.manifest.formatVersion == 1,
                   input.manifest.sourceBinding == input.sourceBinding,
+                  edge.sourceVersion == 1, edge.targetVersion == 2,
                   input.sourceBinding.sourceFormatVersion == edge.sourceVersion,
                   input.sourceBinding.targetFormatVersion == edge.targetVersion else {
                 throw MigrationResolutionFailure.invalidManifest
@@ -74,17 +77,28 @@ enum MigrationRouteReplay {
                 } else {
                     candidate = try MigrationRegistry.transform(files, to: edge.targetVersion)
                 }
+            case (2, 3):
+                candidate = try MigrationRegistry.applyEdge(files, edge: edge)
             default:
                 throw MigrationEdgeFailure.noPath(source: edge.sourceVersion, target: edge.targetVersion)
             }
+            let outputIdentity = CanonicalByteIdentity.compute(files: candidate.files.files).rawValue
             guard candidate.edgePath == [edge.id], candidate.sourceVersion == edge.sourceVersion,
                   candidate.targetVersion == edge.targetVersion,
                   try MigrationRegistry.analyze(candidate.files, to: edge.targetVersion).sourceVersion == edge.targetVersion,
                   let classification = candidate.classification else {
                 throw MigrationEdgeFailure.invalidInput("Installed edge result does not match selected route")
             }
+            if edge.sourceVersion == 2 && edge.targetVersion == 3 {
+                let document = try CanonicalDocumentV3Codec.decode(files: candidate.files.files)
+                let errors = DocumentValidator.validate(document).filter { $0.severity == .error }
+                guard errors.isEmpty else {
+                    throw MigrationEdgeFailure.invalidInput("Format v3 target fails semantic validation: " +
+                        errors.map { $0.rule }.joined(separator: ", "))
+                }
+            }
             receipts.append(MigrationEdgeReceipt(edge: edge, inputIdentity: inputIdentity,
-                outputIdentity: CanonicalByteIdentity.compute(files: candidate.files.files).rawValue,
+                outputIdentity: outputIdentity,
                 classification: classification, resolutionDecisions: candidate.resolutionDecisions,
                 losses: candidate.losses))
             files = candidate.files

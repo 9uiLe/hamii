@@ -2,7 +2,7 @@
 
 ## Context
 
-Current Canonical Format is v2. The isolated migration registry installs one v1→v2 edge; candidate preparation, review, publication, and recovery assume that source/target pair. A future Current v3 Screen format needs a reviewed path from both v1 and v2. This decision concerns migration orchestration across installed edges, regardless of what a particular edge transforms.
+Current Canonical Format is v2. The isolated migration registry installs v1→v2 and explicit-target-only 2→3 edges; public candidate preparation, review, publication, and recovery still target Current v2. A future Current v3 Screen format needs a reviewed publication path from both v1 and v2. This decision concerns migration orchestration across installed edges, regardless of what a particular edge transforms.
 
 ## Decision to Make
 
@@ -42,17 +42,18 @@ Existing review-record formats 1 and 2 retain their single-edge interpretation. 
 
 The route decision is complete. Production has an adjacent-edge registry, receipt chain, Runtime replay, and a strict composed review record 3 / pending publication record 2 exercised with the installed v1→v2 edge. The public prepare command continues to write the single-edge record 1/2. Remaining implementation and validation are:
 
-- The strict v3 candidate codec and Screen semantic validator are present, while the Current reader remains v2. A real v2→v3 edge, Current-v3 reader switch, and production v1→2→3 / v2→3 preparation remain.
+- The strict v3 candidate codec, Screen semantic validator, real 2→3 edge, and ordered 1→2→3 replay are present. The Current reader remains v2. Current-v3 reader switch and production v1→2→3 / v2→3 preparation remain.
 - Full multi-edge publisher/recovery integration and stop/restart validation against actual installed edges; a one-edge composed protocol test does not prove two-edge composition.
 - Full process-stop and power-loss evidence for the eventual multi-edge publication protocol, with power-loss durability owned by its separate ADR.
 
 ## Required Evidence
 
-The [Ordered Edge Publication Spike](spikes/ordered-edge-publication/SPIKE.md) exercised the installed v1→v2 edge plus a synthetic 2→3 edge in a test-only route/review/Git publication/recovery harness. It covered v1→2→3 and v2→3, explicit v1 resolution, route ambiguity, source/intermediate/candidate/review tampering, exception stops on both sides of ref CAS, unchanged unrelated bytes, and an Index identity/generation double. Independent review added regression cases for historical-source/Current-query separation, resolution outside the route, and pending-record misclassification; the corrected focused run passed 8 tests. The [Screen layout Spike](../screen-semantic-relation-persistence/spikes/canonical-layout-and-v3/SPIKE.md) had previously established only test-local sequential transform composability. Production still installs no v1→3 route and cannot read v3; this evidence supports the route decision, not an implementation claim.
+The [Ordered Edge Publication Spike](spikes/ordered-edge-publication/SPIKE.md) exercised the installed v1→v2 edge plus a synthetic 2→3 edge in a test-only route/review/Git publication/recovery harness. It covered v1→2→3 and v2→3, explicit v1 resolution, route ambiguity, source/intermediate/candidate/review tampering, exception stops on both sides of ref CAS, unchanged unrelated bytes, and an Index identity/generation double. Independent review added regression cases for historical-source/Current-query separation, resolution outside the route, and pending-record misclassification; the corrected focused run passed 8 tests. The [Screen layout Spike](../screen-semantic-relation-persistence/spikes/canonical-layout-and-v3/SPIKE.md) established test-local sequential transform composability. That Spike evidence supports the route decision; current production replay of the real 2→3 edge is recorded below. Public candidate preparation and Current reading still target v2.
 
 Production tests with the real v1→v2 edge now exercise record 3 creation and strict store decoding, edge-local replay, pending record 2, source-commit replay before HEAD classification, 13 exception-stop points, tampered pending/review/retention evidence, pre-CAS historical abort, post-CAS roll-forward, dirty-worktree rematerialization, derived Index failure/rebuild, repeated recovery, and Human resolution audit. A five-stage separate-process SIGKILL test also confirms reader lock contention until writer death, pending Query rejection, and old/candidate recovery for the composed record. These are one-edge composed-protocol results. They do not establish an installed multi-edge route or power-loss durability.
 
-The Screen-owned semantic v3 candidate codec, Core validator, and existing journal recovery test provide a strict target-file-set boundary for the future 2→3 edge. They do not install that edge or change the Current v2 reader.
+The Screen-owned semantic v3 candidate codec, Core validator, and existing journal recovery test provide a strict target-file-set boundary for the 2→3 edge. They do not change the Current v2 reader.
+The Foundation-only FormatV2 edge now accepts exact 2/2 markers, rejects preexisting Screen semantics, adds explicit empty declarations without inference, and leaves unrelated Canonical bytes unchanged. The Runtime replays real 2→3 and 1→2→3 routes, binds receipt identities, and validates final v3 bytes through the package-level strict codec and `DocumentValidator`. This is edge and replay evidence; candidate preparation, review, publication, and Current v3 are still not integrated.
 
 ## Decision Criteria
 

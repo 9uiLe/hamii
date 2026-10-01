@@ -2,16 +2,16 @@ import XCTest
 @testable import HamiiMigrations
 
 final class MigrationRouteTests: XCTestCase {
-    func testInstalledOneEdgeRouteAndInvalidCatalogs() throws {
+    func testInstalledAdjacentRoutesAndInvalidCatalogs() throws {
         let edge = MigrationEdge(sourceVersion: 1, targetVersion: 2)
+        let next = MigrationEdge(sourceVersion: 2, targetVersion: 3)
         XCTAssertEqual(try MigrationRegistry.route(from: 1).edges, [edge])
         XCTAssertEqual(try MigrationRegistry.route(from: 1).edgePath, ["1->2"])
         XCTAssertTrue(try MigrationRegistry.route(from: 2).edges.isEmpty)
-        XCTAssertThrowsError(try MigrationRegistry.route(from: 1, to: 3)) {
-            guard case MigrationEdgeFailure.noPath(source: 1, target: 3) = $0 else {
-                return XCTFail("Expected missing-route failure, got \($0)")
-            }
-        }
+        XCTAssertEqual(try MigrationRegistry.route(from: 2, to: 3).edges, [next])
+        XCTAssertEqual(try MigrationRegistry.route(from: 1, to: 3).edges, [edge, next])
+        XCTAssertEqual(MigrationRegistry.currentDocumentFormatVersion, 2)
+        XCTAssertEqual(MigrationPreflight.currentDocumentFormatVersion, 2)
         XCTAssertThrowsError(try MigrationRouteResolver.resolve(from: 1, to: 2, catalog: []))
         for catalog in [
             [edge, edge],

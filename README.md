@@ -53,7 +53,7 @@ HamiiPreviewProtocol ─> HamiiCore   (revisioned patch contract)
 HamiiNativeRuntime   ─> HamiiCore, HamiiPreviewProtocol
 HamiiGeneration      ─> HamiiCore   (standalone SwiftUI source)
 HamiiIntegration     ─> HamiiCore   (semantic contract and profile)
-HamiiMigrations      (Foundation-only historical v1→v2 edge)
+HamiiMigrations      (Foundation-only historical 1→2 and inactive 2→3 edges)
 HamiiMigrationRuntime ─> HamiiMigrations, HamiiFormat, HamiiIndex
                     (isolated review and coordinated publication)
 ```
@@ -70,7 +70,7 @@ Canonical collaboration の Product Contract は「1 worktree = 1 coordinated wr
 
 Repository Asset は `asset import SCOPE_ID NAME MEDIA_TYPE SOURCE_PATH --storage git --state TOKEN` で明示的に取り込みます。バイナリは `assets/blobs/<sha256>` に一度だけ保存され、Asset の JSON は hash と参照を保持します。`validate` は blob の改ざんと欠落を検出します。大きなファイルの Git LFS 運用境界は [Asset ADR](adr/asset-storage-policy/ADR.md) で検証中です。Remote cache、thumbnail、decode 結果は Canonical Repository に含めません。
 
-Document Format v2 が唯一の Current Canonical Format です。v1 repository は runtime が拒否します。`HamiiMigrations` は独立した v1→v2 raw-byte transformation edge を持ち、`hamii migrate plan --json` は安全な自動候補の可否と手動対応が必要な blocker を元 repository を変更せず報告します。Clean かつ committed な v1 branch では `hamii migrate prepare --json` が detached worktree で Current v2 validation と一時 Index rebuild を行い、retention ref で保持した candidate commit の exact OID・diff・検証結果を返します。Prepare は source branch を変更せず、retention ref と `.hamii/migration-reviews/<reviewID>.json` に review identity を保持します。Human が review した exact ID だけを `hamii migrate publish REVIEW_ID SOURCE_OID CANDIDATE_OID --json` で指定すると、pending gate、Git ref CAS、Current v2 再検証、full Index 公開を経て Ready になります。停止後は `hamii migrate recover --json` が old OID なら旧状態を維持し、candidate OID なら roll-forward します。どちらでもない状態や所有者不明の Git lock は拒否します。Current Core に旧形式の parser はありません。5つの停止地点での SIGKILL 復旧テストは process crash の検証であり、停電耐久性の証明とは区別します。
+Document Format v2 が唯一の Current Canonical Format です。v1 repository は runtime が拒否します。`HamiiMigrations` は独立した v1→v2 raw-byte transformation edge と、明示 target 専用の 2→3 edge を持ち、`hamii migrate plan --json` は安全な自動候補の可否と手動対応が必要な blocker を元 repository を変更せず報告します。Clean かつ committed な v1 branch では `hamii migrate prepare --json` が detached worktree で Current v2 validation と一時 Index rebuild を行い、retention ref で保持した candidate commit の exact OID・diff・検証結果を返します。Prepare は source branch を変更せず、retention ref と `.hamii/migration-reviews/<reviewID>.json` に review identity を保持します。Human が review した exact ID だけを `hamii migrate publish REVIEW_ID SOURCE_OID CANDIDATE_OID --json` で指定すると、pending gate、Git ref CAS、Current v2 再検証、full Index 公開を経て Ready になります。停止後は `hamii migrate recover --json` が old OID なら旧状態を維持し、candidate OID なら roll-forward します。どちらでもない状態や所有者不明の Git lock は拒否します。Current Core に旧形式の parser はありません。5つの停止地点での SIGKILL 復旧テストは process crash の検証であり、停電耐久性の証明とは区別します。
 
 
 既知の v1 曖昧値は `hamii migrate resolution --json` で exact source OID・Canonical identity に束縛された有限候補を確認できます。提示された item/candidate ID だけを含む JSON manifest を `.hamii/` または Repository 外に保存し、`hamii migrate prepare --resolution PATH --json` で候補を作ります。Review JSON は選択と exact historical value の loss を示し、loss は `potentiallyLossy` のまま公開後も `.hamii/migration-reviews/` に保持されます。未知の historical meaning は候補0件で停止します。安全な自動移行は従来どおり manifest なしの `migrate prepare` を利用できます。manifest は Canonical Data に追加しません。

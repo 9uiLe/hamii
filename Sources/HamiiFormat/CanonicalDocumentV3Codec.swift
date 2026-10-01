@@ -2,8 +2,8 @@ import Foundation
 import HamiiCore
 
 /// An isolated candidate codec. The installed CanonicalRepository remains v2
-/// until a reviewed v2→v3 migration edge and publication path are installed.
-enum CanonicalDocumentV3Codec {
+/// until the reviewed v3 publication path and Current-format cutover are ready.
+package enum CanonicalDocumentV3Codec {
     enum Failure: Error, Equatable, CustomStringConvertible {
         case invalid(String)
 
@@ -54,7 +54,7 @@ enum CanonicalDocumentV3Codec {
         return files
     }
 
-    static func decode(files: [String: Data]) throws -> Document {
+    package static func decode(files: [String: Data]) throws -> Document {
         guard let manifestBytes = files["hamii.json"] else {
             throw Failure.invalid("missing hamii.json")
         }

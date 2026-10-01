@@ -58,11 +58,12 @@ public enum MigrationEdgeFailure: Error, CustomStringConvertible {
     }
 }
 
-/// Production edge registry. Only Format v1 → Current Format v2 is installed.
+/// Installed adjacent edges. Format v2 remains Current until the v3 cutover.
 public enum MigrationRegistry {
     public static let currentDocumentFormatVersion = 2
     private static let v1ToV2 = MigrationEdge(sourceVersion: 1, targetVersion: 2)
-    public static let installedEdges = [v1ToV2]
+    private static let v2ToV3 = MigrationEdge(sourceVersion: 2, targetVersion: 3)
+    public static let installedEdges = [v1ToV2, v2ToV3]
 
     public static func route(from source: Int, to target: Int = currentDocumentFormatVersion) throws -> MigrationRoute {
         try MigrationRouteResolver.resolve(from: source, to: target, catalog: installedEdges)
@@ -75,11 +76,27 @@ public enum MigrationRegistry {
             return MigrationAnalysis(sourceVersion: version, targetVersion: target,
                                      classification: nil, diagnostics: [], edgeAvailable: false)
         }
-        guard route.edges == [v1ToV2] else {
+        guard route.edges.count == 1, let edge = route.edges.first else {
             throw MigrationEdgeFailure.noPath(source: version, target: target)
         }
-        let diagnostics = try FormatV1.analyze(source.files)
-        return MigrationAnalysis(sourceVersion: version, targetVersion: target,
+        return try analyzeEdge(source, edge: edge)
+    }
+
+    /// An adjacent edge may be analyzed independently of the Current format.
+    /// Ordered multi-edge composition belongs to the migration runtime.
+    public static func analyzeEdge(_ source: MigrationFileSet, edge: MigrationEdge) throws -> MigrationAnalysis {
+        guard installedEdges.contains(edge) else {
+            throw MigrationEdgeFailure.noPath(source: edge.sourceVersion, target: edge.targetVersion)
+        }
+        let diagnostics: [MigrationDiagnostic]
+        switch edge {
+        case v1ToV2: diagnostics = try FormatV1.analyze(source.files)
+        case v2ToV3:
+            try FormatV2.validate(source.files)
+            diagnostics = []
+        default: throw MigrationEdgeFailure.noPath(source: edge.sourceVersion, target: edge.targetVersion)
+        }
+        return MigrationAnalysis(sourceVersion: edge.sourceVersion, targetVersion: edge.targetVersion,
             classification: diagnostics.isEmpty ? .losslessWithNormalization : .manual,
             diagnostics: diagnostics, edgeAvailable: true)
     }
@@ -92,11 +109,22 @@ public enum MigrationRegistry {
                                       edgePath: [], classification: nil, diagnostics: [],
                                       resolutionDecisions: [], losses: [], remainingUnresolved: [])
         }
-        let route = try route(from: analysis.sourceVersion, to: target)
-        let files = try FormatV1.upgrade(source.files)
-        return MigrationCandidate(files: MigrationFileSet(files: files), sourceVersion: analysis.sourceVersion,
-                                  targetVersion: target, edgePath: route.edgePath,
-                                  classification: .losslessWithNormalization, diagnostics: [],
-                                  resolutionDecisions: [], losses: [], remainingUnresolved: [])
+        return try applyEdge(source, edge: MigrationEdge(sourceVersion: analysis.sourceVersion, targetVersion: target))
+    }
+
+    /// Applies exactly one installed edge. No implicit route composition occurs.
+    public static func applyEdge(_ source: MigrationFileSet, edge: MigrationEdge) throws -> MigrationCandidate {
+        let analysis = try analyzeEdge(source, edge: edge)
+        guard analysis.diagnostics.isEmpty else { throw MigrationEdgeFailure.requiresResolution(analysis.diagnostics) }
+        let files: [String: Data]
+        switch edge {
+        case v1ToV2: files = try FormatV1.upgrade(source.files)
+        case v2ToV3: files = try FormatV2.upgrade(source.files)
+        default: throw MigrationEdgeFailure.noPath(source: edge.sourceVersion, target: edge.targetVersion)
+        }
+        return MigrationCandidate(files: MigrationFileSet(files: files), sourceVersion: edge.sourceVersion,
+            targetVersion: edge.targetVersion, edgePath: [edge.id],
+            classification: .losslessWithNormalization, diagnostics: [],
+            resolutionDecisions: [], losses: [], remainingUnresolved: [])
     }
 }
