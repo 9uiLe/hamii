@@ -81,6 +81,11 @@ enum MigrationPreparationStep {
     case beforeRetention(URL)
 }
 
+private enum PreparedMigrationReview {
+    case legacy(MigrationReviewPackage)
+    case composed(MigrationComposedReviewPackage)
+}
+
 public final class MigrationCandidatePreparer {
     private let hook: ((MigrationPreparationStep) throws -> Void)?
     public init() { hook = nil }
@@ -100,6 +105,28 @@ public final class MigrationCandidatePreparer {
 
     public func prepare(repository sourceRoot: URL,
                         resolution: MigrationResolutionManifest? = nil) throws -> MigrationReviewPackage {
+        guard case .legacy(let review) = try prepareCandidate(repository: sourceRoot,
+            resolution: resolution, composedReview: false) else {
+            throw MigrationPreparationError.invalidCandidate("Legacy review construction failed")
+        }
+        return review
+    }
+
+    /// Exercises the reviewed route protocol with the installed 1→2 edge.
+    /// The public writer remains on review formats 1/2 until a composed route
+    /// to a new Current format is installed.
+    func prepareComposed(repository sourceRoot: URL,
+                         resolution: MigrationResolutionManifest? = nil) throws -> MigrationComposedReviewPackage {
+        guard case .composed(let review) = try prepareCandidate(repository: sourceRoot,
+            resolution: resolution, composedReview: true) else {
+            throw MigrationPreparationError.invalidCandidate("Composed review construction failed")
+        }
+        return review
+    }
+
+    private func prepareCandidate(repository sourceRoot: URL,
+                                  resolution: MigrationResolutionManifest?,
+                                  composedReview: Bool) throws -> PreparedMigrationReview {
         let sourceRoot = sourceRoot.standardizedFileURL
         let coordinator = WorktreeCoordinator(root: sourceRoot)
         let source = try coordinator.withReadyExclusive {
@@ -216,22 +243,46 @@ public final class MigrationCandidatePreparer {
         let audit = resolution.map {
             MigrationResolutionAudit(manifest: $0, decisions: candidate.resolutionDecisions, losses: candidate.losses)
         }
-        let package = MigrationReviewPackage(recordFormatVersion: audit == nil ? 1 : 2, reviewID: reviewID,
-            sourceRef: source.ref, sourceOID: source.oid,
-            sourceTreeOID: source.treeOID, sourceCanonicalRevision: source.canonicalRevision.rawValue,
-            sourceCanonicalIdentity: source.identity.rawValue,
-            sourceFormatVersion: 1, targetFormatVersion: 2,
-            sourceDocumentRevision: source.documentRevision, candidateDocumentRevision: committed.document.revision,
-            classification: candidate.classification ?? .manual, edgePath: candidate.edgePath,
-            candidateOID: candidateOID, candidateTreeOID: candidateTreeOID, retentionRef: retentionRef,
-            changedPaths: expected,
-            diffNameStatus: nameStatus, diffStat: stat,
-            validation: MigrationValidationResult(currentFormat: 2,
-                canonicalSnapshotIdentity: committed.identity.rawValue,
-                documentID: committed.document.id.rawValue, documentRevision: committed.document.revision),
-            indexValidation: MigrationIndexValidationResult(sourceCanonicalIdentity: generation.sourceCanonicalIdentity.rawValue,
-                indexGenerationID: generation.id.rawValue, canonicalRevision: canonicalRevision.rawValue),
-            resolutionAudit: audit)
+        let validation = MigrationValidationResult(currentFormat: 2,
+            canonicalSnapshotIdentity: committed.identity.rawValue,
+            documentID: committed.document.id.rawValue, documentRevision: committed.document.revision)
+        let indexValidation = MigrationIndexValidationResult(
+            sourceCanonicalIdentity: generation.sourceCanonicalIdentity.rawValue,
+            indexGenerationID: generation.id.rawValue, canonicalRevision: canonicalRevision.rawValue)
+        let review: PreparedMigrationReview
+        if composedReview {
+            let edgeAudits = audit.map {
+                [MigrationComposedEdgeResolutionAudit(edgeID: candidate.edgePath[0],
+                    manifest: $0.manifest, decisions: $0.decisions, losses: $0.losses)]
+            } ?? []
+            let composed = MigrationComposedReviewPackage(recordFormatVersion: 3, reviewID: reviewID,
+                sourceRef: source.ref, sourceOID: source.oid,
+                sourceTreeOID: source.treeOID, sourceCanonicalRevision: source.canonicalRevision.rawValue,
+                sourceCanonicalIdentity: source.identity.rawValue,
+                sourceFormatVersion: 1, targetFormatVersion: 2,
+                sourceDocumentRevision: source.documentRevision,
+                candidateDocumentRevision: committed.document.revision,
+                classification: candidate.classification ?? .manual, receipts: replay.receipts,
+                edgeResolutionAudits: edgeAudits,
+                candidateOID: candidateOID, candidateTreeOID: candidateTreeOID,
+                retentionRef: retentionRef, changedPaths: expected,
+                diffNameStatus: nameStatus, diffStat: stat,
+                validation: validation, indexValidation: indexValidation)
+            try composed.validateShape()
+            review = .composed(composed)
+        } else {
+            review = .legacy(MigrationReviewPackage(recordFormatVersion: audit == nil ? 1 : 2,
+                reviewID: reviewID, sourceRef: source.ref, sourceOID: source.oid,
+                sourceTreeOID: source.treeOID, sourceCanonicalRevision: source.canonicalRevision.rawValue,
+                sourceCanonicalIdentity: source.identity.rawValue,
+                sourceFormatVersion: 1, targetFormatVersion: 2,
+                sourceDocumentRevision: source.documentRevision,
+                candidateDocumentRevision: committed.document.revision,
+                classification: candidate.classification ?? .manual, edgePath: candidate.edgePath,
+                candidateOID: candidateOID, candidateTreeOID: candidateTreeOID, retentionRef: retentionRef,
+                changedPaths: expected, diffNameStatus: nameStatus, diffStat: stat,
+                validation: validation, indexValidation: indexValidation, resolutionAudit: audit))
+        }
         try coordinator.withReadyExclusive {
             try requireClean(sourceRoot)
             guard try git(sourceRoot, "symbolic-ref", "--quiet", "HEAD") == source.ref,
@@ -241,13 +292,18 @@ public final class MigrationCandidatePreparer {
                 throw MigrationPreparationError.staleSource
             }
             _ = try git(sourceRoot, "update-ref", retentionRef, candidateOID, String(repeating: "0", count: source.oid.count))
-            do { try MigrationReviewStore(root: sourceRoot).write(package) }
+            do {
+                switch review {
+                case .legacy(let package): try MigrationReviewStore(root: sourceRoot).write(package)
+                case .composed(let package): try MigrationReviewStore(root: sourceRoot).writeComposed(package)
+                }
+            }
             catch {
                 _ = try? git(sourceRoot, "update-ref", "-d", retentionRef, candidateOID)
                 throw error
             }
         }
-        return package
+        return review
     }
 
     private struct SourceObservation {

@@ -11,16 +11,49 @@ struct MigrationRouteReplayResult {
     let singleEdgeCandidate: MigrationCandidate?
 }
 
+/// Resolution evidence belongs to the exact input of one installed edge, not
+/// to the route's original source or a free-form payload shared across edges.
+struct MigrationEdgeResolutionInput {
+    let edgeID: String
+    let manifest: MigrationResolutionManifest
+    let sourceBinding: MigrationResolutionSourceBinding
+}
+
 enum MigrationRouteReplay {
     static func run(_ original: MigrationFileSet, route: MigrationRoute,
                     resolution: MigrationResolutionManifest? = nil,
                     sourceBinding: MigrationResolutionSourceBinding? = nil) throws -> MigrationRouteReplayResult {
+        let edgeResolutions: [MigrationEdgeResolutionInput]
+        if let resolution {
+            guard let sourceBinding, route.edges.count == 1 else {
+                throw MigrationResolutionFailure.invalidManifest
+            }
+            edgeResolutions = [MigrationEdgeResolutionInput(edgeID: route.edges[0].id,
+                manifest: resolution, sourceBinding: sourceBinding)]
+        } else {
+            guard sourceBinding == nil else { throw MigrationResolutionFailure.invalidManifest }
+            edgeResolutions = []
+        }
+        return try run(original, route: route, edgeResolutions: edgeResolutions)
+    }
+
+    static func run(_ original: MigrationFileSet, route: MigrationRoute,
+                    edgeResolutions: [MigrationEdgeResolutionInput]) throws -> MigrationRouteReplayResult {
         let sourceVersion = try MigrationRegistry.analyze(original, to: route.sourceVersion).sourceVersion
         guard sourceVersion == route.sourceVersion else {
             throw MigrationEdgeFailure.invalidInput("Route source differs from Canonical format marker")
         }
-        guard resolution == nil || route.edges.contains(where: { $0.sourceVersion == 1 && $0.targetVersion == 2 }) else {
-            throw MigrationResolutionFailure.invalidManifest
+        let routeEdges = Dictionary(uniqueKeysWithValues: route.edges.map { ($0.id, $0) })
+        var resolutions: [String: MigrationEdgeResolutionInput] = [:]
+        for input in edgeResolutions {
+            guard let edge = routeEdges[input.edgeID],
+                  resolutions.updateValue(input, forKey: input.edgeID) == nil,
+                  input.manifest.formatVersion == 1,
+                  input.manifest.sourceBinding == input.sourceBinding,
+                  input.sourceBinding.sourceFormatVersion == edge.sourceVersion,
+                  input.sourceBinding.targetFormatVersion == edge.targetVersion else {
+                throw MigrationResolutionFailure.invalidManifest
+            }
         }
 
         var files = original
@@ -28,16 +61,16 @@ enum MigrationRouteReplay {
         var singleEdgeCandidate: MigrationCandidate?
         for edge in route.edges {
             let inputIdentity = CanonicalByteIdentity.compute(files: files.files).rawValue
+            let resolution = resolutions[edge.id]
             let candidate: MigrationCandidate
             switch (edge.sourceVersion, edge.targetVersion) {
             case (1, 2):
                 if let resolution {
-                    guard let sourceBinding,
-                          sourceBinding.sourceCanonicalIdentity == inputIdentity else {
+                    guard resolution.sourceBinding.sourceCanonicalIdentity == inputIdentity else {
                         throw MigrationResolutionFailure.staleSource
                     }
-                    candidate = try MigrationRegistry.transform(files, applying: resolution,
-                        actualSourceBinding: sourceBinding)
+                    candidate = try MigrationRegistry.transform(files, applying: resolution.manifest,
+                        actualSourceBinding: resolution.sourceBinding)
                 } else {
                     candidate = try MigrationRegistry.transform(files, to: edge.targetVersion)
                 }

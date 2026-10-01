@@ -4,6 +4,11 @@ import HamiiMigrations
 
 enum MigrationReviewStoreError: Error { case invalidID, invalidRecord }
 
+enum MigrationStoredReview {
+    case legacy(MigrationReviewPackage)
+    case composed(MigrationComposedReviewPackage)
+}
+
 /// Local review evidence is outside Canonical data and is never a substitute
 /// for revalidating the immutable Git candidate at publication time.
 struct MigrationReviewStore {
@@ -23,6 +28,55 @@ struct MigrationReviewStore {
         try JSONEncoder().encode(package).write(to: destination, options: .atomic)
         try sync(destination)
         try sync(destination.deletingLastPathComponent())
+    }
+
+    func writeComposed(_ package: MigrationComposedReviewPackage) throws {
+        try package.validateShape()
+        let destination = try url(package.reviewID)
+        try FileManager.default.createDirectory(at: destination.deletingLastPathComponent(), withIntermediateDirectories: true)
+        guard !FileManager.default.fileExists(atPath: destination.path) else { throw MigrationReviewStoreError.invalidRecord }
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        try encoder.encode(package).write(to: destination, options: .atomic)
+        try sync(destination)
+        try sync(destination.deletingLastPathComponent())
+    }
+
+    func loadRawBytes(_ reviewID: String) throws -> Data {
+        try Data(contentsOf: url(reviewID))
+    }
+
+    /// Version dispatch inspects exactly one top-level format marker. Nested
+    /// historical review fields retain their existing v1/v2 decoding policy.
+    func recordVersion(_ reviewID: String) throws -> Int {
+        let bytes = try loadRawBytes(reviewID)
+        guard (try JSONSerialization.jsonObject(with: bytes)) is [String: Any] else {
+            throw MigrationReviewStoreError.invalidRecord
+        }
+        try MigrationReviewUniqueKeys.validate(bytes, allDepths: false)
+        struct Header: Decodable { let recordFormatVersion: Int }
+        return try JSONDecoder().decode(Header.self, from: bytes).recordFormatVersion
+    }
+
+    func loadStored(_ reviewID: String) throws -> MigrationStoredReview {
+        switch try recordVersion(reviewID) {
+        case 1, 2: return .legacy(try load(reviewID))
+        case 3: return .composed(try loadComposed(reviewID))
+        default: throw MigrationReviewStoreError.invalidRecord
+        }
+    }
+
+    func loadComposed(_ reviewID: String) throws -> MigrationComposedReviewPackage {
+        try loadComposedWithBytes(reviewID).review
+    }
+
+    func loadComposedWithBytes(_ reviewID: String) throws -> (review: MigrationComposedReviewPackage, bytes: Data) {
+        let bytes = try loadRawBytes(reviewID)
+        try MigrationComposedReviewSchema.validate(bytes)
+        let result = try JSONDecoder().decode(MigrationComposedReviewPackage.self, from: bytes)
+        guard result.reviewID == reviewID else { throw MigrationReviewStoreError.invalidRecord }
+        try result.validateShape()
+        return (result, bytes)
     }
 
     func load(_ reviewID: String) throws -> MigrationReviewPackage {
