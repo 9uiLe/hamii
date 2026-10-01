@@ -42,7 +42,9 @@ with tempfile.TemporaryDirectory(prefix="hamii-cli-") as directory:
     assert "screen create SCOPE_ID NAME" in run("skills", "get", "authoring")["skill"]
     assert "component promote DEFINITION_ID ANCESTOR_SCOPE_ID" in run("skills", "get", "components")["skill"]
     assert "layer token SCREEN_ID LAYER_ID" in run("skills", "get", "tokens")["skill"]
-    assert "query context summary" in run("skills", "get", "context")["skill"]
+    context_skill = run("skills", "get", "context")["skill"]
+    assert "query context summary" in context_skill
+    assert "query context surface SURFACE_ID" in context_skill
     validation_skill = run("skills", "get", "validation")["skill"]
     assert "validate --project PATH --json" in validation_skill
     assert "query components CONSUMER_SCOPE_ID TERM" in validation_skill

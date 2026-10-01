@@ -30,6 +30,7 @@ private enum ContextCLIOutput: Encodable {
     case resources(ContextResponse<ContextResourceList>)
     case component(ContextResponse<ContextComponentDetail>)
     case token(ContextResponse<ContextTokenDetail>)
+    case surface(ContextResponse<ContextSurfaceCapabilityDetail>)
 
     func encode(to encoder: Encoder) throws {
         switch self {
@@ -38,6 +39,7 @@ private enum ContextCLIOutput: Encodable {
         case .resources(let value): try value.encode(to: encoder)
         case .component(let value): try value.encode(to: encoder)
         case .token(let value): try value.encode(to: encoder)
+        case .surface(let value): try value.encode(to: encoder)
         }
     }
 
@@ -48,6 +50,7 @@ private enum ContextCLIOutput: Encodable {
         case .resources(let value): "\(value.payload.returnedCount) of \(value.payload.matchingCount) resources\(value.payload.truncated ? " (truncated)" : "")"
         case .component(let value): "\(value.payload.id.rawValue) \(value.payload.name)"
         case .token(let value): "\(value.payload.id.rawValue) \(value.payload.name)"
+        case .surface(let value): "\(value.payload.surfaceID.rawValue): \(value.payload.losses.totalCount) capability losses, preview \(value.payload.previewReady ? "ready" : "blocked")"
         }
     }
 }
@@ -101,7 +104,7 @@ private enum CLI {
         "integration": "hamii \(version)\nintegration contract SCREEN_ID --json returns semantic inputs, events, token/asset references, native and accessibility intent. Unknown product mappings require review. generate swiftui SCREEN_ID TARGET_ID --json is a separate deterministic path for the supported static subset and returns an error for unsupported semantics.",
         "assets": "hamii \(version)\nasset import SCOPE_ID NAME MEDIA_TYPE SOURCE_PATH --storage git --state TOKEN writes a SHA-256 addressed repository blob and Asset metadata. Large binary Git/LFS policy is unresolved; choose Git storage explicitly. layer image SCREEN_ID PARENT_ID ASSET_ID NAME --state TOKEN adds an image reference. Run validate --json to check blob integrity. Remote caches and thumbnails are not canonical data.",
         "preview": "hamii \(version)\npreview plan SURFACE_ID --json checks declared target capabilities and semantic support for one AppSurface. A successful plan reports that the IR is supported; an installed and running Native Preview Host is a separate requirement. macOS SwiftUI supports the current in-process subset. iOS Simulator and Android Hosts are not yet implemented.",
-        "context": "hamii \(version)\nUse --json. Prefer query context session [--screen SCREEN_ID --layer LAYER_ID] for multiple reads. It emits an initial summary, then accepts one NDJSON request per line: layer {op,screenID,layerID}, resources {op,consumerScopeID,kind,matching?,limit?}, component {op,consumerScopeID,componentID}, token {op,consumerScopeID,tokenID}, or {op:close}. op is the operation name and all string values must be JSON quoted. Responses reuse the initial observation; requests never accept --state. Lines are limited to 64 KiB. usage and notFound errors have terminal:false; other errors have terminal:true and end the process. On a terminal error start a new session; never combine observations. EOF closes without a response. Mutations use existing one-shot commands with the initial observation.statePrecondition as --state TOKEN. For one-shot reads, start with query context summary [--screen SCREEN_ID --layer LAYER_ID]. Use its observation.statePrecondition as --state TOKEN for every follow-up: query context layer SCREEN_ID LAYER_ID; query context resources SCOPE_ID component|token|asset [MATCH] [--limit N]; query context component SCOPE_ID COMPONENT_ID; query context token SCOPE_ID TOKEN_ID. Resource results are Scope-filtered and bounded. Never combine responses with different statePrecondition values. Request selected detail only when needed. Mutate through existing commands with the same --state TOKEN. On conflict, restart from summary. Do not edit Canonical files directly or use full inspect as the routine AI context."
+        "context": "hamii \(version)\nUse --json. Prefer query context session [--screen SCREEN_ID --layer LAYER_ID] for multiple reads. It emits an initial summary, then accepts one NDJSON request per line: layer {op,screenID,layerID}, resources {op,consumerScopeID,kind,matching?,limit?}, component {op,consumerScopeID,componentID}, token {op,consumerScopeID,tokenID}, surface {op,surfaceID}, or {op:close}. op is the operation name and all string values must be JSON quoted. Responses reuse the initial observation; requests never accept --state. Lines are limited to 64 KiB. usage and notFound errors have terminal:false; other errors have terminal:true and end the process. On a terminal error start a new session; never combine observations. EOF closes without a response. Mutations use existing one-shot commands with the initial observation.statePrecondition as --state TOKEN. For one-shot reads, start with query context summary [--screen SCREEN_ID --layer LAYER_ID]. Use its observation.statePrecondition as --state TOKEN for every follow-up: query context layer SCREEN_ID LAYER_ID; query context resources SCOPE_ID component|token|asset [MATCH] [--limit N]; query context component SCOPE_ID COMPONENT_ID; query context token SCOPE_ID TOKEN_ID; query context surface SURFACE_ID. Surface detail includes bounded capability losses and Preview Plan diagnostics; it does not prove Native Preview Host availability. Resource results are Scope-filtered and bounded. Never combine responses with different statePrecondition values. Request selected detail only when needed. Mutate through existing commands with the same --state TOKEN. On conflict, restart from summary. Do not edit Canonical files directly or use full inspect as the routine AI context."
     ]
 
     static func isContextSessionInvocation(_ raw: [String]) -> Bool {
@@ -166,6 +169,8 @@ private enum CLI {
                     context = .component(try started.session.componentDetail(componentID: component, consumerScopeID: scope))
                 case .token(let scope, let token):
                     context = .token(try started.session.tokenDetail(tokenID: token, consumerScopeID: scope))
+                case .surface(let surface):
+                    context = .surface(try started.session.surfaceCapabilityDetail(surfaceID: surface))
                 }
                 try writeJSON(Output(ok: true, context: context))
             } catch {
@@ -285,6 +290,10 @@ private enum CLI {
             if args.count == 5 && args[2] == "token" {
                 return Output(ok: true, context: .token(try context.tokenDetail(
                     tokenID: EntityID(args[4]), consumerScopeID: EntityID(args[3]), expectedState: expected)))
+            }
+            if args.count == 4 && args[2] == "surface" {
+                return Output(ok: true, context: .surface(try context.surfaceCapabilityDetail(
+                    surfaceID: EntityID(args[3]), expectedState: expected)))
             }
             throw CLIError(category: "usage", message: "Unknown query context command")
         }
@@ -447,7 +456,7 @@ private enum CLI {
         return Output(ok: true, mutation: result)
     }
 
-    static let usage = "hamii [--project PATH] [--profile NAME] [--json] <version|init NAME|inspect|validate|git switch BRANCH|git recover|git merge check BRANCH|git merge publish BRANCH|preview plan SURFACE_ID|migrate plan|migrate resolution|migrate prepare [--resolution PATH]|migrate publish REVIEW_ID SOURCE_OID CANDIDATE_OID|migrate recover|skills list|get NAME|index rebuild|query components SCOPE_ID TERM|query context session [--screen ID --layer ID]|query context summary [--screen ID --layer ID]|query context layer SCREEN_ID LAYER_ID --state TOKEN|query context resources SCOPE_ID component|token|asset [MATCH] [--limit N] --state TOKEN|query context component SCOPE_ID COMPONENT_ID --state TOKEN|query context token SCOPE_ID TOKEN_ID --state TOKEN|generate swiftui SCREEN_ID TARGET_ID|integration contract SCREEN_ID|page create NAME|scope create PARENT_ID NAME|screen create SCOPE_ID NAME|target add PLATFORM FRAMEWORK|surface add PAGE_ID SCREEN_ID TARGET_ID DEVICE RUNTIME BUILD_ENVIRONMENT|surface target SURFACE_ID TARGET_ID|capability set TARGET_ID KEY SUPPORT|asset import SCOPE_ID NAME MEDIA_TYPE SOURCE_PATH --storage git|layer add SCREEN_ID PARENT_ID KIND NAME TEXT|layer text SCREEN_ID LAYER_ID TEXT|layer token SCREEN_ID LAYER_ID spacing|padding TOKEN_ID|-|token create SCOPE_ID NAME KIND VALUE|token alias SCOPE_ID NAME KIND TOKEN_ID|layer image SCREEN_ID PARENT_ID ASSET_ID NAME|component create SCOPE_ID NAME|component list SCOPE_ID|component instantiate SCREEN_ID PARENT_ID DEFINITION_ID|component promote DEFINITION_ID ANCESTOR_SCOPE_ID> [--state TOKEN]"
+    static let usage = "hamii [--project PATH] [--profile NAME] [--json] <version|init NAME|inspect|validate|git switch BRANCH|git recover|git merge check BRANCH|git merge publish BRANCH|preview plan SURFACE_ID|migrate plan|migrate resolution|migrate prepare [--resolution PATH]|migrate publish REVIEW_ID SOURCE_OID CANDIDATE_OID|migrate recover|skills list|get NAME|index rebuild|query components SCOPE_ID TERM|query context session [--screen ID --layer ID]|query context summary [--screen ID --layer ID]|query context layer SCREEN_ID LAYER_ID --state TOKEN|query context resources SCOPE_ID component|token|asset [MATCH] [--limit N] --state TOKEN|query context component SCOPE_ID COMPONENT_ID --state TOKEN|query context token SCOPE_ID TOKEN_ID --state TOKEN|query context surface SURFACE_ID --state TOKEN|generate swiftui SCREEN_ID TARGET_ID|integration contract SCREEN_ID|page create NAME|scope create PARENT_ID NAME|screen create SCOPE_ID NAME|target add PLATFORM FRAMEWORK|surface add PAGE_ID SCREEN_ID TARGET_ID DEVICE RUNTIME BUILD_ENVIRONMENT|surface target SURFACE_ID TARGET_ID|capability set TARGET_ID KEY SUPPORT|asset import SCOPE_ID NAME MEDIA_TYPE SOURCE_PATH --storage git|layer add SCREEN_ID PARENT_ID KIND NAME TEXT|layer text SCREEN_ID LAYER_ID TEXT|layer token SCREEN_ID LAYER_ID spacing|padding TOKEN_ID|-|token create SCOPE_ID NAME KIND VALUE|token alias SCOPE_ID NAME KIND TOKEN_ID|layer image SCREEN_ID PARENT_ID ASSET_ID NAME|component create SCOPE_ID NAME|component list SCOPE_ID|component instantiate SCREEN_ID PARENT_ID DEFINITION_ID|component promote DEFINITION_ID ANCESTOR_SCOPE_ID> [--state TOKEN]"
 
     static func takeOption(_ name: String, from args: inout [String]) -> String? {
         guard let index = args.firstIndex(of: name), args.indices.contains(index + 1) else { return nil }

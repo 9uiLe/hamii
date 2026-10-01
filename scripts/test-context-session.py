@@ -90,6 +90,12 @@ def main():
             layer = mutate('layer', 'add', screen, screen_object['root']['id']['rawValue'], 'text', 'Name', 'Hello')
             component = mutate('component', 'create', scope, 'PriceBadge')
             spacing = mutate('token', 'create', scope, 'spacing.checkout', 'spacing', '16')
+            page = mutate('page', 'create', 'Screens')
+            target = mutate('target', 'add', 'macOS', 'swiftUI')
+            surface = mutate('surface', 'add', page, screen, target, 'Mac', 'macOS 27', 'macOS SDK')
+            mutate('capability', 'set', target, 'layout.stack.container', 'exact')
+            mutate('capability', 'set', target, 'component.text.visual', 'exact')
+            mutate('layer', 'token', screen, screen_object['root']['id']['rawValue'], 'spacing', spacing)
             private_scope = mutate('scope', 'create', scope, 'Private')
             private_component = mutate('component', 'create', private_scope, 'PrivateBadge')
             selection = ['--screen', screen, '--layer', layer]
@@ -98,6 +104,7 @@ def main():
                 ({'op':'resources', 'consumerScopeID':scope, 'kind':'component', 'matching':'PriceBadge', 'limit':2}, ['resources', scope, 'component', 'PriceBadge', '--limit', '2']),
                 ({'op':'component', 'consumerScopeID':scope, 'componentID':component}, ['component', scope, component]),
                 ({'op':'token', 'consumerScopeID':scope, 'tokenID':spacing}, ['token', scope, spacing]),
+                ({'op':'surface', 'surfaceID':surface}, ['surface', surface]),
             ]
             session, initial = start(root, *selection)
             summary_bytes = command(str(binary), '--project', str(root), '--json', 'query', 'context', 'summary', *selection).rstrip(b'\n')
@@ -110,6 +117,17 @@ def main():
                 assert session.last_line == one_shot_bytes
                 assert result == json.loads(one_shot_bytes)
                 assert token(result) == s0
+            surface_context = session.send({'op':'surface', 'surfaceID':surface})['context']
+            assert surface_context['payload']['surfaceID']['rawValue'] == surface
+            assert surface_context['payload']['profile']['targetID']['rawValue'] == target
+            assert surface_context['payload']['requirementCount'] >= 3
+            assert surface_context['payload']['losses']['totalCount'] >= 1
+            assert surface_context['payload']['capabilityAllowed'] is False
+            assert surface_context['payload']['previewReady'] is False
+            missing_state = cli(root, 'query', 'context', 'surface', surface, expected=2)
+            assert missing_state['category'] == 'usage' and 'context' not in missing_state
+            missing_one_shot = cli(root, 'query', 'context', 'surface', 'missing', '--state', s0, expected=2)
+            assert missing_one_shot['category'] == 'notFound' and 'context' not in missing_one_shot
             # Usage/notFound never invalidate S0; oversize lines are drained.
             malformed = [b'{\n', b'[]\n', b'\n', b'{"op":"unknown"}\n',
                          b'{"op":"close","state":"forbidden"}\n',
@@ -117,6 +135,7 @@ def main():
                          b'{"op":"resources","consumerScopeID":"x","kind":"token","limit":1.5}\n',
                          b'{"op":"resources","consumerScopeID":"x","kind":"token","limit":101}\n',
                          b'{"op":"resources","consumerScopeID":"x","kind":"token","matching":null}\n',
+                         b'{"op":"surface","surfaceID":"x","extra":"forbidden"}\n',
                          b'x' * (64 * 1024 + 1) + b'\n']
             for raw in malformed:
                 session.send_bytes(raw)
@@ -127,6 +146,10 @@ def main():
             unavailable = session.send({'op':'component','consumerScopeID':scope,'componentID':private_component})
             assert unavailable['category'] == 'notFound' and unavailable['terminal'] is False
             assert 'context' not in unavailable
+            missing_surface = session.send({'op':'surface','surfaceID':'missing'})
+            assert missing_surface['category'] == 'notFound' and missing_surface['terminal'] is False
+            assert 'context' not in missing_surface
+            assert token(session.send({'op':'surface','surfaceID':surface})) == s0
             assert token(session.send(requests[0][0])) == s0
             assert session.send({'op':'close'})['ok']
             session.finish()
@@ -141,6 +164,8 @@ def main():
             session, initial = start(root)
             s0 = token(initial)
             cli(root, 'page', 'create', 'Concurrent writer', '--state', s0)
+            stale_one_shot = cli(root, 'query', 'context', 'surface', surface, '--state', s0, expected=3)
+            assert stale_one_shot['category'] == 'conflict' and 'context' not in stale_one_shot
             failure = session.send(requests[0][0])
             assert failure['category'] == 'conflict' and failure['terminal'] is True and 'context' not in failure
             session.finish(3)
@@ -183,7 +208,7 @@ def main():
             session.finish(7)
             failed = cli(root,'query','context','session',expected=7)
             assert failed['terminal'] is True and 'context' not in failed
-        print(json.dumps({'status':'passed','normalOperations':5,'usageCases':len(malformed),
+        print(json.dumps({'status':'passed','normalOperations':6,'usageCases':len(malformed),
                           'staleWriter':True,'sameRevisionSwitch':True,'pendingGate':True,
                           'epochCorruption':True,'restart':True,'boundedLineRecovery':True}))
     finally:

@@ -8,6 +8,7 @@
 | `resources` | `op`, `consumerScopeID`, `kind` | `matching`, `limit` |
 | `component` | `op`, `consumerScopeID`, `componentID` | none |
 | `token` | `op`, `consumerScopeID`, `tokenID` | none |
+| `surface` | `op`, `surfaceID` | none |
 | `close` | `op` | none |
 
 `op` is the operation name. IDs must be nonempty strings. `kind` is `component`, `token` or `asset`. `matching` is a string. `limit` is an integer in 1…100 (default 32). Unknown operations/fields, incorrect types and malformed JSON return `usage` with `terminal: false`. Lines over 64 KiB are discarded through the newline and return the same nonterminal error. Missing/unavailable entities return `notFound` with `terminal: false`. No request accepts a state token or mutation.
@@ -17,6 +18,7 @@ Example stdin:
 ```json
 {"op":"resources","consumerScopeID":"scope_app","kind":"component","matching":"Button","limit":8}
 {"op":"component","consumerScopeID":"scope_app","componentID":"component_button"}
+{"op":"surface","surfaceID":"surface_checkout"}
 {"op":"close"}
 ```
 
@@ -25,6 +27,8 @@ All successful context responses identify the initial observation S0. Each follo
 EOF exits 0 without an additional response. `close` returns `{"ok":true,"message":"Context session closed"}` and exits 0. The session holds no worktree lock while waiting for input and does not survive restart. There is no daemon, socket, disk/global registry or session ID. One-shot context commands remain available.
 
 Mutations use existing one-shot commands with `--state TOKEN`, using the summary's `context.observation.statePrecondition.rawValue`. `ProjectService` revalidates the token at mutation time; the read session does not authorize writes. Never combine responses from different observations. Use `hamii skills get context --json` for installed-version guidance.
+
+For one-shot retrieval, `hamii --project PATH --json query context surface SURFACE_ID --state TOKEN` returns the same `context` envelope as the session operation. Its payload identifies the Surface and Screen, carries the evaluated target profile, requirement count and support decision, and bounds non-`none` capability losses and Preview Plan diagnostics separately to 100 items each (`totalCount`, `returnedCount`, `truncated`). Preview readiness is semantic and fixture readiness; it does not establish Native Preview Host availability. A missing Surface returns `notFound`. A stale token returns `conflict` without a payload.
 
 Regression checks: `python3 scripts/test-context-session.py --binary .build/debug/hamii`. The full XCTest gate runs these real-process checks through `ContextSessionCLITests`; Application tests additionally check exact observation/verification counts and failure invalidation.
 

@@ -14,6 +14,7 @@ enum ContextSessionRequest {
     case resources(scope: EntityID, kind: ContextResourceKind, matching: String?, limit: Int)
     case component(scope: EntityID, component: EntityID)
     case token(scope: EntityID, token: EntityID)
+    case surface(surface: EntityID)
     case close
 
     static func decode(_ data: Data) throws -> Self {
@@ -39,6 +40,7 @@ enum ContextSessionRequest {
         case "resources": fields = ["op", "consumerScopeID", "kind", "matching", "limit"]
         case "component": fields = ["op", "consumerScopeID", "componentID"]
         case "token": fields = ["op", "consumerScopeID", "tokenID"]
+        case "surface": fields = ["op", "surfaceID"]
         case "close": fields = ["op"]
         default: throw ContextSessionInputError.usage("Unknown context session operation")
         }
@@ -49,6 +51,7 @@ enum ContextSessionRequest {
         case "layer": return .layer(screen: EntityID(try string("screenID")), layer: EntityID(try string("layerID")))
         case "component": return .component(scope: EntityID(try string("consumerScopeID")), component: EntityID(try string("componentID")))
         case "token": return .token(scope: EntityID(try string("consumerScopeID")), token: EntityID(try string("tokenID")))
+        case "surface": return .surface(surface: EntityID(try string("surfaceID")))
         case "resources":
             guard let kind = ContextResourceKind(rawValue: try string("kind")) else {
                 throw ContextSessionInputError.usage("Resource kind must be component, token or asset")
