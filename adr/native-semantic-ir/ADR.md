@@ -50,7 +50,7 @@ Evidence commit `1a9ab4e874ecb35ac31ab2caaabdfec0dae3e0e0` では、4 fixtures /
 
 ## Remaining Implementation
 
-Production の `LayerPayload` は7種の現行 Layer kind を表し、Validator、TargetPlanner、Canvas、Native Preview、Generator と Mutation が利用する。Current Format v2 は順序付き padding effect を保存し、Canvas / Native Preview / SwiftUI Generator は記載順に適用する。Generator は `effect.padding` の明示宣言を要求し、Stack spacing の Generator lowering は未対応である。Current Format v2 reader は未知の effect kind を拒否するため、別の persisted effect kind は format / migration 境界を検討せずに追加しない。残る実装は他の ordered effects、typed target extension と対応する lowering の範囲である。Screen-level system navigation は既存の別 graph に保持する。Capability の宣言粒度と loss 評価は production の `CapabilityRegistry`、`SemanticRequirementExtractor`、`CapabilityEvaluator` と [Current Architecture](../../docs/final-architecture.md) が定める。この ADR は残る production 実装と検証が完了するまで残す。
+Production の `LayerPayload` は7種の現行 Layer kind を表し、Validator、TargetPlanner、Canvas、Native Preview、Generator と Mutation が利用する。Current Format v2 の Stack spacing は Stack 限定の意味として検証し、Canvas / Native Preview / SwiftUI Generator が同じ spacing Token を解決する。順序付き padding effect も Current Format v2 に保存し、3 consumer が記載順に適用する。Generator は Stack spacing に `layout.spacingToken` の宣言または既存 `token.spacing` alias を使い、padding には独立した `effect.padding` の明示宣言を要求する。Current Format v2 reader は未知の effect kind を拒否するため、別の persisted effect kind は format / migration 境界を検討せずに追加しない。残る実装は他の ordered effects、typed target extension と対応する lowering の範囲である。Screen-level system navigation は既存の別 graph に保持する。Capability の宣言粒度と loss 評価は production の `CapabilityRegistry`、`SemanticRequirementExtractor`、`CapabilityEvaluator` と [Current Architecture](../../docs/final-architecture.md) が定める。この ADR は残る production 実装と検証が完了するまで残す。
 
 ## Status
 

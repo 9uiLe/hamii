@@ -36,6 +36,7 @@ run_cli_smoke() {
   python3 scripts/smoke-cli.py
   python3 scripts/smoke-cli-errors.py
   python3 scripts/smoke-generator-padding.py
+  python3 scripts/smoke-generator-spacing.py
 }
 run_check cli-smoke run_cli_smoke
 run_check state-precondition-smoke python3 scripts/smoke-state-precondition.py
