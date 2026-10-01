@@ -10,7 +10,7 @@ hamii で現在実行できる範囲を示します。製品境界と依存規�
 | Obsolete | Runtime の legacy format parser、MCP adapter、GUI/CLI 別々の mutation engine は package に含めません。 |
 | Unresolved | 狭い決定境界と必要な調査・計測は ADR queue にあります。 |
 
-現在実行できる Native Preview は、宣言済みの Stack / Text / Button / System Image と Text value patch を扱う macOS SwiftUI 実装、および編集用 Canvas です。Editor Inspector は選択した macOS SwiftUI AppSurface の capability loss と Preview Plan の診断を別々に表示し、Native Preview も同じ Surface を使用します。他の Target / Framework declaration は model の入力であり、宣言だけで Preview Host が利用可能にはなりません。Standalone source generation は静的 SwiftUI subset を扱い、未対応 semantics を error として報告します。Repository Asset は content-addressed blob として取り込めますが、その blob の Native Preview 描画は未実装です。
+現在実行できる Native Preview は、宣言済みの Stack / Text / Button / System Image と Text value patch を扱う macOS SwiftUI 実装、および編集用 Canvas です。Editor Inspector は選択した macOS SwiftUI AppSurface の capability loss と Preview Plan の診断を別々に表示し、Native Preview も同じ Surface を使用します。他の Target / Framework declaration は model の入力であり、宣言だけで Preview Host が利用可能にはなりません。Standalone source generation は静的 SwiftUI subset を扱い、未対応 semantics を error として報告します。Built-in capability registry は抽出される意味と Preview / Generator catalog の整合性をテストで保証します。Registry は target support の宣言ではなく、target declaration の未知 key は保存できます。Repository Asset は content-addressed blob として取り込めますが、その blob の Native Preview 描画は未実装です。
 
 `HamiiNativeRuntime` は iOS 26.5 Simulator SDK 向けに Swift 6.4 で compile できます。iOS Host の session protocol は [Host Session Spike](../adr/preview-host-transport/spikes/session-recovery/SPIKE.md) で検証中です。現在の環境では Simulator boot 中の audio/AV capture 初期化が XPC reply 待ちで timeout し、Host install より前に `simctl boot` が失敗します。これは transport validation の blocker です。Host の runtime behavior、画面、transport latency / recovery は未測定・未確認です。
 

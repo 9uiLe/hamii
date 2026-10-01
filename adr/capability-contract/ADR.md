@@ -24,11 +24,13 @@ Node 単位、property 単位、semantic contract 単位。Navigation/Toolbar/Re
 
 ## Unknowns
 
-Current Format v2 で未実装の requirement 抽出範囲、runtime version 別の support 登録方法、残る consumer への loss report 接続、registry の更新時 validation。追加 framework/profile の coverage には別途一次資料・実行検証が必要。
+Current Format v2 で未実装の requirement 抽出範囲と、具体的な version-sensitive requirement が現れた場合の runtime version 別 support 登録方法。追加 framework/profile の coverage には別途一次資料・実行検証が必要。現在の catalog は runtime version 固有の support を宣言していない。
 
 ## Required Evidence
 
 [spikes/capability-granularity/SPIKE.md](spikes/capability-granularity/SPIKE.md) に oracle、14 row / 33 requirement の比較、Spike 実施時の Planner baseline、test-only Swift code、限界を記録した。Oracle は候補より先に Git commit `0f2694f` に保存した。Fixture extraction で発見した D root Stack の欠落を候補計測前に訂正した。
+
+Production では共有 semantic evaluator を `TargetPlanner`、`SwiftUIGenerator`、Human Canvas、AI context に接続した。Native Preview の適用 profile は macOS SwiftUI に限定し、未登録 profile は Exact 宣言でも拒否する。Built-in semantic key と alias は `CapabilityRegistry` へ集約し、実 extractor corpus と両 production catalog の整合性を permanent test で検証する。未登録の抽出意味は診断付きで拒否し、保存済み target declaration の未知 key は許可する。
 
 ## Decision Criteria
 
