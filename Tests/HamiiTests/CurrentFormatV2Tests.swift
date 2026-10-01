@@ -59,6 +59,18 @@ final class CurrentFormatV2Tests: XCTestCase {
         XCTAssertNotEqual(try encoded(root), try encoded(Layer(id: root.id, name: root.name, payload: .stack, children: root.children, effects: root.effects.reversed())))
     }
 
+    func testOpaqueNativeFieldsSurviveCurrentFormatV2RoundTrip() throws {
+        var root = Layer(id: EntityID("native_layer"), name: "Native", payload: .text(TextLayerPayload(value: "Hello")))
+        root.nativeIntent = "customEffect"
+        root.targetOverrides = ["macOS.swiftUI": "customValue"]
+        let screen = Screen(id: EntityID("native_screen"), name: "Native", scopeID: EntityID("scope"), root: root)
+        let bytes = try encoded(screen)
+        let decoded = try JSONDecoder().decode(Screen.self, from: bytes)
+        XCTAssertEqual(decoded.root.nativeIntent, root.nativeIntent)
+        XCTAssertEqual(decoded.root.targetOverrides, root.targetOverrides)
+        XCTAssertEqual(try encoded(decoded), bytes)
+    }
+
     func testCurrentFormatKeepsCompleteScreenAndComponentTreesInOwningEntityFiles() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("hamii-shard-ownership-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: root) }

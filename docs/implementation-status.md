@@ -16,6 +16,8 @@ hamii で現在実行できる範囲を示します。製品境界と依存規�
 
 Spacing Token は GUI と CLI から作成・参照・Stack spacing / Layer の順序付き padding effect へ指定できます。Stack spacing は Validator が Stack 限定として検証します。Canvas と macOS Native Preview は両方を描画し、SwiftUI Generator は `layout.spacingToken` の宣言または既存 `token.spacing` alias がある Stack spacing と、独立した `effect.padding` の明示宣言がある padding を lowering します。Generator は Stack 間隔を構築引数、padding を保存順の Layer effect として扱います。その他の Token kind の解決と Inspector は未実装です。
 
+Current IR の typed payload、Stack spacing、順序付き padding effect、Screen-level system semantics は実装済みです。`nativeIntent` と `targetOverrides` は Current Format v2 の opaque field として保持します。両方とも Preview / Generator の supported capability ではなく、Exact declaration でも利用を拒否します。Product repository 固有の native mapping は Integration Contract 側の論点です。
+
 `bash scripts/check.sh` は実装済み契約を検証します。この検証だけでは Native Preview parity、次の format change に対する migration safety、production integration の品質は証明できません。これらは [Technical Spikes](spikes.md) に紐づく実験で測定します。
 
 Canonical save は読み込み時点の Document から期待 Canonical bytes を再構成し、保存直前の現在 bytes と照合します。load/save 間の逐次外部編集では conflict を返し、外部 bytes を保持することを統合テストで確認しました。照合と atomic replace の間に非協調 writer が入る race は未解決で、[External Git Write ADR](../adr/git-external-write-coordination/ADR.md) の対象です。

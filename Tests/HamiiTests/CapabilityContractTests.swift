@@ -1,6 +1,7 @@
 import Foundation
 import XCTest
 import HamiiCore
+import HamiiGeneration
 
 final class CapabilityContractTests: XCTestCase {
     private func fixture(root: Layer, navigation: NavigationConfiguration? = nil) -> (Document, AppSurface) {
@@ -221,6 +222,46 @@ final class CapabilityContractTests: XCTestCase {
         XCTAssertTrue(plan.diagnostics.contains { $0.rule == "preview.nativeSemantics" })
         let report = NativePreviewCapabilityAnalysis.report(screen: document.screens[0], document: document, surface: surface, target: document.targets[0])
         XCTAssertEqual(report.items.last?.support, .unsupported)
+        surface.runtime = "macOS 26"
+        XCTAssertFalse(TargetPlanner.plan(surface: surface, document: document).canPreview)
+    }
+
+    func testOpaqueNativeFieldsCannotBecomePreviewOrGeneratorCapabilitiesByDeclaration() {
+        var root = Layer(id: EntityID("layer_native"), name: "Native", payload: .text(TextLayerPayload(value: "Hello")))
+        root.nativeIntent = "customEffect"
+        root.targetOverrides = ["macOS.swiftUI": "customValue"]
+        var (document, surface) = fixture(root: root)
+        declare([CapabilityKeys.textVisual, CapabilityKeys.nativeIntent, CapabilityKeys.targetOverride], in: &document)
+        XCTAssertEqual(DocumentValidator.validate(document), [])
+
+        let requirements = SemanticRequirementExtractor.extract(screen: document.screens[0], document: document)
+        XCTAssertEqual(requirements.diagnostics, [])
+        XCTAssertEqual(requirements.requirements.map(\.key), [
+            CapabilityKeys.textVisual, CapabilityKeys.nativeIntent, CapabilityKeys.targetOverride
+        ])
+        XCTAssertFalse(NativePreviewCapabilityCatalog.supportedKeys.contains(CapabilityKeys.nativeIntent))
+        XCTAssertFalse(NativePreviewCapabilityCatalog.supportedKeys.contains(CapabilityKeys.targetOverride))
+        XCTAssertFalse(SwiftUIGeneratorCapabilityCatalog.supportedKeys.contains(CapabilityKeys.nativeIntent))
+        XCTAssertFalse(SwiftUIGeneratorCapabilityCatalog.supportedKeys.contains(CapabilityKeys.targetOverride))
+
+        let report = NativePreviewCapabilityAnalysis.report(
+            screen: document.screens[0], document: document, surface: surface, target: document.targets[0]
+        )
+        XCTAssertFalse(report.allowed)
+        XCTAssertEqual(report.items.map(\.support), [.exact, .unsupported, .unsupported])
+        XCTAssertEqual(report.items.map(\.allowed), [true, false, false])
+        let plan = TargetPlanner.plan(surface: surface, document: document)
+        XCTAssertFalse(plan.canPreview)
+        XCTAssertEqual(plan.diagnostics.filter { $0.rule == "preview.nativeSemantics" }.count, 2)
+        XCTAssertThrowsError(try SwiftUIGenerator.generate(
+            document: document, screenID: document.screens[0].id, targetID: document.targets[0].id
+        )) { error in
+            guard case GenerationError.unsupported(let id, let reason) = error else {
+                return XCTFail("Expected unsupported native semantics, got \(error)")
+            }
+            XCTAssertEqual(id, root.id)
+            XCTAssertTrue(reason.contains(CapabilityKeys.nativeIntent.rawValue))
+        }
         surface.runtime = "macOS 26"
         XCTAssertFalse(TargetPlanner.plan(surface: surface, document: document).canPreview)
     }

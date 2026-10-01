@@ -18,11 +18,11 @@ typed node と別 graph、汎用 property bag、framework-specific AST。
 
 ## Current Hypothesis
 
-**未確定:** typed node + separate domain graph + target extension で主要 screen を loss-aware に記述できる。
+代表 corpus で決めた typed semantic node と separate domain graph を Current IR の境界とする。新しい supported semantics は個別の要件・consumer evidence に基づいて追加する。
 
 ## Unknowns
 
-代表 screen corpus で不足する意味、ordered effects の最小形、target-specific extension の増加率。
+他の ordered effects、typed target extension、native escape hatch の具体的な production 対象は、現在の supported domain として要求されていない。必要になった場合は該当 feature の境界で format / migration と consumer lowering を検討する。
 
 ## Required Evidence
 
@@ -48,9 +48,15 @@ Evidence commit `1a9ab4e874ecb35ac31ab2caaabdfec0dae3e0e0` では、4 fixtures /
 
 代表的な product screen が繰り返し escape hatch を必要とする、target extension が portable semantics を支配する、必須意味に framework API の Core への漏出が必要になる、新しい順序依存を ordered effects が表せない、または UIKit / Compose lowering で一つの portable semantic の意味が両立しないと判明した場合に、この taxonomy 境界を再評価する。現時点で件数 threshold は設けない。
 
-## Remaining Implementation
+## Closure Review
 
-Production の `LayerPayload` は7種の現行 Layer kind を表し、Validator、TargetPlanner、Canvas、Native Preview、Generator と Mutation が利用する。Current Format v2 の Stack spacing は Stack 限定の意味として検証し、Canvas / Native Preview / SwiftUI Generator が同じ spacing Token を解決する。順序付き padding effect も Current Format v2 に保存し、3 consumer が記載順に適用する。Generator は Stack spacing に `layout.spacingToken` の宣言または既存 `token.spacing` alias を使い、padding には独立した `effect.padding` の明示宣言を要求する。Current Format v2 reader は未知の effect kind を拒否するため、別の persisted effect kind は format / migration 境界を検討せずに追加しない。残る実装は他の ordered effects、typed target extension と対応する lowering の範囲である。Screen-level system navigation は既存の別 graph に保持する。Capability の宣言粒度と loss 評価は production の `CapabilityRegistry`、`SemanticRequirementExtractor`、`CapabilityEvaluator` と [Current Architecture](../../docs/final-architecture.md) が定める。この ADR は残る production 実装と検証が完了するまで残す。
+Current IR の supported scope は7種類の typed `LayerPayload`、独立した domain graph、Screen-level system semantics、Stack spacing、順序付き padding effect である。Validator、TargetPlanner、Canvas、macOS Native Preview、SwiftUI Generator が対応する current semantics を扱う。Capability の宣言粒度と loss 評価は production の `CapabilityRegistry`、`SemanticRequirementExtractor`、`CapabilityEvaluator` と [Current Architecture](../../docs/final-architecture.md) が定める。
+
+`nativeIntent: String?` と `targetOverrides: [String: String]` は Current Format v2 の opaque field であり、typed target extension / native escape hatch を実装したものではない。Round-trip で保持され、SemanticRequirementExtractor に抽出されるが、Preview / Generator catalog は supported と宣言しない。Target declaration が Exact でも Native Preview と SwiftUI Generator は拒否する。Product repository 固有の mapping は [Product Integration Contract ADR](../product-integration-contract/ADR.md) の別 decision boundary とする。
+
+Evidence は minimal IR corpus `1a9ab4e874ecb35ac31ab2caaabdfec0dae3e0e0`、decision `b69dcf85672f54f986e4c357d3fb4ed3301b18d9`、typed Layer payload `84e75b4bf3547e105acd9ea48ae7567dc1a266f5`、Current Format v2 padding `9b83fc2417a60664ca91b49d3d1a0686bf84404a`、SwiftUI padding `4f1d777c404030024db50cb7efc4e8ddfb27cc91` と CLI contract `204a4719250c3d27ae187f1fa2ef6b610cf59754`、SwiftUI Stack spacing `a0c50ad6bf30dd2cfe4e1e93cf57fe769617b1b1` と CLI contract `0179706836dab7bb8843f5d43accd8fb648f8a7d` に残る。この closure commit は opaque field の Current Format round-trip と consumer fail-closed regression を追加する。
+
+将来、代表 product screen が別の ordered effect、typed target extension、native escape hatch を必要とする、target extension が portable semantics を支配する、または UIKit / Compose lowering で portable semantics の意味が両立しないと判明した場合は、具体的な要求と evidence をもとに新しい decision boundary を作る。Current Format v2 reader は未知の effect kind を拒否するため、別の persisted effect は format / migration を伴う。これらを現 ADR の未完了作業とはしない。Closure commit が history に残り恒久テスト・Current Architecture が成立した後、次の commit でこの ADR を削除する。
 
 ## Status
 
