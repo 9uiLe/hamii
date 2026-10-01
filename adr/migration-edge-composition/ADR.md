@@ -36,7 +36,7 @@ How should the Migration subsystem compose multiple reviewed format edges into o
 
 ## Required Evidence
 
-A focused Spike must exercise v1→v2→v3 and v2→v3 through real candidate preparation, review, publication, and recovery boundaries. Include a resolution-required v1 fixture, missing/ambiguous routes, source mutation, candidate tampering, stop/recover on both sides of ref CAS, unchanged unrelated bytes, and final Current reader/Index identity checks. The [Screen layout Spike](../screen-semantic-relation-persistence/spikes/canonical-layout-and-v3/SPIKE.md) established only test-local sequential transform composability; production still installs no v1→3 route. No migration Spike is performed in the current anchor experiment.
+The [Ordered Edge Publication Spike](spikes/ordered-edge-publication/SPIKE.md) exercised the installed v1→v2 edge plus a synthetic 2→3 edge in a test-only route/review/Git publication/recovery harness. It covered v1→2→3 and v2→3, explicit v1 resolution, route ambiguity, source/intermediate/candidate/review tampering, exception stops on both sides of ref CAS, unchanged unrelated bytes, and an Index identity/generation double. The [Screen layout Spike](../screen-semantic-relation-persistence/spikes/canonical-layout-and-v3/SPIKE.md) had previously established only test-local sequential transform composability. Production still installs no v1→3 route and cannot read v3; this evidence supports a decision, not an implementation claim.
 
 ## Decision Criteria
 
@@ -44,4 +44,4 @@ Choose a route model only if it deterministically produces one final Current can
 
 ## Status
 
-Spike Required
+Ready for Decision
