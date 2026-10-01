@@ -6,7 +6,7 @@ import HamiiFormat
 import HamiiGeneration
 import HamiiMigrations
 
-final class CurrentFormatV2Tests: XCTestCase {
+final class CurrentFormatV3Tests: XCTestCase {
     private func encoded<T: Encodable>(_ value: T) throws -> Data {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.sortedKeys, .prettyPrinted, .withoutEscapingSlashes]
@@ -22,8 +22,8 @@ final class CurrentFormatV2Tests: XCTestCase {
     func testStarterUsesExactCurrentBytesAndLoadsAsCurrentDocument() throws {
         let root = repositoryRoot.appendingPathComponent("Samples/Starter")
         let manifest = try JSONSerialization.jsonObject(with: Data(contentsOf: root.appendingPathComponent("hamii.json"))) as! [String: Any]
-        XCTAssertEqual(manifest["formatVersion"] as? Int, 2)
-        XCTAssertEqual((manifest["versions"] as? [String: Any])?["document"] as? Int, 2)
+        XCTAssertEqual(manifest["formatVersion"] as? Int, 3)
+        XCTAssertEqual((manifest["versions"] as? [String: Any])?["document"] as? Int, 3)
         let screenFolder = root.appendingPathComponent("screens")
         let files = try FileManager.default.contentsOfDirectory(at: screenFolder, includingPropertiesForKeys: nil).filter { $0.pathExtension == "json" }
         XCTAssertFalse(files.isEmpty)
@@ -31,11 +31,12 @@ final class CurrentFormatV2Tests: XCTestCase {
             let source = try Data(contentsOf: file)
             let screen = try JSONDecoder().decode(Screen.self, from: source)
             XCTAssertEqual(try encoded(screen), source)
+            XCTAssertEqual(screen.semantics, .empty)
             XCTAssertEqual(screen.root.effects, [.padding(tokenID: EntityID("token_8af3340c-ee6e-4a55-b230-0dcfb0ecaac0"))])
             XCTAssertTrue(screen.root.children.allSatisfy { $0.effects.isEmpty })
         }
         let document = try CanonicalRepository(root: root).load()
-        XCTAssertEqual(document.versions.document, 2)
+        XCTAssertEqual(document.versions.document, 3)
         XCTAssertEqual(try MigrationPreflight.plan(repository: root).state, "current")
     }
 
@@ -59,7 +60,7 @@ final class CurrentFormatV2Tests: XCTestCase {
         XCTAssertNotEqual(try encoded(root), try encoded(Layer(id: root.id, name: root.name, payload: .stack, children: root.children, effects: root.effects.reversed())))
     }
 
-    func testOpaqueNativeFieldsSurviveCurrentFormatV2RoundTrip() throws {
+    func testOpaqueNativeFieldsSurviveCurrentFormatV3RoundTrip() throws {
         var root = Layer(id: EntityID("native_layer"), name: "Native", payload: .text(TextLayerPayload(value: "Hello")))
         root.nativeIntent = "customEffect"
         root.targetOverrides = ["macOS.swiftUI": "customValue"]
@@ -140,9 +141,9 @@ final class CurrentFormatV2Tests: XCTestCase {
         XCTAssertThrowsError(try JSONDecoder().decode(Layer.self, from: JSONSerialization.data(withJSONObject: object)))
     }
 
-    func testV1AndMixedMarkersRejectWithoutChangingCanonicalBytes() throws {
+    func testHistoricalAndMixedMarkersRejectWithoutChangingCanonicalBytes() throws {
         let sample = repositoryRoot.appendingPathComponent("Samples/Starter")
-        for (format, documentVersion) in [(1, 1), (1, 2), (2, 1)] {
+        for (format, documentVersion) in [(1, 1), (1, 2), (2, 1), (2, 2), (3, 2), (2, 3)] {
             let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
             defer { try? FileManager.default.removeItem(at: root) }
             try FileManager.default.copyItem(at: sample, to: root)
@@ -157,15 +158,20 @@ final class CurrentFormatV2Tests: XCTestCase {
             let repository = CanonicalRepository(root: root)
             XCTAssertThrowsError(try repository.load(), "\(format)/\(documentVersion)")
             XCTAssertThrowsError(try ProjectService(repository: repository).observe())
-            if format == documentVersion {
-                let plan = try MigrationPreflight.plan(repository: root)
-                XCTAssertEqual(plan.state, "requiresResolution")
-                XCTAssertEqual(plan.classification, .manual)
-            } else {
+            if format != documentVersion {
                 XCTAssertThrowsError(try MigrationPreflight.plan(repository: root))
             }
             XCTAssertEqual(try Data(contentsOf: manifestURL), bytes)
         }
+        let historicalV2 = FileManager.default.temporaryDirectory
+            .appendingPathComponent("hamii-historical-v2-\(UUID().uuidString)")
+        try FileManager.default.copyItem(
+            at: repositoryRoot.appendingPathComponent("Tests/Fixtures/format-v2-starter"), to: historicalV2)
+        defer { try? FileManager.default.removeItem(at: historicalV2) }
+        XCTAssertThrowsError(try CanonicalRepository(root: historicalV2).load())
+        let v2Plan = try MigrationPreflight.plan(repository: historicalV2)
+        XCTAssertEqual(v2Plan.targetDocumentFormatVersion, 3)
+        XCTAssertEqual(v2Plan.state, "migrationAvailable")
     }
 
     func testPaddingRequiresExactDeclarationAndGeneratorLowersIt() throws {
@@ -195,18 +201,20 @@ final class CurrentFormatV2Tests: XCTestCase {
         XCTAssertTrue(generated.source.contains(".padding(12.0)"))
     }
 
-    func testNewProjectReopensAsV2AndNoOpKeepsGeneration() throws {
+    func testNewProjectReopensAsV3AndNoOpKeepsGeneration() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
         let repository = CanonicalRepository(root: root)
         let created = try repository.create(name: "Current")
-        XCTAssertEqual(created.versions.document, 2)
+        XCTAssertEqual(created.versions.document, 3)
         var document = created
         let text = Layer(id: EntityID("text"), name: "Text", payload: .text(TextLayerPayload(value: "Same")))
         document.screens = [Screen(id: EntityID("screen"), name: "Screen", scopeID: document.scopes[0].id, root: text)]
         document.revision += 1
         try repository.save(document, expected: created)
-        XCTAssertEqual(try CanonicalRepository(root: root).load(), document)
+        let reopened = try CanonicalRepository(root: root).load()
+        XCTAssertEqual(reopened, document)
+        XCTAssertEqual(reopened.screens.first?.semantics, .empty)
         let service = ProjectService(repository: repository)
         let observed = try service.observe()
         let before = try CanonicalGenerationStore(root: root).readStable()
@@ -215,6 +223,37 @@ final class CurrentFormatV2Tests: XCTestCase {
         XCTAssertTrue(result.patches.isEmpty)
         XCTAssertEqual(result.statePrecondition, observed.statePrecondition)
         XCTAssertEqual(try CanonicalGenerationStore(root: root).readStable(), before)
+    }
+
+    func testNormalAuthoringRetainsExplicitSemanticsAcrossScreenTextAndComponentEdits() throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("hamii-v3-authoring-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: root) }
+        let repository = CanonicalRepository(root: root)
+        let created = try repository.create(name: "Authoring")
+        let scope = try XCTUnwrap(created.scopes.first?.id)
+        let service = ProjectService(repository: repository)
+        let screenResult = try service.mutate(.createScreen(name: "Profile", scopeID: scope),
+            expectedState: service.observe().statePrecondition, author: .human)
+        let screen = try XCTUnwrap(service.document().screens.first)
+        XCTAssertEqual(screen.semantics, .empty)
+        let layerResult = try service.mutate(.addLayer(screenID: screen.id, parentID: screen.root.id,
+            kind: .text, name: "Heading", text: "Before"),
+            expectedState: try XCTUnwrap(screenResult.statePrecondition), author: .human)
+        let layer = try XCTUnwrap(service.document().screens.first?.root.children.first)
+        let textResult = try service.mutate(.setText(screenID: screen.id, layerID: layer.id, text: "After"),
+            expectedState: try XCTUnwrap(layerResult.statePrecondition), author: .human)
+        _ = try service.mutate(.createComponent(name: "Badge", scopeID: scope),
+            expectedState: try XCTUnwrap(textResult.statePrecondition), author: .human)
+
+        let reopened = try CanonicalRepository(root: root).load()
+        XCTAssertEqual(reopened.versions.document, 3)
+        XCTAssertEqual(reopened.screens.first?.semantics, .empty)
+        XCTAssertEqual(reopened.screens.first?.root.children.first?.text, "After")
+        XCTAssertEqual(reopened.components.first?.name, "Badge")
+        let screenURL = root.appendingPathComponent("screens/\(screen.id.rawValue).json")
+        let screenJSON = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: screenURL)) as? [String: Any])
+        XCTAssertNotNil(screenJSON["semantics"])
     }
 
     func testPaddingSetterRejectsAmbiguousOrderedSequence() throws {

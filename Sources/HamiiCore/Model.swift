@@ -16,7 +16,7 @@ public struct FormatVersions: Codable, Equatable {
     public var authoringHarness: Int
     public var integrationProfile: Int
 
-    public init(document: Int = 2, authoringHarness: Int = 1, integrationProfile: Int = 1) {
+    public init(document: Int = 3, authoringHarness: Int = 1, integrationProfile: Int = 1) {
         self.document = document
         self.authoringHarness = authoringHarness
         self.integrationProfile = integrationProfile
@@ -87,13 +87,12 @@ public struct Screen: Codable, Equatable, Identifiable {
     public var scopeID: EntityID
     public var root: Layer
     public var navigation: NavigationConfiguration?
-    /// Product-independent declarations owned by this Screen shard. Current
-    /// format v2 keeps this nil and does not encode a semantics key.
-    public var semantics: ScreenSemantics?
+    /// Product-independent declarations owned by this Screen shard.
+    public var semantics: ScreenSemantics
     public init(id: EntityID, name: String, scopeID: EntityID, root: Layer) {
         self.id = id; self.name = name; self.scopeID = scopeID; self.root = root
         self.navigation = nil
-        self.semantics = nil
+        self.semantics = .empty
     }
 }
 

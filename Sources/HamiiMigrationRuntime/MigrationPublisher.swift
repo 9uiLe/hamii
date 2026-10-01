@@ -7,6 +7,7 @@ import HamiiMigrations
 
 public enum MigrationPublicationError: Error, CustomStringConvertible {
     case invalidReview
+    case historicalReviewRequiresReprepare
     case candidateMismatch
     case sourceChanged
     case unknownSourceState
@@ -14,6 +15,8 @@ public enum MigrationPublicationError: Error, CustomStringConvertible {
     public var description: String {
         switch self {
         case .invalidReview: "Migration review record or explicit confirmation is invalid"
+        case .historicalReviewRequiresReprepare:
+            "Historical migration review targets an earlier format; prepare a new Current-format review"
         case .candidateMismatch: "Retained candidate differs from the reviewed and validated Canonical state"
         case .sourceChanged: "Historical source changed after candidate review"
         case .unknownSourceState: "Source ref is neither reviewed old nor candidate OID; migration remains gated"
@@ -122,50 +125,15 @@ public final class MigrationPublisher {
         let recordVersion: Int
         do { recordVersion = try reviews.recordVersion(reviewID) }
         catch { throw MigrationPublicationError.invalidReview }
-        if recordVersion == 3 {
-            return try publishComposed(reviewID: reviewID, confirmedSourceOID: confirmedSourceOID,
-                                       confirmedCandidateOID: confirmedCandidateOID)
-        }
-        guard recordVersion == 1 || recordVersion == 2 else {
+        guard recordVersion == 3 else {
+            if recordVersion == 1 || recordVersion == 2 {
+                throw MigrationPublicationError.historicalReviewRequiresReprepare
+            }
             throw MigrationPublicationError.invalidReview
         }
-        let review: MigrationReviewPackage
-        do { review = try reviews.load(reviewID) }
-        catch { throw MigrationPublicationError.invalidReview }
-        guard review.sourceOID == confirmedSourceOID,
-              review.candidateOID == confirmedCandidateOID else { throw MigrationPublicationError.invalidReview }
-        do { try validateRetainedCandidate(review) }
-        catch { throw MigrationPublicationError.candidateMismatch }
-        let result = try coordinator.withExclusive { () throws -> MigrationPublicationResult in
-            try coordinator.requireReady()
-            try requireWorktreeRoot()
-            try validateSource(review)
-            let sourceIdentity = try identity(review.sourceCanonicalIdentity)
-            let candidateIdentity = try identity(review.validation.canonicalSnapshotIdentity)
-            let old: StableCanonicalGeneration
-            do { old = try generations.requireMatchingStable(validatedIdentity: sourceIdentity) }
-            catch CanonicalGenerationError.missing {
-                old = try generations.bootstrapVerified(validatedIdentity: sourceIdentity)
-            }
-            let operationID = UUID()
-            let record = MigrationPublicationRecord(formatVersion: 1, publicationID: UUID(), reviewID: reviewID,
-                sourceRef: review.sourceRef, expectedSourceOID: review.sourceOID,
-                sourceTreeOID: review.sourceTreeOID, sourceCanonicalRevision: review.sourceCanonicalRevision,
-                sourceCanonicalIdentity: review.sourceCanonicalIdentity,
-                sourceDocumentRevision: review.sourceDocumentRevision,
-                candidateOID: review.candidateOID, candidateTreeOID: review.candidateTreeOID,
-                candidateCanonicalIdentity: review.validation.canonicalSnapshotIdentity,
-                candidateDocumentID: review.validation.documentID,
-                candidateDocumentRevision: review.candidateDocumentRevision,
-                retentionRef: review.retentionRef, operationID: operationID, phase: .pending)
-            try coordinator.beginMigrationPublication(try JSONEncoder().encode(record))
-            try hook?(.pending)
-            _ = try generations.beginPending(old: old, expectedNewIdentity: candidateIdentity,
-                                             operationID: operationID)
-            return try publishPending(record, recovering: false)
-        }
-        cleanup(reviewID: reviewID, retentionRef: review.retentionRef, candidateOID: review.candidateOID)
-        return result
+        return try publishComposed(reviewID: reviewID,
+            confirmedSourceOID: confirmedSourceOID,
+            confirmedCandidateOID: confirmedCandidateOID)
     }
 
     public func recover() throws -> MigrationPublicationResult {
@@ -178,7 +146,9 @@ public final class MigrationPublisher {
                 try requireClean()
                 let files = try MigrationRepositoryInput.load(from: root)
                 let manifest = try historicalManifest(files)
-                if manifest.version == 1 {
+                if [1, 2].contains(manifest.version) &&
+                    manifest.version < MigrationRegistry.currentDocumentFormatVersion {
+                    try requireNoCanonicalJournal()
                     _ = try generations.requireMatchingStable(validatedIdentity:
                         CanonicalByteIdentity.compute(files: files.files))
                     return (MigrationPublicationResult(sourceRef: ref, candidateOID: head,
@@ -200,32 +170,7 @@ public final class MigrationPublisher {
             if try publicationRecordVersion(bytes) == 2 {
                 return try recoverComposedPending(bytes)
             }
-            let record = try decode(bytes)
-            try GitLockGuard.requireAbsent(root: root, sourceRef: record.sourceRef)
-            guard try git("symbolic-ref", "--quiet", "HEAD") == record.sourceRef else {
-                throw MigrationPublicationError.unknownSourceState
-            }
-            try coordinator.invalidateClientObservations()
-            let head = try git("rev-parse", "HEAD")
-            if head == record.expectedSourceOID {
-                try requireNoCanonicalJournal()
-                try requireClean()
-                guard try git("rev-parse", "HEAD^{tree}") == record.sourceTreeOID,
-                      try rawIdentity() == identity(record.sourceCanonicalIdentity) else {
-                    throw MigrationPublicationError.unknownSourceState
-                }
-                _ = try generations.reconcile(validatedIdentity: try identity(record.sourceCanonicalIdentity),
-                                              expectedOperationID: record.operationID)
-                try coordinator.finishMigrationPublication()
-                return (MigrationPublicationResult(sourceRef: record.sourceRef, candidateOID: record.expectedSourceOID,
-                    documentID: record.candidateDocumentID, documentRevision: record.sourceDocumentRevision,
-                    canonicalSnapshotIdentity: record.sourceCanonicalIdentity, indexGenerationID: "", recovered: true), nil)
-            }
-            guard head == record.candidateOID else { throw MigrationPublicationError.unknownSourceState }
-            try ensurePendingGeneration(record)
-            return (try publishPending(record, recovering: true),
-                    MigrationPublicationCleanup(reviewID: record.reviewID,
-                        retentionRef: record.retentionRef, candidateOID: record.candidateOID))
+            return try recoverHistoricalLegacyPending(decode(bytes))
         }
         if let cleanupRecord {
             cleanup(reviewID: cleanupRecord.reviewID, retentionRef: cleanupRecord.retentionRef,
@@ -240,7 +185,11 @@ public final class MigrationPublisher {
         let reviewBytes: Data
         do { (review, reviewBytes) = try reviews.loadComposedWithBytes(reviewID) }
         catch { throw MigrationPublicationError.invalidReview }
-        guard review.sourceOID == confirmedSourceOID,
+        if review.targetFormatVersion < MigrationRegistry.currentDocumentFormatVersion {
+            throw MigrationPublicationError.historicalReviewRequiresReprepare
+        }
+        guard review.targetFormatVersion == MigrationRegistry.currentDocumentFormatVersion,
+              review.sourceOID == confirmedSourceOID,
               review.candidateOID == confirmedCandidateOID else { throw MigrationPublicationError.invalidReview }
         let result = try coordinator.withExclusive { () throws -> MigrationPublicationResult in
             try coordinator.requireReady()
@@ -269,7 +218,8 @@ public final class MigrationPublisher {
             try hook?(.pending)
             _ = try generations.beginPending(old: old, expectedNewIdentity: candidateIdentity,
                                              operationID: operationID)
-            return try publishPending(publicationContext(review, record: record), recovering: false) { phase in
+            return try publishPending(publicationContext(review, record: record), recovering: false,
+                                      expectedTargetVersion: review.targetFormatVersion) { phase in
                 record.phase = phase
                 try self.save(record)
             }
@@ -354,7 +304,16 @@ public final class MigrationPublisher {
         }
         guard head == review.candidateOID else { throw MigrationPublicationError.unknownSourceState }
         try ensurePendingGeneration(context)
-        let result = try publishPending(context, recovering: true) { phase in
+        if review.targetFormatVersion < MigrationRegistry.currentDocumentFormatVersion {
+            let result = try finishHistoricalCandidate(context, recovering: true) { phase in
+                record.phase = phase
+                try self.save(record)
+            }
+            return (result, MigrationPublicationCleanup(reviewID: review.reviewID,
+                retentionRef: review.retentionRef, candidateOID: review.candidateOID))
+        }
+        let result = try publishPending(context, recovering: true,
+                                        expectedTargetVersion: review.targetFormatVersion) { phase in
             record.phase = phase
             try self.save(record)
         }
@@ -362,51 +321,124 @@ public final class MigrationPublisher {
             retentionRef: review.retentionRef, candidateOID: review.candidateOID))
     }
 
-    private func validateRetainedCandidate(_ review: MigrationReviewPackage) throws {
-        guard [1, 2].contains(review.recordFormatVersion), review.sourceFormatVersion == 1,
-              review.targetFormatVersion == 2,
-              (review.recordFormatVersion == 1 && review.resolutionAudit == nil &&
-               review.classification == .losslessWithNormalization ||
-               review.recordFormatVersion == 2 && review.resolutionAudit != nil &&
-               [MigrationClassification.losslessWithNormalization, .potentiallyLossy].contains(review.classification)),
-              review.edgePath == ["1->2"],
-              review.validation.currentFormat == 2,
+    /// A record-1 publication could have crossed its ref CAS in a previous
+    /// Current-v2 process. Current Core never reads that v2 candidate after
+    /// cutover: exact replay and raw identity checks live at this boundary.
+    private func recoverHistoricalLegacyPending(_ record: MigrationPublicationRecord) throws ->
+        (MigrationPublicationResult, MigrationPublicationCleanup?) {
+        let review: MigrationReviewPackage
+        do { review = try reviews.load(record.reviewID) }
+        catch { throw MigrationPublicationError.invalidReview }
+        guard review.sourceFormatVersion == 1, review.targetFormatVersion == 2,
+              review.reviewID == record.reviewID,
+              review.sourceRef == record.sourceRef,
+              review.sourceOID == record.expectedSourceOID,
+              review.sourceTreeOID == record.sourceTreeOID,
+              review.sourceCanonicalRevision == record.sourceCanonicalRevision,
+              review.sourceCanonicalIdentity == record.sourceCanonicalIdentity,
+              review.sourceDocumentRevision == record.sourceDocumentRevision,
+              review.candidateOID == record.candidateOID,
+              review.candidateTreeOID == record.candidateTreeOID,
+              review.validation.canonicalSnapshotIdentity == record.candidateCanonicalIdentity,
+              review.validation.documentID == record.candidateDocumentID,
+              review.candidateDocumentRevision == record.candidateDocumentRevision,
+              review.retentionRef == record.retentionRef else {
+            throw MigrationPublicationError.invalidReview
+        }
+        try validateHistoricalLegacyCandidate(review)
+        try GitLockGuard.requireAbsent(root: root, sourceRef: record.sourceRef)
+        guard try git("symbolic-ref", "--quiet", "HEAD") == record.sourceRef else {
+            throw MigrationPublicationError.unknownSourceState
+        }
+        try coordinator.invalidateClientObservations()
+        let head = try git("rev-parse", "HEAD")
+        if head == record.expectedSourceOID {
+            try requireNoCanonicalJournal()
+            try requireClean()
+            guard try git("rev-parse", "HEAD^{tree}") == record.sourceTreeOID,
+                  try rawIdentity() == identity(record.sourceCanonicalIdentity) else {
+                throw MigrationPublicationError.unknownSourceState
+            }
+            _ = try generations.reconcile(validatedIdentity: try identity(record.sourceCanonicalIdentity),
+                                          expectedOperationID: record.operationID)
+            try coordinator.finishMigrationPublication()
+            return (MigrationPublicationResult(sourceRef: record.sourceRef,
+                candidateOID: record.expectedSourceOID, documentID: record.candidateDocumentID,
+                documentRevision: record.sourceDocumentRevision,
+                canonicalSnapshotIdentity: record.sourceCanonicalIdentity,
+                indexGenerationID: "", recovered: true), nil)
+        }
+        guard head == record.candidateOID else { throw MigrationPublicationError.unknownSourceState }
+        try ensurePendingGeneration(record)
+        let result = try finishHistoricalCandidate(record, recovering: true) { phase in
+            var updated = record
+            updated.phase = phase
+            try self.save(updated)
+        }
+        return (result, MigrationPublicationCleanup(reviewID: record.reviewID,
+            retentionRef: record.retentionRef, candidateOID: record.candidateOID))
+    }
+
+    private func validateHistoricalLegacyCandidate(_ review: MigrationReviewPackage) throws {
+        guard [1, 2].contains(review.recordFormatVersion),
+              review.edgePath == ["1->2"], review.validation.currentFormat == 2,
               review.validation.documentRevision == review.candidateDocumentRevision,
               review.indexValidation.sourceCanonicalIdentity == review.validation.canonicalSnapshotIdentity,
               IndexGenerationID(rawValue: review.indexValidation.indexGenerationID) != nil,
-              review.retentionRef == "refs/hamii/migration-candidates/\(review.reviewID)",
+              try git("cat-file", "-t", review.sourceOID) == "commit",
+              try git("rev-parse", "\(review.sourceOID)^{tree}") == review.sourceTreeOID,
               try git("rev-parse", "--verify", "\(review.retentionRef)^{commit}") == review.candidateOID,
               try git("cat-file", "-t", review.candidateOID) == "commit",
               try git("rev-parse", "\(review.candidateOID)^{tree}") == review.candidateTreeOID,
-              try git("rev-list", "--parents", "-n", "1", review.candidateOID) == "\(review.candidateOID) \(review.sourceOID)" else {
+              try git("rev-list", "--parents", "-n", "1", review.candidateOID) ==
+                  "\(review.candidateOID) \(review.sourceOID)",
+              try gitPaths(GitCommand.runData(at: root,
+                  ["diff", "--name-only", "-z", review.sourceOID, review.candidateOID])) == review.changedPaths,
+              try git("diff", "--name-status", review.sourceOID, review.candidateOID) == review.diffNameStatus,
+              try git("diff", "--stat", review.sourceOID, review.candidateOID) == review.diffStat else {
             throw MigrationPublicationError.candidateMismatch
         }
-        let paths = try gitPaths(GitCommand.runData(at: root,
-            ["diff", "--name-only", "-z", review.sourceOID, review.candidateOID]))
-        guard paths == review.changedPaths else { throw MigrationPublicationError.candidateMismatch }
-        let container = FileManager.default.temporaryDirectory.appendingPathComponent("hamii-migration-publish-check-\(UUID().uuidString)")
-        let candidateRoot = container.appendingPathComponent("worktree")
+        let container = FileManager.default.temporaryDirectory
+            .appendingPathComponent("hamii-legacy-pending-check-\(UUID().uuidString)")
+        let originalRoot = container.appendingPathComponent("original")
+        let candidateRoot = container.appendingPathComponent("candidate")
         try FileManager.default.createDirectory(at: container, withIntermediateDirectories: true)
-        var added = false
+        var originalAdded = false
+        var candidateAdded = false
         defer {
-            if added { _ = try? git("worktree", "remove", "--force", candidateRoot.path) }
+            if candidateAdded { _ = try? git("worktree", "remove", "--force", candidateRoot.path) }
+            if originalAdded { _ = try? git("worktree", "remove", "--force", originalRoot.path) }
             try? FileManager.default.removeItem(at: container)
         }
+        _ = try git("worktree", "add", "--detach", originalRoot.path, review.sourceOID)
+        originalAdded = true
         _ = try git("worktree", "add", "--detach", candidateRoot.path, review.candidateOID)
-        added = true
+        candidateAdded = true
+        try requireClean(at: originalRoot)
         try requireClean(at: candidateRoot)
-        let snapshot = try CanonicalRepository(root: candidateRoot).withCoordinatedSnapshot { $0 }
-        guard snapshot.document.versions.document == 2,
-              snapshot.identity.rawValue == review.validation.canonicalSnapshotIdentity,
-              snapshot.document.id.rawValue == review.validation.documentID,
-              snapshot.document.revision == review.candidateDocumentRevision,
-              snapshot.document.revision == review.validation.documentRevision else {
+        let original = try MigrationRepositoryInput.load(from: originalRoot)
+        guard CanonicalByteIdentity.compute(files: original.files).rawValue == review.sourceCanonicalIdentity,
+              try historicalRevision(original) == review.sourceDocumentRevision else {
             throw MigrationPublicationError.candidateMismatch
         }
-        if review.recordFormatVersion == 2 {
-            try validateResolutionAudit(review, candidateRoot: candidateRoot)
+        let replay = try replaySource(original, review: review)
+        let committed = try MigrationRepositoryInput.load(from: candidateRoot)
+        guard let candidate = replay.singleEdgeCandidate,
+              candidate.classification == review.classification,
+              candidate.resolutionDecisions == (review.resolutionAudit?.decisions ?? []),
+              candidate.losses == (review.resolutionAudit?.losses ?? []),
+              candidate.remainingUnresolved.isEmpty,
+              replay.finalFiles.files == committed.files else {
+            throw MigrationPublicationError.candidateMismatch
         }
-        try index.validateCandidate(at: candidateRoot, snapshot: snapshot)
+        try validateHistoricalV2Files(committed,
+            expectedIdentity: review.validation.canonicalSnapshotIdentity,
+            expectedID: review.validation.documentID,
+            expectedRevision: review.candidateDocumentRevision)
+        guard try GitCanonicalRevisionCalculator().current(at: candidateRoot).rawValue ==
+              review.indexValidation.canonicalRevision else {
+            throw MigrationPublicationError.candidateMismatch
+        }
     }
 
     /// Reconstructs the reviewed route from the immutable original commit,
@@ -476,6 +508,10 @@ public final class MigrationPublisher {
                   receipt.resolutionDecisions == audit.decisions,
                   receipt.losses == audit.losses else { throw MigrationPublicationError.candidateMismatch }
         }
+        if review.targetFormatVersion < MigrationRegistry.currentDocumentFormatVersion {
+            try validateHistoricalTarget(review, committed: committed, candidateRoot: candidateRoot)
+            return
+        }
         let snapshot = try CanonicalRepository(root: candidateRoot).withCoordinatedSnapshot { $0 }
         guard snapshot.document.versions.document == review.targetFormatVersion,
               snapshot.identity.rawValue == review.validation.canonicalSnapshotIdentity,
@@ -490,28 +526,35 @@ public final class MigrationPublisher {
         try index.validateCandidate(at: candidateRoot, snapshot: snapshot)
     }
 
-    private func validateResolutionAudit(_ review: MigrationReviewPackage, candidateRoot: URL) throws {
-        guard let audit = review.resolutionAudit,
-              audit.manifest.sourceOID == review.sourceOID,
-              audit.manifest.sourceCanonicalIdentity == review.sourceCanonicalIdentity,
-              audit.manifest.sourceFormatVersion == review.sourceFormatVersion,
-              audit.manifest.targetFormatVersion == review.targetFormatVersion,
-              audit.decisions == audit.manifest.decisions else {
+    private func validateHistoricalTarget(_ review: MigrationComposedReviewPackage,
+                                          committed: MigrationFileSet, candidateRoot: URL) throws {
+        guard review.targetFormatVersion == 2,
+              review.indexValidation.sourceCanonicalIdentity == review.validation.canonicalSnapshotIdentity,
+              IndexGenerationID(rawValue: review.indexValidation.indexGenerationID) != nil,
+              try GitCanonicalRevisionCalculator().current(at: candidateRoot).rawValue ==
+                  review.indexValidation.canonicalRevision else {
             throw MigrationPublicationError.candidateMismatch
         }
-        let historical = try MigrationRepositoryInput.load(from: root)
-        guard CanonicalByteIdentity.compute(files: historical.files).rawValue == review.sourceCanonicalIdentity else {
-            throw MigrationPublicationError.sourceChanged
-        }
-        let replay = try replaySource(historical, review: review)
-        guard let resolved = replay.singleEdgeCandidate else { throw MigrationPublicationError.candidateMismatch }
-        guard resolved.classification == review.classification,
-              resolved.losses == audit.losses,
-              resolved.resolutionDecisions == audit.decisions,
-              resolved.remainingUnresolved.isEmpty,
-              replay.finalFiles.files == (try MigrationRepositoryInput.load(from: candidateRoot)).files else {
+        try validateHistoricalV2Files(committed,
+            expectedIdentity: review.validation.canonicalSnapshotIdentity,
+            expectedID: review.validation.documentID,
+            expectedRevision: review.candidateDocumentRevision)
+    }
+
+    private func validateHistoricalV2Files(_ files: MigrationFileSet,
+                                           expectedIdentity: String,
+                                           expectedID: String,
+                                           expectedRevision: Int) throws {
+        let manifest = try historicalManifest(files)
+        guard manifest.version == 2, manifest.id == expectedID,
+              manifest.revision == expectedRevision,
+              CanonicalByteIdentity.compute(files: files.files).rawValue == expectedIdentity else {
             throw MigrationPublicationError.candidateMismatch
         }
+        // The next installed edge's preflight is a historical raw-v2 check.
+        // Current Core does not gain a v2 decoder for old pending recovery.
+        _ = try MigrationRegistry.analyzeEdge(files,
+            edge: MigrationEdge(sourceVersion: 2, targetVersion: 3))
     }
 
     private func replaySource(_ historical: MigrationFileSet,
@@ -529,46 +572,14 @@ public final class MigrationPublisher {
             resolution: review.resolutionAudit?.manifest, sourceBinding: binding)
     }
 
-    private func validateSource(_ review: MigrationReviewPackage) throws {
-        try requireNoCanonicalJournal()
-        guard try git("symbolic-ref", "--quiet", "HEAD") == review.sourceRef,
-              try git("rev-parse", "HEAD") == review.sourceOID,
-              try git("rev-parse", "HEAD^{tree}") == review.sourceTreeOID,
-              try GitCanonicalRevisionCalculator().current(at: root).rawValue == review.sourceCanonicalRevision else {
-            throw MigrationPublicationError.sourceChanged
-        }
-        try requireClean()
-        let historical = try MigrationRepositoryInput.load(from: root)
-        let analysis = try MigrationRegistry.analyze(historical)
-        guard CanonicalByteIdentity.compute(files: historical.files) == (try identity(review.sourceCanonicalIdentity)),
-              try historicalRevision(historical) == review.sourceDocumentRevision else {
-            throw MigrationPublicationError.sourceChanged
-        }
-        if review.resolutionAudit == nil {
-            guard analysis.automaticCandidateEligible,
-                  analysis.classification == .losslessWithNormalization else {
-                throw MigrationPublicationError.sourceChanged
-            }
-        }
-        guard let replay = try? replaySource(historical, review: review),
-              let resolved = replay.singleEdgeCandidate,
-              resolved.classification == review.classification,
-              resolved.resolutionDecisions == (review.resolutionAudit?.decisions ?? []),
-              resolved.losses == (review.resolutionAudit?.losses ?? []),
-              resolved.remainingUnresolved.isEmpty,
-              CanonicalByteIdentity.compute(files: replay.finalFiles.files).rawValue == review.validation.canonicalSnapshotIdentity else {
-            throw MigrationPublicationError.sourceChanged
-        }
-    }
-
     private func publishPending(_ initial: MigrationPublicationRecord,
                                 recovering: Bool,
-                                saveComposedPhase: ((MigrationPublicationPhase) throws -> Void)? = nil) throws -> MigrationPublicationResult {
+                                expectedTargetVersion: Int,
+                                saveComposedPhase: (MigrationPublicationPhase) throws -> Void) throws -> MigrationPublicationResult {
         var record = initial
         func persist(_ phase: MigrationPublicationPhase) throws {
             record.phase = phase
-            if let saveComposedPhase { try saveComposedPhase(phase) }
-            else { try save(record) }
+            try saveComposedPhase(phase)
         }
         guard try git("rev-parse", "--verify", "\(record.retentionRef)^{commit}") == record.candidateOID,
               try git("rev-parse", "\(record.candidateOID)^{tree}") == record.candidateTreeOID else {
@@ -593,7 +604,7 @@ public final class MigrationPublisher {
         guard snapshot.identity.rawValue == record.candidateCanonicalIdentity,
               snapshot.document.id.rawValue == record.candidateDocumentID,
               snapshot.document.revision == record.candidateDocumentRevision,
-              snapshot.document.versions.document == 2 else {
+              snapshot.document.versions.document == expectedTargetVersion else {
             throw MigrationPublicationError.candidateMismatch
         }
         try persist(.canonicalVerified)
@@ -626,6 +637,53 @@ public final class MigrationPublisher {
             documentID: snapshot.document.id.rawValue, documentRevision: snapshot.document.revision,
             canonicalSnapshotIdentity: snapshot.identity.rawValue,
             indexGenerationID: built.id.rawValue, recovered: recovering)
+    }
+
+    /// Finishes an already published historical v2 candidate left by a
+    /// previous binary. It does not make v2 a Current document or publish a v2
+    /// Index. A separate reviewed 2→3 migration is required after gate release.
+    private func finishHistoricalCandidate(_ initial: MigrationPublicationRecord,
+        recovering: Bool,
+        savePhase: (MigrationPublicationPhase) throws -> Void) throws -> MigrationPublicationResult {
+        var record = initial
+        func persist(_ phase: MigrationPublicationPhase) throws {
+            record.phase = phase
+            try savePhase(phase)
+        }
+        guard try git("rev-parse", "--verify", "\(record.retentionRef)^{commit}") == record.candidateOID,
+              try git("rev-parse", "\(record.candidateOID)^{tree}") == record.candidateTreeOID else {
+            throw MigrationPublicationError.candidateMismatch
+        }
+        try requireNoCanonicalJournal()
+        try GitLockGuard.requireAbsent(root: root, sourceRef: record.sourceRef)
+        try hook?(.beforeMaterialization)
+        _ = try git("read-tree", "--reset", "-u", record.candidateOID)
+        try persist(.worktreeMaterialized)
+        try hook?(.materialized)
+        try requireClean()
+        try hook?(.beforeCanonicalValidation)
+        let files = try MigrationRepositoryInput.load(from: root)
+        try hook?(.duringCanonicalValidation)
+        try validateHistoricalV2Files(files, expectedIdentity: record.candidateCanonicalIdentity,
+            expectedID: record.candidateDocumentID,
+            expectedRevision: record.candidateDocumentRevision)
+        guard try git("symbolic-ref", "--quiet", "HEAD") == record.sourceRef,
+              try git("rev-parse", "HEAD") == record.candidateOID else {
+            throw MigrationPublicationError.unknownSourceState
+        }
+        try persist(.canonicalVerified)
+        try hook?(.canonicalVerified)
+        _ = try generations.reconcile(validatedIdentity: try identity(record.candidateCanonicalIdentity),
+                                      expectedOperationID: record.operationID)
+        try hook?(.beforeGateRelease)
+        try coordinator.finishMigrationPublication()
+        try hook?(.gateReleased)
+        return MigrationPublicationResult(sourceRef: record.sourceRef,
+            candidateOID: record.candidateOID,
+            documentID: record.candidateDocumentID,
+            documentRevision: record.candidateDocumentRevision,
+            canonicalSnapshotIdentity: record.candidateCanonicalIdentity,
+            indexGenerationID: "", recovered: recovering)
     }
 
     private func ensurePendingGeneration(_ record: MigrationPublicationRecord) throws {

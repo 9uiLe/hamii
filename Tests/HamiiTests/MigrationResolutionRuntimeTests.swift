@@ -87,21 +87,31 @@ final class MigrationResolutionRuntimeTests: XCTestCase {
             XCTAssertTrue(report.items.allSatisfy { !$0.choices.isEmpty })
             let resolution = manifest(report)
             let review = try preparer.prepare(repository: root, resolution: resolution)
-            XCTAssertEqual(review.recordFormatVersion, 2)
+            XCTAssertEqual(review.recordFormatVersion, 3)
+            XCTAssertEqual(review.sourceFormatVersion, 1)
+            XCTAssertEqual(review.targetFormatVersion, 3)
+            XCTAssertEqual(review.edgePath, ["1->2", "2->3"])
             XCTAssertEqual(review.classification, expectedClass)
             XCTAssertEqual(review.resolutionAudit?.decisions, resolution.decisions)
             XCTAssertEqual(review.resolutionAudit?.losses.count, lossCount)
+            XCTAssertEqual(review.edgeResolutionAudits.map(\.edgeID), ["1->2"])
+            XCTAssertEqual(review.receipts[0].resolutionDecisions, resolution.decisions)
+            XCTAssertEqual(review.receipts[0].losses.count, lossCount)
+            XCTAssertTrue(review.receipts[1].resolutionDecisions.isEmpty)
+            XCTAssertTrue(review.receipts[1].losses.isEmpty)
             XCTAssertEqual(try git(root, "rev-parse", "HEAD"), report.source.sourceOID)
             let reviewPath = root.appendingPathComponent(".hamii/migration-reviews/\(review.reviewID).json")
             XCTAssertTrue(FileManager.default.fileExists(atPath: reviewPath.path))
+            XCTAssertEqual(try MigrationReviewStore(root: root).recordVersion(review.reviewID), 3)
             let published = try MigrationPublisher(root: root, index: PublishedCanonicalIndex())
                 .publish(reviewID: review.reviewID, confirmedSourceOID: review.sourceOID,
                          confirmedCandidateOID: review.candidateOID)
             XCTAssertEqual(published.candidateOID, review.candidateOID)
             XCTAssertFalse(WorktreeCoordinator(root: root).migrationPublicationPending())
             XCTAssertTrue(FileManager.default.fileExists(atPath: reviewPath.path), "Loss audit must survive publication")
-            let retained = try MigrationReviewStore(root: root).load(review.reviewID)
-            XCTAssertEqual(retained.resolutionAudit?.losses, review.resolutionAudit?.losses)
+            let retained = try MigrationReviewStore(root: root).loadComposed(review.reviewID)
+            XCTAssertEqual(retained.edgeResolutionAudits.first?.losses, review.resolutionAudit?.losses)
+            XCTAssertEqual(retained.receipts, review.receipts)
             let snapshot = try CanonicalRepository(root: root).withCoordinatedSnapshot { $0 }
             XCTAssertEqual(snapshot.identity.rawValue, review.validation.canonicalSnapshotIdentity)
             let index = try PublishedCanonicalIndex().verifyPublished(at: root, snapshot: snapshot)
@@ -162,9 +172,10 @@ final class MigrationResolutionRuntimeTests: XCTestCase {
             resolution: manifest(preparer.resolutionReport(repository: root)))
         let reviewPath = root.appendingPathComponent(".hamii/migration-reviews/\(review.reviewID).json")
         let original = try Data(contentsOf: reviewPath)
-        for tamper in ["removeLoss", "changeValue", "choice", "classification", "removeManifest", "sourceBinding", "unknownManifestField"] {
+        for tamper in ["removeLoss", "changeValue", "choice", "classification", "removeManifest", "sourceBinding", "unknownManifestField", "edgeID"] {
             var json = try XCTUnwrap(JSONSerialization.jsonObject(with: original) as? Object)
-            var audit = try XCTUnwrap(json["resolutionAudit"] as? Object)
+            var audits = try XCTUnwrap(json["edgeResolutionAudits"] as? [Object])
+            var audit = try XCTUnwrap(audits.first)
             switch tamper {
             case "removeLoss": audit["losses"] = [Object]()
             case "changeValue":
@@ -185,9 +196,11 @@ final class MigrationResolutionRuntimeTests: XCTestCase {
                 var resolution = try XCTUnwrap(audit["manifest"] as? Object)
                 resolution["jsonPath"] = "hamii.json"
                 audit["manifest"] = resolution
+            case "edgeID": audit["edgeID"] = "2->3"
             default: XCTFail("Unknown tamper")
             }
-            json["resolutionAudit"] = audit
+            audits[0] = audit
+            json["edgeResolutionAudits"] = audits
             try JSONSerialization.data(withJSONObject: json).write(to: reviewPath)
             XCTAssertThrowsError(try MigrationPublisher(root: root, index: PublishedCanonicalIndex())
                 .publish(reviewID: review.reviewID, confirmedSourceOID: review.sourceOID,
@@ -198,17 +211,22 @@ final class MigrationResolutionRuntimeTests: XCTestCase {
         }
     }
 
-    func testAutomaticReviewKeepsVersionOneAndCanPublish() throws {
+    func testAutomaticReviewUsesComposedRecordAndCanPublish() throws {
         let root = try fixture("safe")
         defer { try? FileManager.default.removeItem(at: root) }
         let review = try MigrationCandidatePreparer().prepare(repository: root)
-        XCTAssertEqual(review.recordFormatVersion, 1)
+        XCTAssertEqual(review.recordFormatVersion, 3)
+        XCTAssertEqual(review.edgePath, ["1->2", "2->3"])
         XCTAssertNil(review.resolutionAudit)
+        XCTAssertTrue(review.edgeResolutionAudits.isEmpty)
+        XCTAssertEqual(try MigrationReviewStore(root: root).recordVersion(review.reviewID), 3)
         _ = try MigrationPublisher(root: root, index: PublishedCanonicalIndex())
             .publish(reviewID: review.reviewID, confirmedSourceOID: review.sourceOID,
                      confirmedCandidateOID: review.candidateOID)
-        XCTAssertFalse(FileManager.default.fileExists(atPath:
+        XCTAssertTrue(FileManager.default.fileExists(atPath:
             root.appendingPathComponent(".hamii/migration-reviews/\(review.reviewID).json").path))
+        XCTAssertEqual(try MigrationReviewStore(root: root).loadComposed(review.reviewID).receipts,
+            review.receipts)
     }
 
     func testResolvedPublicationRecoversAfterRefCASAndRetainsAudit() throws {
@@ -227,7 +245,8 @@ final class MigrationResolutionRuntimeTests: XCTestCase {
         let result = try MigrationPublisher(root: root, index: PublishedCanonicalIndex()).recover()
         XCTAssertTrue(result.recovered)
         XCTAssertFalse(WorktreeCoordinator(root: root).migrationPublicationPending())
-        XCTAssertEqual(try MigrationReviewStore(root: root).load(review.reviewID).resolutionAudit?.losses.count, 1)
+        XCTAssertEqual(try MigrationReviewStore(root: root).loadComposed(review.reviewID)
+            .edgeResolutionAudits.first?.losses.count, 1)
         let snapshot = try CanonicalRepository(root: root).withCoordinatedSnapshot { $0 }
         XCTAssertEqual(try PublishedCanonicalIndex().verifyPublished(at: root, snapshot: snapshot).id.rawValue,
             result.indexGenerationID)

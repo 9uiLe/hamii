@@ -1,0 +1,15 @@
+{
+  "formatVersion" : 1,
+  "profiles" : [
+    {
+      "maximumMutations" : 100,
+      "mayPromoteScope" : false,
+      "profileName" : "builder"
+    },
+    {
+      "maximumMutations" : 0,
+      "mayPromoteScope" : false,
+      "profileName" : "reviewer"
+    }
+  ]
+}

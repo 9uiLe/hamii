@@ -78,13 +78,13 @@ private struct Output: Encodable {
     var blockedOutputs: [SemanticOutputKey]?
     var migration: MigrationPlan?
     var migrationResolution: MigrationResolutionReport?
-    var migrationReview: MigrationReviewPackage?
+    var migrationReview: MigrationPreparedReview?
     var migrationPublication: MigrationPublicationResult?
     var previewPlan: TargetPlan?
     var mergeCheck: MergeCheck?
     var context: ContextCLIOutput?
     var terminal: Bool?
-    init(ok: Bool, category: String? = nil, message: String? = nil, blockers: [String]? = nil, document: Document? = nil, statePrecondition: ClientPrecondition? = nil, mutation: MutationResult? = nil, components: [ComponentDefinition]? = nil, skills: [String]? = nil, skill: String? = nil, diagnostics: [Diagnostic]? = nil, hits: [ComponentHit]? = nil, generated: GeneratedSource? = nil, contract: IntegrationContract? = nil, integrationPlan: IntegrationPlan? = nil, resolutionIssues: [IntegrationResolutionIssue]? = nil, blockedOutputs: [SemanticOutputKey]? = nil, migration: MigrationPlan? = nil, migrationResolution: MigrationResolutionReport? = nil, migrationReview: MigrationReviewPackage? = nil, migrationPublication: MigrationPublicationResult? = nil, previewPlan: TargetPlan? = nil, mergeCheck: MergeCheck? = nil, context: ContextCLIOutput? = nil, terminal: Bool? = nil) {
+    init(ok: Bool, category: String? = nil, message: String? = nil, blockers: [String]? = nil, document: Document? = nil, statePrecondition: ClientPrecondition? = nil, mutation: MutationResult? = nil, components: [ComponentDefinition]? = nil, skills: [String]? = nil, skill: String? = nil, diagnostics: [Diagnostic]? = nil, hits: [ComponentHit]? = nil, generated: GeneratedSource? = nil, contract: IntegrationContract? = nil, integrationPlan: IntegrationPlan? = nil, resolutionIssues: [IntegrationResolutionIssue]? = nil, blockedOutputs: [SemanticOutputKey]? = nil, migration: MigrationPlan? = nil, migrationResolution: MigrationResolutionReport? = nil, migrationReview: MigrationPreparedReview? = nil, migrationPublication: MigrationPublicationResult? = nil, previewPlan: TargetPlan? = nil, mergeCheck: MergeCheck? = nil, context: ContextCLIOutput? = nil, terminal: Bool? = nil) {
         self.ok = ok; self.category = category; self.message = message; self.blockers = blockers; self.document = document
         self.statePrecondition = statePrecondition
         self.mutation = mutation; self.components = components; self.skills = skills

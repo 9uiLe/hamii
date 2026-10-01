@@ -75,7 +75,7 @@ final class MigrationPublicationTests: XCTestCase {
         let review = try MigrationCandidatePreparer().prepare(repository: root)
         let reviewPath = root.appendingPathComponent(".hamii/migration-reviews/\(review.reviewID).json")
         XCTAssertTrue(FileManager.default.fileExists(atPath: reviewPath.path))
-        XCTAssertEqual(try MigrationReviewStore(root: root).load(review.reviewID).sourceCanonicalIdentity,
+        XCTAssertEqual(try MigrationReviewStore(root: root).loadComposed(review.reviewID).sourceCanonicalIdentity,
                        review.sourceCanonicalIdentity)
         let result = try MigrationPublisher(root: root, index: PublishedCanonicalIndex())
             .publish(reviewID: review.reviewID, confirmedSourceOID: review.sourceOID,
@@ -84,7 +84,7 @@ final class MigrationPublicationTests: XCTestCase {
         XCTAssertEqual(try git(root, "rev-parse", "HEAD"), review.candidateOID)
         XCTAssertTrue(try git(root, "status", "--porcelain=v1", "--untracked-files=all").isEmpty)
         XCTAssertFalse(WorktreeCoordinator(root: root).migrationPublicationPending())
-        XCTAssertFalse(FileManager.default.fileExists(atPath: reviewPath.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: reviewPath.path))
         let repository = CanonicalRepository(root: root)
         let observed = try repository.observe()
         XCTAssertNotEqual(observed.statePrecondition, old)

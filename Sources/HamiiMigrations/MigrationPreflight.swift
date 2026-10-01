@@ -29,7 +29,7 @@ public enum MigrationPreflightError: Error, CustomStringConvertible {
 }
 
 public enum MigrationPreflight {
-    public static let currentDocumentFormatVersion = 2
+    public static let currentDocumentFormatVersion = MigrationRegistry.currentDocumentFormatVersion
 
     public static func plan(repository: URL) throws -> MigrationPlan {
         if FileManager.default.fileExists(atPath: repository.appendingPathComponent(".hamii/migration-publication.pending.json").path) {
@@ -53,15 +53,9 @@ public enum MigrationPreflight {
             return MigrationPlan(sourceDocumentFormatVersion: version, targetDocumentFormatVersion: currentDocumentFormatVersion, classification: nil, state: "pendingCanonicalTransaction", blockers: ["Recover the pending Canonical save before migration"], canonicalFileCount: count, originalRepositoryUntouched: true)
         }
         if version == currentDocumentFormatVersion {
-            for (path, bytes) in files.files where path.hasPrefix("screens/") && path.hasSuffix(".json") {
-                guard let screen = try JSONSerialization.jsonObject(with: bytes) as? [String: Any] else {
-                    throw MigrationPreflightError.invalidManifest
-                }
-                if screen["semantics"] != nil { throw MigrationPreflightError.v3SemanticsUnderV2(path) }
-            }
             return MigrationPlan(sourceDocumentFormatVersion: version, targetDocumentFormatVersion: version, classification: nil, state: "current", blockers: [], canonicalFileCount: count, originalRepositoryUntouched: true)
         }
-        if version == 1 {
+        if version == 1 || version == 2 {
             do {
                 let analysis = try MigrationRegistry.analyze(files)
                 return MigrationPlan(sourceDocumentFormatVersion: version, targetDocumentFormatVersion: currentDocumentFormatVersion,

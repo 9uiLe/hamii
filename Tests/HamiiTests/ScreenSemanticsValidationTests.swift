@@ -48,19 +48,16 @@ final class ScreenSemanticsValidationTests: XCTestCase {
             relations: [relation("profileName")])
         XCTAssertEqual(DocumentValidator.validate(document), [])
 
-        document.screens[0].semantics!.outputs[0].binding = "wrong.path"
+        document.screens[0].semantics.outputs[0].binding = "wrong.path"
         XCTAssertTrue(rules(document).contains("semantics.binding"))
-        document.screens[0].semantics!.outputs[0].binding = "profile.name"
-        document.screens[0].semantics!.outputs[0].anchor = .direct(layerID: id("missing"), property: .text)
+        document.screens[0].semantics.outputs[0].binding = "profile.name"
+        document.screens[0].semantics.outputs[0].anchor = .direct(layerID: id("missing"), property: .text)
         XCTAssertTrue(rules(document).contains("semantics.anchor"))
     }
 
-    func testFormatVersionRequiresExplicitSemanticOwnership() {
-        var document = document(root: text("name_label"))
-        XCTAssertTrue(rules(document).contains("semantics.required"))
-        document.screens[0].semantics = ScreenSemantics()
-        document.versions.document = 2
-        XCTAssertTrue(rules(document).contains("semantics.formatVersion"))
+    func testNewScreenHasExplicitEmptySemantics() {
+        let document = document(root: text("name_label"))
+        XCTAssertEqual(document.screens[0].semantics, .empty)
     }
 
     func testSourceOutputRelationIdentityAndVisibilityFailures() {
@@ -125,21 +122,21 @@ final class ScreenSemanticsValidationTests: XCTestCase {
                                                   relations: [relation("profileName")])
         XCTAssertEqual(DocumentValidator.validate(document), [], "Variant changes the text value, not its binding")
 
-        document.screens[0].semantics!.outputs[0].binding = "other.binding"
+        document.screens[0].semantics.outputs[0].binding = "other.binding"
         XCTAssertTrue(rules(document).contains("semantics.binding"))
-        document.screens[0].semantics!.outputs[0].binding = "profile.name"
-        document.screens[0].semantics!.outputs[0].anchor = .component(
+        document.screens[0].semantics.outputs[0].binding = "profile.name"
+        document.screens[0].semantics.outputs[0].anchor = .component(
             path: [SemanticOccurrenceFrame(instanceLayerID: frame.instanceLayerID,
                                            expectedDefinitionID: id("wrong_definition"), layerPath: frame.layerPath)],
             layerID: id("name_label"), property: .text)
         XCTAssertTrue(rules(document).contains("semantics.anchor"))
-        document.screens[0].semantics!.outputs[0].anchor = .component(
+        document.screens[0].semantics.outputs[0].anchor = .component(
             path: [SemanticOccurrenceFrame(instanceLayerID: frame.instanceLayerID,
                                            expectedDefinitionID: definition.id,
                                            layerPath: [id("screen_root"), id("missing_path")])],
             layerID: id("name_label"), property: .text)
         XCTAssertTrue(rules(document).contains("semantics.anchor"))
-        document.screens[0].semantics!.outputs[0].anchor = .component(
+        document.screens[0].semantics.outputs[0].anchor = .component(
             path: [frame], layerID: id("missing_target"), property: .text)
         XCTAssertTrue(rules(document).contains("semantics.anchor"))
     }
@@ -176,7 +173,7 @@ final class ScreenSemanticsValidationTests: XCTestCase {
                                                   relations: [relation("leftName"), relation("rightName")])
         XCTAssertEqual(DocumentValidator.validate(document), [])
 
-        document.screens[0].semantics!.outputs[1].anchor = .component(path: [
+        document.screens[0].semantics.outputs[1].anchor = .component(path: [
             SemanticOccurrenceFrame(instanceLayerID: id("right_instance"), expectedDefinitionID: parent.id,
                                     layerPath: [id("screen_root"), id("left_instance")])
         ], layerID: id("definition_label"), property: .text)

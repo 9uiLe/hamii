@@ -1,6 +1,8 @@
 # Canonical Format v1 layer baseline
 
-`FormatV1LayerGoldenTests.swift` is the frozen test source from the Format v1 baseline. It is not part of the Current Format v2 test target. The recorded test result is preserved in Git history; Current v2 behavior is covered by `Tests/HamiiTests/CurrentFormatV2Tests.swift`.
+`FormatV1LayerGoldenTests.swift` is the frozen test source from the Format v1 baseline. It is not part of the Current Format v3 test target. The recorded test result is preserved in Git history; Current v3 behavior is covered by `Tests/HamiiTests/CurrentFormatV3Tests.swift`.
+
+`format-v2-starter/` is historical Canonical input for the 2→3 migration path. The Current reader does not load it.
 
 `format-v1-layer.json` was encoded by the production `Layer` from source commit
 `e652031ea92fdd6a51997818bc4590389b40a90a` using the Canonical JSON encoder

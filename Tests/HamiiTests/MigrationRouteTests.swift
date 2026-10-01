@@ -5,13 +5,13 @@ final class MigrationRouteTests: XCTestCase {
     func testInstalledAdjacentRoutesAndInvalidCatalogs() throws {
         let edge = MigrationEdge(sourceVersion: 1, targetVersion: 2)
         let next = MigrationEdge(sourceVersion: 2, targetVersion: 3)
-        XCTAssertEqual(try MigrationRegistry.route(from: 1).edges, [edge])
-        XCTAssertEqual(try MigrationRegistry.route(from: 1).edgePath, ["1->2"])
-        XCTAssertTrue(try MigrationRegistry.route(from: 2).edges.isEmpty)
+        XCTAssertEqual(try MigrationRegistry.route(from: 1).edges, [edge, next])
+        XCTAssertEqual(try MigrationRegistry.route(from: 1).edgePath, ["1->2", "2->3"])
+        XCTAssertEqual(try MigrationRegistry.route(from: 2).edges, [next])
         XCTAssertEqual(try MigrationRegistry.route(from: 2, to: 3).edges, [next])
         XCTAssertEqual(try MigrationRegistry.route(from: 1, to: 3).edges, [edge, next])
-        XCTAssertEqual(MigrationRegistry.currentDocumentFormatVersion, 2)
-        XCTAssertEqual(MigrationPreflight.currentDocumentFormatVersion, 2)
+        XCTAssertEqual(MigrationRegistry.currentDocumentFormatVersion, 3)
+        XCTAssertEqual(MigrationPreflight.currentDocumentFormatVersion, 3)
         XCTAssertThrowsError(try MigrationRouteResolver.resolve(from: 1, to: 2, catalog: []))
         for catalog in [
             [edge, edge],
@@ -53,7 +53,7 @@ final class MigrationRouteTests: XCTestCase {
         XCTAssertThrowsError(try MigrationReceiptChain.validate([first, brokenJoin], for: route,
             sourceIdentity: "source", finalIdentity: "final"))
 
-        let noOp = try MigrationRegistry.route(from: 2)
+        let noOp = try MigrationRegistry.route(from: 3)
         XCTAssertNoThrow(try MigrationReceiptChain.validate([], for: noOp,
             sourceIdentity: "same", finalIdentity: "same"))
         XCTAssertThrowsError(try MigrationReceiptChain.validate([], for: noOp,

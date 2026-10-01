@@ -12,7 +12,6 @@ final class IntegrationExtractionV3Tests: XCTestCase {
         var screen = Screen(id: EntityID("screen_profile"), name: "Profile", scopeID: EntityID("scope_app"),
                             root: Layer(id: EntityID("layer_root"), kind: .stack, name: "Root", children: [name]))
         if withSemantics {
-            result.versions.document = 3
             name.textBinding = "profile.name"
             screen.root.children[0] = name
             screen.semantics = ScreenSemantics(
@@ -30,29 +29,29 @@ final class IntegrationExtractionV3Tests: XCTestCase {
         let document = document(withSemantics: true)
         XCTAssertFalse(DocumentValidator.validate(document).contains { $0.severity == .error })
         let contract = try IntegrationContracts.make(screenID: EntityID("screen_profile"), document: document)
-        XCTAssertEqual(contract.semanticSources, document.screens[0].semantics?.sources)
-        XCTAssertEqual(contract.relations, document.screens[0].semantics?.relations)
+        XCTAssertEqual(contract.semanticSources, document.screens[0].semantics.sources)
+        XCTAssertEqual(contract.relations, document.screens[0].semantics.relations)
         XCTAssertEqual(contract.inputs, ["profile.name"])
         let json = try JSONSerialization.jsonObject(with: JSONEncoder().encode(contract)) as? [String: Any]
         XCTAssertNotNil(json?["semanticSources"])
         XCTAssertNotNil(json?["relations"])
     }
 
-    func testV2ContractAndScreenJSONDoNotGainEmptySemanticsKeys() throws {
+    func testCurrentEmptySemanticsAreExplicitInContractAndScreenJSON() throws {
         let document = document(withSemantics: false)
         let contract = try IntegrationContracts.make(screenID: EntityID("screen_profile"), document: document)
-        XCTAssertNil(contract.semanticSources)
-        XCTAssertNil(contract.relations)
+        XCTAssertEqual(contract.semanticSources, [])
+        XCTAssertEqual(contract.relations, [])
         let contractJSON = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(contract)) as? [String: Any])
-        XCTAssertFalse(contractJSON.keys.contains("semanticSources"))
-        XCTAssertFalse(contractJSON.keys.contains("relations"))
+        XCTAssertEqual((contractJSON["semanticSources"] as? [[String: Any]])?.count, 0)
+        XCTAssertEqual((contractJSON["relations"] as? [[String: Any]])?.count, 0)
         let screenJSON = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(document.screens[0])) as? [String: Any])
-        XCTAssertFalse(screenJSON.keys.contains("semantics"))
+        XCTAssertNotNil(screenJSON["semantics"])
     }
 
     func testExtractionRejectsInvalidRelationBeforePublishingContract() {
         var document = document(withSemantics: true)
-        guard var semantics = document.screens[0].semantics else { return XCTFail("Missing semantics fixture") }
+        var semantics = document.screens[0].semantics
         semantics.relations[0].output = HamiiCore.SemanticOutputKey("missingOutput")
         document.screens[0].semantics = semantics
         XCTAssertThrowsError(try IntegrationContracts.make(screenID: EntityID("screen_profile"),

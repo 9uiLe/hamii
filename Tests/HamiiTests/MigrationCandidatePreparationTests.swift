@@ -44,7 +44,7 @@ final class MigrationCandidatePreparationTests: XCTestCase {
         let preparer = MigrationCandidatePreparer { step in
             if case .beforeRetention(let url) = step { worktrees.append(url) }
         }
-        var packages: [MigrationReviewPackage] = []
+        var packages: [MigrationPreparedReview] = []
         for _ in 0..<3 {
             packages.append(try preparer.prepare(repository: root))
         }
@@ -54,7 +54,7 @@ final class MigrationCandidatePreparationTests: XCTestCase {
             XCTAssertEqual(review.sourceOID, head)
             XCTAssertEqual(review.sourceTreeOID, tree)
             XCTAssertEqual(review.sourceDocumentRevision, review.candidateDocumentRevision)
-            XCTAssertEqual(review.validation.currentFormat, 2)
+            XCTAssertEqual(review.validation.currentFormat, 3)
             XCTAssertEqual(review.validation.canonicalSnapshotIdentity, review.indexValidation.sourceCanonicalIdentity)
             XCTAssertEqual(try git(root, "rev-parse", review.retentionRef), review.candidateOID)
             XCTAssertEqual(try git(root, "rev-list", "--parents", "-n", "1", review.candidateOID), "\(review.candidateOID) \(head)")

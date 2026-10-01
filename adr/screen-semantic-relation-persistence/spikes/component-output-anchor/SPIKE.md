@@ -50,7 +50,7 @@ The test-only projection called production `IntegrationContracts.make`, which co
 
 ## Conclusion
 
-The tested occurrence-path candidate is sufficient to distinguish repeated and nested Component outputs in this fixture and rejects the tested invalid cases. This supports the Screen ownership decision but does not install a production schema, extraction path, or v3 reader. The persistence ADR remains **Spike Required** until the ownership/transaction boundary is decided with complete validation evidence. Migration edge composition has its own [ADR](../../../migration-edge-composition/ADR.md) and was not tested here.
+The tested occurrence-path candidate is sufficient to distinguish repeated and nested Component outputs in this fixture and rejects the tested invalid cases. This supports the Screen ownership decision but does not install a production schema, extraction path, or v3 reader. At the time of this Spike, the persistence ADR remained **Spike Required**. The subsequent ADR decision selected Screen shard ownership and moved it to **Implementation Required**. Migration edge composition has its own [ADR](../../../migration-edge-composition/ADR.md) and was not tested here.
 
 ## Artifacts
 

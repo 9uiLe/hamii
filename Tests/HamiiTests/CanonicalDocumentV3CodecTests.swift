@@ -3,7 +3,6 @@ import CryptoKit
 import XCTest
 import HamiiCore
 @testable import HamiiFormat
-import HamiiMigrations
 
 final class CanonicalDocumentV3CodecTests: XCTestCase {
     private func fixture() -> Document {
@@ -117,7 +116,7 @@ final class CanonicalDocumentV3CodecTests: XCTestCase {
 
     func testV3OccurrenceFrameShapeRejectsUnknownAndMissingFields() throws {
         var document = fixture()
-        document.screens[0].semantics!.outputs[0].anchor = .component(path: [
+        document.screens[0].semantics.outputs[0].anchor = .component(path: [
             .init(instanceLayerID: EntityID("instance"), expectedDefinitionID: EntityID("definition"),
                   layerPath: [EntityID("root"), EntityID("instance")])
         ], layerID: EntityID("label"), property: .text)
@@ -144,30 +143,51 @@ final class CanonicalDocumentV3CodecTests: XCTestCase {
         }))
     }
 
-    func testV2BytesRemainExactAndV2MarkerRejectsSemantics() throws {
-        let sample = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+    func testCurrentScreenRequiresSemanticsAndRepositoryRejectsV2() throws {
+        let historical = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
             .deletingLastPathComponent().deletingLastPathComponent()
-            .appendingPathComponent("Samples/Starter")
+            .appendingPathComponent("Tests/Fixtures/format-v2-starter")
         let screenPath = "screens/screen_9369ecd6-58a4-47e1-a455-2c62eee99a4d.json"
-        let bytes = try Data(contentsOf: sample.appendingPathComponent(screenPath))
+        let bytes = try Data(contentsOf: historical.appendingPathComponent(screenPath))
         XCTAssertEqual(SHA256.hash(data: bytes).map { String(format: "%02x", $0) }.joined(),
                        "dc5d3a880f267d5ed6ebd31dd66807f4835771cab7b0fc2c99b75cf8a408c273")
-        let screen = try JSONDecoder().decode(Screen.self, from: bytes)
-        XCTAssertNil(screen.semantics)
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = [.sortedKeys, .prettyPrinted, .withoutEscapingSlashes]
-        var encoded = try encoder.encode(screen)
-        encoded.append(0x0A)
-        XCTAssertEqual(encoded, bytes)
-
+        XCTAssertThrowsError(try JSONDecoder().decode(Screen.self, from: bytes))
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("hamii-v2-semantic-\(UUID())")
         defer { try? FileManager.default.removeItem(at: root) }
-        try FileManager.default.copyItem(at: sample, to: root)
-        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: bytes) as? [String: Any])
-        object["semantics"] = ["sources": [], "outputs": [], "relations": []]
-        try JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])
-            .write(to: root.appendingPathComponent(screenPath))
-        XCTAssertThrowsError(try CanonicalRepository(root: root).load())
-        XCTAssertThrowsError(try MigrationPreflight.plan(repository: root))
+        try FileManager.default.copyItem(at: historical, to: root)
+        XCTAssertThrowsError(try CanonicalRepository(root: root).load()) { error in
+            guard case CanonicalError.unsupportedFormat(2) = error else {
+                return XCTFail("Expected unsupportedFormat(2), got \(error)")
+            }
+        }
+    }
+
+    func testCurrentRepositoryWritesStrictV3ScreensAndRejectsMissingSemantics() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("hamii-current-v3-\(UUID())")
+        defer { try? FileManager.default.removeItem(at: root) }
+        let repository = CanonicalRepository(root: root)
+        let created = try repository.create(name: "Current v3")
+        XCTAssertEqual(created.versions.document, 3)
+        let manifest = try XCTUnwrap(JSONSerialization.jsonObject(with:
+            Data(contentsOf: root.appendingPathComponent("hamii.json"))) as? [String: Any])
+        XCTAssertEqual(manifest["formatVersion"] as? Int, 3)
+
+        var updated = created
+        updated.revision += 1
+        updated.screens = [Screen(id: EntityID("screen_current"), name: "Current",
+            scopeID: created.scopes[0].id,
+            root: Layer(id: EntityID("root_current"), kind: .stack, name: "Root"))]
+        try repository.save(updated, expected: created)
+        XCTAssertEqual(try repository.load(), updated)
+        let screenPath = root.appendingPathComponent("screens/screen_current.json")
+        let screenBytes = try Data(contentsOf: screenPath)
+        let screen = try XCTUnwrap(JSONSerialization.jsonObject(with: screenBytes) as? [String: Any])
+        let semantics = try XCTUnwrap(screen["semantics"] as? [String: Any])
+        XCTAssertEqual(Set(semantics.keys), ["sources", "outputs", "relations"])
+
+        var missing = screen
+        missing.removeValue(forKey: "semantics")
+        try JSONSerialization.data(withJSONObject: missing).write(to: screenPath)
+        XCTAssertThrowsError(try repository.load())
     }
 }

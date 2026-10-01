@@ -5,7 +5,7 @@ import Foundation
 /// ownership: slot content can replace a definition subtree with the same IDs.
 enum ScreenSemanticsValidator {
     static func validate(_ screen: Screen, in document: Document) -> [Diagnostic] {
-        guard let semantics = screen.semantics else { return [] }
+        let semantics = screen.semantics
         var diagnostics: [Diagnostic] = []
         func issue(_ rule: String, _ message: String) {
             diagnostics.append(Diagnostic(rule, message, entityID: screen.id))

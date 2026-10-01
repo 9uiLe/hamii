@@ -2,7 +2,7 @@
 
 ## Context
 
-Current Canonical Format is v2. The isolated migration registry installs v1→v2 and explicit-target-only 2→3 edges; public candidate preparation, review, publication, and recovery still target Current v2. A future Current v3 Screen format needs a reviewed publication path from both v1 and v2. This decision concerns migration orchestration across installed edges, regardless of what a particular edge transforms.
+Current Canonical Format is v3. The isolated migration registry installs v1→2 and 2→3 adjacent edges. Public candidate preparation, review, publication, and recovery target final v3 from either historical v1 or v2. This decision concerns migration orchestration across installed edges, regardless of what a particular edge transforms.
 
 ## Decision to Make
 
@@ -40,20 +40,18 @@ Existing review-record formats 1 and 2 retain their single-edge interpretation. 
 
 ## Unknowns
 
-The route decision is complete. Production has an adjacent-edge registry, receipt chain, Runtime replay, and a strict composed review record 3 / pending publication record 2 exercised with the installed v1→v2 edge. The public prepare command continues to write the single-edge record 1/2. Remaining implementation and validation are:
-
-- The strict v3 candidate codec, Screen semantic validator, real 2→3 edge, and ordered 1→2→3 replay are present. The Current reader remains v2. Current-v3 reader switch and production v1→2→3 / v2→3 preparation remain.
-- Full multi-edge publisher/recovery integration and stop/restart validation against actual installed edges; a one-edge composed protocol test does not prove two-edge composition.
-- Full process-stop and power-loss evidence for the eventual multi-edge publication protocol, with power-loss durability owned by its separate ADR.
+The route decision and Current v3 cutover implementation are complete. The remaining gate in this ADR is integrated verification of real two-edge publication/recovery, Human resolution, process-stop behavior, historical pending recovery, and exact pushed SHA Verify. This ADR stays `Implementation Required` until that validation is complete and a separate closure commit is justified. Power-loss durability belongs to its separate ADR.
 
 ## Required Evidence
 
-The [Ordered Edge Publication Spike](spikes/ordered-edge-publication/SPIKE.md) exercised the installed v1→v2 edge plus a synthetic 2→3 edge in a test-only route/review/Git publication/recovery harness. It covered v1→2→3 and v2→3, explicit v1 resolution, route ambiguity, source/intermediate/candidate/review tampering, exception stops on both sides of ref CAS, unchanged unrelated bytes, and an Index identity/generation double. Independent review added regression cases for historical-source/Current-query separation, resolution outside the route, and pending-record misclassification; the corrected focused run passed 8 tests. The [Screen layout Spike](../screen-semantic-relation-persistence/spikes/canonical-layout-and-v3/SPIKE.md) established test-local sequential transform composability. That Spike evidence supports the route decision; current production replay of the real 2→3 edge is recorded below. Public candidate preparation and Current reading still target v2.
+The [Ordered Edge Publication Spike](spikes/ordered-edge-publication/SPIKE.md) exercised the installed v1→v2 edge plus a synthetic 2→3 edge in a test-only route/review/Git publication/recovery harness. It covered v1→2→3 and v2→3, explicit v1 resolution, route ambiguity, source/intermediate/candidate/review tampering, exception stops on both sides of ref CAS, unchanged unrelated bytes, and an Index identity/generation double. Independent review added regression cases for historical-source/Current-query separation, resolution outside the route, and pending-record misclassification; the corrected focused run passed 8 tests. The [Screen layout Spike](../screen-semantic-relation-persistence/spikes/canonical-layout-and-v3/SPIKE.md) established test-local sequential transform composability. That Spike evidence supports the route decision; current production replay of the real 2→3 edge is recorded below. At the time of that Spike, public candidate preparation and Current reading still targeted v2; the cutover is now implemented.
 
 Production tests with the real v1→v2 edge now exercise record 3 creation and strict store decoding, edge-local replay, pending record 2, source-commit replay before HEAD classification, 13 exception-stop points, tampered pending/review/retention evidence, pre-CAS historical abort, post-CAS roll-forward, dirty-worktree rematerialization, derived Index failure/rebuild, repeated recovery, and Human resolution audit. A five-stage separate-process SIGKILL test also confirms reader lock contention until writer death, pending Query rejection, and old/candidate recovery for the composed record. These are one-edge composed-protocol results. They do not establish an installed multi-edge route or power-loss durability.
 
-The Screen-owned semantic v3 candidate codec, Core validator, and existing journal recovery test provide a strict target-file-set boundary for the 2→3 edge. They do not change the Current v2 reader.
-The Foundation-only FormatV2 edge now accepts exact 2/2 markers, rejects preexisting Screen semantics, adds explicit empty declarations without inference, and leaves unrelated Canonical bytes unchanged. The Runtime replays real 2→3 and 1→2→3 routes, binds receipt identities, and validates final v3 bytes through the package-level strict codec and `DocumentValidator`. This is edge and replay evidence; candidate preparation, review, publication, and Current v3 are still not integrated.
+The Screen-owned semantic v3 codec, Core validator, and journal recovery test provide a strict Current target-file-set boundary for the 2→3 edge.
+The Foundation-only FormatV2 edge now accepts exact 2/2 markers, rejects preexisting Screen semantics, adds explicit empty declarations without inference, and leaves unrelated Canonical bytes unchanged. The Runtime replays real 2→3 and 1→2→3 routes, binds receipt identities, and validates final v3 bytes through the package-level strict codec and `DocumentValidator`. Those edge and replay results remain independent evidence for the integrated Current v3 preparation and publication path.
+
+The Current v3 focused integration tests prepared real v1→2→3 and v2→3 record-3 candidates from original source commits, verified receipts and an edge-local v1 resolution audit, and published only final v3 CanonicalSnapshot/Index state (preparation 2/2; publication 3/3; CLI end-to-end 1/1). Four historical pending-recovery tests verified raw v2 recovery for record-1 and record-2 target-v2 stops without publishing v2 as a Current Index. These are process/test-environment results; full gate, exact-SHA CI, and power-loss durability are separate validation boundaries.
 
 ## Decision Criteria
 
@@ -69,9 +67,9 @@ The focused comparison below separates measured behavior from projected maintena
 
 ## Implementation Gates
 
-- Production `HamiiMigrations` must represent ordered adjacent routes and per-edge receipts. The existing v1→v2 transform and resolution behavior must pass unchanged through the one-edge route before any v3 edge is installed.
+- Production `HamiiMigrations` must represent ordered adjacent routes and per-edge receipts. The v1→2 transform and edge-local resolution behavior must remain stable when followed by 2→3.
 - Candidate preparation, review, publication, and recovery must share full-route replay from the exact original source. A new composed review-record format must be strict; existing formats 1 and 2 must retain their single-edge meanings.
-- A future v3 edge must use a strict Current-v3 validator and an Index built from the exact final CanonicalSnapshot. Pre-CAS historical abort must not permit Current queries; post-CAS recovery must not publish intermediate v2 or mismatched Index state.
+- The installed 2→3 edge must use a strict Current-v3 validator and an Index built from the exact final CanonicalSnapshot. Pre-CAS historical abort must not permit Current queries; post-CAS recovery must not publish intermediate v2 or mismatched Index state.
 - Production stop/restart and tamper tests must cover the committed publication protocol. SIGKILL evidence is distinct from the separate [Power-loss ADR](../canonical-power-loss-durability/ADR.md).
 
 ## Status

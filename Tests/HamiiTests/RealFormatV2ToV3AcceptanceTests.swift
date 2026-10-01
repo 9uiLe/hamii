@@ -5,8 +5,8 @@ import HamiiCore
 import HamiiMigrations
 @testable import HamiiMigrationRuntime
 
-/// The installed 2→3 edge is explicit migration machinery, not the Current
-/// Canonical reader. These tests exercise exact captured bytes and real replay.
+/// Historical v2 is handled by migration machinery; the Current reader accepts v3.
+/// These tests exercise exact captured bytes and real replay.
 final class RealFormatV2ToV3AcceptanceTests: XCTestCase {
     private var repositoryRoot: URL {
         URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
@@ -14,7 +14,7 @@ final class RealFormatV2ToV3AcceptanceTests: XCTestCase {
     }
 
     private func starter() throws -> MigrationFileSet {
-        try MigrationRepositoryInput.load(from: repositoryRoot.appendingPathComponent("Samples/Starter"))
+        try MigrationRepositoryInput.load(from: repositoryRoot.appendingPathComponent("Tests/Fixtures/format-v2-starter"))
     }
 
     private func historical() throws -> MigrationFileSet {
@@ -124,7 +124,7 @@ final class RealFormatV2ToV3AcceptanceTests: XCTestCase {
 
     func testRealReplayProducesExactChainedReceiptsForBothRoutes() throws {
         let v1 = try historical()
-        let v2 = try MigrationRegistry.transform(v1)
+        let v2 = try MigrationRegistry.transform(v1, to: 2)
         let oneRoute = try MigrationRegistry.route(from: 2, to: 3)
         let one = try MigrationRouteReplay.run(v2.files, route: oneRoute)
         XCTAssertEqual(one.receipts.map(\.edgeID), ["2->3"])
@@ -178,27 +178,25 @@ final class RealFormatV2ToV3AcceptanceTests: XCTestCase {
         XCTAssertTrue(DocumentValidator.validate(decoded).contains { $0.rule == "semantics.anchor" })
     }
 
-    func testInstalledEdgeDoesNotAdvanceCurrentV2Defaults() throws {
-        XCTAssertEqual(MigrationRegistry.currentDocumentFormatVersion, 2)
-        XCTAssertEqual(MigrationPreflight.currentDocumentFormatVersion, 2)
-        XCTAssertEqual(try MigrationRegistry.route(from: 1).edgePath, ["1->2"])
+    func testCurrentV3DefaultsAndHistoricalV2Boundary() throws {
+        XCTAssertEqual(MigrationRegistry.currentDocumentFormatVersion, 3)
+        XCTAssertEqual(MigrationPreflight.currentDocumentFormatVersion, 3)
+        XCTAssertEqual(try MigrationRegistry.route(from: 1).edgePath, ["1->2", "2->3"])
         let sample = repositoryRoot.appendingPathComponent("Samples/Starter")
         let plan = try MigrationPreflight.plan(repository: sample)
         XCTAssertEqual(plan.state, "current")
-        XCTAssertEqual(plan.targetDocumentFormatVersion, 2)
-        XCTAssertEqual(try CanonicalRepository(root: sample).load().versions.document, 2)
-        let candidate = try direct(starter())
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent("hamii-v3-edge-\(UUID())")
-        defer { try? FileManager.default.removeItem(at: root) }
-        for (path, bytes) in candidate.files.files {
-            let url = root.appendingPathComponent(path)
-            try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
-            try bytes.write(to: url)
-        }
-        XCTAssertThrowsError(try CanonicalRepository(root: root).load()) { error in
-            guard case CanonicalError.unsupportedFormat(3) = error else {
-                return XCTFail("Expected unsupportedFormat(3), got \(error)")
+        XCTAssertEqual(plan.targetDocumentFormatVersion, 3)
+        XCTAssertEqual(try CanonicalRepository(root: sample).load().versions.document, 3)
+        let historicalV2 = FileManager.default.temporaryDirectory
+            .appendingPathComponent("hamii-v2-current-boundary-\(UUID().uuidString)")
+        try FileManager.default.copyItem(
+            at: repositoryRoot.appendingPathComponent("Tests/Fixtures/format-v2-starter"), to: historicalV2)
+        defer { try? FileManager.default.removeItem(at: historicalV2) }
+        XCTAssertThrowsError(try CanonicalRepository(root: historicalV2).load()) { error in
+            guard case CanonicalError.unsupportedFormat(2) = error else {
+                return XCTFail("Expected unsupportedFormat(2), got \(error)")
             }
         }
+        XCTAssertEqual(try MigrationPreflight.plan(repository: historicalV2).state, "migrationAvailable")
     }
 }

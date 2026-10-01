@@ -233,12 +233,6 @@ public enum DocumentValidator {
             checkID(screen.id)
             if !scopeIDs.contains(screen.scopeID) { errors.append(Diagnostic("screen.scope", "ArchitectureScope is missing", entityID: screen.id)) }
             checkLayer(screen.root, consumer: screen.scopeID)
-            if document.versions.document < 3 && screen.semantics != nil {
-                errors.append(Diagnostic("semantics.formatVersion", "Screen semantics require Canonical Document Format v3", entityID: screen.id))
-            }
-            if document.versions.document >= 3 && screen.semantics == nil {
-                errors.append(Diagnostic("semantics.required", "Canonical Document Format v3 requires Screen semantics", entityID: screen.id))
-            }
             errors += ScreenSemanticsValidator.validate(screen, in: document)
             if let navigation = screen.navigation {
                 switch navigation {

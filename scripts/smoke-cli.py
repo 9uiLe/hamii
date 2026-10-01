@@ -114,9 +114,11 @@ with tempfile.TemporaryDirectory(prefix="hamii-cli-") as directory:
     assert set(contract) == {
         "screenID", "name", "architectureScopeID", "inputs", "events",
         "tokenIDs", "assetIDs", "nativeIntents", "accessibilityLabels",
+        "semanticSources", "relations",
     }, contract
     assert contract["screenID"]["rawValue"] == screen["id"]["rawValue"]
     assert contract["assetIDs"] == [{"rawValue": asset["id"]["rawValue"]}]
+    assert contract["semanticSources"] == [] and contract["relations"] == []
     with tempfile.TemporaryDirectory(prefix="hamii-integration-profile-") as profile_dir:
         profile_file = Path(profile_dir) / "profile.json"
         profile_file.write_text(json.dumps(integration_profile))
@@ -336,7 +338,10 @@ with tempfile.TemporaryDirectory(prefix="hamii-resolution-cli-") as directory:
     resolution_path = local / "resolution.json"
     resolution_path.write_text(json.dumps(resolution))
     review = migrate("prepare", "--resolution", str(resolution_path))["migrationReview"]
-    assert review["recordFormatVersion"] == 2 and review["classification"] == "potentiallyLossy"
+    assert review["recordFormatVersion"] == 3 and review["classification"] == "potentiallyLossy"
+    assert review["edgePath"] == ["1->2", "2->3"]
+    assert [receipt["edgeID"] for receipt in review["receipts"]] == review["edgePath"]
+    assert [audit["edgeID"] for audit in review["edgeResolutionAudits"]] == ["1->2"]
     assert len(review["resolutionAudit"]["losses"]) == 1
     assert "historicalValue" in review["resolutionAudit"]["losses"][0]
     published = migrate("publish", review["reviewID"], review["sourceOID"], review["candidateOID"])

@@ -67,7 +67,7 @@ final class MigrationComposedPublicationTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: root) }
         let review = try MigrationCandidatePreparer().prepareComposed(repository: root)
         XCTAssertEqual(review.recordFormatVersion, 3)
-        XCTAssertEqual(review.receipts.map(\.edgeID), ["1->2"])
+        XCTAssertEqual(review.receipts.map(\.edgeID), ["1->2", "2->3"])
         XCTAssertEqual(try MigrationReviewStore(root: root).recordVersion(review.reviewID), 3)
         let reviewPath = root.appendingPathComponent(".hamii/migration-reviews/\(review.reviewID).json")
         XCTAssertTrue(FileManager.default.fileExists(atPath: reviewPath.path))
@@ -284,15 +284,15 @@ final class MigrationComposedPublicationTests: XCTestCase {
                        review.receipts)
     }
 
-    func testDuplicateReviewVersionCannotFallBackToLegacyPublisher() throws {
+    func testDuplicateReviewVersionCannotBypassStrictComposedPublisher() throws {
         let root = try fixture()
         defer { try? FileManager.default.removeItem(at: root) }
         let review = try MigrationCandidatePreparer().prepare(repository: root)
-        XCTAssertEqual(review.recordFormatVersion, 1)
+        XCTAssertEqual(review.recordFormatVersion, 3)
         let reviewURL = root.appendingPathComponent(".hamii/migration-reviews/\(review.reviewID).json")
         let original = try String(contentsOf: reviewURL, encoding: .utf8)
-        let tampered = original.replacingOccurrences(of: "\"recordFormatVersion\":1",
-            with: "\"recordFormatVersion\":1,\"recordFormatVersion\":1")
+        let tampered = original.replacingOccurrences(of: "\"recordFormatVersion\":3",
+            with: "\"recordFormatVersion\":3,\"recordFormatVersion\":3")
         XCTAssertNotEqual(original, tampered)
         try Data(tampered.utf8).write(to: reviewURL)
         XCTAssertThrowsError(try MigrationPublisher(root: root, index: PublishedCanonicalIndex())

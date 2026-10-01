@@ -17,7 +17,8 @@ final class MigrationRealRouteReplayTests: XCTestCase {
     }
 
     private func v2() throws -> MigrationFileSet {
-        try MigrationRepositoryInput.load(from: repositoryRoot.appendingPathComponent("Samples/Starter"))
+        try MigrationRepositoryInput.load(from: repositoryRoot
+            .appendingPathComponent("Tests/Fixtures/format-v2-starter"))
     }
 
     private func assertChain(_ replay: MigrationRouteReplayResult, source: MigrationFileSet,
@@ -33,9 +34,9 @@ final class MigrationRealRouteReplayTests: XCTestCase {
         let document = try CanonicalDocumentV3Codec.decode(files: replay.finalFiles.files)
         XCTAssertFalse(DocumentValidator.validate(document).contains { $0.severity == .error })
         XCTAssertTrue(document.screens.allSatisfy {
-            $0.semantics?.sources.isEmpty == true &&
-            $0.semantics?.outputs.isEmpty == true &&
-            $0.semantics?.relations.isEmpty == true
+            $0.semantics.sources.isEmpty &&
+            $0.semantics.outputs.isEmpty &&
+            $0.semantics.relations.isEmpty
         })
     }
 

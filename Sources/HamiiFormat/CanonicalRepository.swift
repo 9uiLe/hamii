@@ -31,7 +31,6 @@ public enum CanonicalError: Error, CustomStringConvertible {
 
 private struct CapturedCanonicalFile {
     let relativePath: String
-    let url: URL
     let bytes: Data
 }
 
@@ -389,27 +388,8 @@ public final class CanonicalRepository: ProjectRepository, ProjectObservationVer
 
     private func loadUnlocked(validate: Bool, validationHook: (() throws -> Void)? = nil,
                               onObservation: CanonicalObservationRecorder? = nil) throws -> Document {
-        let manifest = try measureCanonical(.manifestRead, recorder: onObservation) { try readManifest() }
-        guard manifest.formatVersion == 2, manifest.versions.document == 2, manifest.versions.authoringHarness == 1 else {
-            throw CanonicalError.unsupportedFormat(manifest.formatVersion)
-        }
-        var document = Document(name: manifest.name)
-        document.id = manifest.id
-        document.revision = manifest.revision
-        document.versions = manifest.versions
-        document.authoringHarness = manifest.authoringHarness
-        document.capabilityDeclarations = manifest.capabilityDeclarations
-        document.tokenTemplate = manifest.tokenTemplate
-        document.pages = try readAll("pages", onObservation: onObservation)
-        document.screens = try readAll("screens", onObservation: onObservation)
-        document.scopes = try readAll("scopes", onObservation: onObservation)
-        document.components = try readAll("components", onObservation: onObservation)
-        document.tokens = try readAll("tokens", onObservation: onObservation)
-        document.assets = try readAll("assets", onObservation: onObservation)
-        document.interactions = try readAll("interactions", onObservation: onObservation)
-        document.motions = try readAll("motions", onObservation: onObservation)
-        document.fixtures = try readAll("fixtures", onObservation: onObservation)
-        document.targets = try readAll("targets", onObservation: onObservation)
+        let captured = try captureCanonicalFiles(onObservation: onObservation, onFileCaptured: nil)
+        let document = try decodeCurrentDocument(from: captured, onObservation: onObservation)
         if validate {
             try validationHook?()
             let diagnostics = allDiagnostics(document, onObservation: onObservation)
@@ -472,47 +452,49 @@ public final class CanonicalRepository: ProjectRepository, ProjectObservationVer
             }
             files[file.relativePath] = file.bytes
         }
-        // canonicalJSONPaths always includes hamii.json; the fallback keeps a
-        // missing manifest a recoverable file error instead of an abort.
-        let manifestBytes = try files["hamii.json"]
-            ?? Data(contentsOf: root.appendingPathComponent("hamii.json"))
-        let manifest = try measureCanonical(.manifestDecode, recorder: onObservation) { () -> Manifest in
-            let header = try JSONDecoder().decode(FormatHeader.self, from: manifestBytes)
-            guard header.formatVersion == 2 else { throw CanonicalError.unsupportedFormat(header.formatVersion) }
-            let value = try JSONDecoder().decode(Manifest.self, from: manifestBytes)
-            guard value.formatVersion == 2, value.versions.document == 2,
-                  value.versions.authoringHarness == 1 else {
-                throw CanonicalError.unsupportedFormat(value.formatVersion)
-            }
-            return value
-        }
-        var document = Document(name: manifest.name)
-        document.id = manifest.id
-        document.revision = manifest.revision
-        document.versions = manifest.versions
-        document.authoringHarness = manifest.authoringHarness
-        document.capabilityDeclarations = manifest.capabilityDeclarations
-        document.tokenTemplate = manifest.tokenTemplate
-        document.pages = try decodeCaptured("pages", from: captured, onObservation: onObservation)
-        document.screens = try decodeCaptured("screens", from: captured, onObservation: onObservation)
-        document.scopes = try decodeCaptured("scopes", from: captured, onObservation: onObservation)
-        document.components = try decodeCaptured("components", from: captured, onObservation: onObservation)
-        document.tokens = try decodeCaptured("tokens", from: captured, onObservation: onObservation)
-        document.assets = try decodeCaptured("assets", from: captured, onObservation: onObservation)
-        document.interactions = try decodeCaptured("interactions", from: captured, onObservation: onObservation)
-        document.motions = try decodeCaptured("motions", from: captured, onObservation: onObservation)
-        document.fixtures = try decodeCaptured("fixtures", from: captured, onObservation: onObservation)
-        document.targets = try decodeCaptured("targets", from: captured, onObservation: onObservation)
+        let document = try decodeCurrentDocument(from: captured, onObservation: onObservation)
         try validationHook?()
         let diagnostics = allDiagnostics(document, onObservation: onObservation)
         if diagnostics.contains(where: { $0.severity == .error }) { throw CanonicalError.invalid(diagnostics) }
-        let profileBytes = try files["hamii-agent-profiles.json"]
-            ?? Data(contentsOf: root.appendingPathComponent("hamii-agent-profiles.json"))
-        _ = try measureCanonical(.agentProfilesValidation, recorder: onObservation) {
-            try AgentProfilesRepository.decodeProfiles(from: profileBytes)
-        }
         let identity = measureCanonical(.identityHash, recorder: onObservation) { CanonicalByteIdentity.compute(files: files) }
         return CanonicalSnapshot(document: document, identity: identity)
+    }
+
+    private func decodeCurrentDocument(
+        from captured: [CapturedCanonicalFile],
+        onObservation: CanonicalObservationRecorder?
+    ) throws -> Document {
+        var files: [String: Data] = [:]
+        for file in captured {
+            guard files.updateValue(file.bytes, forKey: file.relativePath) == nil else {
+                throw CanonicalError.transactionCorrupt("Duplicate Canonical path: \(file.relativePath)")
+            }
+        }
+        guard let manifestBytes = files["hamii.json"] else {
+            throw CanonicalError.transactionCorrupt("Missing hamii.json")
+        }
+        guard files["hamii-agent-profiles.json"] != nil else {
+            throw CanonicalError.transactionCorrupt("Missing hamii-agent-profiles.json")
+        }
+        let header = try JSONDecoder().decode(FormatHeader.self, from: manifestBytes)
+        guard header.formatVersion == 3 else { throw CanonicalError.unsupportedFormat(header.formatVersion) }
+        do {
+            return try CanonicalDocumentV3Codec.decode(
+                files: files,
+                onManifestDecoded: { milliseconds in
+                    onObservation?(CanonicalObservationMeasurement(stage: .manifestDecode, milliseconds: milliseconds))
+                },
+                onFolderDecoded: { folder, milliseconds in
+                    onObservation?(CanonicalObservationMeasurement(stage: .entityDecode, detail: folder,
+                        milliseconds: milliseconds))
+                },
+                onProfilesValidated: { milliseconds in
+                    onObservation?(CanonicalObservationMeasurement(stage: .agentProfilesValidation,
+                        milliseconds: milliseconds))
+                })
+        } catch CanonicalDocumentV3Codec.Failure.filenameMismatch(let path) {
+            throw CanonicalError.filenameMismatch((path as NSString).lastPathComponent)
+        }
     }
 
     private func captureCanonicalFiles(
@@ -529,7 +511,7 @@ public final class CanonicalRepository: ProjectRepository, ProjectObservationVer
         for url in paths {
             let relative = url.path.replacingOccurrences(of: root.path + "/", with: "")
             let bytes = try Data(contentsOf: url)
-            captured.append(CapturedCanonicalFile(relativePath: relative, url: url, bytes: bytes))
+            captured.append(CapturedCanonicalFile(relativePath: relative, bytes: bytes))
             if onObservation != nil { totalBytes += bytes.count }
             onFileCaptured?(relative, bytes)
         }
@@ -539,24 +521,6 @@ public final class CanonicalRepository: ProjectRepository, ProjectObservationVer
                 bytes: totalBytes, pathCount: paths.count))
         }
         return captured
-    }
-
-    private func decodeCaptured<T: Decodable & Identifiable>(
-        _ folder: String, from files: [CapturedCanonicalFile],
-        onObservation: CanonicalObservationRecorder?
-    ) throws -> [T] where T.ID == EntityID {
-        try measureCanonical(.entityDecode, detail: folder, recorder: onObservation) {
-            try files.filter { $0.relativePath.hasPrefix(folder + "/") }
-                .sorted { $0.url.lastPathComponent < $1.url.lastPathComponent }
-                .map { file in
-                    if folder == "screens" { try rejectV3SemanticsInV2(file.bytes, path: file.relativePath) }
-                    let value = try JSONDecoder().decode(T.self, from: file.bytes)
-                    guard file.url.deletingPathExtension().lastPathComponent == value.id.rawValue else {
-                        throw CanonicalError.filenameMismatch(file.url.lastPathComponent)
-                    }
-                    return value
-                }
-        }
     }
 
     private func writeDocument(_ document: Document, expected: Document?) throws {
@@ -593,24 +557,8 @@ public final class CanonicalRepository: ProjectRepository, ProjectObservationVer
     }
 
     private func encodedFiles(_ document: Document) throws -> [String: Data] {
-        guard document.versions.document == 2 else { throw CanonicalError.unsupportedFormat(document.versions.document) }
-        guard document.screens.allSatisfy({ $0.semantics == nil }) else {
-            throw CanonicalError.unsupportedFormat(3)
-        }
-        var files: [String: Data] = [:]
-        try encodeAll(document.pages, folder: "pages", into: &files)
-        try encodeAll(document.screens, folder: "screens", into: &files)
-        try encodeAll(document.scopes, folder: "scopes", into: &files)
-        try encodeAll(document.components, folder: "components", into: &files)
-        try encodeAll(document.tokens, folder: "tokens", into: &files)
-        try encodeAll(document.assets, folder: "assets", into: &files)
-        try encodeAll(document.interactions, folder: "interactions", into: &files)
-        try encodeAll(document.motions, folder: "motions", into: &files)
-        try encodeAll(document.fixtures, folder: "fixtures", into: &files)
-        try encodeAll(document.targets, folder: "targets", into: &files)
-        let manifest = Manifest(formatVersion: 2, id: document.id, name: document.name, revision: document.revision, versions: document.versions, authoringHarness: document.authoringHarness, capabilityDeclarations: document.capabilityDeclarations, tokenTemplate: document.tokenTemplate)
-        files["hamii.json"] = try encode(manifest)
-        return files
+        guard document.versions.document == 3 else { throw CanonicalError.unsupportedFormat(document.versions.document) }
+        return try CanonicalDocumentV3Codec.encode(document: document)
     }
 
     private func allDiagnostics(_ document: Document,
@@ -732,89 +680,14 @@ public final class CanonicalRepository: ProjectRepository, ProjectObservationVer
         hash.update(data: value)
     }
 
-    private func read<T: Decodable>(_ url: URL) throws -> T {
-        try JSONDecoder().decode(T.self, from: Data(contentsOf: url))
-    }
-
     private func readManifest() throws -> Manifest {
         let url = root.appendingPathComponent("hamii.json")
-        let header: FormatHeader = try read(url)
-        guard header.formatVersion == 2 else { throw CanonicalError.unsupportedFormat(header.formatVersion) }
-        let manifest: Manifest = try read(url)
-        guard manifest.versions.document == 2 else { throw CanonicalError.unsupportedFormat(manifest.versions.document) }
+        let bytes = try Data(contentsOf: url)
+        let header = try JSONDecoder().decode(FormatHeader.self, from: bytes)
+        guard header.formatVersion == 3 else { throw CanonicalError.unsupportedFormat(header.formatVersion) }
+        let manifest = try JSONDecoder().decode(Manifest.self, from: bytes)
+        guard manifest.versions.document == 3 else { throw CanonicalError.unsupportedFormat(manifest.versions.document) }
         return manifest
     }
 
-    private func readAll<T: Decodable & Identifiable>(_ folder: String,
-        onObservation: CanonicalObservationRecorder? = nil) throws -> [T] where T.ID == EntityID {
-        let directory = root.appendingPathComponent(folder, isDirectory: true)
-        let enumerationStart = onObservation == nil ? 0 : ProcessInfo.processInfo.systemUptime
-        let paths: [URL]
-        if manager.fileExists(atPath: directory.path) {
-            paths = try manager.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
-            .filter { $0.pathExtension == "json" }
-            .sorted { $0.lastPathComponent < $1.lastPathComponent }
-        } else {
-            paths = []
-        }
-        if let onObservation {
-            onObservation(CanonicalObservationMeasurement(stage: .directoryEnumeration, detail: folder,
-                milliseconds: (ProcessInfo.processInfo.systemUptime - enumerationStart) * 1_000,
-                pathCount: paths.count, folderCount: 1))
-        }
-        var readMilliseconds = 0.0
-        var decodeMilliseconds = 0.0
-        var bytesRead = 0
-        let values: [T] = try paths.map { url in
-            let readStart = onObservation == nil ? 0 : ProcessInfo.processInfo.systemUptime
-            let data = try Data(contentsOf: url)
-            if onObservation != nil {
-                readMilliseconds += (ProcessInfo.processInfo.systemUptime - readStart) * 1_000
-                bytesRead += data.count
-            }
-            let decodeStart = onObservation == nil ? 0 : ProcessInfo.processInfo.systemUptime
-            if folder == "screens" { try rejectV3SemanticsInV2(data, path: url.lastPathComponent) }
-            let value = try JSONDecoder().decode(T.self, from: data)
-            if onObservation != nil {
-                decodeMilliseconds += (ProcessInfo.processInfo.systemUptime - decodeStart) * 1_000
-            }
-            guard url.deletingPathExtension().lastPathComponent == value.id.rawValue else {
-                throw CanonicalError.filenameMismatch(url.lastPathComponent)
-            }
-            return value
-        }
-        if let onObservation {
-            onObservation(CanonicalObservationMeasurement(stage: .entityBytesRead, detail: folder,
-                milliseconds: readMilliseconds, bytes: bytesRead))
-            onObservation(CanonicalObservationMeasurement(stage: .entityDecode, detail: folder,
-                milliseconds: decodeMilliseconds))
-        }
-        return values
-    }
-
-    private func encode<T: Encodable>(_ value: T) throws -> Data {
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = [.sortedKeys, .prettyPrinted, .withoutEscapingSlashes]
-        var data = try encoder.encode(value)
-        data.append(0x0A)
-        return data
-    }
-
-    private func rejectV3SemanticsInV2(_ bytes: Data, path: String) throws {
-        guard let object = try JSONSerialization.jsonObject(with: bytes) as? [String: Any] else {
-            throw CanonicalError.transactionCorrupt("Invalid Screen JSON: \(path)")
-        }
-        guard object["semantics"] == nil else {
-            throw CanonicalError.transactionCorrupt("Screen semantics requires format v3: \(path)")
-        }
-    }
-
-    private func encodeAll<T: Encodable & Identifiable>(_ values: [T], folder: String, into files: inout [String: Data]) throws where T.ID == EntityID {
-        for value in values {
-            guard value.id.rawValue.range(of: "^[a-zA-Z0-9_-]+$", options: .regularExpression) != nil else {
-                throw CanonicalError.unsafeID(value.id.rawValue)
-            }
-            files["\(folder)/\(value.id.rawValue).json"] = try encode(value)
-        }
-    }
 }

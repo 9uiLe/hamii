@@ -53,12 +53,12 @@ final class FormatV1MigrationEdgeTests: XCTestCase {
         let plan = try MigrationPreflight.plan(repository: planRoot)
         XCTAssertEqual(plan.state, "migrationAvailable")
         XCTAssertTrue(plan.notes.contains { $0.contains("explicit publication") })
-        let candidate = try MigrationRegistry.transform(MigrationFileSet(files: source))
+        let candidate = try MigrationRegistry.transform(MigrationFileSet(files: source), to: 2)
         XCTAssertEqual(candidate.edgePath, ["1->2"])
         XCTAssertEqual(source, original)
         XCTAssertEqual(candidate.files.files.keys.sorted(), source.keys.sorted())
         for _ in 0..<3 {
-            XCTAssertEqual(try MigrationRegistry.transform(MigrationFileSet(files: source)).files.files, candidate.files.files)
+            XCTAssertEqual(try MigrationRegistry.transform(MigrationFileSet(files: source), to: 2).files.files, candidate.files.files)
         }
         for (path, bytes) in source where path != "hamii.json" && !path.hasPrefix("screens/") && !path.hasPrefix("components/") {
             XCTAssertEqual(candidate.files.files[path], bytes, path)
@@ -66,10 +66,12 @@ final class FormatV1MigrationEdgeTests: XCTestCase {
 
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
-        try materialize(candidate.files.files, at: root)
+        let final = try MigrationRegistry.applyEdge(candidate.files,
+            edge: MigrationEdge(sourceVersion: 2, targetVersion: 3))
+        try materialize(final.files.files, at: root)
         let repository = CanonicalRepository(root: root)
         let document = try repository.load()
-        XCTAssertEqual(document.versions.document, 2)
+        XCTAssertEqual(document.versions.document, 3)
         XCTAssertEqual(document.revision, 1)
         XCTAssertEqual(document.pages.count, 1)
         XCTAssertEqual(document.screens.count, 1)
@@ -93,7 +95,7 @@ final class FormatV1MigrationEdgeTests: XCTestCase {
 
         let manifest = try JSONDecoder().decode(DocumentManifestProbe.self, from: XCTUnwrap(candidate.files.files["hamii.json"]))
         XCTAssertEqual(candidate.files.files["hamii.json"], try canonicalBytes(manifest))
-        for (path, bytes) in candidate.files.files where path.hasPrefix("screens/") || path.hasPrefix("components/") {
+        for (path, bytes) in final.files.files where path.hasPrefix("screens/") || path.hasPrefix("components/") {
             if path.hasPrefix("screens/") { XCTAssertEqual(bytes, try canonicalBytes(JSONDecoder().decode(Screen.self, from: bytes)), path) }
             if path.hasPrefix("components/") { XCTAssertEqual(bytes, try canonicalBytes(JSONDecoder().decode(ComponentDefinition.self, from: bytes)), path) }
         }
@@ -128,7 +130,7 @@ final class FormatV1MigrationEdgeTests: XCTestCase {
         let analysis = try MigrationRegistry.analyze(MigrationFileSet(files: source))
         XCTAssertEqual(analysis.classification, .manual)
         XCTAssertTrue(analysis.diagnostics.contains { $0.code == "layer.crossKindResidual" && $0.entityID == "layer_title" })
-        XCTAssertThrowsError(try MigrationRegistry.transform(MigrationFileSet(files: source)))
+        XCTAssertThrowsError(try MigrationRegistry.transform(MigrationFileSet(files: source), to: 2))
         let temp = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: temp) }
         try materialize(source, at: temp)
@@ -144,16 +146,16 @@ final class FormatV1MigrationEdgeTests: XCTestCase {
         versions["document"] = 3
         manifest["versions"] = versions
         unknown["hamii.json"] = try JSONSerialization.data(withJSONObject: manifest)
-        XCTAssertThrowsError(try MigrationRegistry.transform(MigrationFileSet(files: unknown)))
+        XCTAssertThrowsError(try MigrationRegistry.transform(MigrationFileSet(files: unknown), to: 2))
         XCTAssertThrowsError(try MigrationRegistry.transform(MigrationFileSet(files: try sourceFiles()), to: 0))
     }
 
     func testVersionMarkersNoOpAndUnchangedBlobAreExplicit() throws {
         var source = try sourceFiles()
         source["assets/blobs/sha256/example"] = Data([0, 1, 2, 255])
-        let candidate = try MigrationRegistry.transform(MigrationFileSet(files: source))
+        let candidate = try MigrationRegistry.transform(MigrationFileSet(files: source), to: 2)
         XCTAssertEqual(candidate.files.files["assets/blobs/sha256/example"], source["assets/blobs/sha256/example"])
-        let current = try MigrationRegistry.transform(candidate.files)
+        let current = try MigrationRegistry.transform(candidate.files, to: 2)
         XCTAssertEqual(current.edgePath, [])
         XCTAssertEqual(current.files.files, candidate.files.files)
         var mixed = source
@@ -181,7 +183,7 @@ final class FormatV1MigrationEdgeTests: XCTestCase {
             entity["root"] = strip(try XCTUnwrap(entity["root"] as? [String: Any]))
             noPadding[path] = try JSONSerialization.data(withJSONObject: entity)
         }
-        let result = try MigrationRegistry.transform(MigrationFileSet(files: noPadding))
+        let result = try MigrationRegistry.transform(MigrationFileSet(files: noPadding), to: 2)
         let resultManifest = try XCTUnwrap(JSONSerialization.jsonObject(with: XCTUnwrap(result.files.files["hamii.json"])) as? [String: Any])
         let declarations = try XCTUnwrap(resultManifest["capabilityDeclarations"] as? [[String: Any]])
         XCTAssertFalse(declarations.contains { (($0["key"] as? [String: Any])?["rawValue"] as? String) == "effect.padding" })
@@ -202,7 +204,7 @@ final class FormatV1MigrationEdgeTests: XCTestCase {
         let analysis = try MigrationRegistry.analyze(MigrationFileSet(files: source))
         XCTAssertEqual(analysis.classification, .manual)
         XCTAssertEqual(Set(analysis.diagnostics.map(\.code)), ["schema.unknownField", "capability.ambiguousPadding"])
-        XCTAssertThrowsError(try MigrationRegistry.transform(MigrationFileSet(files: source)))
+        XCTAssertThrowsError(try MigrationRegistry.transform(MigrationFileSet(files: source), to: 2))
     }
 
     func testPreservedHistoricalCrossKindFixtureBlocksAutomaticCandidate() throws {

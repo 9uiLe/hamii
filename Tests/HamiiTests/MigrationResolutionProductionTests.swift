@@ -83,19 +83,21 @@ final class MigrationResolutionProductionTests: XCTestCase {
     }
 
     private func validCurrent(_ files: [String: Data]) throws -> Bool {
+        let final = try MigrationRegistry.applyEdge(MigrationFileSet(files: files),
+            edge: MigrationEdge(sourceVersion: 2, targetVersion: 3))
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
-        for (path, bytes) in files {
+        for (path, bytes) in final.files.files {
             let url = root.appendingPathComponent(path)
             try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
             try bytes.write(to: url)
         }
         let document = try CanonicalRepository(root: root).load()
-        return document.versions.document == 2 && DocumentValidator.validate(document).isEmpty
+        return document.versions.document == 3 && DocumentValidator.validate(document).isEmpty
     }
 
     func testResolutionCannotApplyWhenItsEdgeIsAbsentFromRoute() throws {
-        let current = try MigrationRegistry.transform(MigrationFileSet(files: source())).files
+        let current = try MigrationRegistry.transform(MigrationFileSet(files: source()), to: 2).files
         let currentBinding = binding(current.files)
         let irrelevant = MigrationResolutionManifest(source: currentBinding, decisions: [])
         XCTAssertThrowsError(try MigrationRegistry.resolutionReport(current,
@@ -236,11 +238,11 @@ final class MigrationResolutionProductionTests: XCTestCase {
                 JSONSerialization.data(withJSONObject: json)), mutation)
         }
         let safe = try source()
-        let automatic = try MigrationRegistry.transform(MigrationFileSet(files: safe))
+        let automatic = try MigrationRegistry.transform(MigrationFileSet(files: safe), to: 2)
         XCTAssertEqual(automatic.classification, .losslessWithNormalization)
         XCTAssertTrue(automatic.resolutionDecisions.isEmpty)
         XCTAssertTrue(automatic.losses.isEmpty)
         XCTAssertEqual(automatic.files.files,
-            try MigrationRegistry.transform(MigrationFileSet(files: safe)).files.files)
+            try MigrationRegistry.transform(MigrationFileSet(files: safe), to: 2).files.files)
     }
 }

@@ -58,9 +58,9 @@ public enum MigrationEdgeFailure: Error, CustomStringConvertible {
     }
 }
 
-/// Installed adjacent edges. Format v2 remains Current until the v3 cutover.
+/// Installed adjacent edges for Current Format v3.
 public enum MigrationRegistry {
-    public static let currentDocumentFormatVersion = 2
+    public static let currentDocumentFormatVersion = 3
     private static let v1ToV2 = MigrationEdge(sourceVersion: 1, targetVersion: 2)
     private static let v2ToV3 = MigrationEdge(sourceVersion: 2, targetVersion: 3)
     public static let installedEdges = [v1ToV2, v2ToV3]
@@ -76,10 +76,19 @@ public enum MigrationRegistry {
             return MigrationAnalysis(sourceVersion: version, targetVersion: target,
                                      classification: nil, diagnostics: [], edgeAvailable: false)
         }
-        guard route.edges.count == 1, let edge = route.edges.first else {
-            throw MigrationEdgeFailure.noPath(source: version, target: target)
+        var files = source
+        for (index, edge) in route.edges.enumerated() {
+            let analysis = try analyzeEdge(files, edge: edge)
+            if !analysis.diagnostics.isEmpty {
+                return MigrationAnalysis(sourceVersion: version, targetVersion: target,
+                    classification: .manual, diagnostics: analysis.diagnostics, edgeAvailable: true)
+            }
+            if index < route.edges.count - 1 {
+                files = try applyEdge(files, edge: edge).files
+            }
         }
-        return try analyzeEdge(source, edge: edge)
+        return MigrationAnalysis(sourceVersion: version, targetVersion: target,
+            classification: .losslessWithNormalization, diagnostics: [], edgeAvailable: true)
     }
 
     /// An adjacent edge may be analyzed independently of the Current format.

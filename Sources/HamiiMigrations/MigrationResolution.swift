@@ -260,7 +260,7 @@ extension MigrationRegistry {
         let post = try analyze(MigrationFileSet(files: edited))
         guard post.diagnostics.isEmpty else { throw MigrationResolutionFailure.unresolved(try resolutionReport(
             MigrationFileSet(files: edited), sourceBinding: actualSourceBinding).items.map(\.id)) }
-        let base = try transform(MigrationFileSet(files: edited))
+        let base = try transform(MigrationFileSet(files: edited), to: 2)
         return MigrationCandidate(files: base.files, sourceVersion: base.sourceVersion,
             targetVersion: base.targetVersion, edgePath: base.edgePath,
             classification: losses.isEmpty ? .losslessWithNormalization : .potentiallyLossy,

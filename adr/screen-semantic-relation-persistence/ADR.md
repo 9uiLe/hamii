@@ -2,7 +2,7 @@
 
 ## Context
 
-The Product Integration Contract decision requires a screen-level contract with typed semantic sources and relations. The current `Screen` stores a layer tree and navigation, while `IntegrationContract` can represent optional typed relations that the current IR cannot extract. A free `SemanticOutputKey` does not identify a concrete screen output. The current Canonical Document Format is v2, and its migration registry has only a v1→v2 edge.
+The Product Integration Contract decision requires a screen-level contract with typed semantic sources and relations. Current `Screen` owns a layer tree, navigation, and nonoptional typed semantic declarations. `IntegrationContract` extracts declared sources, outputs, and relations. A free `SemanticOutputKey` alone does not identify a concrete screen output. Current Canonical Document Format is v3; the Migration boundary contains adjacent 1→2 and 2→3 edges.
 
 ## Decision to Make
 
@@ -13,7 +13,7 @@ Where should screen-level typed semantic sources, outputs, and relations be owne
 - hamii IR remains Product independent. Product symbols and Repository Profile mappings do not enter these declarations.
 - Every relation output must resolve through a unique declared screen output to an existing binding/input anchor. Missing, duplicate, or dangling identities fail validation.
 - v2 `textBinding` and `Interaction.states` do not imply visibility, nil behavior, transform, or a typed relation. Migration must not infer them.
-- Current Core reads only Current Format. v3 requires an isolated migration path from both v2 and v1 repositories, and older v2 readers must reject v3.
+- Current Core reads only v3. Historical v1/v2 repositories require an isolated reviewed migration path, and older v2 readers reject v3.
 - `Document.versions.integrationProfile` is the independent Repository Profile version and must not be repurposed.
 - CanonicalSnapshot identity, client preconditions, worktree transactions, and migration publication must observe every new Canonical byte.
 
@@ -40,19 +40,20 @@ The sidecar option isolates relation-only diffs, but the measured unregistered s
 
 ## Unknowns
 
-- How will the Current v3 reader/writer and public migration publication switch together while retaining v2 project access through the reviewed migration path?
-- How will Current v3 migration candidate/review/publication compose older edges? This independent decision is tracked in [Migration Edge Composition](../migration-edge-composition/ADR.md).
+- The ownership decision and Current v3 implementation are complete. Validate the integrated cutover against the full local gate and exact pushed SHA Verify before evaluating ADR closure.
+- Route composition and legacy pending recovery are tracked in [Migration Edge Composition](../migration-edge-composition/ADR.md).
 
 ## Required Evidence
 
 [Canonical layout and v3 Spike](spikes/canonical-layout-and-v3/SPIKE.md) compared both layouts with test-only prototypes. It found that the current v2 decoder drops new Screen fields under a v2 marker, and an unregistered sidecar is invisible to Snapshot identity and client preconditions. It demonstrated direct-Screen anchor validation, candidate round-trip, v2 reader rejection of a v3 marker, and sequential v1→v2 plus test-only v2→v3 transformation. [Component output anchor Spike](spikes/component-output-anchor/SPIKE.md) then tested repeated and nested Component occurrences, Variant/slot resolution, invalid anchor rejection, and candidate contract projection using actual resolver code.
 
-The production candidate seam now keeps semantic declarations in Core, validates direct and occurrence anchors against raw and resolved trees, and rejects a slot replacement that reuses a definition Layer ID. A strict v3 file-set codec requires explicit Screen semantics and matching v3 markers. The Current v2 reader and migration preflight reject a semantics field under a v2 marker. Integration Contract extraction consumes valid in-memory v3 semantics while v2 JSON shape remains unchanged. Tests exercise relation edits through the existing Canonical transaction journal at prepared, ready, Screen shard apply, manifest apply, and complete/cleanup, requiring exact old or new v3 file sets after recovery. These are implementation evidence for the candidate seam, not evidence that v3 is Current. The Current switch and public migration publication remain outstanding. Migration path composition is tracked separately in [Migration Edge Composition](../migration-edge-composition/ADR.md).
-The real 2→3 raw-byte edge now adds explicit empty semantics to every v2 Screen, infers no relation, and preserves all other Canonical file bytes except the two document markers. Actual 2→3 and 1→2→3 replay validate final v3 bytes with the strict codec and `DocumentValidator`. This proves an explicit target candidate path; the Current v2 reader, public prepare, and publication remain unchanged.
+The strict Current v3 codec and `CanonicalRepository` require explicit Screen semantics and matching 3/3 markers. Current authoring creates `.empty` semantics, and the Screen shard participates in the existing journal, CanonicalSnapshot identity, ClientPrecondition, and strict save/reopen validation. Core validates direct and Component occurrence anchors against raw and resolved trees and rejects slot replacement that reuses a definition Layer ID. `IntegrationContract` extracts Current declarations and represents empty semantics as empty lists. The real 2→3 raw-byte edge adds empty semantics without inferring relations and preserves unrelated Canonical bytes. Both historical v1 and v2 sources prepare reviewed v3 candidates; final publication remains subject to the separate Migration Edge Composition decision and its validation gates.
+
+Focused Current v3 codec, transaction, and repository tests passed 15/15; single-pass snapshot/error-boundary tests passed 7/7. The reviewed v1/v2 CLI migration path reached v3 and completed inspect, validation, and Query in the focused end-to-end test. Full gate and exact-SHA CI remain separate completion evidence.
 
 ## Decision Criteria
 
-Ownership is decided from the measured existing Screen path coverage, sidecar observation gap, candidate semantic round-trip, occurrence-safe anchor validation, and candidate identity change when relation bytes are included. The chosen implementation must add production extraction/validation, strict v3 reader separation, and a noninventive v2→v3 edge. A safe v1→Current path remains blocked on [Migration Edge Composition](../migration-edge-composition/ADR.md). Preserve the [Product Integration Contract decision](../product-integration-contract/ADR.md) and its `Needs Resolution` rule.
+Ownership is decided from the measured existing Screen path coverage, sidecar observation gap, candidate semantic round-trip, occurrence-safe anchor validation, and candidate identity change when relation bytes are included. The chosen implementation must add production extraction/validation, strict v3 reader separation, and a noninventive v2→v3 edge. The reviewed v1→2→3 path and publication must pass the integrated verification in [Migration Edge Composition](../migration-edge-composition/ADR.md). Preserve the [Product Integration Contract decision](../product-integration-contract/ADR.md) and its `Needs Resolution` rule.
 
 ## Implementation Gates
 

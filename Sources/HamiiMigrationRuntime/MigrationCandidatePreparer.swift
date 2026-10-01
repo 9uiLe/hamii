@@ -74,16 +74,83 @@ public struct MigrationReviewPackage: Codable {
     public let resolutionAudit: MigrationResolutionAudit?
 }
 
+/// CLI/API view of the newly prepared candidate. The persisted record-3 review
+/// is the publication authority; this value is only a compatibility projection.
+public struct MigrationPreparedReview: Encodable {
+    public let recordFormatVersion: Int
+    public let reviewID: String
+    public let sourceRef: String
+    public let sourceOID: String
+    public let sourceTreeOID: String
+    public let sourceCanonicalRevision: String
+    public let sourceCanonicalIdentity: String
+    public let sourceFormatVersion: Int
+    public let targetFormatVersion: Int
+    public let sourceDocumentRevision: Int
+    public let candidateDocumentRevision: Int
+    public let classification: MigrationClassification
+    public let edgePath: [String]
+    public let receipts: [MigrationEdgeReceipt]
+    public let edgeResolutionAudits: [MigrationPreparedEdgeResolutionAudit]
+    public let candidateOID: String
+    public let candidateTreeOID: String
+    public let retentionRef: String
+    public let changedPaths: [String]
+    public let diffNameStatus: String
+    public let diffStat: String
+    public let validation: MigrationValidationResult
+    public let indexValidation: MigrationIndexValidationResult
+    public let resolutionAudit: MigrationResolutionAudit?
+
+    init(_ review: MigrationComposedReviewPackage) {
+        recordFormatVersion = review.recordFormatVersion
+        reviewID = review.reviewID
+        sourceRef = review.sourceRef
+        sourceOID = review.sourceOID
+        sourceTreeOID = review.sourceTreeOID
+        sourceCanonicalRevision = review.sourceCanonicalRevision
+        sourceCanonicalIdentity = review.sourceCanonicalIdentity
+        sourceFormatVersion = review.sourceFormatVersion
+        targetFormatVersion = review.targetFormatVersion
+        sourceDocumentRevision = review.sourceDocumentRevision
+        candidateDocumentRevision = review.candidateDocumentRevision
+        classification = review.classification
+        edgePath = review.edgePath
+        receipts = review.receipts
+        edgeResolutionAudits = review.edgeResolutionAudits.map(MigrationPreparedEdgeResolutionAudit.init)
+        candidateOID = review.candidateOID
+        candidateTreeOID = review.candidateTreeOID
+        retentionRef = review.retentionRef
+        changedPaths = review.changedPaths
+        diffNameStatus = review.diffNameStatus
+        diffStat = review.diffStat
+        validation = review.validation
+        indexValidation = review.indexValidation
+        resolutionAudit = review.edgeResolutionAudits.first(where: { $0.edgeID == "1->2" }).map {
+            MigrationResolutionAudit(manifest: $0.manifest, decisions: $0.decisions, losses: $0.losses)
+        }
+    }
+}
+
+public struct MigrationPreparedEdgeResolutionAudit: Encodable {
+    public let edgeID: String
+    public let manifest: MigrationResolutionManifest
+    public let decisions: [MigrationResolutionDecision]
+    public let losses: [MigrationResolutionLoss]
+
+    init(_ audit: MigrationComposedEdgeResolutionAudit) {
+        edgeID = audit.edgeID
+        manifest = audit.manifest
+        decisions = audit.decisions
+        losses = audit.losses
+    }
+}
+
 enum MigrationPreparationStep {
     case afterTransform(URL)
     case beforeCurrentValidation(URL)
     case beforeIndexValidation(URL)
     case beforeRetention(URL)
-}
-
-private enum PreparedMigrationReview {
-    case legacy(MigrationReviewPackage)
-    case composed(MigrationComposedReviewPackage)
 }
 
 public final class MigrationCandidatePreparer {
@@ -104,29 +171,17 @@ public final class MigrationCandidatePreparer {
     }
 
     public func prepare(repository sourceRoot: URL,
-                        resolution: MigrationResolutionManifest? = nil) throws -> MigrationReviewPackage {
-        guard case .legacy(let review) = try prepareCandidate(repository: sourceRoot,
-            resolution: resolution, composedReview: false) else {
-            throw MigrationPreparationError.invalidCandidate("Legacy review construction failed")
-        }
-        return review
+                        resolution: MigrationResolutionManifest? = nil) throws -> MigrationPreparedReview {
+        MigrationPreparedReview(try prepareCandidate(repository: sourceRoot, resolution: resolution))
     }
 
-    /// Exercises the reviewed route protocol with the installed 1→2 edge.
-    /// The public writer remains on review formats 1/2 until a composed route
-    /// to a new Current format is installed.
     func prepareComposed(repository sourceRoot: URL,
                          resolution: MigrationResolutionManifest? = nil) throws -> MigrationComposedReviewPackage {
-        guard case .composed(let review) = try prepareCandidate(repository: sourceRoot,
-            resolution: resolution, composedReview: true) else {
-            throw MigrationPreparationError.invalidCandidate("Composed review construction failed")
-        }
-        return review
+        try prepareCandidate(repository: sourceRoot, resolution: resolution)
     }
 
     private func prepareCandidate(repository sourceRoot: URL,
-                                  resolution: MigrationResolutionManifest?,
-                                  composedReview: Bool) throws -> PreparedMigrationReview {
+                                  resolution: MigrationResolutionManifest?) throws -> MigrationComposedReviewPackage {
         let sourceRoot = sourceRoot.standardizedFileURL
         let coordinator = WorktreeCoordinator(root: sourceRoot)
         let source = try coordinator.withReadyExclusive {
@@ -160,21 +215,21 @@ public final class MigrationCandidatePreparer {
             }
         }
         let route = try MigrationRegistry.route(from: analysis.sourceVersion)
-        let replay = try MigrationRouteReplay.run(historical, route: route, resolution: resolution,
-            sourceBinding: resolution == nil ? nil : binding(source))
-        guard let candidate = replay.singleEdgeCandidate,
-              replay.receipts.count == 1,
-              replay.finalFiles.files == candidate.files.files else {
-            throw MigrationPreparationError.invalidCandidate("Current review format requires one installed edge")
+        if resolution != nil && analysis.sourceVersion != 1 {
+            throw MigrationResolutionFailure.invalidManifest
         }
-        guard candidate.remainingUnresolved.isEmpty,
-              candidate.classification == .losslessWithNormalization || candidate.classification == .potentiallyLossy else {
-            throw MigrationPreparationError.migrationUnavailable(candidate.diagnostics.map(\.blocker))
+        let edgeResolutions = resolution.map {
+            [MigrationEdgeResolutionInput(edgeID: "1->2", manifest: $0, sourceBinding: binding(source))]
+        } ?? []
+        let replay = try MigrationRouteReplay.run(historical, route: route, edgeResolutions: edgeResolutions)
+        guard replay.receipts.count == route.edges.count,
+              replay.receipts.allSatisfy({ $0.classification != .manual }) else {
+            throw MigrationPreparationError.invalidCandidate("Route replay did not produce reviewed edge receipts")
         }
-        let expected = changedPaths(before: historical.files, after: candidate.files.files)
+        let expected = changedPaths(before: historical.files, after: replay.finalFiles.files)
         guard !expected.isEmpty else { throw MigrationPreparationError.invalidCandidate("Migration produced no Canonical changes") }
         for path in expected {
-            guard let bytes = candidate.files.files[path] else {
+            guard let bytes = replay.finalFiles.files[path] else {
                 throw MigrationPreparationError.invalidCandidate("Migration removed Canonical path \(path)")
             }
             try bytes.write(to: candidateRoot.appendingPathComponent(path), options: .atomic)
@@ -186,7 +241,7 @@ public final class MigrationCandidatePreparer {
         // Actual Current Format parser, semantic validator and asset verifier.
         let candidateRepository = CanonicalRepository(root: candidateRoot)
         let precommit = try candidateRepository.withCoordinatedSnapshot { $0 }
-        guard precommit.document.versions.document == 2,
+        guard precommit.document.versions.document == MigrationRegistry.currentDocumentFormatVersion,
               precommit.document.revision == source.documentRevision else {
             throw MigrationPreparationError.invalidCandidate("Current Format or DocumentRevision changed unexpectedly")
         }
@@ -195,7 +250,8 @@ public final class MigrationCandidatePreparer {
         let staged = try gitPaths(GitCommand.runData(at: candidateRoot, ["diff", "--cached", "--name-only", "-z"]))
         guard staged == expected else { throw MigrationPreparationError.unexpectedPaths(expected: expected, actual: staged) }
         _ = try git(candidateRoot, "-c", "user.name=hamii", "-c", "user.email=hamii@localhost",
-                    "-c", "core.hooksPath=/dev/null", "commit", "--no-gpg-sign", "-m", "Migrate hamii document format v1 to v2")
+                    "-c", "core.hooksPath=/dev/null", "commit", "--no-gpg-sign", "-m",
+                    "Migrate hamii document format v\(analysis.sourceVersion) to v\(route.targetVersion)")
         let candidateOID = try git(candidateRoot, "rev-parse", "HEAD")
         let parents = try git(candidateRoot, "rev-list", "--parents", "-n", "1", candidateOID).split(separator: " ").map(String.init)
         guard parents == [candidateOID, source.oid] else { throw MigrationPreparationError.invalidCandidate("Candidate must have the exact source OID as its sole parent") }
@@ -240,49 +296,39 @@ public final class MigrationCandidatePreparer {
             let stat = try git(sourceRoot, "diff", "--stat", source.oid, candidateOID)
             return (nameStatus, stat)
         }
-        let audit = resolution.map {
-            MigrationResolutionAudit(manifest: $0, decisions: candidate.resolutionDecisions, losses: candidate.losses)
+        let edgeAudits: [MigrationComposedEdgeResolutionAudit]
+        if let resolution {
+            guard let receipt = replay.receipts.first(where: { $0.edgeID == "1->2" }) else {
+                throw MigrationPreparationError.invalidCandidate("Resolved edge has no receipt")
+            }
+            edgeAudits = [MigrationComposedEdgeResolutionAudit(edgeID: receipt.edgeID,
+                manifest: resolution, decisions: receipt.resolutionDecisions, losses: receipt.losses)]
+        } else {
+            edgeAudits = []
         }
-        let validation = MigrationValidationResult(currentFormat: 2,
+        let validation = MigrationValidationResult(currentFormat: route.targetVersion,
             canonicalSnapshotIdentity: committed.identity.rawValue,
             documentID: committed.document.id.rawValue, documentRevision: committed.document.revision)
         let indexValidation = MigrationIndexValidationResult(
             sourceCanonicalIdentity: generation.sourceCanonicalIdentity.rawValue,
             indexGenerationID: generation.id.rawValue, canonicalRevision: canonicalRevision.rawValue)
-        let review: PreparedMigrationReview
-        if composedReview {
-            let edgeAudits = audit.map {
-                [MigrationComposedEdgeResolutionAudit(edgeID: candidate.edgePath[0],
-                    manifest: $0.manifest, decisions: $0.decisions, losses: $0.losses)]
-            } ?? []
-            let composed = MigrationComposedReviewPackage(recordFormatVersion: 3, reviewID: reviewID,
-                sourceRef: source.ref, sourceOID: source.oid,
-                sourceTreeOID: source.treeOID, sourceCanonicalRevision: source.canonicalRevision.rawValue,
-                sourceCanonicalIdentity: source.identity.rawValue,
-                sourceFormatVersion: 1, targetFormatVersion: 2,
-                sourceDocumentRevision: source.documentRevision,
-                candidateDocumentRevision: committed.document.revision,
-                classification: candidate.classification ?? .manual, receipts: replay.receipts,
-                edgeResolutionAudits: edgeAudits,
-                candidateOID: candidateOID, candidateTreeOID: candidateTreeOID,
-                retentionRef: retentionRef, changedPaths: expected,
-                diffNameStatus: nameStatus, diffStat: stat,
-                validation: validation, indexValidation: indexValidation)
-            try composed.validateShape()
-            review = .composed(composed)
-        } else {
-            review = .legacy(MigrationReviewPackage(recordFormatVersion: audit == nil ? 1 : 2,
-                reviewID: reviewID, sourceRef: source.ref, sourceOID: source.oid,
-                sourceTreeOID: source.treeOID, sourceCanonicalRevision: source.canonicalRevision.rawValue,
-                sourceCanonicalIdentity: source.identity.rawValue,
-                sourceFormatVersion: 1, targetFormatVersion: 2,
-                sourceDocumentRevision: source.documentRevision,
-                candidateDocumentRevision: committed.document.revision,
-                classification: candidate.classification ?? .manual, edgePath: candidate.edgePath,
-                candidateOID: candidateOID, candidateTreeOID: candidateTreeOID, retentionRef: retentionRef,
-                changedPaths: expected, diffNameStatus: nameStatus, diffStat: stat,
-                validation: validation, indexValidation: indexValidation, resolutionAudit: audit))
-        }
+        let classification: MigrationClassification = replay.receipts.contains(where: { $0.classification == .potentiallyLossy })
+            ? .potentiallyLossy : replay.receipts.contains(where: { $0.classification == .losslessWithNormalization })
+            ? .losslessWithNormalization : .lossless
+        let review = MigrationComposedReviewPackage(recordFormatVersion: 3, reviewID: reviewID,
+            sourceRef: source.ref, sourceOID: source.oid,
+            sourceTreeOID: source.treeOID, sourceCanonicalRevision: source.canonicalRevision.rawValue,
+            sourceCanonicalIdentity: source.identity.rawValue,
+            sourceFormatVersion: analysis.sourceVersion, targetFormatVersion: route.targetVersion,
+            sourceDocumentRevision: source.documentRevision,
+            candidateDocumentRevision: committed.document.revision,
+            classification: classification, receipts: replay.receipts,
+            edgeResolutionAudits: edgeAudits,
+            candidateOID: candidateOID, candidateTreeOID: candidateTreeOID,
+            retentionRef: retentionRef, changedPaths: expected,
+            diffNameStatus: nameStatus, diffStat: stat,
+            validation: validation, indexValidation: indexValidation)
+        try review.validateShape()
         try coordinator.withReadyExclusive {
             try requireClean(sourceRoot)
             guard try git(sourceRoot, "symbolic-ref", "--quiet", "HEAD") == source.ref,
@@ -292,12 +338,7 @@ public final class MigrationCandidatePreparer {
                 throw MigrationPreparationError.staleSource
             }
             _ = try git(sourceRoot, "update-ref", retentionRef, candidateOID, String(repeating: "0", count: source.oid.count))
-            do {
-                switch review {
-                case .legacy(let package): try MigrationReviewStore(root: sourceRoot).write(package)
-                case .composed(let package): try MigrationReviewStore(root: sourceRoot).writeComposed(package)
-                }
-            }
+            do { try MigrationReviewStore(root: sourceRoot).writeComposed(review) }
             catch {
                 _ = try? git(sourceRoot, "update-ref", "-d", retentionRef, candidateOID)
                 throw error
@@ -328,9 +369,10 @@ public final class MigrationCandidatePreparer {
         let canonicalRevision = try GitCanonicalRevisionCalculator().current(at: root)
         let plan = try MigrationPreflight.plan(repository: root)
         if plan.state == "current" { throw MigrationPreparationError.alreadyCurrent }
-        guard plan.sourceDocumentFormatVersion == 1,
+        guard plan.sourceDocumentFormatVersion == 1 || plan.sourceDocumentFormatVersion == 2,
               (plan.state == "migrationAvailable" && plan.classification == .losslessWithNormalization ||
-               allowResolution && plan.state == "requiresResolution") else {
+               allowResolution && plan.sourceDocumentFormatVersion == 1 &&
+                   plan.state == "requiresResolution") else {
             throw MigrationPreparationError.migrationUnavailable(plan.blockers)
         }
         let files = try MigrationRepositoryInput.load(from: root)

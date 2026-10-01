@@ -40,12 +40,23 @@ final class MigrationRouteReplayTests: XCTestCase {
     func testAutomaticOneEdgeReplayMatchesDirectTransformAndRejectsTamperedBytes() throws {
         let original = try source()
         let route = try MigrationRegistry.route(from: 1, to: 2)
-        let direct = try MigrationRegistry.transform(original)
+        let direct = try MigrationRegistry.transform(original, to: 2)
         let first = try MigrationRouteReplay.run(original, route: route)
         let second = try MigrationRouteReplay.run(original, route: route)
         try assertSameOneEdgeResult(first, as: direct, original: original)
         XCTAssertEqual(first.finalFiles.files, second.finalFiles.files)
         XCTAssertEqual(first.receipts, second.receipts)
+
+        let currentRoute = try MigrationRegistry.route(from: 1)
+        let currentReplay = try MigrationRouteReplay.run(original, route: currentRoute)
+        let finalEdge = try MigrationRegistry.applyEdge(direct.files,
+            edge: MigrationEdge(sourceVersion: 2, targetVersion: 3))
+        XCTAssertEqual(currentReplay.receipts.map(\.edgeID), ["1->2", "2->3"])
+        XCTAssertEqual(currentReplay.receipts[0], first.receipts[0])
+        XCTAssertEqual(currentReplay.finalFiles.files, finalEdge.files.files)
+        try MigrationReceiptChain.validate(currentReplay.receipts, for: currentRoute,
+            sourceIdentity: currentReplay.receipts[0].inputIdentity,
+            finalIdentity: currentReplay.receipts[1].outputIdentity)
 
         var tampered = first.finalFiles.files
         tampered["hamii.json"]?.append(0x20)

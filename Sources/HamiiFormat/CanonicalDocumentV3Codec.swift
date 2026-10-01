@@ -1,14 +1,17 @@
 import Foundation
 import HamiiCore
 
-/// An isolated candidate codec. The installed CanonicalRepository remains v2
-/// until the reviewed v3 publication path and Current-format cutover are ready.
+/// The strict Current Canonical Document Format codec.
 package enum CanonicalDocumentV3Codec {
     enum Failure: Error, Equatable, CustomStringConvertible {
         case invalid(String)
+        case filenameMismatch(String)
 
         var description: String {
-            switch self { case .invalid(let detail): "Invalid Canonical v3: \(detail)" }
+            switch self {
+            case .invalid(let detail): "Invalid Canonical v3: \(detail)"
+            case .filenameMismatch(let path): "Canonical file name does not match stable ID: \(path)"
+            }
         }
     }
 
@@ -32,9 +35,6 @@ package enum CanonicalDocumentV3Codec {
         guard document.versions.document == 3, document.versions.authoringHarness == 1 else {
             throw Failure.invalid("document and authoringHarness versions must be 3 and 1")
         }
-        guard document.screens.allSatisfy({ $0.semantics != nil }) else {
-            throw Failure.invalid("each Screen requires semantics")
-        }
         var files: [String: Data] = [:]
         try add(document.pages, folder: "pages", to: &files)
         try add(document.screens, folder: "screens", to: &files)
@@ -54,7 +54,12 @@ package enum CanonicalDocumentV3Codec {
         return files
     }
 
-    package static func decode(files: [String: Data]) throws -> Document {
+    package static func decode(
+        files: [String: Data],
+        onManifestDecoded: ((Double) -> Void)? = nil,
+        onFolderDecoded: ((String, Double) -> Void)? = nil,
+        onProfilesValidated: ((Double) -> Void)? = nil
+    ) throws -> Document {
         guard let manifestBytes = files["hamii.json"] else {
             throw Failure.invalid("missing hamii.json")
         }
@@ -66,13 +71,17 @@ package enum CanonicalDocumentV3Codec {
                 throw Failure.invalid("unexpected Canonical path: \(path)")
             }
         }
+        let manifestStart = ProcessInfo.processInfo.systemUptime
         let manifest: Manifest = try strictDecode(Manifest.self, bytes: manifestBytes, path: "hamii.json")
+        onManifestDecoded?((ProcessInfo.processInfo.systemUptime - manifestStart) * 1_000)
         guard manifest.formatVersion == 3, manifest.versions.document == 3,
               manifest.versions.authoringHarness == 1 else {
             throw Failure.invalid("manifest formatVersion, versions.document, and authoringHarness must be 3, 3, and 1")
         }
         if let profiles = files["hamii-agent-profiles.json"] {
+            let profilesStart = ProcessInfo.processInfo.systemUptime
             _ = try AgentProfilesRepository.decodeProfiles(from: profiles)
+            onProfilesValidated?((ProcessInfo.processInfo.systemUptime - profilesStart) * 1_000)
         }
         var document = Document(name: manifest.name)
         document.id = manifest.id
@@ -81,19 +90,22 @@ package enum CanonicalDocumentV3Codec {
         document.authoringHarness = manifest.authoringHarness
         document.capabilityDeclarations = manifest.capabilityDeclarations
         document.tokenTemplate = manifest.tokenTemplate
-        document.pages = try decodeAll(Page.self, folder: "pages", files: files)
-        document.screens = try decodeAll(Screen.self, folder: "screens", files: files)
-        document.scopes = try decodeAll(ArchitectureScope.self, folder: "scopes", files: files)
-        document.components = try decodeAll(ComponentDefinition.self, folder: "components", files: files)
-        document.tokens = try decodeAll(DesignToken.self, folder: "tokens", files: files)
-        document.assets = try decodeAll(Asset.self, folder: "assets", files: files)
-        document.interactions = try decodeAll(Interaction.self, folder: "interactions", files: files)
-        document.motions = try decodeAll(Motion.self, folder: "motions", files: files)
-        document.fixtures = try decodeAll(PreviewFixture.self, folder: "fixtures", files: files)
-        document.targets = try decodeAll(Target.self, folder: "targets", files: files)
-        guard document.screens.allSatisfy({ $0.semantics != nil }) else {
-            throw Failure.invalid("each Screen requires semantics")
+        func decodeFolder<T: Codable & Identifiable>(_ type: T.Type, _ folder: String) throws -> [T] where T.ID == EntityID {
+            let started = ProcessInfo.processInfo.systemUptime
+            let values = try decodeAll(type, folder: folder, files: files)
+            onFolderDecoded?(folder, (ProcessInfo.processInfo.systemUptime - started) * 1_000)
+            return values
         }
+        document.pages = try decodeFolder(Page.self, "pages")
+        document.screens = try decodeFolder(Screen.self, "screens")
+        document.scopes = try decodeFolder(ArchitectureScope.self, "scopes")
+        document.components = try decodeFolder(ComponentDefinition.self, "components")
+        document.tokens = try decodeFolder(DesignToken.self, "tokens")
+        document.assets = try decodeFolder(Asset.self, "assets")
+        document.interactions = try decodeFolder(Interaction.self, "interactions")
+        document.motions = try decodeFolder(Motion.self, "motions")
+        document.fixtures = try decodeFolder(PreviewFixture.self, "fixtures")
+        document.targets = try decodeFolder(Target.self, "targets")
         return document
     }
 
@@ -115,7 +127,7 @@ package enum CanonicalDocumentV3Codec {
             guard let bytes = files[path] else { throw Failure.invalid("missing \(path)") }
             let value: T = try strictDecode(T.self, bytes: bytes, path: path)
             guard path == "\(folder)/\(value.id.rawValue).json" else {
-                throw Failure.invalid("filename does not match stable ID: \(path)")
+                throw Failure.filenameMismatch(path)
             }
             return value
         }

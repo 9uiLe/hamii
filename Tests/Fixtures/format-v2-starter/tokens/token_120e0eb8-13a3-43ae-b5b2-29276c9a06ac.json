@@ -1,0 +1,15 @@
+{
+  "id" : {
+    "rawValue" : "token_120e0eb8-13a3-43ae-b5b2-29276c9a06ac"
+  },
+  "kind" : "spacing",
+  "name" : "spacing.base",
+  "ownerScopeID" : {
+    "rawValue" : "scope_7eb344ab-f605-4994-8c3c-fba4e8c823c0"
+  },
+  "value" : {
+    "literal" : {
+      "_0" : "12"
+    }
+  }
+}

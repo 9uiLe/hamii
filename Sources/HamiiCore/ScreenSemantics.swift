@@ -216,6 +216,8 @@ public struct SemanticOutput: Codable, Equatable, Sendable {
 }
 
 public struct ScreenSemantics: Codable, Equatable, Sendable {
+    public static let empty = ScreenSemantics()
+
     public var sources: [SemanticSource]
     public var outputs: [SemanticOutput]
     public var relations: [SemanticRelation]

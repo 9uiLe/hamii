@@ -8,7 +8,7 @@ final class FormatV2MigrationEdgeTests: XCTestCase {
     private func starter() throws -> MigrationFileSet {
         let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
             .deletingLastPathComponent().deletingLastPathComponent()
-            .appendingPathComponent("Samples/Starter")
+            .appendingPathComponent("Tests/Fixtures/format-v2-starter")
         return try MigrationRepositoryInput.load(from: root)
     }
 
