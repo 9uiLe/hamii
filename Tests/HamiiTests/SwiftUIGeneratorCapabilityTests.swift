@@ -121,7 +121,7 @@ final class SwiftUIGeneratorCapabilityTests: XCTestCase {
         assertUnsupported(image, at: image.screens[0].root.id)
     }
 
-    func testLayoutTokensAndInteractionStayBlocked() {
+    func testStackSpacingAndInteractionStayBlockedWhilePaddingLowers() throws {
         let root = Layer(id: EntityID("layer_root"), name: "Text", payload: .text(TextLayerPayload(value: "Hello")))
         var project = document(root: root)
         declare([CapabilityKeys.legacyText], in: &project)
@@ -138,7 +138,7 @@ final class SwiftUIGeneratorCapabilityTests: XCTestCase {
         padding.screens[0].root.effects = [.padding(tokenID: tokenID)]
         declare([CapabilityKeys.paddingEffect], in: &padding)
         XCTAssertEqual(DocumentValidator.validate(padding), [])
-        assertUnsupported(padding, at: root.id)
+        XCTAssertTrue(try generate(padding).contains(".padding(12.0)"))
 
         var interaction = project
         let interactionID = EntityID("interaction_tap")
@@ -147,6 +147,72 @@ final class SwiftUIGeneratorCapabilityTests: XCTestCase {
         declare([CapabilityKeys.interactionRuntime], in: &interaction)
         XCTAssertEqual(DocumentValidator.validate(interaction), [])
         assertUnsupported(interaction, at: root.id)
+    }
+
+    func testPaddingKeepsStoredOrderAndResolvesAlias() throws {
+        let first = EntityID("space_four")
+        let second = EntityID("space_twelve")
+        let alias = EntityID("space_alias")
+        let root = Layer(id: EntityID("layer_text"), name: "Text", payload: .text(TextLayerPayload(value: "Hello")),
+                         effects: [.padding(tokenID: alias), .padding(tokenID: second)])
+        var project = document(root: root)
+        let scope = project.scopes[0].id
+        project.tokens = [
+            DesignToken(id: first, name: "Four", kind: .spacing, ownerScopeID: scope, value: .literal("4")),
+            DesignToken(id: second, name: "Twelve", kind: .spacing, ownerScopeID: scope, value: .literal("12")),
+            DesignToken(id: alias, name: "Alias", kind: .spacing, ownerScopeID: scope, value: .reference(first))
+        ]
+        declare([CapabilityKeys.textVisual, CapabilityKeys.paddingEffect], in: &project)
+        XCTAssertEqual(DocumentValidator.validate(project), [])
+        let source = try generate(project)
+        XCTAssertTrue(source.contains("Text(\"Hello\")\n            .padding(4.0)\n            .padding(12.0)"))
+
+        let decoded = try JSONDecoder().decode(Layer.self, from: JSONEncoder().encode(root))
+        project.screens[0].root = decoded
+        XCTAssertEqual(try generate(project), source)
+
+        project.screens[0].root.effects.reverse()
+        XCTAssertTrue(try generate(project).contains(".padding(12.0)\n            .padding(4.0)"))
+    }
+
+    func testPaddingAppliesToComponentRootAndKeepsContainerBoundaries() throws {
+        let child = Layer(id: EntityID("child"), name: "Child", payload: .text(TextLayerPayload(value: "Child")),
+                          effects: [.padding(tokenID: EntityID("four"))])
+        let definitionRoot = Layer(id: EntityID("definition_root"), name: "Stack", payload: .stack, children: [child],
+                                   effects: [.padding(tokenID: EntityID("twelve"))])
+        let instance = Layer(id: EntityID("instance"), name: "Instance",
+                             payload: .componentInstance(ComponentInstanceLayerPayload(instance: ComponentInstance(definitionID: EntityID("card")))))
+        var project = document(root: instance)
+        let scope = project.scopes[0].id
+        project.components = [ComponentDefinition(id: EntityID("card"), name: "Card", ownerScopeID: scope, root: definitionRoot)]
+        project.tokens = [
+            DesignToken(id: EntityID("four"), name: "Four", kind: .spacing, ownerScopeID: scope, value: .literal("4")),
+            DesignToken(id: EntityID("twelve"), name: "Twelve", kind: .spacing, ownerScopeID: scope, value: .literal("12"))
+        ]
+        declare([CapabilityKeys.componentInstance, CapabilityKeys.stackContainer, CapabilityKeys.textVisual, CapabilityKeys.paddingEffect], in: &project)
+        XCTAssertEqual(DocumentValidator.validate(project), [])
+        let source = try generate(project)
+        XCTAssertEqual(source.components(separatedBy: ".padding(4.0)").count - 1, 1)
+        XCTAssertEqual(source.components(separatedBy: ".padding(12.0)").count - 1, 1)
+        XCTAssertTrue(source.contains("Text(\"Child\")\n                .padding(4.0)\n        }\n            .padding(12.0)"))
+    }
+
+    func testInvalidPaddingTokensFailValidationWithoutFallback() {
+        let root = Layer(id: EntityID("layer_text"), name: "Text", payload: .text(TextLayerPayload(value: "Hello")),
+                         effects: [.padding(tokenID: EntityID("token"))])
+        var project = document(root: root)
+        declare([CapabilityKeys.textVisual, CapabilityKeys.paddingEffect], in: &project)
+        let scope = project.scopes[0].id
+        for value in [TokenValue.literal("-1"), .literal("nan"), .literal("inf"), .reference(EntityID("missing"))] {
+            project.tokens = [DesignToken(id: EntityID("token"), name: "Invalid", kind: .spacing, ownerScopeID: scope, value: value)]
+            XCTAssertTrue(DocumentValidator.validate(project).contains { $0.rule == "token.layoutValue" })
+            XCTAssertThrowsError(try generate(project))
+        }
+        project.tokens = [DesignToken(id: EntityID("token"), name: "Wrong kind", kind: .color, ownerScopeID: scope, value: .literal("4"))]
+        XCTAssertTrue(DocumentValidator.validate(project).contains { $0.rule == "token.layoutValue" })
+        XCTAssertThrowsError(try generate(project))
+        project.tokens = [DesignToken(id: EntityID("token"), name: "Zero", kind: .spacing, ownerScopeID: scope, value: .literal("0"))]
+        XCTAssertTrue((try? generate(project))?.contains(".padding(0.0)") == true)
     }
 
     func testFrameworkApplicabilityRemainsExplicit() {

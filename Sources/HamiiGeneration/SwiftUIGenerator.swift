@@ -28,7 +28,7 @@ public enum SwiftUIGeneratorCapabilityCatalog {
     public static let supportedKeys: Set<CapabilityKey> = [
         CapabilityKeys.stackContainer, CapabilityKeys.overlayVisual, CapabilityKeys.scrollContainer,
         CapabilityKeys.textVisual, CapabilityKeys.buttonVisual, CapabilityKeys.imageVisual,
-        CapabilityKeys.systemAssetMapping, CapabilityKeys.componentInstance
+        CapabilityKeys.systemAssetMapping, CapabilityKeys.componentInstance, CapabilityKeys.paddingEffect
     ]
     public static let catalog = CapabilityCatalog(supportedKeys: supportedKeys, legacyAliases: CapabilityRegistry.aliases(for: supportedKeys))
 }
@@ -64,6 +64,21 @@ public enum SwiftUIGenerator {
     }
 
     private static func render(_ layer: Layer, document: Document, indent: Int) throws -> String {
+        var source = try renderBase(layer, document: document, indent: indent)
+        let prefix = String(repeating: "    ", count: indent)
+        for effect in layer.effects {
+            switch effect {
+            case .padding(let tokenID):
+                guard let value = TokenResolver.spacing(tokenID, in: document.tokens) else {
+                    throw GenerationError.unsupported(layer.id, "Padding token does not resolve to spacing")
+                }
+                source += "\n" + prefix + "    .padding(\(value))"
+            }
+        }
+        return source
+    }
+
+    private static func renderBase(_ layer: Layer, document: Document, indent: Int) throws -> String {
         let prefix = String(repeating: "    ", count: indent)
         switch layer.payload {
         case .text(let payload):

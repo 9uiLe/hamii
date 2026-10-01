@@ -156,7 +156,7 @@ final class CurrentFormatV2Tests: XCTestCase {
         }
     }
 
-    func testPaddingRequiresExactDeclarationAndGeneratorRejectsIt() throws {
+    func testPaddingRequiresExactDeclarationAndGeneratorLowersIt() throws {
         var document = Document(name: "Effects")
         let target = Target(id: EntityID("target"), platform: .macOS, framework: .swiftUI)
         let token = EntityID("spacing")
@@ -174,11 +174,13 @@ final class CurrentFormatV2Tests: XCTestCase {
         let missing = CapabilityEvaluator.evaluate(requirements: requirement, profile: CapabilityProfile(target: target),
             declarations: document.capabilityDeclarations, catalog: NativePreviewCapabilityCatalog.catalog)
         XCTAssertFalse(missing.allowed)
+        XCTAssertThrowsError(try SwiftUIGenerator.generate(document: document, screenID: screen.id, targetID: target.id))
         document.capabilityDeclarations.append(CapabilityDeclaration(targetID: target.id, key: .init("effect.padding"), support: .exact))
         let preview = CapabilityEvaluator.evaluate(requirements: requirement, profile: CapabilityProfile(target: target),
             declarations: document.capabilityDeclarations, catalog: NativePreviewCapabilityCatalog.catalog)
         XCTAssertTrue(preview.allowed)
-        XCTAssertThrowsError(try SwiftUIGenerator.generate(document: document, screenID: screen.id, targetID: target.id))
+        let generated = try SwiftUIGenerator.generate(document: document, screenID: screen.id, targetID: target.id)
+        XCTAssertTrue(generated.source.contains(".padding(12.0)"))
     }
 
     func testNewProjectReopensAsV2AndNoOpKeepsGeneration() throws {
