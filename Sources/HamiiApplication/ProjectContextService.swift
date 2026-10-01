@@ -369,4 +369,11 @@ public final class ProjectContextService {
                 consumerScopeID: consumerScopeID)
         }
     }
+
+    public func surfaceCapabilityDetail(surfaceID: EntityID,
+                                        expectedState: ClientPrecondition) throws -> ContextResponse<ContextSurfaceCapabilityDetail> {
+        try withObservation(expectedState: expectedState) {
+            try ProjectContextProjection.surfaceCapabilityDetail($0, surfaceID: surfaceID)
+        }
+    }
 }

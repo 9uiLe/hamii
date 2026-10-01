@@ -74,4 +74,8 @@ public final class ProjectContextReadSession {
                 consumerScopeID: consumerScopeID)
         }
     }
+
+    public func surfaceCapabilityDetail(surfaceID: EntityID) throws -> ContextResponse<ContextSurfaceCapabilityDetail> {
+        try withVerified { try ProjectContextProjection.surfaceCapabilityDetail($0, surfaceID: surfaceID) }
+    }
 }
