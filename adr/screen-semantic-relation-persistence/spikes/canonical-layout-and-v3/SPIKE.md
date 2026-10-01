@@ -66,7 +66,7 @@ The prototype imports typed relations from `HamiiIntegration` only because it li
 
 ## Conclusion
 
-The initial evidence favors A but does **not** select it. Output anchoring for component instances, production v3 ownership/validation, a real v1→Current migration route and migration publication, and journal stop/recovery tests remain unresolved. In particular the installed registry has no v1→3 route. Keep the ADR `Spike Required`; do not treat the sequential test-only transform as production edge chaining. Do not write typed relation fields under the v2 marker, because the v2 Screen decoder drops them. A follow-up Spike should decide a component-instance-safe anchor and prove the production-shaped v1→2→3 route and crash boundary before the ownership decision.
+The initial evidence favors A but does **not** select it. At the time of this Spike, output anchoring for component instances, production v3 ownership/validation, a real v1→Current migration route and migration publication, and journal stop/recovery tests were unresolved. In particular the installed registry had no v1→3 route. The subsequent [Component output anchor Spike](../component-output-anchor/SPIKE.md) tested occurrence-safe anchors; [Migration Edge Composition](../../../migration-edge-composition/ADR.md) now owns the independent route/publication question. The persistence ADR remains `Spike Required`. Do not treat the sequential test-only transform as production edge chaining or write typed relation fields under the v2 marker, because the v2 Screen decoder drops them.
 
 ## Artifacts
 

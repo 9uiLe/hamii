@@ -6,7 +6,7 @@ The Product Integration Contract decision requires a screen-level contract with 
 
 ## Decision to Make
 
-Where should screen-level typed semantic sources, outputs, and relations be owned and persisted in Current Canonical IR, and how can historical formats migrate without inventing their meaning?
+Where should screen-level typed semantic sources, outputs, and relations be owned and persisted in Current Canonical IR?
 
 ## Constraints
 
@@ -32,16 +32,15 @@ An external explicit profile file is a control for comparison, but it cannot be 
 
 - Which output declaration shape gives a stable, unique link to an existing binding/input without coupling to Product code?
 - Which layout yields exact semantic round-trip and complete contract projection with the smaller durable transaction surface?
-- Can a deterministic v1→v2→v3 migration path be composed without duplicating v1→v2 knowledge, while preserving unrelated shards/blobs?
 - What validation and migration runtime boundaries must change together for Current Format v3?
 
 ## Required Evidence
 
-[Canonical layout and v3 Spike](spikes/canonical-layout-and-v3/SPIKE.md) compared both layouts with test-only prototypes. It found that the current v2 decoder drops new Screen fields under a v2 marker, and an unregistered sidecar is invisible to Snapshot identity and client preconditions. It demonstrated direct-Screen anchor validation, candidate round-trip, v2 reader rejection of a v3 marker, and sequential v1→v2 plus test-only v2→v3 transformation. Production migration edge chaining, component-instance-safe output anchoring, and journal recovery remain unproven. This is evidence, not a production format decision.
+[Canonical layout and v3 Spike](spikes/canonical-layout-and-v3/SPIKE.md) compared both layouts with test-only prototypes. It found that the current v2 decoder drops new Screen fields under a v2 marker, and an unregistered sidecar is invisible to Snapshot identity and client preconditions. It demonstrated direct-Screen anchor validation, candidate round-trip, v2 reader rejection of a v3 marker, and sequential v1→v2 plus test-only v2→v3 transformation. [Component output anchor Spike](spikes/component-output-anchor/SPIKE.md) then tested repeated and nested Component occurrences, Variant/slot resolution, invalid anchor rejection, and candidate contract projection using actual resolver code. These are evidence, not a production format decision. Production schema, complete validation/extraction, and journal recovery remain unproven. Migration path composition is tracked separately in [Migration Edge Composition](../migration-edge-composition/ADR.md).
 
 ## Decision Criteria
 
-Select an ownership model only after the Spike demonstrates unique output anchors, fail-closed references, exact semantic round-trip, complete extraction into the screen contract, Canonical identity change on a relation edit, strict v2/v3 reader separation, noninventive v2→v3 migration, a safe v1→Current path, and explicit crash/journal boundary changes. If migration composition proves to require an independent difficult decision, create a narrow ADR for that decision. Preserve the [Product Integration Contract decision](../product-integration-contract/ADR.md) and its `Needs Resolution` rule.
+Select an ownership model only after evidence demonstrates unique output anchors, fail-closed references, exact semantic round-trip, complete extraction into the screen contract, Canonical identity change on a relation edit, strict v2/v3 reader separation, and explicit crash/journal boundary changes. A noninventive v2→v3 edge and safe v1→Current path remain implementation prerequisites; the independent composition/publication decision belongs to [Migration Edge Composition](../migration-edge-composition/ADR.md). Preserve the [Product Integration Contract decision](../product-integration-contract/ADR.md) and its `Needs Resolution` rule.
 
 ## Status
 
