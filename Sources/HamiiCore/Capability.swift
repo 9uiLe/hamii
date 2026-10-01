@@ -47,6 +47,112 @@ public enum CapabilityKeys {
     public static let legacyCustomNavigation = CapabilityKey("navigation.custom")
 }
 
+/// Registry membership identifies a built-in semantic meaning, not consumer support.
+public struct CapabilityDefinition: Sendable {
+    public let key: CapabilityKey
+    public let legacyAlias: CapabilityKey?
+    public init(_ key: CapabilityKey, legacyAlias: CapabilityKey? = nil) {
+        self.key = key
+        self.legacyAlias = legacyAlias
+    }
+}
+
+public enum CapabilityRegistryIssue: Equatable {
+    case duplicateSemanticKey(CapabilityKey)
+    case duplicateLegacyAlias(CapabilityKey)
+    case semanticLegacyCollision(CapabilityKey)
+    case unknownSupportedKey(CapabilityKey)
+    case legacyKeyAdvertisedAsSupported(CapabilityKey)
+    case runtimeSensitiveKeyNotSupported(CapabilityKey)
+    case aliasSourceNotSupported(CapabilityKey)
+    case invalidAlias(CapabilityKey, CapabilityKey)
+    case inapplicableCatalogAdvertisesSupport
+}
+
+public enum CapabilityRegistry {
+    public static let definitions: [CapabilityDefinition] = [
+        .init(CapabilityKeys.stackContainer, legacyAlias: CapabilityKeys.legacyStack),
+        .init(CapabilityKeys.overlayVisual, legacyAlias: CapabilityKeys.legacyOverlay),
+        .init(CapabilityKeys.scrollContainer, legacyAlias: CapabilityKeys.legacyScroll),
+        .init(CapabilityKeys.textVisual, legacyAlias: CapabilityKeys.legacyText),
+        .init(CapabilityKeys.buttonVisual, legacyAlias: CapabilityKeys.legacyButton),
+        .init(CapabilityKeys.buttonEventEmit),
+        .init(CapabilityKeys.imageVisual, legacyAlias: CapabilityKeys.legacyImage),
+        .init(CapabilityKeys.componentInstance, legacyAlias: CapabilityKeys.legacyInstance),
+        .init(CapabilityKeys.fixtureBinding),
+        .init(CapabilityKeys.bindingFallback),
+        .init(CapabilityKeys.spacingToken, legacyAlias: CapabilityKeys.legacySpacing),
+        .init(CapabilityKeys.paddingEffect),
+        .init(CapabilityKeys.systemAssetMapping),
+        .init(CapabilityKeys.repositoryAssetRendering),
+        .init(CapabilityKeys.remoteAssetFetch),
+        .init(CapabilityKeys.runtimeAssetBinding),
+        .init(CapabilityKeys.generatedAssetRendering),
+        .init(CapabilityKeys.systemNavigation, legacyAlias: CapabilityKeys.legacySystemNavigation),
+        .init(CapabilityKeys.navigationTitle),
+        .init(CapabilityKeys.systemToolbar),
+        .init(CapabilityKeys.toolbarEventEmit),
+        .init(CapabilityKeys.customNavigation, legacyAlias: CapabilityKeys.legacyCustomNavigation),
+        .init(CapabilityKeys.interactionRuntime),
+        .init(CapabilityKeys.nativeIntent),
+        .init(CapabilityKeys.targetOverride)
+    ]
+
+    public static let semanticKeys = Set(definitions.map(\.key))
+    public static let legacyAliasKeys = Set(definitions.compactMap(\.legacyAlias))
+    public static let legacyAliases = Dictionary(uniqueKeysWithValues: definitions.compactMap { definition in
+        definition.legacyAlias.map { (definition.key, $0) }
+    })
+
+    public static func aliases(for supportedKeys: Set<CapabilityKey>) -> [CapabilityKey: CapabilityKey] {
+        legacyAliases.filter { supportedKeys.contains($0.key) }
+    }
+
+    public static func validateDefinitions(_ definitions: [CapabilityDefinition] = definitions) -> [CapabilityRegistryIssue] {
+        let keys = definitions.map(\.key)
+        let aliases = definitions.compactMap(\.legacyAlias)
+        let semanticSet = Set(keys)
+        let aliasSet = Set(aliases)
+        var issues: [CapabilityRegistryIssue] = []
+        issues += duplicates(in: keys).map(CapabilityRegistryIssue.duplicateSemanticKey)
+        issues += duplicates(in: aliases).map(CapabilityRegistryIssue.duplicateLegacyAlias)
+        issues += semanticSet.intersection(aliasSet).sorted(by: keyOrder).map(CapabilityRegistryIssue.semanticLegacyCollision)
+        return issues
+    }
+
+    public static func validate(catalog: CapabilityCatalog) -> [CapabilityRegistryIssue] {
+        var issues: [CapabilityRegistryIssue] = []
+        for key in catalog.supportedKeys.sorted(by: keyOrder) {
+            if legacyAliasKeys.contains(key) { issues.append(.legacyKeyAdvertisedAsSupported(key)) }
+            else if !semanticKeys.contains(key) { issues.append(.unknownSupportedKey(key)) }
+        }
+        for key in catalog.runtimeSensitiveKeys.subtracting(catalog.supportedKeys).sorted(by: keyOrder) {
+            issues.append(.runtimeSensitiveKeyNotSupported(key))
+        }
+        for key in catalog.legacyAliases.keys.sorted(by: keyOrder) {
+            let alias = catalog.legacyAliases[key]!
+            if !catalog.supportedKeys.contains(key) { issues.append(.aliasSourceNotSupported(key)) }
+            if legacyAliases[key] != alias { issues.append(.invalidAlias(key, alias)) }
+        }
+        if catalog.unavailableReason != nil &&
+            (!catalog.supportedKeys.isEmpty || !catalog.legacyAliases.isEmpty || !catalog.runtimeSensitiveKeys.isEmpty) {
+            issues.append(.inapplicableCatalogAdvertisesSupport)
+        }
+        return issues
+    }
+
+    public static func validate(requirements: [SemanticRequirement]) -> [Diagnostic] {
+        requirements.filter { !semanticKeys.contains($0.key) }.map {
+            Diagnostic("semantic.capabilityRegistry", "Unregistered built-in semantic capability \($0.key)", entityID: $0.sourceEntityID)
+        }
+    }
+
+    private static func keyOrder(_ lhs: CapabilityKey, _ rhs: CapabilityKey) -> Bool { lhs.rawValue < rhs.rawValue }
+    private static func duplicates(in keys: [CapabilityKey]) -> [CapabilityKey] {
+        Dictionary(grouping: keys, by: { $0 }).filter { $0.value.count > 1 }.keys.sorted(by: keyOrder)
+    }
+}
+
 public enum CapabilitySupport: String, Codable {
     case exact, portable, targetSpecific, approximate, unsupported, externalIntegrationRequired
 }
@@ -226,6 +332,7 @@ public enum SemanticRequirementExtractor {
                 append(CapabilityKeys.customNavigation, screen.id)
             }
         }
+        diagnostics += CapabilityRegistry.validate(requirements: requirements)
         return SemanticExtraction(requirements: requirements, diagnostics: diagnostics, bindings: bindings)
     }
 }
@@ -248,18 +355,7 @@ public struct CapabilityCatalog: Sendable {
 
 /// Basic node declarations cover only the corresponding visual meaning.
 public enum BasicCapabilityAliases {
-    public static let map: [CapabilityKey: CapabilityKey] = [
-        CapabilityKeys.stackContainer: CapabilityKeys.legacyStack,
-        CapabilityKeys.overlayVisual: CapabilityKeys.legacyOverlay,
-        CapabilityKeys.scrollContainer: CapabilityKeys.legacyScroll,
-        CapabilityKeys.textVisual: CapabilityKeys.legacyText,
-        CapabilityKeys.buttonVisual: CapabilityKeys.legacyButton,
-        CapabilityKeys.imageVisual: CapabilityKeys.legacyImage,
-        CapabilityKeys.componentInstance: CapabilityKeys.legacyInstance,
-        CapabilityKeys.spacingToken: CapabilityKeys.legacySpacing,
-        CapabilityKeys.systemNavigation: CapabilityKeys.legacySystemNavigation,
-        CapabilityKeys.customNavigation: CapabilityKeys.legacyCustomNavigation
-    ]
+    public static let map = CapabilityRegistry.legacyAliases
 }
 
 /// This subset describes the implemented Preview semantics. It is not an API coverage claim for every target OS.
@@ -282,7 +378,7 @@ public enum NativePreviewCapabilityCatalog {
         CapabilityKeys.systemToolbar, CapabilityKeys.toolbarEventEmit, CapabilityKeys.customNavigation
     ]
 
-    public static let catalog = CapabilityCatalog(supportedKeys: supportedKeys, legacyAliases: BasicCapabilityAliases.map)
+    public static let catalog = CapabilityCatalog(supportedKeys: supportedKeys, legacyAliases: CapabilityRegistry.aliases(for: supportedKeys))
 
     public static func catalog(for profile: CapabilityProfile) -> CapabilityCatalog {
         isApplicable(to: profile) ? catalog : CapabilityCatalog(

@@ -25,11 +25,12 @@ public struct GeneratedSource: Codable {
 
 /// Only semantics lowered by this generator. Target declarations are evaluated separately.
 public enum SwiftUIGeneratorCapabilityCatalog {
-    public static let catalog = CapabilityCatalog(supportedKeys: [
+    public static let supportedKeys: Set<CapabilityKey> = [
         CapabilityKeys.stackContainer, CapabilityKeys.overlayVisual, CapabilityKeys.scrollContainer,
         CapabilityKeys.textVisual, CapabilityKeys.buttonVisual, CapabilityKeys.imageVisual,
         CapabilityKeys.systemAssetMapping, CapabilityKeys.componentInstance
-    ], legacyAliases: BasicCapabilityAliases.map)
+    ]
+    public static let catalog = CapabilityCatalog(supportedKeys: supportedKeys, legacyAliases: CapabilityRegistry.aliases(for: supportedKeys))
 }
 
 public enum SwiftUIGenerator {
