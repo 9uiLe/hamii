@@ -18,11 +18,11 @@ Page 階層と Scope は独立。sibling dependency は許さない。Promotion 
 
 ## Current Hypothesis
 
-**未確定:** 共通 evaluator と SQLite projection は nested deny fixture で Human/AI/Validator の結果を一致させた。Promotion と allowOnly の範囲は未検証。
+**未確定:** 共通 evaluator と SQLite projection は nested deny、複数 allowOnly ID、unsafe / safe promotion の検証 fixture で Human / AI / Validator と一致した。`allowOnly` の Product Semantics は exact consumer membership と descendant membership で結果が分かれるため、まだ選択しない。
 
 ## Unknowns
 
-nested Definition の effective scope、promotion の再検証範囲、例外 policy の説明可能性。
+`allowOnly` の列挙 Scope だけを許すか descendant へ及ぶか、例外 policy を Human / AI にどう説明するか。測定は small / 1000 components の process 内 availability / projection に限られ、Canonical read、SQLite Query、Git freshness を含まない。
 
 ## Required Evidence
 
@@ -34,4 +34,4 @@ Spike の成功/失敗基準に照らして方式を選び、必要な実装・�
 
 ## Status
 
-Researching
+Ready for Decision
