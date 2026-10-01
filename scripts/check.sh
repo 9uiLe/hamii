@@ -35,6 +35,7 @@ run_check swift-test env HAMII_SWIFT="$hamii_swift" python3 scripts/run-swift-te
 run_cli_smoke() {
   python3 scripts/smoke-cli.py
   python3 scripts/smoke-cli-errors.py
+  python3 scripts/smoke-generator-padding.py
 }
 run_check cli-smoke run_cli_smoke
 run_check state-precondition-smoke python3 scripts/smoke-state-precondition.py
