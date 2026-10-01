@@ -24,7 +24,7 @@ Node 単位、property 単位、semantic contract 単位。Navigation/Toolbar/Re
 
 ## Unknowns
 
-Current Format v2 で未実装の requirement 抽出範囲と、具体的な version-sensitive requirement が現れた場合の runtime version 別 support 登録方法。追加 framework/profile の coverage には別途一次資料・実行検証が必要。現在の catalog は runtime version 固有の support を宣言していない。
+Current Format v2 の既知 built-in semantic requirement に未登録のものはない。将来の runtime version 別 support 方法は、具体的な version-sensitive requirement が確認された時に判断する。追加 framework/profile は将来の機能実装であり、一次資料・実行検証なしに support を登録しない。現在の catalog は runtime version 固有の support を宣言していない。
 
 ## Required Evidence
 
@@ -39,3 +39,13 @@ Production では共有 semantic evaluator を `TargetPlanner`、`SwiftUIGenerat
 ## Status
 
 Implementation Required
+
+## Closure Review
+
+Decision と Spike は完了し、現行 IR の意味に対する production 実装と検証も完了した。共有 extractor/evaluator は `TargetPlanner`、`SwiftUIGenerator`、Human Canvas の `SurfaceCapabilityAssessmentService`、AI の context projection に接続されている。Native Preview は macOS SwiftUI profile のみ適用し、その他の profile は宣言が Exact でも fail closed に拒否する。
+
+`CapabilityRegistry` は25個の built-in semantic key を定義する。恒久テストの current extractor corpus は、その全 key を実 IR から発行し、registry 外の key を発行しない。両 production catalog は registry validation を通り、legacy alias は basic visual semantics のみを表す。未登録の抽出意味は error diagnostic とともに要求として保持し、保存済み target declaration の未知 key は拒否しない。現行両 production catalog の `runtimeSensitiveKeys` は空である。未指定 runtime で runtime-sensitive key を許可しない evaluator のテストも維持する。
+
+現行契約には runtime version 別 support table が必要な concrete requirement はない。将来、一次資料と実行結果が runtime による差を示した semantic、nonempty `runtimeSensitiveKeys`、追加 framework/profile の実装、既存 requirement/evaluator/loss model で表現できない新しい意味、consumer 間で共有できない support semantics、または registry テストが示す consumer divergence が現れた場合は、その具体的な境界を再検討する。現在の decision boundary に未実装・未検証の follow-up は残っていない。
+
+Evidence と Decision は [granularity Spike](spikes/capability-granularity/SPIKE.md) と Git history に残る。主な implementation history は `12a2f76` (shared Surface assessment)、`791c23c` (Canvas Inspector)、`3c387a4` (context projection)、`dd64b5d` (AI CLI context)、`e612681` (Preview profile gate)、`d4ba0cc` (profile regression)、`2f57a9c` (registry validation)、`9d5259a` (extractor/catalog coverage) である。恒久ルールは production code、tests、README、`docs/final-architecture.md`、`docs/implementation-status.md` に移した。Evidence 専用の `CapabilityGranularitySpikeTests` と Spike artifacts は Git history へ残し、ADR 削除 commit で current tree から除く。ADR と Spike の記録を独立 commit に残した後、別 commit でこの directory を削除できる。

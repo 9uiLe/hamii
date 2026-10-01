@@ -38,7 +38,7 @@ Bindings and event handlers are represented in IR but marked `externalIntegratio
 
 A small typed payload shape can preserve current stable IDs and the separate Scope/Component/Token/Asset graphs. The smallest demonstrated additions are ordered effects and a versioned, target-qualified extension. `ProbeNativeEscapeHatch` illustrates an isolated boundary with target, semantic owner, and payload version; no fixture uses it. A production escape hatch, ownership validation, broader presentation semantics, and exact framework capability sets remain unresolved. The candidate's `iOSSheetDetents` case is a deliberately narrow probe, not a selected production API.
 
-The semantic units passed to `adr/capability-contract` should be node kind, binding/event support, ordered effect kind, system navigation/toolbar, system asset mapping, and target extension. This Spike does not decide capability registry granularity.
+The semantic units identified by this Spike include node kind, binding/event support, ordered effect kind, system navigation/toolbar, system asset mapping, and target extension. Production capability granularity and loss evaluation are defined by `CapabilityRegistry`, `SemanticRequirementExtractor`, and `CapabilityEvaluator`; this Spike does not decide their contract.
 
 ## Outcome
 

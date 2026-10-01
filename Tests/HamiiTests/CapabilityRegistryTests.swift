@@ -96,6 +96,11 @@ final class CapabilityRegistryTests: XCTestCase {
         }
     }
 
+    func testCurrentProductionCatalogsMakeNoRuntimeVersionSupportClaims() {
+        XCTAssertTrue(NativePreviewCapabilityCatalog.catalog.runtimeSensitiveKeys.isEmpty)
+        XCTAssertTrue(SwiftUIGeneratorCapabilityCatalog.catalog.runtimeSensitiveKeys.isEmpty)
+    }
+
     func testCurrentExtractorCorpusEmitsExactlyRegisteredBuiltInSemantics() {
         var document = Document(name: "Capability corpus")
         let scope = document.scopes[0].id
