@@ -1,0 +1,6 @@
+1967:◇ Test "L2 — 프로필 편집은 값 없이 설정 화면으로 보낸다" started.
+1978:◇ Test "배선 — ProfileMain Store 의 tapEditProfile 이 path 에 반영된다" started.
+1988:✔ Test "L2 — 프로필 편집은 값 없이 설정 화면으로 보낸다" passed after 0.008 seconds.
+2012:✔ Test "배선 — ProfileMain Store 의 tapEditProfile 이 path 에 반영된다" passed after 0.014 seconds.
+2016:✔ Test run with 30 tests in 3 suites passed after 0.017 seconds.
+2024:** TEST SUCCEEDED **

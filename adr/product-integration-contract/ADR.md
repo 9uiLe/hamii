@@ -22,11 +22,11 @@ component 単位 contract、screen 単位 contract、dependency graph 付き con
 
 ## Unknowns
 
-contract の粒度を選ぶための独立比較、実 Product の profile state / edit route に対する未知 mapping、Human 修正量、new-action runtime behavior。現行 screen-level `IntegrationContract` は States と dependency structure を独立 field に持たない。
+contract の粒度を選ぶための独立 review、Human 修正量、新しい表示・イベントの runtime behavior。既存 profile state / edit route への mapping は1つの reducer/store Repository の独立3試行で検証したが、system avatar 指定は2方式で未達だった。現行 screen-level `IntegrationContract` は States と dependency structure を独立 field に持たず、共通 fixture の補足なしで十分かは未検証。
 
 ## Required Evidence
 
-[spikes/repository-mapping/SPIKE.md](spikes/repository-mapping/SPIKE.md) は2つの実 SwiftUI Repository × 3表現を測り、全 final patch で source-level semantic traceability と build を確認した。試行は同一 AI の逐次実行で Human correction は未計測のため、方式の採否はまだ決めない。[spikes/existing-profile-state/SPIKE.md](spikes/existing-profile-state/SPIKE.md) では既存 profile state / edit route を持つ reducer/store Repository に対象を絞り、同じ3表現を独立 context で比較する。独立 review と new-action runtime validation は、その結果を踏まえて必要性を判断する。Spike prototype は production adapter ではない。
+[spikes/repository-mapping/SPIKE.md](spikes/repository-mapping/SPIKE.md) は2つの実 SwiftUI Repository × 3表現を測り、全 final patch で source-level semantic traceability と build を確認した。試行は同一 AI の逐次実行で Human correction は未計測。[spikes/existing-profile-state/SPIKE.md](spikes/existing-profile-state/SPIKE.md) は既存 profile state / edit route を持つ reducer/store Repository 1件 × 3表現を独立 context で比較した。3方式とも既存 state/route を利用し30件の既存 tests に成功した一方、2方式で avatar asset の固定意図が未達だった。screen 表現の States / dependency 欠落は共通 fixture で補われており、方式の採否はまだ決めない。次の Evidence は独立 review と新しい表示・イベントの runtime validation のうち1件へ絞る。Spike prototype は production adapter ではない。
 
 ## Decision Criteria
 
