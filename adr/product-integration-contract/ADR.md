@@ -22,11 +22,11 @@ component 単位 contract、screen 単位 contract、dependency graph 付き con
 
 ## Unknowns
 
-contract の粒度、未知 mapping の検出、既存 repo の convention 読取、build/test 成功率、Human 修正量。
+contract の粒度を選ぶための独立比較、実 Product の profile state / edit route に対する未知 mapping、Human 修正量、new-action runtime behavior。現行 screen-level `IntegrationContract` は States と dependency structure を独立 field に持たない。
 
 ## Required Evidence
 
-[spikes/repository-mapping/SPIKE.md](spikes/repository-mapping/SPIKE.md) を実施し、観測値と結論を同じディレクトリに記録する。未実施の結果を確定判断として扱わない。
+[spikes/repository-mapping/SPIKE.md](spikes/repository-mapping/SPIKE.md) は2つの実 SwiftUI Repository × 3表現を測り、全 final patch で source-level semantic traceability と build を確認した。試行は同一 AI の逐次実行で Human correction は未計測のため、方式の採否はまだ決めない。独立 review と、既存 profile state を持つ reducer/store Repository の mapping、new-action runtime validation を必要な追加 Evidence として絞る。Spike prototype は production adapter ではない。
 
 ## Decision Criteria
 

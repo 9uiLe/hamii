@@ -52,12 +52,27 @@ contract の意味が失われる、unknown mapping を silent guess する、�
 
 ## Result
 
-未実施。実測値、観察、失敗、成果物への link を記入する。
+2026-10-01 に、固定した2つの実 Repository と同一 ProfileHeader fixture で6つの逐次 AI 試行を実施した。各 attempt の prompt、contract、差分、項目別 mapping、build/test、修正候補、review 時間は [artifacts/attempts/](artifacts/attempts/) にある。各 `*.patch.gz` を展開した原本は対象の pinned commit へ `git apply` で再適用し、展開後 SHA-256、`git diff --check` と差分行数を照合した。gzip は patch 内容を変えずに、外部 source の既存空白を hamii 自身の diff whitespace 判定から分離するための保存形式である。大きな checkout / build log / DerivedData は Repository 外に置いた。
+
+| Target | Shape | Final build | Existing tests | Patch files / + / − | AI self-review wall time | AI semantic / architecture / cosmetic corrections |
+| --- | --- | --- | --- | --- | --- | --- |
+| [Food Truck](artifacts/attempts/food-truck-component/RESULT.md) | component | pass | target なし | 1 / 42 / 12 | 35 s | 2 / 0 / 0 |
+| [Food Truck](artifacts/attempts/food-truck-screen/RESULT.md) | screen | pass | target なし | 1 / 31 / 12 | 10 s | 0 / 0 / 0 |
+| [Food Truck](artifacts/attempts/food-truck-graph/RESULT.md) | graph | pass | target なし | 1 / 48 / 11 | 10 s | 0 / 0 / 0 |
+| [SyncUps](artifacts/attempts/syncups-component/RESULT.md) | component | pass | 21 pass, 12 known issues | 1 / 47 / 0 | 13 s | 0 / 0 / 0 |
+| [SyncUps](artifacts/attempts/syncups-screen/RESULT.md) | screen | pass | 21 pass, 12 known issues | 1 / 32 / 0 | 9 s | 0 / 0 / 0 |
+| [SyncUps](artifacts/attempts/syncups-graph/RESULT.md) | graph | pass | 21 pass, 12 known issues | 1 / 61 / 0 | 9 s | 0 / 0 / 0 |
+
+**Confirmed within source audit:** 各 final patch では I01–I10 が target code location に対応し、I11 `editProfileDestination` は明示的 unresolved だった。意図しない route / state / API の創作は0、silent lossは0。MVVM/TCA の型は外部 patch 内だけにあり hamii IR は変更していない。Food Truck component 試行の **初回** patch は build success でも既存 `Form` の閉じ括弧を早く置き、後続 control を外へ出す semantic regression があった。レビューで発見・修正してから同じ build を再実行した。build 成功だけを semantic correctness としない証拠である。
+
+**Measured conditions:** Food Truck iOS Simulator baseline / 3 post-patch builds は成功。プロジェクトに test target はない。SyncUps baseline / 3 post-patch builds と baseline / 3 post-patch unit-test gates は成功し、各 test gate は Swift Testing 21件、既存 known issues 12件を報告した。SyncUps では Xcode macro approval を `-skipMacroValidation` で固定し、iOS 27.0 Simulator を使用した。macOS Food Truck build、iOS 26.5 SyncUps test destination、および別の TCA template candidate の baseline failure は対象選定・環境の失敗として記録し、contract failure に混ぜていない。
+
+**Interpretation limits:** 同一 agent が6件を順番に実施したため学習の持ち越しがあり、方式間の行数・修正数・review 時間を因果効果として比較できない。reviewer は AI 本人で独立 Human correction は**未計測**。SyncUps に既存 profile domain がなく、表示名は fixture 用 State を追加した。既存 tests は新しい edit action を exercise せず、目視の runtime 確認もしていない。したがって「実 Product の未知 mapping に対して AI が一般に安全」とは結論できない。現行 production `IntegrationContract` には States と dependency structure の独立 field がない。screen 試行では state を `stateNote` と共有 fixture で補ったため、その欠落が実験で消えたわけではない。
 
 ## Conclusion
 
-未実施。結果が ADR の Options と Current Hypothesis をどう変えたかを記入し、削除前に commit する。
+3表現とも、検証した2 Repository では semantic item を source 上で追跡できた。ただし独立 Human review、context を分離した AI 比較、既存 profile data を持つ reducer Repository、new-action runtime validation が不足する。どの contract granularity を production の正式方式にするかは**未決定**。ADR は `Spike Required` のまま維持し、追加の Evidence を絞ってから判断する。特に review independence と、既存 product state / edit route が実在する Repository で unknown mapping を評価する必要がある。この Spike の patch は prototype であり production adapter / API に昇格しない。
 
 ## Artifacts
 
-未作成。検証時に必要な成果物だけをこの Spike ディレクトリの `artifacts/` に保存する。
+[artifacts/](artifacts/) に固定 fixture、3表現、2 Repository profile、6件の full prompt / small patch / 結果表を保存する。target checkout、Xcode DerivedData、raw build/test logs は commit しない。
