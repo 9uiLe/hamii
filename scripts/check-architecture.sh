@@ -15,6 +15,7 @@ check_imports Sources/HamiiApplication 'AppKit|SwiftUI|UIKit|SQLite3|HamiiFormat
 check_imports Sources/HamiiPreviewProtocol 'AppKit|SQLite3|HamiiFormat|HamiiIndex|HamiiCLI|HamiiApp|HamiiMigrations'
 check_imports Sources/HamiiGeneration 'AppKit|SQLite3|HamiiApplication|HamiiFormat|HamiiIndex|HamiiCLI|HamiiApp|HamiiMigrations'
 check_imports Sources/HamiiIntegration 'AppKit|SQLite3|HamiiApplication|HamiiFormat|HamiiIndex|HamiiCLI|HamiiApp|HamiiMigrations'
+check_imports Sources/HamiiIntegrationRuntime 'AppKit|SwiftUI|UIKit|SQLite3|HamiiIndex|HamiiCLI|HamiiApp|HamiiMigrations|HamiiMigrationRuntime'
 check_imports Sources/HamiiMigrations 'AppKit|SwiftUI|UIKit|SQLite3|CryptoKit|HamiiCore|HamiiApplication|HamiiFormat|HamiiIndex|HamiiCLI|HamiiApp|HamiiMigrationRuntime'
 check_imports Sources/HamiiMigrationRuntime 'AppKit|SwiftUI|UIKit|HamiiCLI|HamiiApp'
 check_imports Sources/HamiiFormat 'HamiiMigrationRuntime'

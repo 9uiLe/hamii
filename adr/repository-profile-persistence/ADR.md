@@ -2,7 +2,7 @@
 
 ## Context
 
-`IntegrationProfileFile` currently reads a caller-selected Profile v1 file without changing it. `hamii integration plan` uses that file after checking the Document's independent `integrationProfile` version. No hamii-managed Profile writer or Product repository adapter exists. Product-specific mappings must remain outside Native-semantic IR, while a future adapter needs a reviewable, reproducible authority for the mappings it applies. The [Product Integration Contract ADR](../product-integration-contract/ADR.md) owns the contract and Product validation work; this ADR owns only Profile persistence, identity, and versioning.
+`IntegrationProfileFile` decodes Profile v1 bytes without changing them. `hamii integration plan` supports an explicitly selected Product Git Profile for authoritative read-only planning and an external file for non-authoritative read-only planning. Both paths check the Document's independent `integrationProfile` version. No hamii-managed Profile writer or Product source adapter exists. Product-specific mappings must remain outside Native-semantic IR, while a future adapter needs a reviewable, reproducible authority for the mappings it applies. The [Product Integration Contract ADR](../product-integration-contract/ADR.md) owns the contract and Product validation work; this ADR owns only Profile persistence, identity, and versioning.
 
 ## Decision to Make
 
@@ -30,7 +30,7 @@ Where should a Product-specific Repository Profile be persisted, and what reposi
 
 ## Unknowns
 
-- Production receipt issuance and verification against immutable Git object bytes and a hamii observation.
+- Product write and adoption authorization using the issued planning receipt; the read-only receipt alone is not patch authority.
 - Isolated Product patch publication and races after plan; these remain Product Integration implementation, not a guarantee from this placement decision.
 - Profile migration candidate and cross-repository version mismatch handling.
 - Measured frequency and UX cost of exact-commit false-positive invalidation; a narrower identity is not yet justified.
@@ -61,11 +61,10 @@ The initial safe binding is conservative:
 
 ## Implementation and Validation Required
 
-- Issue a structured production receipt from the selected immutable Product commit and captured hamii observation; include exact Profile and source identities in plan output.
-- Reject dirty, missing, malformed, wrong-version, wrong-source, symlinked, changed-Profile, and stale-hamii inputs before any Product modification. Preserve a machine-readable reason.
+- Read-only authoritative planning captures the selected immutable Product commit and tracked regular Profile blob, decodes its exact bytes, and issues a structured receipt bound to the hamii observation and Screen contract. Regression tests cover dirty, missing, malformed, wrong-version, wrong-source, symlinked, changed-Profile, and stale-hamii inputs and machine-readable reasons. This does not authorize Product modification.
 - Implement explicit external v1 adoption into a reviewed Product commit and independent format-version migration/compatibility checks.
-- Validate replay, clone/fork/relocation/shallow behavior under the stated identity semantics, and race cases around plan/use. Keep Product patch publication in the Product Integration boundary.
-- Update Current Architecture, CLI skills, tests, and samples only when the production path exists; current documentation must continue to describe the present read-only external CLI accurately until then.
+- Validate replay, clone/fork/relocation/shallow behavior beyond the tested same-commit clone, and race cases around plan/use before Product patch publication. Keep Product patch publication in the Product Integration boundary.
+- Current Architecture, CLI skills, and tests describe the read-only Product Git path and the separate external-file path. Extend documentation when adoption and Product publication become available.
 
 ## Status
 

@@ -111,4 +111,44 @@ with tempfile.TemporaryDirectory(prefix="hamii-cli-errors-") as temporary:
     commit(historical)
     failure(historical, "migrationRequired", 6, "inspect")
 
+    product = root / "product"
+    product.mkdir()
+    git(product, "init", "--quiet")
+    repository_profile = product / "profile.json"
+    profile = {
+        "formatVersion": 1, "repositoryName": "Product", "architectureRules": [],
+        "componentMappings": [], "tokenMappings": [], "assetMappings": [],
+        "routingMappings": {}, "stateMappings": {}, "nativeMappings": {},
+        "codeModificationPolicy": [],
+    }
+    repository_profile.write_text(json.dumps(profile))
+    commit(product)
+    options = ("integration", "plan", screen, "--product-repository", str(product),
+               "--repository-profile", "profile.json")
+    resolved = success(project, *options)
+    assert resolved["repositoryProfileReceipt"]["profilePath"] == "profile.json"
+    assert "repositoryProfileIssue" not in resolved
+    failure(project, "usage", 2, "integration", "plan", screen,
+            "--product-repository", str(product))
+    failure(project, "usage", 2, *options, "--integration-profile", str(repository_profile))
+    not_a_repository = root / "not-a-product-repository"
+    not_a_repository.mkdir()
+    wrong_root = failure(project, "git", 7, "integration", "plan", screen,
+                         "--product-repository", str(not_a_repository),
+                         "--repository-profile", "profile.json")
+    assert wrong_root["repositoryProfileIssue"]["code"] == "invalidProductRoot"
+    (product / "untracked.txt").write_text("untracked\n")
+    dirty = failure(project, "conflict", 3, *options)
+    assert dirty["repositoryProfileIssue"]["code"] == "dirtyProduct"
+    (product / "untracked.txt").unlink()
+    missing = failure(project, "contract", 5, "integration", "plan", screen,
+                      "--product-repository", str(product),
+                      "--repository-profile", "missing.json")
+    assert missing["repositoryProfileIssue"]["code"] == "missingProfile"
+    profile["formatVersion"] = 2
+    repository_profile.write_text(json.dumps(profile))
+    commit(product)
+    version = failure(project, "migrationRequired", 6, *options)
+    assert version["repositoryProfileIssue"]["code"] == "unsupportedProfileVersion"
+
 print("CLI structured error contract valid: nine tested categories and permission")

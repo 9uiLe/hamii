@@ -53,7 +53,9 @@ HamiiPreviewProtocol ─> HamiiCore   (revisioned patch contract)
 HamiiNativeRuntime   ─> HamiiCore, HamiiPreviewProtocol
 HamiiGeneration      ─> HamiiCore   (standalone SwiftUI source)
 HamiiIntegration     ─> HamiiCore   (semantic contract and profile)
-HamiiMigrations      (Foundation-only historical 1→2 and inactive 2→3 edges)
+HamiiIntegrationRuntime ─> HamiiIntegration, HamiiApplication, HamiiFormat, HamiiCore
+                    (read-only Product Git Profile capture and planning receipt)
+HamiiMigrations      (Foundation-only historical 1→2 and 2→3 edges)
 HamiiMigrationRuntime ─> HamiiMigrations, HamiiFormat, HamiiIndex
                     (isolated review and coordinated publication)
 ```
@@ -83,7 +85,7 @@ Layer の実装済み kind は Stack、Text、Image、Button、Scroll、Overlay�
 
 [Starter sample](Samples/Starter/) は Page、Screen、AppSurface、Target capability、Text / Button Layer、Spacing Token を持つ Git 正本形式の例です。
 
-`hamii generate swiftui SCREEN_ID TARGET_ID --json` は宣言済みかつ Generator が実装する静的 subset の standalone source を返します。Generator は AppSurface を受けないため runtime version は未指定で評価し、version 固有の意味を無条件に許可しません。Runtime binding や未対応 semantics は error になります。`hamii integration contract SCREEN_ID --json` は product repository に渡す input/event/token/asset contract を返し、source generation とは別経路です。`hamii integration plan SCREEN_ID --integration-profile PATH --json` は明示指定した read-only Repository Profile v1 を読み、未解決 mapping を exit 5 と structured plan で返します。[Repository Profile v1](docs/integration-profile.md) に file schema と exit status を示します。
+`hamii generate swiftui SCREEN_ID TARGET_ID --json` は宣言済みかつ Generator が実装する静的 subset の standalone source を返します。Generator は AppSurface を受けないため runtime version は未指定で評価し、version 固有の意味を無条件に許可しません。Runtime binding や未対応 semantics は error になります。`hamii integration contract SCREEN_ID --json` は product repository に渡す input/event/token/asset contract を返し、source generation とは別経路です。`hamii integration plan SCREEN_ID --product-repository ROOT --repository-profile RELATIVE_PATH --json` は clean な Product Git commit に保存された Profile v1 を読み、hamii observation と exact Product input を `repositoryProfileReceipt` に束縛して read-only planning を行います。Product root は明示指定します。`--integration-profile PATH` は既存の外部 Profile を使う非 authoritative な read-only 経路で、receipt を発行しません。どちらの plan も mapping の構造的解決のみを表し、Product source の symbol 実在や runtime 動作は保証しません。[Repository Profile v1](docs/integration-profile.md) に file schema と exit status を示します。
 
 ## Tests / development / ADR
 

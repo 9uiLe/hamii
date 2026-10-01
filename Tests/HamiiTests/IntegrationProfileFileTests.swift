@@ -129,4 +129,58 @@ final class IntegrationProfileFileTests: XCTestCase {
             }
         }
     }
+
+    func testCapturedBytesDecodeAfterSourceFileDisappears() throws {
+        var profile = IntegrationProfile(repositoryName: "Product")
+        profile.stateMappings["user.name"] = "Product.User.name"
+        let data = try JSONEncoder().encode(profile)
+        try withProfile(data) { file in
+            let captured = try Data(contentsOf: file)
+            try FileManager.default.removeItem(at: file)
+            let decoded = try IntegrationProfileFile.decode(data: captured)
+            XCTAssertEqual(decoded.stateMappings, profile.stateMappings)
+            XCTAssertThrowsError(try IntegrationProfileFile.load(at: file)) {
+                XCTAssertEqual($0 as? IntegrationProfileFileError, .unreadable)
+            }
+        }
+    }
+
+    func testCapturedBytesPreserveStrictProfileFailures() throws {
+        let unsupported = try changed(encodedProfile()) { $0["formatVersion"] = 2 }
+        XCTAssertThrowsError(try IntegrationProfileFile.decode(data: unsupported)) {
+            XCTAssertEqual($0 as? IntegrationProfileFileError, .unsupportedVersion(2))
+        }
+        let encoded = try XCTUnwrap(String(data: encodedProfile(), encoding: .utf8))
+        let duplicate = Data(encoded.replacingOccurrences(of: "\"formatVersion\":1",
+            with: "\"formatVersion\":1,\"formatVersion\":1").utf8)
+        XCTAssertThrowsError(try IntegrationProfileFile.decode(data: duplicate)) {
+            guard case .invalid = $0 as? IntegrationProfileFileError else {
+                return XCTFail("Expected invalid duplicate-key profile, got \($0)")
+            }
+        }
+    }
+
+    func testRepositoryProfileReceiptCodableRoundTripAndRequiredFields() throws {
+        let receipt = RepositoryProfileReceipt(
+            productCommitOID: String(repeating: "a", count: 40),
+            profilePath: "profile.json",
+            profileBlobOID: String(repeating: "b", count: 40),
+            profileSHA256: String(repeating: "c", count: 64),
+            profileFormatVersion: 1,
+            hamiiDocumentID: EntityID("doc_one"),
+            hamiiDocumentRevision: 7,
+            hamiiStatePrecondition: ClientPrecondition("state-one"),
+            screenID: EntityID("screen_one"),
+            contractSHA256: String(repeating: "d", count: 64))
+        let data = try JSONEncoder().encode(receipt)
+        XCTAssertEqual(try JSONDecoder().decode(RepositoryProfileReceipt.self, from: data), receipt)
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        XCTAssertEqual(Set(object.keys), ["receiptFormatVersion", "productCommitOID", "profilePath",
+            "profileBlobOID", "profileSHA256", "profileFormatVersion", "hamiiDocumentID",
+            "hamiiDocumentRevision", "hamiiStatePrecondition", "screenID", "contractSHA256"])
+        XCTAssertEqual(object["receiptFormatVersion"] as? Int, 1)
+        object.removeValue(forKey: "profileBlobOID")
+        let missing = try JSONSerialization.data(withJSONObject: object)
+        XCTAssertThrowsError(try JSONDecoder().decode(RepositoryProfileReceipt.self, from: missing))
+    }
 }

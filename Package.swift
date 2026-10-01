@@ -11,6 +11,7 @@ let package = Package(
         .library(name: "HamiiIndex", targets: ["HamiiIndex"]),
         .library(name: "HamiiGeneration", targets: ["HamiiGeneration"]),
         .library(name: "HamiiIntegration", targets: ["HamiiIntegration"]),
+        .library(name: "HamiiIntegrationRuntime", targets: ["HamiiIntegrationRuntime"]),
         .library(name: "HamiiMigrations", targets: ["HamiiMigrations"]),
         .library(name: "HamiiPreviewProtocol", targets: ["HamiiPreviewProtocol"]),
         .library(name: "HamiiNativeRuntime", targets: ["HamiiNativeRuntime"]),
@@ -24,12 +25,13 @@ let package = Package(
         .target(name: "HamiiIndex", dependencies: ["HamiiCore", "HamiiFormat"], linkerSettings: [.linkedLibrary("sqlite3")]),
         .target(name: "HamiiGeneration", dependencies: ["HamiiCore"]),
         .target(name: "HamiiIntegration", dependencies: ["HamiiCore"]),
+        .target(name: "HamiiIntegrationRuntime", dependencies: ["HamiiCore", "HamiiApplication", "HamiiFormat", "HamiiIntegration"]),
         .target(name: "HamiiMigrations"),
         .target(name: "HamiiMigrationRuntime", dependencies: ["HamiiMigrations", "HamiiCore", "HamiiFormat", "HamiiIndex"]),
         .target(name: "HamiiPreviewProtocol", dependencies: ["HamiiCore"]),
         .target(name: "HamiiNativeRuntime", dependencies: ["HamiiCore", "HamiiPreviewProtocol"]),
-        .executableTarget(name: "HamiiCLI", dependencies: ["HamiiCore", "HamiiApplication", "HamiiFormat", "HamiiIndex", "HamiiGeneration", "HamiiIntegration", "HamiiMigrations", "HamiiMigrationRuntime"]),
+        .executableTarget(name: "HamiiCLI", dependencies: ["HamiiCore", "HamiiApplication", "HamiiFormat", "HamiiIndex", "HamiiGeneration", "HamiiIntegration", "HamiiIntegrationRuntime", "HamiiMigrations", "HamiiMigrationRuntime"]),
         .executableTarget(name: "HamiiApp", dependencies: ["HamiiCore", "HamiiApplication", "HamiiFormat", "HamiiPreviewProtocol", "HamiiNativeRuntime"]),
-        .testTarget(name: "HamiiTests", dependencies: ["HamiiCore", "HamiiApplication", "HamiiFormat", "HamiiIndex", "HamiiGeneration", "HamiiIntegration", "HamiiMigrations", "HamiiMigrationRuntime", "HamiiPreviewProtocol", "HamiiNativeRuntime"])
+        .testTarget(name: "HamiiTests", dependencies: ["HamiiCore", "HamiiApplication", "HamiiFormat", "HamiiIndex", "HamiiGeneration", "HamiiIntegration", "HamiiIntegrationRuntime", "HamiiMigrations", "HamiiMigrationRuntime", "HamiiPreviewProtocol", "HamiiNativeRuntime"])
     ]
 )

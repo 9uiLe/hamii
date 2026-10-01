@@ -28,6 +28,11 @@ public enum IntegrationProfileFile {
         do { data = try Data(contentsOf: url) }
         catch { throw IntegrationProfileFileError.unreadable }
 
+        return try decode(data: data)
+    }
+
+    /// Validate already captured Profile bytes without reading a mutable path again.
+    public static func decode(data: Data) throws -> IntegrationProfile {
         let object: [String: Any]
         do {
             guard let parsed = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {

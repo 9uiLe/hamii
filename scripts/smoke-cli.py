@@ -54,6 +54,8 @@ with tempfile.TemporaryDirectory(prefix="hamii-cli-") as directory:
     integration_skill = run("skills", "get", "integration")["skill"]
     assert "integration contract SCREEN_ID" in integration_skill
     assert "integration plan SCREEN_ID --integration-profile PATH" in integration_skill
+    assert "integration plan SCREEN_ID --product-repository ROOT --repository-profile RELATIVE_PATH" in integration_skill
+    assert "non-authoritative" in integration_skill
     assert "generate swiftui SCREEN_ID TARGET_ID" in integration_skill
     scope = created["document"]["scopes"][0]["id"]["rawValue"]
     added = mutate("screen", "create", scope, "Profile")
@@ -71,6 +73,32 @@ with tempfile.TemporaryDirectory(prefix="hamii-cli-") as directory:
         resolved = run("integration", "plan", screen_id, "--integration-profile", str(profile_file))
         assert resolved["ok"] and resolved["integrationPlan"]["resolutionIssues"] == []
         assert resolved["resolutionIssues"] == [] and resolved["blockedOutputs"] == []
+        assert set(resolved) == {"ok", "integrationPlan", "resolutionIssues", "blockedOutputs"}
+        product = Path(profile_dir) / "product"
+        product.mkdir()
+        subprocess.run(["git", "-C", str(product), "init", "-q"], check=True, timeout=15)
+        tracked_profile = product / "profile.json"
+        tracked_profile.write_text(json.dumps(integration_profile))
+        subprocess.run(["git", "-C", str(product), "add", "profile.json"], check=True, timeout=15)
+        subprocess.run(["git", "-C", str(product), "-c", "user.name=Smoke",
+                        "-c", "user.email=smoke@example.invalid", "commit", "-qm", "profile"],
+                       check=True, timeout=15)
+        product_head = subprocess.check_output(["git", "-C", str(product), "rev-parse", "HEAD"],
+                                               text=True, timeout=15).strip()
+        authoritative = run("integration", "plan", screen_id,
+                            "--product-repository", str(product),
+                            "--repository-profile", "profile.json")
+        assert authoritative["ok"] and authoritative["integrationPlan"] == resolved["integrationPlan"]
+        assert authoritative["resolutionIssues"] == [] and authoritative["blockedOutputs"] == []
+        receipt = authoritative["repositoryProfileReceipt"]
+        assert receipt["receiptFormatVersion"] == 1
+        assert receipt["productCommitOID"] == product_head
+        assert receipt["profilePath"] == "profile.json" and receipt["profileFormatVersion"] == 1
+        assert receipt["screenID"]["rawValue"] == screen_id
+        assert subprocess.check_output(["git", "-C", str(product), "status", "--porcelain"],
+                                       text=True, timeout=15) == ""
+        assert subprocess.check_output(["git", "-C", str(product), "rev-parse", "HEAD"],
+                                       text=True, timeout=15).strip() == product_head
         profile_file.write_text(json.dumps({**integration_profile, "formatVersion": 2}))
         wrong_version = subprocess.run(
             [str(binary), "--project", directory, "--json", "integration", "plan", screen_id,
@@ -129,10 +157,31 @@ with tempfile.TemporaryDirectory(prefix="hamii-cli-") as directory:
         assert unresolved.returncode == 5, unresolved.stdout + unresolved.stderr
         payload = json.loads(unresolved.stdout)
         assert payload["ok"] is False and payload["category"] == "contract"
+        assert "repositoryProfileReceipt" not in payload and "repositoryProfileIssue" not in payload
         assert payload["integrationPlan"]["unresolvedMappings"] == [f"asset:{asset['id']['rawValue']}"]
         assert payload["resolutionIssues"] == [{
             "code": "missingMapping", "semanticID": f"asset:{asset['id']['rawValue']}"}]
         assert payload["blockedOutputs"] == []
+        product = Path(profile_dir) / "product"
+        product.mkdir()
+        tracked_profile = product / "profile.json"
+        tracked_profile.write_text(json.dumps(integration_profile))
+        subprocess.run(["git", "-C", str(product), "init", "-q"], check=True, timeout=15)
+        subprocess.run(["git", "-C", str(product), "add", "profile.json"], check=True, timeout=15)
+        subprocess.run(["git", "-C", str(product), "-c", "user.name=Smoke",
+                        "-c", "user.email=smoke@example.invalid", "commit", "-qm", "profile"],
+                       check=True, timeout=15)
+        authoritative = subprocess.run(
+            [str(binary), "--project", directory, "--json", "integration", "plan", screen_id,
+             "--product-repository", str(product), "--repository-profile", "profile.json"],
+            capture_output=True, text=True, timeout=15,
+        )
+        assert authoritative.returncode == 5, authoritative.stdout + authoritative.stderr
+        authoritative_payload = json.loads(authoritative.stdout)
+        assert authoritative_payload["ok"] is False and authoritative_payload["category"] == "contract"
+        for field in ("integrationPlan", "resolutionIssues", "blockedOutputs"):
+            assert authoritative_payload[field] == payload[field], field
+        assert authoritative_payload["repositoryProfileReceipt"]["profilePath"] == "profile.json"
         duplicate_asset = {**integration_profile, "assetMappings": [
             {"rawValue": asset["id"]["rawValue"]}, "Product.AvatarA",
             {"rawValue": asset["id"]["rawValue"]}, "Product.AvatarB",
