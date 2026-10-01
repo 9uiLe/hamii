@@ -549,6 +549,7 @@ public final class CanonicalRepository: ProjectRepository, ProjectObservationVer
             try files.filter { $0.relativePath.hasPrefix(folder + "/") }
                 .sorted { $0.url.lastPathComponent < $1.url.lastPathComponent }
                 .map { file in
+                    if folder == "screens" { try rejectV3SemanticsInV2(file.bytes, path: file.relativePath) }
                     let value = try JSONDecoder().decode(T.self, from: file.bytes)
                     guard file.url.deletingPathExtension().lastPathComponent == value.id.rawValue else {
                         throw CanonicalError.filenameMismatch(file.url.lastPathComponent)
@@ -593,6 +594,9 @@ public final class CanonicalRepository: ProjectRepository, ProjectObservationVer
 
     private func encodedFiles(_ document: Document) throws -> [String: Data] {
         guard document.versions.document == 2 else { throw CanonicalError.unsupportedFormat(document.versions.document) }
+        guard document.screens.allSatisfy({ $0.semantics == nil }) else {
+            throw CanonicalError.unsupportedFormat(3)
+        }
         var files: [String: Data] = [:]
         try encodeAll(document.pages, folder: "pages", into: &files)
         try encodeAll(document.screens, folder: "screens", into: &files)
@@ -769,6 +773,7 @@ public final class CanonicalRepository: ProjectRepository, ProjectObservationVer
                 bytesRead += data.count
             }
             let decodeStart = onObservation == nil ? 0 : ProcessInfo.processInfo.systemUptime
+            if folder == "screens" { try rejectV3SemanticsInV2(data, path: url.lastPathComponent) }
             let value = try JSONDecoder().decode(T.self, from: data)
             if onObservation != nil {
                 decodeMilliseconds += (ProcessInfo.processInfo.systemUptime - decodeStart) * 1_000
@@ -793,6 +798,15 @@ public final class CanonicalRepository: ProjectRepository, ProjectObservationVer
         var data = try encoder.encode(value)
         data.append(0x0A)
         return data
+    }
+
+    private func rejectV3SemanticsInV2(_ bytes: Data, path: String) throws {
+        guard let object = try JSONSerialization.jsonObject(with: bytes) as? [String: Any] else {
+            throw CanonicalError.transactionCorrupt("Invalid Screen JSON: \(path)")
+        }
+        guard object["semantics"] == nil else {
+            throw CanonicalError.transactionCorrupt("Screen semantics requires format v3: \(path)")
+        }
     }
 
     private func encodeAll<T: Encodable & Identifiable>(_ values: [T], folder: String, into files: inout [String: Data]) throws where T.ID == EntityID {

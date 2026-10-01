@@ -40,13 +40,14 @@ The sidecar option isolates relation-only diffs, but the measured unregistered s
 
 ## Unknowns
 
-- Which exact v3 Codable schema and production extraction APIs best implement the chosen ownership and anchor boundary?
-- Which production validation diagnostics and atomic journal checkpoints are needed for new Screen bytes?
+- How will the real v2→v3 edge create explicit empty Screen semantics without inferring relations, and how will the Current reader switch only after that edge is installed?
 - How will Current v3 migration candidate/review/publication compose older edges? This independent decision is tracked in [Migration Edge Composition](../migration-edge-composition/ADR.md).
 
 ## Required Evidence
 
-[Canonical layout and v3 Spike](spikes/canonical-layout-and-v3/SPIKE.md) compared both layouts with test-only prototypes. It found that the current v2 decoder drops new Screen fields under a v2 marker, and an unregistered sidecar is invisible to Snapshot identity and client preconditions. It demonstrated direct-Screen anchor validation, candidate round-trip, v2 reader rejection of a v3 marker, and sequential v1→v2 plus test-only v2→v3 transformation. [Component output anchor Spike](spikes/component-output-anchor/SPIKE.md) then tested repeated and nested Component occurrences, Variant/slot resolution, invalid anchor rejection, and candidate contract projection using actual resolver code. These are evidence, not a production format decision. Production schema, complete validation/extraction, and journal recovery remain unproven. Migration path composition is tracked separately in [Migration Edge Composition](../migration-edge-composition/ADR.md).
+[Canonical layout and v3 Spike](spikes/canonical-layout-and-v3/SPIKE.md) compared both layouts with test-only prototypes. It found that the current v2 decoder drops new Screen fields under a v2 marker, and an unregistered sidecar is invisible to Snapshot identity and client preconditions. It demonstrated direct-Screen anchor validation, candidate round-trip, v2 reader rejection of a v3 marker, and sequential v1→v2 plus test-only v2→v3 transformation. [Component output anchor Spike](spikes/component-output-anchor/SPIKE.md) then tested repeated and nested Component occurrences, Variant/slot resolution, invalid anchor rejection, and candidate contract projection using actual resolver code.
+
+The production candidate seam now keeps semantic declarations in Core, validates direct and occurrence anchors against raw and resolved trees, and rejects a slot replacement that reuses a definition Layer ID. A strict v3 file-set codec requires explicit Screen semantics and matching v3 markers. The Current v2 reader and migration preflight reject a semantics field under a v2 marker. Integration Contract extraction consumes valid in-memory v3 semantics while v2 JSON shape remains unchanged. Tests exercise relation edits through the existing Canonical transaction journal at prepared, ready, Screen shard apply, manifest apply, and complete/cleanup, requiring exact old or new v3 file sets after recovery. These are implementation evidence for the candidate seam, not evidence that v3 is Current. The real v2→v3 edge and Current switch remain outstanding. Migration path composition is tracked separately in [Migration Edge Composition](../migration-edge-composition/ADR.md).
 
 ## Decision Criteria
 

@@ -18,10 +18,12 @@ public struct MigrationPlan: Codable {
 public enum MigrationPreflightError: Error, CustomStringConvertible {
     case missingManifest
     case invalidManifest
+    case v3SemanticsUnderV2(String)
     public var description: String {
         switch self {
         case .missingManifest: return "hamii.json is missing"
         case .invalidManifest: return "hamii.json must contain matching numeric formatVersion and versions.document markers"
+        case .v3SemanticsUnderV2(let path): return "Screen semantics requires format v3: \(path)"
         }
     }
 }
@@ -51,6 +53,12 @@ public enum MigrationPreflight {
             return MigrationPlan(sourceDocumentFormatVersion: version, targetDocumentFormatVersion: currentDocumentFormatVersion, classification: nil, state: "pendingCanonicalTransaction", blockers: ["Recover the pending Canonical save before migration"], canonicalFileCount: count, originalRepositoryUntouched: true)
         }
         if version == currentDocumentFormatVersion {
+            for (path, bytes) in files.files where path.hasPrefix("screens/") && path.hasSuffix(".json") {
+                guard let screen = try JSONSerialization.jsonObject(with: bytes) as? [String: Any] else {
+                    throw MigrationPreflightError.invalidManifest
+                }
+                if screen["semantics"] != nil { throw MigrationPreflightError.v3SemanticsUnderV2(path) }
+            }
             return MigrationPlan(sourceDocumentFormatVersion: version, targetDocumentFormatVersion: version, classification: nil, state: "current", blockers: [], canonicalFileCount: count, originalRepositoryUntouched: true)
         }
         if version == 1 {

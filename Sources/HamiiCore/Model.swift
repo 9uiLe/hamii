@@ -87,9 +87,13 @@ public struct Screen: Codable, Equatable, Identifiable {
     public var scopeID: EntityID
     public var root: Layer
     public var navigation: NavigationConfiguration?
+    /// Product-independent declarations owned by this Screen shard. Current
+    /// format v2 keeps this nil and does not encode a semantics key.
+    public var semantics: ScreenSemantics?
     public init(id: EntityID, name: String, scopeID: EntityID, root: Layer) {
         self.id = id; self.name = name; self.scopeID = scopeID; self.root = root
         self.navigation = nil
+        self.semantics = nil
     }
 }
 

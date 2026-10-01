@@ -11,7 +11,7 @@ public struct IntegrationContract: Codable, Equatable {
     public var assetIDs: [EntityID]
     public var nativeIntents: [String]
     public var accessibilityLabels: [String]
-    // Nil preserves the JSON shape of contracts extracted from the current IR.
+    // Nil preserves the JSON shape of contracts extracted from screens without typed semantics.
     // A textBinding alone cannot establish visibility, nil or transform semantics.
     public var semanticSources: [SemanticSource]? = nil
     public var relations: [SemanticRelation]? = nil
@@ -118,7 +118,13 @@ public enum IntegrationContracts {
                 native.insert("navigation.custom")
             }
         }
-        return IntegrationContract(screenID: screen.id, name: screen.name, architectureScopeID: screen.scopeID, inputs: inputs.sorted(), events: events.sorted(), tokenIDs: tokens.sorted { $0.rawValue < $1.rawValue }, assetIDs: assets.sorted { $0.rawValue < $1.rawValue }, nativeIntents: native.sorted(), accessibilityLabels: labels.sorted())
+        return IntegrationContract(screenID: screen.id, name: screen.name, architectureScopeID: screen.scopeID,
+            inputs: inputs.sorted(), events: events.sorted(),
+            tokenIDs: tokens.sorted { $0.rawValue < $1.rawValue },
+            assetIDs: assets.sorted { $0.rawValue < $1.rawValue },
+            nativeIntents: native.sorted(), accessibilityLabels: labels.sorted(),
+            semanticSources: screen.semantics?.sources,
+            relations: screen.semantics?.relations)
     }
 
     public static func plan(_ contract: IntegrationContract, profile: IntegrationProfile) -> IntegrationPlan {
