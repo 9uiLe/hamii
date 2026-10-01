@@ -18,6 +18,8 @@ Spacing Token は GUI と CLI から作成・参照・Stack spacing / Layer の�
 
 Current IR の typed payload、Stack spacing、順序付き padding effect、Screen-level system semantics は実装済みです。`nativeIntent` と `targetOverrides` は Current Format v2 の opaque field として保持します。両方とも Preview / Generator の supported capability ではなく、Exact declaration でも利用を拒否します。Product repository 固有の native mapping は Integration Contract 側の論点です。
 
+Product Integration Contract は Screen-level の optional typed state/binding relation と fail-closed planning core を持ちます。既存 CLI contract の JSON field は維持し、現行 IR から抽出できない relation を推測して出力しません。Planner は mapping/relation/transform の unresolved issue と影響を受ける output を報告できます。IR からの relation 抽出と保存、IntegrationProfile の canonical persistence、Product repository adapter、runtime display/event/accessibility の検証は未実装です。
+
 `bash scripts/check.sh` は実装済み契約を検証します。この検証だけでは Native Preview parity、次の format change に対する migration safety、production integration の品質は証明できません。これらは [Technical Spikes](spikes.md) に紐づく実験で測定します。
 
 Canonical save は読み込み時点の Document から期待 Canonical bytes を再構成し、保存直前の現在 bytes と照合します。load/save 間の逐次外部編集では conflict を返し、外部 bytes を保持することを統合テストで確認しました。照合と atomic replace の間に非協調 writer が入る race は未解決で、[External Git Write ADR](../adr/git-external-write-coordination/ADR.md) の対象です。

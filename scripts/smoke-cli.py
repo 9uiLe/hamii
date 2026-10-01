@@ -73,6 +73,13 @@ with tempfile.TemporaryDirectory(prefix="hamii-cli-") as directory:
     screen = run("inspect")["document"]["screens"][0]
     image = mutate("layer", "image", screen["id"]["rawValue"], screen["root"]["id"]["rawValue"], asset["id"]["rawValue"], "Avatar")
     assert image["mutation"]["revision"] == 3
+    contract = run("integration", "contract", screen["id"]["rawValue"])["contract"]
+    assert set(contract) == {
+        "screenID", "name", "architectureScopeID", "inputs", "events",
+        "tokenIDs", "assetIDs", "nativeIntents", "accessibilityLabels",
+    }, contract
+    assert contract["screenID"]["rawValue"] == screen["id"]["rawValue"]
+    assert contract["assetIDs"] == [{"rawValue": asset["id"]["rawValue"]}]
     primitive = mutate("token", "create", scope, "spacing.base", "spacing", "8")
     assert primitive["mutation"]["revision"] == 4
     primitive_id = primitive["mutation"]["patches"][0]["entityID"]["rawValue"]

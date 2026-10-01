@@ -11,6 +11,27 @@ public struct IntegrationContract: Codable, Equatable {
     public var assetIDs: [EntityID]
     public var nativeIntents: [String]
     public var accessibilityLabels: [String]
+    // Nil preserves the JSON shape of contracts extracted from the current IR.
+    // A textBinding alone cannot establish visibility, nil or transform semantics.
+    public var semanticSources: [SemanticSource]? = nil
+    public var relations: [SemanticRelation]? = nil
+
+    public init(screenID: EntityID, name: String, architectureScopeID: EntityID,
+                inputs: [String], events: [String], tokenIDs: [EntityID], assetIDs: [EntityID],
+                nativeIntents: [String], accessibilityLabels: [String],
+                semanticSources: [SemanticSource]? = nil, relations: [SemanticRelation]? = nil) {
+        self.screenID = screenID
+        self.name = name
+        self.architectureScopeID = architectureScopeID
+        self.inputs = inputs
+        self.events = events
+        self.tokenIDs = tokenIDs
+        self.assetIDs = assetIDs
+        self.nativeIntents = nativeIntents
+        self.accessibilityLabels = accessibilityLabels
+        self.semanticSources = semanticSources
+        self.relations = relations
+    }
 }
 
 public struct IntegrationProfile: Codable, Equatable {
@@ -34,6 +55,9 @@ public struct IntegrationProfile: Codable, Equatable {
 public struct IntegrationPlan: Codable {
     public var contract: IntegrationContract
     public var unresolvedMappings: [String]
+    public var resolutionIssues: [IntegrationResolutionIssue]
+    public var blockedOutputs: [SemanticOutputKey]
+    public var needsResolution: Bool { !resolutionIssues.isEmpty }
 }
 
 public enum ContractError: Error { case missingScreen, invalidDocument([Diagnostic]) }
@@ -76,11 +100,6 @@ public enum IntegrationContracts {
     }
 
     public static func plan(_ contract: IntegrationContract, profile: IntegrationProfile) -> IntegrationPlan {
-        var unresolved: [String] = []
-        for token in contract.tokenIDs where profile.tokenMappings[token] == nil { unresolved.append("token:\(token.rawValue)") }
-        for asset in contract.assetIDs where profile.assetMappings[asset] == nil { unresolved.append("asset:\(asset.rawValue)") }
-        for event in contract.events where profile.routingMappings[event] == nil { unresolved.append("event:\(event)") }
-        for input in contract.inputs where profile.stateMappings[input] == nil { unresolved.append("input:\(input)") }
-        return IntegrationPlan(contract: contract, unresolvedMappings: unresolved.sorted())
+        IntegrationPlanner.plan(contract, assessments: IntegrationPlanner.assessments(for: contract, profile: profile))
     }
 }
