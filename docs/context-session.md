@@ -6,17 +6,21 @@
 | --- | --- | --- |
 | `layer` | `op`, `screenID`, `layerID` | none |
 | `resources` | `op`, `consumerScopeID`, `kind` | `matching`, `limit` |
+| `componentAvailability` | `op`, `consumerScopeID` | `matching`, `limit` |
 | `component` | `op`, `consumerScopeID`, `componentID` | none |
 | `token` | `op`, `consumerScopeID`, `tokenID` | none |
 | `surface` | `op`, `surfaceID` | none |
 | `close` | `op` | none |
 
-`op` is the operation name. IDs must be nonempty strings. `kind` is `component`, `token` or `asset`. `matching` is a string. `limit` is an integer in 1…100 (default 32). Unknown operations/fields, incorrect types and malformed JSON return `usage` with `terminal: false`. Lines over 64 KiB are discarded through the newline and return the same nonterminal error. Missing/unavailable entities return `notFound` with `terminal: false`. No request accepts a state token or mutation.
+`op` is the operation name. IDs must be nonempty strings. `kind` is `component`, `token` or `asset`. `matching` is a string. `limit` is an integer in 1…100 (default 32). Unknown operations/fields, incorrect types and malformed JSON return `usage` with `terminal: false`. Lines over 64 KiB are discarded through the newline and return the same nonterminal error. Missing entities and unavailable individual detail lookups return `notFound` with `terminal: false`. No request accepts a state token or mutation.
+
+`componentAvailability` explicitly assesses all ComponentDefinitions for one consumer Scope, including unavailable definitions. Its machine-readable items contain `id`, `name`, `ownerScopeID`, `available`, `ruleID` and `blockingComponentID`; the latter two are absent for available items. A nested unavailable dependency is identified by `blockingComponentID`. The list is filtered by name, sorted by name then stable ID, and limited after filtering. It also reports `returnedCount`, `matchingCount` and `truncated`. The one-shot equivalent is `hamii --project PATH --json query context component-availability SCOPE_ID [MATCH] [--limit N] --state TOKEN`. Both paths use the same projection and observation freshness rule. `resources ... component` remains an available-only query. This explanation is derived from the Canonical Document and does not add Index columns.
 
 Example stdin:
 
 ```json
 {"op":"resources","consumerScopeID":"scope_app","kind":"component","matching":"Button","limit":8}
+{"op":"componentAvailability","consumerScopeID":"scope_app","matching":"Button","limit":8}
 {"op":"component","consumerScopeID":"scope_app","componentID":"component_button"}
 {"op":"surface","surfaceID":"surface_checkout"}
 {"op":"close"}

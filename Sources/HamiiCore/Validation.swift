@@ -40,25 +40,55 @@ public struct ScopeEvaluator {
     }
 }
 
+public struct ComponentAvailabilityAssessment: Equatable, Sendable {
+    public let available: Bool
+    public let ruleID: String?
+    public let blockingComponentID: EntityID?
+
+    public init(ruleID: String? = nil, blockingComponentID: EntityID? = nil) {
+        available = ruleID == nil
+        self.ruleID = ruleID
+        self.blockingComponentID = blockingComponentID
+    }
+}
+
 public enum ComponentAvailability {
-    public static func reason(_ definition: ComponentDefinition, consumer: EntityID, scopes: ScopeEvaluator, definitions: [EntityID: ComponentDefinition]) -> String? {
-        reason(definition, consumer: consumer, scopes: scopes, definitions: definitions, path: [])
+    public static func assess(_ definition: ComponentDefinition, consumer: EntityID,
+                              scopes: ScopeEvaluator,
+                              definitions: [EntityID: ComponentDefinition]) -> ComponentAvailabilityAssessment {
+        assess(definition, consumer: consumer, scopes: scopes, definitions: definitions, path: [])
     }
 
-    private static func reason(_ definition: ComponentDefinition, consumer: EntityID, scopes: ScopeEvaluator, definitions: [EntityID: ComponentDefinition], path: Set<EntityID>) -> String? {
-        guard !path.contains(definition.id) else { return "component.cycle" }
-        guard scopes.canUse(owner: definition.ownerScopeID, consumer: consumer) else { return "scope.notAncestor" }
-        if definition.availability.denyScopeIDs.contains(consumer) { return "component.denied" }
+    public static func reason(_ definition: ComponentDefinition, consumer: EntityID,
+                              scopes: ScopeEvaluator, definitions: [EntityID: ComponentDefinition]) -> String? {
+        assess(definition, consumer: consumer, scopes: scopes, definitions: definitions).ruleID
+    }
+
+    private static func assess(_ definition: ComponentDefinition, consumer: EntityID,
+                               scopes: ScopeEvaluator, definitions: [EntityID: ComponentDefinition],
+                               path: Set<EntityID>) -> ComponentAvailabilityAssessment {
+        func blocked(_ rule: String, by id: EntityID) -> ComponentAvailabilityAssessment {
+            ComponentAvailabilityAssessment(ruleID: rule, blockingComponentID: id)
+        }
+        guard !path.contains(definition.id) else { return blocked("component.cycle", by: definition.id) }
+        guard scopes.canUse(owner: definition.ownerScopeID, consumer: consumer) else {
+            return blocked("scope.notAncestor", by: definition.id)
+        }
+        if definition.availability.denyScopeIDs.contains(consumer) {
+            return blocked("component.denied", by: definition.id)
+        }
         if !definition.availability.allowOnlyScopeIDs.isEmpty && !definition.availability.allowOnlyScopeIDs.contains(consumer) {
-            return "component.notAllowed"
+            return blocked("component.notAllowed", by: definition.id)
         }
         for dependencyID in dependencies(in: definition.root) {
-            guard let dependency = definitions[dependencyID] else { return "component.missing" }
-            if let rule = reason(dependency, consumer: consumer, scopes: scopes, definitions: definitions, path: path.union([definition.id])) {
-                return rule
+            guard let dependency = definitions[dependencyID] else {
+                return blocked("component.missing", by: dependencyID)
             }
+            let assessment = assess(dependency, consumer: consumer, scopes: scopes,
+                                    definitions: definitions, path: path.union([definition.id]))
+            if !assessment.available { return assessment }
         }
-        return nil
+        return ComponentAvailabilityAssessment()
     }
 
     private static func dependencies(in layer: Layer) -> [EntityID] {

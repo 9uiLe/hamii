@@ -106,6 +106,7 @@ def main():
             requests = [
                 ({'op':'layer', 'screenID':screen, 'layerID':layer}, ['layer', screen, layer]),
                 ({'op':'resources', 'consumerScopeID':scope, 'kind':'component', 'matching':'PriceBadge', 'limit':2}, ['resources', scope, 'component', 'PriceBadge', '--limit', '2']),
+                ({'op':'componentAvailability', 'consumerScopeID':scope, 'matching':'PrivateBadge', 'limit':2}, ['component-availability', scope, 'PrivateBadge', '--limit', '2']),
                 ({'op':'component', 'consumerScopeID':scope, 'componentID':component}, ['component', scope, component]),
                 ({'op':'token', 'consumerScopeID':scope, 'tokenID':spacing}, ['token', scope, spacing]),
                 ({'op':'surface', 'surfaceID':surface}, ['surface', surface]),
@@ -122,6 +123,15 @@ def main():
                 assert session.last_line == one_shot_bytes
                 assert result == json.loads(one_shot_bytes)
                 assert token(result) == s0
+            availability = session.send(requests[2][0])['context']['payload']
+            assert availability['consumerScopeID']['rawValue'] == scope
+            assert availability['matchingCount'] == 1 and availability['returnedCount'] == 1
+            blocked = availability['items'][0]
+            assert blocked['id']['rawValue'] == private_component and blocked['available'] is False
+            assert blocked['ruleID'] == 'scope.notAncestor'
+            assert blocked['blockingComponentID']['rawValue'] == private_component
+            assert all(item['id']['rawValue'] != private_component for item in
+                       session.send({'op':'resources','consumerScopeID':scope,'kind':'component'})['context']['payload']['items'])
             surface_context = session.send({'op':'surface', 'surfaceID':surface})['context']
             assert surface_context['payload']['surfaceID']['rawValue'] == surface
             assert surface_context['payload']['profile']['targetID']['rawValue'] == target
@@ -155,6 +165,9 @@ def main():
                          b'{"op":"resources","consumerScopeID":"x","kind":"token","limit":1.5}\n',
                          b'{"op":"resources","consumerScopeID":"x","kind":"token","limit":101}\n',
                          b'{"op":"resources","consumerScopeID":"x","kind":"token","matching":null}\n',
+                         b'{"op":"componentAvailability","consumerScopeID":"x","limit":true}\n',
+                         b'{"op":"componentAvailability","consumerScopeID":"x","limit":101}\n',
+                         b'{"op":"componentAvailability","consumerScopeID":"x","state":"forbidden"}\n',
                          b'{"op":"surface","surfaceID":"x","extra":"forbidden"}\n',
                          b'x' * (64 * 1024 + 1) + b'\n']
             for raw in malformed:
@@ -166,6 +179,9 @@ def main():
             unavailable = session.send({'op':'component','consumerScopeID':scope,'componentID':private_component})
             assert unavailable['category'] == 'notFound' and unavailable['terminal'] is False
             assert 'context' not in unavailable
+            invalid_limit = cli(root, 'query', 'context', 'component-availability', scope,
+                                '--limit', '101', '--state', s0, expected=2)
+            assert invalid_limit['category'] == 'usage' and 'context' not in invalid_limit
             missing_surface = session.send({'op':'surface','surfaceID':'missing'})
             assert missing_surface['category'] == 'notFound' and missing_surface['terminal'] is False
             assert 'context' not in missing_surface
@@ -186,6 +202,9 @@ def main():
             cli(root, 'page', 'create', 'Concurrent writer', '--state', s0)
             stale_one_shot = cli(root, 'query', 'context', 'surface', surface, '--state', s0, expected=3)
             assert stale_one_shot['category'] == 'conflict' and 'context' not in stale_one_shot
+            stale_availability = cli(root, 'query', 'context', 'component-availability', scope,
+                                     '--state', s0, expected=3)
+            assert stale_availability['category'] == 'conflict' and 'context' not in stale_availability
             failure = session.send(requests[0][0])
             assert failure['category'] == 'conflict' and failure['terminal'] is True and 'context' not in failure
             session.finish(3)
@@ -228,7 +247,7 @@ def main():
             session.finish(7)
             failed = cli(root,'query','context','session',expected=7)
             assert failed['terminal'] is True and 'context' not in failed
-        print(json.dumps({'status':'passed','normalOperations':7,'usageCases':len(malformed),
+        print(json.dumps({'status':'passed','normalOperations':8,'usageCases':len(malformed),
                           'staleWriter':True,'sameRevisionSwitch':True,'pendingGate':True,
                           'epochCorruption':True,'restart':True,'boundedLineRecovery':True}))
     finally:

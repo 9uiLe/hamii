@@ -58,6 +58,17 @@ public final class ProjectService {
         ProjectResourceAvailability.components(in: try repository.observe().document, consumer: scopeID)
     }
 
+    public func componentAvailability(for scopeID: EntityID, expectedState: ClientPrecondition,
+                                      includeNonOwned: Bool = true) throws -> [ComponentAvailabilityItem] {
+        let observed = try repository.observe()
+        guard observed.statePrecondition == expectedState else { throw AuthoringError.staleState }
+        guard observed.document.scopes.contains(where: { $0.id == scopeID }) else {
+            throw AuthoringError.notFound(scopeID.rawValue)
+        }
+        return ProjectResourceAvailability.componentAvailability(in: observed.document, consumer: scopeID,
+            includeNonOwned: includeNonOwned)
+    }
+
     public func availableAssets(for scopeID: EntityID) throws -> [Asset] {
         ProjectResourceAvailability.assets(in: try repository.observe().document, consumer: scopeID)
     }

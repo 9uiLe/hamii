@@ -19,7 +19,7 @@ final class EditorSession {
     var selectedSurfaceID: EntityID?
     var surfaceCapabilityAssessment: SurfaceCapabilityAssessment?
     var surfaceAssessmentError: String?
-    var availableComponents: [ComponentDefinition] = []
+    var componentAvailability: [ComponentAvailabilityItem] = []
     var availableAssets: [Asset] = []
     var availableSpacingTokens: [DesignToken] = []
     var previewSession: NativePreviewSession?
@@ -48,8 +48,8 @@ final class EditorSession {
             selectedLayerID = nil
             refreshSurfaceAssessment()
             previewSession = makePreviewSession(document, statePrecondition: observed.statePrecondition)
-            refreshAvailableComponents()
             errorMessage = nil
+            refreshComponentAvailability()
         } catch { errorMessage = String(describing: error) }
     }
     func selectScreen(_ id: EntityID) {
@@ -59,7 +59,7 @@ final class EditorSession {
         if let document, let statePrecondition {
             previewSession = makePreviewSession(document, statePrecondition: statePrecondition)
         }
-        refreshAvailableComponents()
+        refreshComponentAvailability()
     }
 
     var eligibleSurfaces: [AppSurface] {
@@ -177,7 +177,7 @@ final class EditorSession {
             } else {
                 previewSession = makePreviewSession(updated, statePrecondition: observed.statePrecondition)
             }
-            refreshAvailableComponents()
+            refreshComponentAvailability()
             errorMessage = nil
         } catch {
             if case AuthoringError.staleState = error, let observed = try? service.observe() {
@@ -185,7 +185,7 @@ final class EditorSession {
                 statePrecondition = observed.statePrecondition
                 refreshSurfaceAssessment()
                 previewSession = makePreviewSession(observed.document, statePrecondition: observed.statePrecondition)
-                refreshAvailableComponents()
+                refreshComponentAvailability()
             }
             errorMessage = String(describing: error)
         }
@@ -196,17 +196,39 @@ final class EditorSession {
         return try? NativePreviewSession(document: document, surface: surface, statePrecondition: statePrecondition)
     }
 
-    private func refreshAvailableComponents() {
-        guard let service, let document,
+    private func refreshComponentAvailability() {
+        guard let service, let document, let statePrecondition,
               let screen = document.screens.first(where: { $0.id == selectedScreenID }) else {
-            availableComponents = []
+            componentAvailability = []
             availableAssets = []
             availableSpacingTokens = []
             return
         }
-        availableComponents = (try? service.availableComponents(for: screen.scopeID)) ?? []
+        do {
+            componentAvailability = try service.componentAvailability(for: screen.scopeID,
+                expectedState: statePrecondition, includeNonOwned: false)
+                .sorted { $0.name == $1.name ? $0.id.rawValue < $1.id.rawValue : $0.name < $1.name }
+        } catch {
+            componentAvailability = []
+            errorMessage = String(describing: error)
+        }
         availableAssets = (try? service.availableAssets(for: screen.scopeID)) ?? []
         availableSpacingTokens = (try? service.availableTokens(for: screen.scopeID, kind: .spacing)) ?? []
+    }
+
+    func componentAvailabilityExplanation(_ item: ComponentAvailabilityItem) -> String {
+        let reason: String
+        switch item.ruleID {
+        case "component.denied": reason = "Denied for this ArchitectureScope"
+        case "component.notAllowed": reason = "This ArchitectureScope is not in the allow list"
+        case "scope.notAncestor": reason = "A nested component is outside this ArchitectureScope"
+        case "component.missing": reason = "A nested component is missing"
+        case "component.cycle": reason = "Component dependency cycle"
+        default: reason = "Component is unavailable"
+        }
+        guard let blocker = item.blockingComponentID else { return reason }
+        let name = document?.components.first { $0.id == blocker }?.name ?? blocker.rawValue
+        return "\(reason) (\(name), \(item.ruleID ?? "unknown"))"
     }
 }
 
@@ -416,9 +438,24 @@ struct EditorView: View {
                         }
                     }
                     Section("Components") {
-                        ForEach(session.availableComponents) { component in
-                            Button(component.name) { session.instantiate(component.id) }
-                                .disabled(selectedScreen == nil)
+                        ForEach(session.componentAvailability, id: \.id) { item in
+                            Button {
+                                session.instantiate(item.id)
+                            } label: {
+                                VStack(alignment: .leading) {
+                                    HStack {
+                                        Text(item.name)
+                                        if !item.available { Image(systemName: "lock.fill") }
+                                    }
+                                    if !item.available {
+                                        Text(session.componentAvailabilityExplanation(item))
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                            }
+                            .disabled(selectedScreen == nil || !item.available)
+                            .help(item.available ? "Available" : session.componentAvailabilityExplanation(item))
                         }
                     }
                     Section("Assets") {

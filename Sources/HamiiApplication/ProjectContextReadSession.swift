@@ -61,6 +61,14 @@ public final class ProjectContextReadSession {
         }
     }
 
+    public func componentAvailability(consumerScopeID: EntityID, matching: String? = nil,
+                                      limit: Int = 32) throws -> ContextResponse<ContextComponentAvailabilityList> {
+        try withVerified {
+            try ProjectContextProjection.componentAvailability($0, consumerScopeID: consumerScopeID,
+                matching: matching, limit: limit)
+        }
+    }
+
     public func componentDetail(componentID: EntityID, consumerScopeID: EntityID) throws -> ContextResponse<ContextComponentDetail> {
         try withVerified {
             try ProjectContextProjection.componentDetail($0, componentID: componentID,

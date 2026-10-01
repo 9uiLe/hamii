@@ -147,6 +147,14 @@ public struct ContextResourceList: Codable, Equatable {
     public let truncated: Bool
 }
 
+public struct ContextComponentAvailabilityList: Codable, Equatable {
+    public let consumerScopeID: EntityID
+    public let items: [ComponentAvailabilityItem]
+    public let returnedCount: Int
+    public let matchingCount: Int
+    public let truncated: Bool
+}
+
 public struct ContextBoundedList<Element: Codable & Equatable>: Codable, Equatable {
     public let items: [Element]
     public let totalCount: Int
@@ -279,6 +287,24 @@ enum ProjectContextProjection {
             truncated: filtered.count > limit))
     }
 
+    static func componentAvailability(_ observed: ProjectObservation, consumerScopeID: EntityID,
+                                      matching: String?, limit: Int) throws
+        -> ContextResponse<ContextComponentAvailabilityList> {
+        guard (1...100).contains(limit) else { throw ContextQueryError.invalidLimit }
+        let document = observed.document
+        try requireScope(consumerScopeID, in: document)
+        let term = matching?.lowercased() ?? ""
+        let filtered = ProjectResourceAvailability.componentAvailability(in: document, consumer: consumerScopeID)
+            .filter { term.isEmpty || $0.name.lowercased().contains(term) }
+            .sorted { left, right in
+                left.name == right.name ? left.id.rawValue < right.id.rawValue : left.name < right.name
+            }
+        let items = Array(filtered.prefix(limit))
+        return ContextResponse(observation: ContextObservation(observed),
+            payload: ContextComponentAvailabilityList(consumerScopeID: consumerScopeID, items: items,
+                returnedCount: items.count, matchingCount: filtered.count, truncated: filtered.count > limit))
+    }
+
     static func componentDetail(_ observed: ProjectObservation, componentID: EntityID,
                                 consumerScopeID: EntityID) throws -> ContextResponse<ContextComponentDetail> {
         try Self.requireScope(consumerScopeID, in: observed.document)
@@ -351,6 +377,16 @@ public final class ProjectContextService {
         return try withObservation(expectedState: expectedState) {
             try ProjectContextProjection.resources($0, consumerScopeID: consumerScopeID,
                 kind: kind, matching: matching, limit: limit)
+        }
+    }
+
+    public func componentAvailability(consumerScopeID: EntityID, matching: String? = nil,
+                                      limit: Int = 32, expectedState: ClientPrecondition) throws
+        -> ContextResponse<ContextComponentAvailabilityList> {
+        guard (1...100).contains(limit) else { throw ContextQueryError.invalidLimit }
+        return try withObservation(expectedState: expectedState) {
+            try ProjectContextProjection.componentAvailability($0, consumerScopeID: consumerScopeID,
+                matching: matching, limit: limit)
         }
     }
 

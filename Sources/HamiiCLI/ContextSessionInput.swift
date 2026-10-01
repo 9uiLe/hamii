@@ -12,6 +12,7 @@ enum ContextSessionInputError: Error, CustomStringConvertible {
 enum ContextSessionRequest {
     case layer(screen: EntityID, layer: EntityID)
     case resources(scope: EntityID, kind: ContextResourceKind, matching: String?, limit: Int)
+    case componentAvailability(scope: EntityID, matching: String?, limit: Int)
     case component(scope: EntityID, component: EntityID)
     case token(scope: EntityID, token: EntityID)
     case surface(surface: EntityID)
@@ -38,6 +39,7 @@ enum ContextSessionRequest {
         switch op {
         case "layer": fields = ["op", "screenID", "layerID"]
         case "resources": fields = ["op", "consumerScopeID", "kind", "matching", "limit"]
+        case "componentAvailability": fields = ["op", "consumerScopeID", "matching", "limit"]
         case "component": fields = ["op", "consumerScopeID", "componentID"]
         case "token": fields = ["op", "consumerScopeID", "tokenID"]
         case "surface": fields = ["op", "surfaceID"]
@@ -52,15 +54,12 @@ enum ContextSessionRequest {
         case "component": return .component(scope: EntityID(try string("consumerScopeID")), component: EntityID(try string("componentID")))
         case "token": return .token(scope: EntityID(try string("consumerScopeID")), token: EntityID(try string("tokenID")))
         case "surface": return .surface(surface: EntityID(try string("surfaceID")))
-        case "resources":
-            guard let kind = ContextResourceKind(rawValue: try string("kind")) else {
-                throw ContextSessionInputError.usage("Resource kind must be component, token or asset")
-            }
+        case "resources", "componentAvailability":
             var limit = 32
             if let value = object["limit"] {
                 guard let number = value as? NSNumber, CFGetTypeID(number) != CFBooleanGetTypeID(),
                       (1...100).contains(number.doubleValue), number.doubleValue.rounded() == number.doubleValue else {
-                    throw ContextSessionInputError.usage("Resource limit must be an integer in 1...100")
+                    throw ContextSessionInputError.usage("Context list limit must be an integer in 1...100")
                 }
                 limit = number.intValue
             }
@@ -69,6 +68,13 @@ enum ContextSessionRequest {
                 guard let text = value as? String else { throw ContextSessionInputError.usage("matching must be a string") }
                 matching = text
             } else { matching = nil }
+            if op == "componentAvailability" {
+                return .componentAvailability(scope: EntityID(try string("consumerScopeID")),
+                    matching: matching, limit: limit)
+            }
+            guard let kind = ContextResourceKind(rawValue: try string("kind")) else {
+                throw ContextSessionInputError.usage("Resource kind must be component, token or asset")
+            }
             return .resources(scope: EntityID(try string("consumerScopeID")), kind: kind, matching: matching, limit: limit)
         default: return .close
         }

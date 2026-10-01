@@ -5,7 +5,7 @@ import HamiiApplication
 @testable import HamiiFormat
 @testable import HamiiIndex
 
-final class ComponentScopeParitySpikeTests: XCTestCase {
+final class ComponentAvailabilityTests: XCTestCase {
     private let commerce = EntityID("scope_commerce")
     private let checkout = EntityID("scope_checkout")
     private let product = EntityID("scope_product")
@@ -117,7 +117,7 @@ final class ComponentScopeParitySpikeTests: XCTestCase {
         }
     }
 
-    func testAllowOnlyCandidatesAndAllConsumerPathsAgreeWithCurrentEvaluator() throws {
+    func testExactAllowOnlyAndAllConsumerPathsAgree() throws {
         let document = matrixDocument()
         XCTAssertEqual(DocumentValidator.validate(document), [])
         let (root, repository, saved) = try seed(document)
@@ -128,25 +128,12 @@ final class ComponentScopeParitySpikeTests: XCTestCase {
         let context = ProjectContextService(repository: repository)
         let evaluator = ScopeEvaluator(saved.scopes)
         let definitions = Dictionary(uniqueKeysWithValues: saved.components.map { ($0.id, $0) })
-        let expanded = saved.components.map { definition -> ComponentDefinition in
-            var candidate = definition
-            if !definition.availability.allowOnlyScopeIDs.isEmpty {
-                candidate.availability.allowOnlyScopeIDs = saved.scopes.compactMap { scope in
-                    definition.availability.allowOnlyScopeIDs.contains(where: {
-                        evaluator.canUse(owner: $0, consumer: scope.id)
-                    }) ? scope.id : nil
-                }
-            }
-            return candidate
-        }
-        let descendantDefinitions = Dictionary(uniqueKeysWithValues: expanded.map { ($0.id, $0) })
         let expected: [EntityID: Set<EntityID>] = [
             commerce: [EntityID("component_inner"), EntityID("component_outer"), EntityID("component_shared")],
             checkout: [EntityID("component_shared")],
             product: [EntityID("component_inner"), EntityID("component_outer"), EntityID("component_shared"), EntityID("component_product")],
             account: []
         ]
-        var differences: [(EntityID, EntityID)] = []
         for consumer in [commerce, checkout, product, account] {
             let exact = Set(saved.components.compactMap { definition in
                 ComponentAvailability.reason(definition, consumer: consumer, scopes: evaluator, definitions: definitions) == nil
@@ -165,16 +152,23 @@ final class ComponentScopeParitySpikeTests: XCTestCase {
             for definition in saved.components {
                 let currentReason = ComponentAvailability.reason(definition, consumer: consumer,
                     scopes: evaluator, definitions: definitions)
-                let descendantReason = ComponentAvailability.reason(descendantDefinitions[definition.id]!,
-                    consumer: consumer, scopes: evaluator, definitions: descendantDefinitions)
-                if (currentReason == nil) != (descendantReason == nil) { differences.append((consumer, definition.id)) }
+                let assessment = ComponentAvailability.assess(definition, consumer: consumer,
+                    scopes: evaluator, definitions: definitions)
+                XCTAssertEqual(assessment.available, currentReason == nil)
+                XCTAssertEqual(assessment.ruleID, currentReason)
                 try assertMutation(saved, screen: screen, definition: definition, expectedReason: currentReason)
-                print("SCOPE_MATRIX consumer=\(consumer.rawValue) component=\(definition.id.rawValue) exact=\(currentReason ?? "allow") descendant=\(descendantReason ?? "allow")")
             }
         }
-        XCTAssertEqual(Set(differences.map { "\($0.0.rawValue):\($0.1.rawValue)" }), [
-            "scope_checkout:component_inner", "scope_checkout:component_outer"
-        ])
+        let outer = try XCTUnwrap(definitions[EntityID("component_outer")])
+        let blocked = ComponentAvailability.assess(outer, consumer: checkout,
+            scopes: evaluator, definitions: definitions)
+        XCTAssertEqual(blocked.ruleID, "component.notAllowed")
+        XCTAssertEqual(blocked.blockingComponentID, EntityID("component_inner"))
+        let newDescendant = EntityID("scope_delivery")
+        let extended = ScopeEvaluator(saved.scopes + [ArchitectureScope(id: newDescendant,
+            name: "Delivery", parentID: commerce)])
+        XCTAssertEqual(ComponentAvailability.assess(outer, consumer: newDescendant,
+            scopes: extended, definitions: definitions).ruleID, "component.notAllowed")
     }
 
     func testUnsafePromotionRejectsWithoutChangingCanonicalAndSafePromotionReindexes() throws {
@@ -270,43 +264,4 @@ final class ComponentScopeParitySpikeTests: XCTestCase {
         }
     }
 
-    func testAvailabilityAndProjectionLatencySamples() {
-        func samples(_ document: Document) -> (Double, Double, Double, Double) {
-            let evaluator = ScopeEvaluator(document.scopes)
-            let definitions = Dictionary(uniqueKeysWithValues: document.components.map { ($0.id, $0) })
-            var availability: [Double] = []
-            var projection: [Double] = []
-            for _ in 0..<30 {
-                let start = DispatchTime.now().uptimeNanoseconds
-                for component in document.components {
-                    _ = ComponentAvailability.reason(component, consumer: checkout,
-                        scopes: evaluator, definitions: definitions)
-                }
-                let middle = DispatchTime.now().uptimeNanoseconds
-                _ = IndexProjection(document: document)
-                let end = DispatchTime.now().uptimeNanoseconds
-                availability.append(Double(middle - start) / 1_000_000)
-                projection.append(Double(end - middle) / 1_000_000)
-            }
-            func percentile(_ values: [Double], _ fraction: Double) -> Double {
-                let sorted = values.sorted()
-                return sorted[max(0, Int(ceil(Double(sorted.count) * fraction)) - 1)]
-            }
-            return (percentile(availability, 0.5), percentile(availability, 0.95),
-                    percentile(projection, 0.5), percentile(projection, 0.95))
-        }
-        let small = matrixDocument()
-        var large = small
-        for number in 0..<996 {
-            large.components.append(ComponentDefinition(id: EntityID("component_extra_\(number)"),
-                name: "Extra \(number)", ownerScopeID: commerce,
-                root: Layer(id: EntityID("extra_root_\(number)"), name: "Root", payload: .stack)))
-        }
-        for (label, document) in [("small", small), ("1000", large)] {
-            let result = samples(document)
-            print("SCOPE_LATENCY fixture=\(label) components=\(document.components.count) " +
-                "availabilityP50Ms=\(result.0) availabilityP95Ms=\(result.1) " +
-                "projectionP50Ms=\(result.2) projectionP95Ms=\(result.3) runs=30")
-        }
-    }
 }

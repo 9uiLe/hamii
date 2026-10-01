@@ -350,6 +350,78 @@ final class ProjectContextServiceTests: XCTestCase {
         XCTAssertEqual(ids, ids.sorted())
     }
 
+    func testComponentAvailabilityExplainsNestedBlockerAndSharesOneShotSessionProjection() throws {
+        var document = fixture()
+        var inner = ComponentDefinition(id: ID("component_inner"), name: "Inner",
+            ownerScopeID: Self.commerce,
+            root: Layer(id: ID("layer_inner"), kind: .stack, name: "Inner"))
+        inner.availability.allowOnlyScopeIDs = [Self.commerce]
+        let nested = Layer(id: ID("layer_nested"), name: "Nested", payload: .componentInstance(
+            ComponentInstanceLayerPayload(instance: ComponentInstance(definitionID: inner.id))))
+        let outer = ComponentDefinition(id: ID("component_outer"), name: "Outer",
+            ownerScopeID: Self.commerce,
+            root: Layer(id: ID("layer_outer"), kind: .stack, name: "Outer", children: [nested]))
+        document.components += [inner, outer]
+        let repository = CountingRepository(document)
+        let context = ProjectContextService(repository: repository)
+        let state = try context.projectSummary().observation.statePrecondition
+        let oneShot = try context.componentAvailability(consumerScopeID: Self.checkout,
+            expectedState: state)
+        let session = try ProjectContextReadSession.start(repository: repository).session
+        let cached = try session.componentAvailability(consumerScopeID: Self.checkout)
+        XCTAssertEqual(try encoded(oneShot), try encoded(cached))
+        XCTAssertEqual(oneShot.payload.consumerScopeID, Self.checkout)
+        XCTAssertEqual(oneShot.payload.returnedCount, 6)
+        XCTAssertEqual(oneShot.payload.matchingCount, 6)
+        XCTAssertFalse(oneShot.payload.truncated)
+        let assessments = Dictionary(uniqueKeysWithValues: oneShot.payload.items.map { ($0.id, $0) })
+        XCTAssertEqual(assessments[outer.id]?.ruleID, "component.notAllowed")
+        XCTAssertEqual(assessments[outer.id]?.blockingComponentID, inner.id)
+        XCTAssertEqual(assessments[ID("component_account")]?.ruleID, "scope.notAncestor")
+        XCTAssertEqual(assessments[ID("component_denied")]?.ruleID, "component.denied")
+        XCTAssertEqual(assessments[Self.component]?.available, true)
+        XCTAssertEqual(try context.resources(consumerScopeID: Self.checkout, kind: .component,
+            expectedState: state).payload.items.map(\.id).contains(outer.id), false)
+        let gui = try ProjectService(repository: repository).componentAvailability(for: Self.checkout,
+            expectedState: state, includeNonOwned: false)
+        XCTAssertFalse(gui.contains { $0.id == ID("component_account") })
+        XCTAssertEqual(gui.first { $0.id == outer.id }?.blockingComponentID, inner.id)
+        XCTAssertThrowsError(try context.componentAvailability(consumerScopeID: Self.checkout,
+            limit: 101, expectedState: state))
+        let matched = try context.componentAvailability(consumerScopeID: Self.checkout,
+            matching: "out", limit: 1, expectedState: state)
+        XCTAssertEqual(matched.payload.items.map(\.id), [outer.id])
+        XCTAssertEqual(matched.payload.matchingCount, 1)
+        repository.transitionWithoutRevisionChange()
+        XCTAssertThrowsError(try context.componentAvailability(consumerScopeID: Self.checkout,
+            expectedState: state)) { error in
+            guard case AuthoringError.staleState = error else { return XCTFail("\(error)") }
+        }
+        XCTAssertThrowsError(try session.componentAvailability(consumerScopeID: Self.checkout)) { error in
+            guard case AuthoringError.staleState = error else { return XCTFail("\(error)") }
+        }
+    }
+
+    func testComponentAvailabilityFiltersBeforeLimitAndSortsNameThenStableID() throws {
+        var document = fixture()
+        for index in 0..<105 {
+            document.components.append(ComponentDefinition(id: ID("component_match_\(index)"),
+                name: "Match", ownerScopeID: Self.app,
+                root: Layer(id: ID("layer_match_\(index)"), kind: .stack, name: "Match")))
+        }
+        let repository = CountingRepository(document)
+        let context = ProjectContextService(repository: repository)
+        let state = try context.projectSummary().observation.statePrecondition
+        let list = try context.componentAvailability(consumerScopeID: Self.checkout,
+            matching: "Match", limit: 100, expectedState: state)
+        XCTAssertEqual(list.payload.matchingCount, 105)
+        XCTAssertEqual(list.payload.returnedCount, 100)
+        XCTAssertTrue(list.payload.truncated)
+        XCTAssertEqual(list.payload.items.map(\.id.rawValue),
+            (0..<105).map { "component_match_\($0)" }.sorted().prefix(100).map { $0 })
+        XCTAssertEqual(list.payload.items.first?.name, "Match")
+    }
+
     func testProductionServicePayloadRemainsBoundedAtOneAndTenThousandLayers() throws {
         func document(_ scale: Int) -> Document {
             var result = fixture()

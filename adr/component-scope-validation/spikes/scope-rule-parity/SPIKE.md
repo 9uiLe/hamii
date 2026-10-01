@@ -69,6 +69,8 @@ Lookup 測定は arm64 macOS 27.0、Apple Swift 6.4 debug `swift test --filter C
 
 共通 `ComponentAvailability.reason` の再帰判定は、検証した nested deny、複数 allowOnly ID、4 Scope の Picker / AI context / SQLite projection / Human / Agent mutation を一致させた。transitive に不正な promotion は Canonical を変更せず拒否し、安全な promotion は full Index rebuild 後に可用集合を再同期できた。**exact membership と descendant membership は Checkout で異なるため、どちらを Product Semantics とするかは ADR の Decision に残す。** この Spike から production の allowOnly rule や Index architecture を変更しない。
 
+この文は Spike 実施時点の判断範囲を記録する。その後 ADR は exact consumer membership を採用し、Status を `Implementation Required` とした。
+
 ## Artifacts
 
 未作成。検証時に必要な成果物だけをこの Spike ディレクトリの `artifacts/` に保存する。
