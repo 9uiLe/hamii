@@ -1,0 +1,29 @@
+{
+  "screen": "existing account/list screen",
+  "component": "ProfileHeader",
+  "inputs": [
+    "I01 displayName",
+    "I02 secondaryText",
+    "I09 displayNameSource",
+    "I10 secondaryTextSource"
+  ],
+  "events": [
+    "I04 editProfile"
+  ],
+  "assets": [
+    "I03 avatar: person.crop.circle.fill"
+  ],
+  "tokenIDs": [
+    "I05 spacing.profileHeader = 12 pt"
+  ],
+  "nativeIntents": [
+    "I07 navigation.system"
+  ],
+  "accessibilityLabels": [
+    "I06 Profile avatar for {displayName}"
+  ],
+  "stateNote": "I08 normal (the production IntegrationContract has no dedicated states field)",
+  "unresolvedMappings": [
+    "I11 editProfileDestination"
+  ]
+}

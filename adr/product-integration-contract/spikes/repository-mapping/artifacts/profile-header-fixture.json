@@ -1,0 +1,18 @@
+{
+  "fixtureVersion": 1,
+  "component": "ProfileHeader",
+  "host": "existing native navigation screen",
+  "intent": [
+    { "id": "I01", "kind": "input", "name": "displayName", "type": "String", "meaning": "visible profile name, supplied by host state" },
+    { "id": "I02", "kind": "input", "name": "secondaryText", "type": "String", "meaning": "visible secondary profile text, supplied by host state" },
+    { "id": "I03", "kind": "asset", "name": "avatar", "type": "systemImage", "value": "person.crop.circle.fill" },
+    { "id": "I04", "kind": "event", "name": "editProfile", "meaning": "user activates Edit profile" },
+    { "id": "I05", "kind": "token", "name": "spacing.profileHeader", "value": 12, "unit": "pt" },
+    { "id": "I06", "kind": "accessibility", "name": "avatarLabel", "value": "Profile avatar for {displayName}" },
+    { "id": "I07", "kind": "nativeIntent", "name": "navigation.system", "meaning": "host uses native NavigationStack semantics" },
+    { "id": "I08", "kind": "state", "name": "normal", "meaning": "display inputs and make Edit profile available" },
+    { "id": "I09", "kind": "binding", "name": "displayNameSource", "target": "I01", "meaning": "host state changes refresh displayed name" },
+    { "id": "I10", "kind": "binding", "name": "secondaryTextSource", "target": "I02", "meaning": "host state changes refresh displayed secondary text" },
+    { "id": "I11", "kind": "repositoryMapping", "name": "editProfileDestination", "source": "I04", "status": "intentionallyUnknown", "meaning": "do not create a navigation route without target repository evidence" }
+  ]
+}

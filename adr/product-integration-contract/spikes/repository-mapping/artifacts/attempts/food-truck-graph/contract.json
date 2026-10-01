@@ -1,0 +1,32 @@
+{
+  "nodes": [
+    "I01 displayName",
+    "I02 secondaryText",
+    "I03 avatar",
+    "I04 editProfile",
+    "I05 spacing.profileHeader",
+    "I06 avatarLabel",
+    "I07 navigation.system",
+    "I08 normal",
+    "I09 displayNameSource",
+    "I10 secondaryTextSource",
+    "I11 editProfileDestination: unresolved"
+  ],
+  "edges": [
+    "I09 -> I01",
+    "I10 -> I02",
+    "I01 -> I06",
+    "I03 -> I06",
+    "I08 -> I01",
+    "I08 -> I02",
+    "I08 -> I03",
+    "I08 -> I04",
+    "I04 -> I11",
+    "ProfileHeader -> I07"
+  ],
+  "values": {
+    "I03": "person.crop.circle.fill",
+    "I05": "12 pt",
+    "I06": "Profile avatar for {displayName}"
+  }
+}
