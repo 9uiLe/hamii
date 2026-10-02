@@ -39,6 +39,8 @@ public enum AuthoringIntent {
     case instantiate(screenID: EntityID, parentID: EntityID, definitionID: EntityID)
     case setComponentVariant(screenID: EntityID, layerID: EntityID, axis: String, value: String)
     case unsetComponentVariant(screenID: EntityID, layerID: EntityID, axis: String)
+    case setComponentProperty(screenID: EntityID, layerID: EntityID, name: String, value: String)
+    case unsetComponentProperty(screenID: EntityID, layerID: EntityID, name: String)
     case promoteComponent(definitionID: EntityID, newOwnerID: EntityID)
 }
 
@@ -209,6 +211,26 @@ public enum MutationEngine {
                 patches.append(SemanticPatch(entityID: layerID, path: try componentVariantPath(axis: axis),
                                              oldValue: old, newValue: nil))
             }
+        case .setComponentProperty(let screenID, let layerID, let name, let value):
+            guard let screenIndex = document.screens.firstIndex(where: { $0.id == screenID }) else { throw AuthoringError.notFound(screenID.rawValue) }
+            guard case .found(let old) = try editComponentProperty(value, name: name,
+                in: &document.screens[screenIndex].root, id: layerID, definitions: document.components) else {
+                throw AuthoringError.notFound(layerID.rawValue)
+            }
+            if old != value {
+                patches.append(SemanticPatch(entityID: layerID, path: try componentPropertyPath(name: name),
+                                             oldValue: old, newValue: value))
+            }
+        case .unsetComponentProperty(let screenID, let layerID, let name):
+            guard let screenIndex = document.screens.firstIndex(where: { $0.id == screenID }) else { throw AuthoringError.notFound(screenID.rawValue) }
+            guard case .found(let old) = try editComponentProperty(nil, name: name,
+                in: &document.screens[screenIndex].root, id: layerID, definitions: document.components) else {
+                throw AuthoringError.notFound(layerID.rawValue)
+            }
+            if old != nil {
+                patches.append(SemanticPatch(entityID: layerID, path: try componentPropertyPath(name: name),
+                                             oldValue: old, newValue: nil))
+            }
         case .promoteComponent(let definitionID, let newOwnerID):
             guard author == .human || agent?.mayPromoteScope == true else { throw AuthoringError.approvalRequired("component scope promotion") }
             guard let index = document.components.firstIndex(where: { $0.id == definitionID }) else { throw AuthoringError.notFound(definitionID.rawValue) }
@@ -260,14 +282,14 @@ public enum MutationEngine {
         return nil
     }
 
-    private enum ComponentVariantEdit {
+    private enum ComponentInstanceEdit {
         case notFound
         case found(oldValue: String?)
     }
 
     private static func editComponentVariant(_ value: String?, axis: String, in root: inout Layer,
                                              id: EntityID, definitions: [ComponentDefinition],
-                                             requireKnownAxis: Bool) throws -> ComponentVariantEdit {
+                                             requireKnownAxis: Bool) throws -> ComponentInstanceEdit {
         if root.id == id {
             guard case .componentInstance(var payload) = root.payload, var instance = payload.instance else {
                 throw AuthoringError.validation([Diagnostic("component.instanceRequired",
@@ -303,6 +325,43 @@ public enum MutationEngine {
     private static func componentVariantPath(axis: String) throws -> String {
         let quoted = String(decoding: try JSONEncoder().encode(axis), as: UTF8.self)
         return "component.variantSelection[\(quoted)]"
+    }
+
+    private static func editComponentProperty(_ value: String?, name: String, in root: inout Layer,
+                                              id: EntityID, definitions: [ComponentDefinition]) throws -> ComponentInstanceEdit {
+        if root.id == id {
+            guard case .componentInstance(var payload) = root.payload, var instance = payload.instance else {
+                throw AuthoringError.validation([Diagnostic("component.instanceRequired",
+                    "Layer must contain a ComponentInstance", entityID: id)])
+            }
+            guard let definition = definitions.first(where: { $0.id == instance.definitionID }) else {
+                throw AuthoringError.validation([Diagnostic("component.missing",
+                    "Component definition is missing", entityID: id)])
+            }
+            guard definition.api.properties.contains(where: { $0.name == name && $0.kind == .text }) else {
+                throw AuthoringError.validation([Diagnostic("component.property",
+                    "Unknown or unsupported text component property", entityID: id)])
+            }
+            let old = instance.propertyValues[name]
+            if old != value {
+                if let value { instance.propertyValues[name] = value }
+                else { instance.propertyValues.removeValue(forKey: name) }
+                payload.instance = instance
+                root.payload = .componentInstance(payload)
+            }
+            return .found(oldValue: old)
+        }
+        for index in root.children.indices {
+            let result = try editComponentProperty(value, name: name, in: &root.children[index],
+                                                   id: id, definitions: definitions)
+            if case .found = result { return result }
+        }
+        return .notFound
+    }
+
+    private static func componentPropertyPath(name: String) throws -> String {
+        let quoted = String(decoding: try JSONEncoder().encode(name), as: UTF8.self)
+        return "component.propertyValues[\(quoted)]"
     }
 
     private static func setLayoutToken(_ tokenID: EntityID?, property: LayoutTokenProperty, in root: inout Layer, id: EntityID) throws -> EntityID?? {
