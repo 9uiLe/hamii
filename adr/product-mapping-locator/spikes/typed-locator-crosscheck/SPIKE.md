@@ -49,7 +49,7 @@ No production Profile schema, validator, or Product source write is introduced b
 
 ## Conclusion
 
-The tested direct-declaration locator can identify a unique pinned **source candidate** and reject the tested unsupported or malformed cases. Compiler evidence from the selected Product target and configuration is a distinct prerequisite for a Product-compiled `verified` claim. For the measured targets, such compiler evidence is obtainable, but it requires a matching build, module name, SDK, and flags. The ADR remains `Spike Required` while the option comparison and minimum Profile schema are assessed. A future validator must explicitly scope `verified` to the evidence it actually holds.
+The tested direct-declaration locator can identify a unique pinned **source candidate** and reject the tested unsupported or malformed cases. Compiler evidence from the selected Product target and configuration is a distinct prerequisite for a Product-compiled `verified` claim. For the measured targets, such compiler evidence is obtainable, but it requires a matching build, module name, SDK, and flags. At the time of this Spike, the option comparison and minimum Profile schema remained undecided. The subsequent ADR decision selected a restricted pinned-source declaration locator and moved the ADR to `Implementation Required`. A future validator must explicitly scope `verified` to the evidence it actually holds.
 
 ## Artifacts
 
