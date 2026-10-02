@@ -1,0 +1,206 @@
+{
+  "cases" : [
+    {
+      "agent" : {
+        "category" : "validation",
+        "commits" : 0,
+        "diagnostics" : [
+          {
+            "entityID" : "layer_button",
+            "rule" : "accessibility.controlLabel"
+          }
+        ],
+        "revision" : 0,
+        "state" : "observation-0"
+      },
+      "case" : "accessibleButton",
+      "directCandidateDiagnostics" : [
+        {
+          "entityID" : "layer_button",
+          "rule" : "accessibility.controlLabel"
+        }
+      ],
+      "human" : {
+        "category" : "validation",
+        "commits" : 0,
+        "diagnostics" : [
+          {
+            "entityID" : "layer_button",
+            "rule" : "accessibility.controlLabel"
+          }
+        ],
+        "revision" : 0,
+        "state" : "observation-0"
+      }
+    },
+    {
+      "agent" : {
+        "category" : "validation",
+        "commits" : 0,
+        "diagnostics" : [
+          {
+            "entityID" : "layer_stack",
+            "rule" : "token.spacingRequired"
+          }
+        ],
+        "revision" : 0,
+        "state" : "observation-0"
+      },
+      "case" : "tokenSpacing",
+      "directCandidateDiagnostics" : [
+        {
+          "entityID" : "layer_stack",
+          "rule" : "token.spacingRequired"
+        }
+      ],
+      "human" : {
+        "category" : "validation",
+        "commits" : 0,
+        "diagnostics" : [
+          {
+            "entityID" : "layer_stack",
+            "rule" : "token.spacingRequired"
+          }
+        ],
+        "revision" : 0,
+        "state" : "observation-0"
+      }
+    },
+    {
+      "agent" : {
+        "category" : "mutationLimit",
+        "commits" : 0,
+        "diagnostics" : [
+
+        ],
+        "revision" : 0,
+        "state" : "observation-0"
+      },
+      "case" : "commonLimit",
+      "human" : {
+        "category" : "mutationLimit",
+        "commits" : 0,
+        "diagnostics" : [
+
+        ],
+        "revision" : 0,
+        "state" : "observation-0"
+      }
+    },
+    {
+      "agent" : {
+        "category" : "mutationLimit",
+        "commits" : 0,
+        "diagnostics" : [
+
+        ],
+        "revision" : 0,
+        "state" : "observation-0"
+      },
+      "case" : "agentLimit",
+      "human" : {
+        "category" : "success",
+        "commits" : 1,
+        "diagnostics" : [
+
+        ],
+        "revision" : 1,
+        "state" : "observation-1"
+      }
+    },
+    {
+      "agentApproved" : {
+        "category" : "success",
+        "commits" : 1,
+        "diagnostics" : [
+
+        ],
+        "revision" : 1,
+        "state" : "observation-1"
+      },
+      "agentDenied" : {
+        "category" : "approvalRequired",
+        "commits" : 0,
+        "diagnostics" : [
+
+        ],
+        "revision" : 0,
+        "state" : "observation-0"
+      },
+      "case" : "promotion",
+      "human" : {
+        "category" : "success",
+        "commits" : 1,
+        "diagnostics" : [
+
+        ],
+        "revision" : 1,
+        "state" : "observation-1"
+      }
+    },
+    {
+      "agent" : {
+        "category" : "validation",
+        "commits" : 0,
+        "diagnostics" : [
+          {
+            "entityID" : "layer_instance",
+            "rule" : "component.denied"
+          }
+        ],
+        "revision" : 0,
+        "state" : "observation-0"
+      },
+      "case" : "availabilityInvariant",
+      "directCandidateDiagnostics" : [
+        {
+          "entityID" : "layer_instance",
+          "rule" : "component.denied"
+        }
+      ],
+      "human" : {
+        "category" : "validation",
+        "commits" : 0,
+        "diagnostics" : [
+          {
+            "entityID" : "layer_instance",
+            "rule" : "component.denied"
+          }
+        ],
+        "revision" : 0,
+        "state" : "observation-0"
+      }
+    }
+  ],
+  "checkCount" : 20,
+  "checks" : {
+    "accessibleButton.agent" : true,
+    "accessibleButton.direct" : true,
+    "accessibleButton.human" : true,
+    "accessibleButton.sameTypedDiagnostics" : true,
+    "agentLimit.agentRejected" : true,
+    "agentLimit.humanAllowed" : true,
+    "availabilityInvariant.agent" : true,
+    "availabilityInvariant.direct" : true,
+    "availabilityInvariant.human" : true,
+    "availabilityInvariant.sameTypedDiagnostics" : true,
+    "commonLimit.agent" : true,
+    "commonLimit.human" : true,
+    "promotion.agentApproved" : true,
+    "promotion.agentDenied" : true,
+    "promotion.humanAllowed" : true,
+    "tokenSpacing.agent" : true,
+    "tokenSpacing.direct" : true,
+    "tokenSpacing.human" : true,
+    "tokenSpacing.sameTypedDiagnostics" : true,
+    "validBase" : true
+  },
+  "classification" : {
+    "Confirmed" : "typed rule\/entity and save behavior for exercised service path",
+    "Measured" : "one run, 20 checks, 20 passes; no latency benchmark",
+    "Unknown" : "CanonicalRepository disk persistence and GUI\/CLI adapter forwarding not exercised"
+  },
+  "fixture" : "in-memory ProjectRepository, same Document and intent per actor, fixed IDs",
+  "passed" : true,
+  "sourceCommit" : "38fef033c4bb2d905d22333b6cb705947ada21b6"
+}
