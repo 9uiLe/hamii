@@ -118,7 +118,7 @@ private enum CLI {
         "bootstrap": "hamii \(version)\nUse hamii skills list and hamii skills get NAME. Load only the relevant live skill. Global options: --project PATH --json. Create a Git-backed project with hamii init NAME --project PATH --json; inspect it with hamii inspect --project PATH --json. Do not guess commands or edit canonical files directly. Supply the statePrecondition from inspect as --state TOKEN for every mutation.",
         "authoring": "hamii \(version)\nGlobal options: --project PATH --profile NAME --json. Inspect: hamii inspect. Mutations require --state TOKEN from inspect or the previous mutation. Commands: page create NAME; scope create PARENT_ID NAME; screen create SCOPE_ID NAME; target add PLATFORM FRAMEWORK; surface add PAGE_ID SCREEN_ID TARGET_ID DEVICE RUNTIME BUILD_ENVIRONMENT; surface target SURFACE_ID TARGET_ID; capability set TARGET_ID KEY SUPPORT; layer add SCREEN_ID PARENT_ID KIND NAME TEXT; layer text SCREEN_ID LAYER_ID TEXT. Managed git switch BRANCH requires a clean worktree and --state TOKEN; git recover validates an interrupted switch or merge publication. git merge check BRANCH --state TOKEN validates an isolated candidate without publishing. git merge publish BRANCH --state TOKEN validates and publishes a candidate through the coordinated pending gate. Use - for no text. Read the tokens, components or assets skill when needed. All mutations use the same Authoring Harness validation as GUI.",
         "tokens": "hamii \(version)\ntoken create OWNER_SCOPE_ID NAME KIND LITERAL --state TOKEN creates a primitive token; token alias OWNER_SCOPE_ID NAME KIND TARGET_TOKEN_ID --state TOKEN creates a semantic alias. KIND is color|typography|spacing|radius|border|shadow|opacity|motion. Spacing literals are nonnegative finite numbers. layer token SCREEN_ID LAYER_ID spacing|padding TOKEN_ID|- --state TOKEN sets or clears a layout token. ArchitectureScope ownership and token references are validated before save.",
-        "components": "hamii \(version)\ncomponent list CONSUMER_SCOPE_ID; component create OWNER_SCOPE_ID NAME --state TOKEN; component instantiate SCREEN_ID PARENT_LAYER_ID DEFINITION_ID --state TOKEN; component promote DEFINITION_ID ANCESTOR_SCOPE_ID --state TOKEN. Promotion requires an Agent profile with explicit mayPromoteScope permission. Definition tree is referenced by instances; scope and availability are enforced by the mutation service. For availability reasons, obtain query context summary, then query context component-availability SCOPE_ID [MATCH] [--limit N] --state TOKEN; the result includes ruleID and blockingComponentID for unavailable definitions.",
+        "components": "hamii \(version)\ncomponent list CONSUMER_SCOPE_ID; component create OWNER_SCOPE_ID NAME --state TOKEN; component instantiate SCREEN_ID PARENT_LAYER_ID DEFINITION_ID --state TOKEN; component variant set SCREEN_ID LAYER_ID AXIS VALUE --state TOKEN; component variant unset SCREEN_ID LAYER_ID AXIS --state TOKEN; component promote DEFINITION_ID ANCESTOR_SCOPE_ID --state TOKEN. Set and unset are separate commands; - is a literal axis or value, never an unset marker. For option-like axis or value, put --state TOKEN and any real --json before --, then the literal arguments after --. Example: hamii --json component variant set SCREEN_ID LAYER_ID AXIS --state TOKEN -- --json. The first -- ends option parsing only for component variant set/unset. Promotion requires an Agent profile with explicit mayPromoteScope permission. Definition tree is referenced by instances; scope and availability are enforced by the mutation service. For availability reasons, obtain query context summary, then query context component-availability SCOPE_ID [MATCH] [--limit N] --state TOKEN; the result includes ruleID and blockingComponentID for unavailable definitions.",
         "validation": "hamii \(version)\nvalidate --project PATH --json returns diagnostics with rule, severity, entityID and message. query components CONSUMER_SCOPE_ID TERM automatically rebuilds a missing or stale derived index only from a verified coordinated Canonical generation. External edits, pending transitions, unverifiable Git state, and storage failures remain fail closed; use index rebuild explicitly after supported external edits. If canonical Git files are marked assume-unchanged or skip-worktree or use Git filters, clear those settings before rebuilding. migrate plan --json preflights a format without changing it. migrate resolution --json lists finite, source-bound choices for clean committed historical input; zero-choice items stay blocked. Save a typed manifest outside Canonical data, then migrate prepare --resolution PATH --json creates a reviewed candidate and reports exact losses. Safe automatic sources still use migrate prepare --json. After reviewing exact IDs and losses, migrate publish REVIEW_ID SOURCE_OID CANDIDATE_OID --json publishes only that candidate; migrate recover --json reconciles an interrupted publication.",
         "integration": "hamii \(version)\nintegration contract SCREEN_ID --json returns semantic inputs, events, token/asset references, native and accessibility intent. integration plan SCREEN_ID --product-repository ROOT --repository-profile RELATIVE_PATH --json reads a clean Product Git commit and its tracked regular Profile v1 or v2 blob, and returns repositoryProfileReceipt with the plan. In Profile v2 a typed locator is the sole target for a supported source mapping; a same-key structural string is rejected. Profile v2 adds repositoryMappingEvidence per required key; verified/pinnedSourceDeclaration proves only direct declaration existence in the pinned source blob. Both options are required. integration plan SCREEN_ID --integration-profile PATH --json remains a non-authoritative external-file read-only plan: it has no receipt and cannot authorize a Product patch. Exit 0 is a planning result, never Product patch permission or selected-build/runtime proof. External v1 remains structural-only. Exit 5/category contract returns integrationPlan, resolutionIssues and blockedOutputs for Needs Resolution. Do not guess mappings or edit canonical files directly. generate swiftui SCREEN_ID TARGET_ID --json is a separate deterministic path for the supported static subset and returns an error for unsupported semantics.",
         "assets": "hamii \(version)\nasset import SCOPE_ID NAME MEDIA_TYPE SOURCE_PATH --storage git --state TOKEN writes a SHA-256 addressed repository blob and Asset metadata. Large binary Git/LFS policy is unresolved; choose Git storage explicitly. layer image SCREEN_ID PARENT_ID ASSET_ID NAME --state TOKEN adds an image reference. Run validate --json to check blob integrity. Remote caches and thumbnails are not canonical data.",
@@ -132,6 +132,17 @@ private enum CLI {
             _ = takeOption(name, from: &args)
         }
         return Array(args.prefix(3)) == ["query", "context", "session"]
+    }
+
+    static func isVariantCommand(_ raw: [String]) -> Bool {
+        let prefix = raw.firstIndex(of: "--").map { Array(raw[..<$0]) } ?? raw
+        var args = prefix.filter { $0 != "--json" }
+        for name in ["--project", "--profile", "--state", "--storage", "--resolution", "--limit", "--screen", "--layer",
+                     "--integration-profile", "--product-repository", "--repository-profile"] {
+            _ = takeOption(name, from: &args)
+        }
+        return args.count >= 3 && args[0] == "component" && args[1] == "variant"
+            && (args[2] == "set" || args[2] == "unset")
     }
 
     static func writeJSON(_ output: Output) throws {
@@ -207,7 +218,12 @@ private enum CLI {
     }
 
     static func run(_ raw: [String]) throws -> Output {
-        var args = raw.filter { $0 != "--json" }
+        let delimiterIndex = raw.firstIndex(of: "--")
+        let prefix = delimiterIndex.map { Array(raw[..<$0]) } ?? raw
+        let variantCommand = isVariantCommand(raw)
+        let optionRegion = variantCommand ? prefix : raw
+        let literalTail = variantCommand ? delimiterIndex.map { Array(raw[raw.index(after: $0)...]) } : nil
+        var args = optionRegion.filter { $0 != "--json" }
         let project = takeOption("--project", from: &args) ?? FileManager.default.currentDirectoryPath
         let profileName = takeOption("--profile", from: &args) ?? "builder"
         let stateText = takeOption("--state", from: &args)
@@ -224,6 +240,7 @@ private enum CLI {
         let integrationProfilePath = takeOption("--integration-profile", from: &args)
         let productRepositoryPath = takeOption("--product-repository", from: &args)
         let repositoryProfilePath = takeOption("--repository-profile", from: &args)
+        if let literalTail { args.append(contentsOf: literalTail) }
         guard let verb = args.first else { throw CLIError(category: "usage", message: usage) }
         let isIntegrationPlan = args.count == 3 && args[0] == "integration" && args[1] == "plan"
         guard (integrationProfilePath == nil && productRepositoryPath == nil && repositoryProfilePath == nil) ||
@@ -528,6 +545,10 @@ private enum CLI {
             intent = .createComponent(name: args[3], scopeID: EntityID(args[2]))
         } else if args.count == 5 && args[0] == "component" && args[1] == "instantiate" {
             intent = .instantiate(screenID: EntityID(args[2]), parentID: EntityID(args[3]), definitionID: EntityID(args[4]))
+        } else if args.count == 7 && args[0] == "component" && args[1] == "variant" && args[2] == "set" {
+            intent = .setComponentVariant(screenID: EntityID(args[3]), layerID: EntityID(args[4]), axis: args[5], value: args[6])
+        } else if args.count == 6 && args[0] == "component" && args[1] == "variant" && args[2] == "unset" {
+            intent = .unsetComponentVariant(screenID: EntityID(args[3]), layerID: EntityID(args[4]), axis: args[5])
         } else if args.count == 4 && args[0] == "component" && args[1] == "promote" {
             intent = .promoteComponent(definitionID: EntityID(args[2]), newOwnerID: EntityID(args[3]))
         } else { throw CLIError(category: "usage", message: usage) }
@@ -535,7 +556,7 @@ private enum CLI {
         return Output(ok: true, mutation: result)
     }
 
-    static let usage = "hamii [--project PATH] [--profile NAME] [--json] <version|init NAME|inspect|validate|git switch BRANCH|git recover|git merge check BRANCH|git merge publish BRANCH|preview plan SURFACE_ID|migrate plan|migrate resolution|migrate prepare [--resolution PATH]|migrate publish REVIEW_ID SOURCE_OID CANDIDATE_OID|migrate recover|skills list|get NAME|index rebuild|query components SCOPE_ID TERM|query context session [--screen ID --layer ID]|query context summary [--screen ID --layer ID]|query context layer SCREEN_ID LAYER_ID --state TOKEN|query context resources SCOPE_ID component|token|asset [MATCH] [--limit N] --state TOKEN|query context component-availability SCOPE_ID [MATCH] [--limit N] --state TOKEN|query context component SCOPE_ID COMPONENT_ID --state TOKEN|query context token SCOPE_ID TOKEN_ID --state TOKEN|query context surface SURFACE_ID --state TOKEN|generate swiftui SCREEN_ID TARGET_ID|integration contract SCREEN_ID|integration plan SCREEN_ID --product-repository ROOT --repository-profile RELATIVE_PATH|integration plan SCREEN_ID --integration-profile PATH|page create NAME|scope create PARENT_ID NAME|screen create SCOPE_ID NAME|target add PLATFORM FRAMEWORK|surface add PAGE_ID SCREEN_ID TARGET_ID DEVICE RUNTIME BUILD_ENVIRONMENT|surface target SURFACE_ID TARGET_ID|capability set TARGET_ID KEY SUPPORT|asset import SCOPE_ID NAME MEDIA_TYPE SOURCE_PATH --storage git|layer add SCREEN_ID PARENT_ID KIND NAME TEXT|layer text SCREEN_ID LAYER_ID TEXT|layer token SCREEN_ID LAYER_ID spacing|padding TOKEN_ID|-|token create SCOPE_ID NAME KIND VALUE|token alias SCOPE_ID NAME KIND TOKEN_ID|layer image SCREEN_ID PARENT_ID ASSET_ID NAME|component create SCOPE_ID NAME|component list SCOPE_ID|component instantiate SCREEN_ID PARENT_ID DEFINITION_ID|component promote DEFINITION_ID ANCESTOR_SCOPE_ID> [--state TOKEN]"
+    static let usage = "hamii [--project PATH] [--profile NAME] [--json] <version|init NAME|inspect|validate|git switch BRANCH|git recover|git merge check BRANCH|git merge publish BRANCH|preview plan SURFACE_ID|migrate plan|migrate resolution|migrate prepare [--resolution PATH]|migrate publish REVIEW_ID SOURCE_OID CANDIDATE_OID|migrate recover|skills list|get NAME|index rebuild|query components SCOPE_ID TERM|query context session [--screen ID --layer ID]|query context summary [--screen ID --layer ID]|query context layer SCREEN_ID LAYER_ID --state TOKEN|query context resources SCOPE_ID component|token|asset [MATCH] [--limit N] --state TOKEN|query context component-availability SCOPE_ID [MATCH] [--limit N] --state TOKEN|query context component SCOPE_ID COMPONENT_ID --state TOKEN|query context token SCOPE_ID TOKEN_ID --state TOKEN|query context surface SURFACE_ID --state TOKEN|generate swiftui SCREEN_ID TARGET_ID|integration contract SCREEN_ID|integration plan SCREEN_ID --product-repository ROOT --repository-profile RELATIVE_PATH|integration plan SCREEN_ID --integration-profile PATH|page create NAME|scope create PARENT_ID NAME|screen create SCOPE_ID NAME|target add PLATFORM FRAMEWORK|surface add PAGE_ID SCREEN_ID TARGET_ID DEVICE RUNTIME BUILD_ENVIRONMENT|surface target SURFACE_ID TARGET_ID|capability set TARGET_ID KEY SUPPORT|asset import SCOPE_ID NAME MEDIA_TYPE SOURCE_PATH --storage git|layer add SCREEN_ID PARENT_ID KIND NAME TEXT|layer text SCREEN_ID LAYER_ID TEXT|layer token SCREEN_ID LAYER_ID spacing|padding TOKEN_ID|-|token create SCOPE_ID NAME KIND VALUE|token alias SCOPE_ID NAME KIND TOKEN_ID|layer image SCREEN_ID PARENT_ID ASSET_ID NAME|component create SCOPE_ID NAME|component list SCOPE_ID|component instantiate SCREEN_ID PARENT_ID DEFINITION_ID|component variant set SCREEN_ID LAYER_ID AXIS VALUE|component variant unset SCREEN_ID LAYER_ID AXIS|component promote DEFINITION_ID ANCESTOR_SCOPE_ID> [--state TOKEN]"
 
     static func takeOption(_ name: String, from args: inout [String]) -> String? {
         guard let index = args.firstIndex(of: name), args.indices.contains(index + 1) else { return nil }
@@ -641,11 +662,14 @@ private func failureOutput(_ error: Error, terminal: Bool? = nil) -> (Output, In
 
 }
 
-let json = CommandLine.arguments.contains("--json")
-let isSession = CLI.isContextSessionInvocation(Array(CommandLine.arguments.dropFirst()))
+let rawArguments = Array(CommandLine.arguments.dropFirst())
+let json = CLI.isVariantCommand(rawArguments)
+    ? rawArguments.prefix(while: { $0 != "--" }).contains("--json")
+    : rawArguments.contains("--json")
+let isSession = CLI.isContextSessionInvocation(rawArguments)
 do {
-    if isSession { exit(try CLI.runContextSession(Array(CommandLine.arguments.dropFirst()))) }
-    let output = try CLI.run(Array(CommandLine.arguments.dropFirst()))
+    if isSession { exit(try CLI.runContextSession(rawArguments)) }
+    let output = try CLI.run(rawArguments)
     if json {
         let encoder = JSONEncoder(); encoder.outputFormatting = [.sortedKeys]
         let data = try encoder.encode(output)

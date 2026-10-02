@@ -105,6 +105,10 @@ public enum ComponentAvailability {
 
 public enum DocumentValidator {
     public static func validate(_ document: Document) -> [Diagnostic] {
+        struct VariantKey: Hashable {
+            let axis: String
+            let value: String
+        }
         var errors: [Diagnostic] = []
         var ids = Set<EntityID>()
         func checkID(_ id: EntityID) {
@@ -181,8 +185,9 @@ public enum DocumentValidator {
                     if let rule = ComponentAvailability.reason(definition, consumer: consumer, scopes: scopes, definitions: componentMap) {
                         errors.append(Diagnostic(rule, "Component is unavailable to this ArchitectureScope", entityID: layer.id))
                     }
-                    let variants = Set(definition.variants.map { "\($0.axis)=\($0.value)" })
-                    for (axis, value) in instance.variantSelection where !variants.contains("\(axis)=\(value)") {
+                    let variants = Set(definition.variants.map { VariantKey(axis: $0.axis, value: $0.value) })
+                    for (axis, value) in instance.variantSelection.sorted(by: { $0.key < $1.key })
+                        where !variants.contains(VariantKey(axis: axis, value: value)) {
                         errors.append(Diagnostic("component.variant", "Unknown variant selection", entityID: layer.id))
                     }
                     for key in instance.propertyValues.keys where !definition.api.properties.contains(where: { $0.name == key }) {
@@ -268,7 +273,7 @@ public enum DocumentValidator {
                 errors.append(Diagnostic("component.availabilityConflict", "ArchitectureScope cannot be both allowed and denied", entityID: definition.id))
             }
             definition.variants.forEach { checkID($0.id) }
-            var variantKeys = Set<String>()
+            var variantKeys = Set<VariantKey>()
             func findLayer(_ id: EntityID, in layer: Layer) -> Layer? {
                 if layer.id == id { return layer }
                 for child in layer.children { if let found = findLayer(id, in: child) { return found } }
@@ -298,7 +303,7 @@ public enum DocumentValidator {
                 }
             }
             for variant in definition.variants {
-                let key = "\(variant.axis)=\(variant.value)"
+                let key = VariantKey(axis: variant.axis, value: variant.value)
                 if !variantKeys.insert(key).inserted {
                     errors.append(Diagnostic("component.duplicateVariant", "Duplicate variant axis and value", entityID: definition.id))
                 }

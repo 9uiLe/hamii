@@ -42,6 +42,8 @@ Layer は stable ID、kind 別の `LayerPayload`、hierarchy、layout、accessib
 
 ## Mutation and authoring
 
+ComponentInstance の Variant selection 編集は、Screen の Instance Layer ID を対象にした共通 `AuthoringIntent` です。axis/value は任意の文字列であり、CLI の set と unset を別操作にします。`SemanticPatch.path` の動的 axis は `component.variantSelection[<JSON string literal>]` として符号化し、`.` や引用符を含む axis も一意に識別します。
+
 Human/Agent adapter は `AuthoringIntent` を `ProjectService` に渡します。Service は client が観測した opaque な `ClientPrecondition` を現在の Canonical observation と照合し、MutationEngine が candidate Document と `SemanticPatch` を作成します。DocumentValidator が ID、参照、Scope、Component、Token、Asset、Interaction、Harness rule を検証し、失敗した candidate は保存しません。同値編集は revision を進めず Canonical files を書かず、同じ precondition を返します。Patch は entity ID、property path、old/new value を持ちます。GUI と CLI は同じ service を使用します。`DocumentRevision` は MutationEngine 内の順序検査に残しますが、client state identity の代わりにはしません。
 
 AgentHarness は profile 名、mutation limit、Scope promotion 権限を持ち、`hamii-agent-profiles.json` に独立 version で保存します。`builder` と読み取り専用 `reviewer` を作成時に登録します。HumanHarness は snap と insertion preference を持つ actor 設定です。両者は Product rule を変更できません。Document 内の versioned `AuthoringHarness` は `requireAccessibleControls`、`requireTokenSpacing`、`maximumMutationNodes` を持ちます。前二者は `DocumentValidator` が actor に依らず Screen と ComponentDefinition を含む候補 Document 全体に適用します。`maximumMutationNodes` は `MutationEngine` が一度の intent 件数へ共通適用し、Agent の `maximumMutations` はさらに厳しい actor 固有の上限です。Scope promotion の Agent approval も actor 権限であり、Product policy rule ではありません。GUI/CLI の事前表示、AI instruction、Skill text は共通判定の代わりになりません。

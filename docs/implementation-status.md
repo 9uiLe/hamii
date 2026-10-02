@@ -6,11 +6,13 @@ hamii で現在実行できる範囲を示します。製品境界と依存規�
 |---|---|
 | Aligned | Native-semantic IR が編集の正本です。GUI と CLI は `ProjectService` と同じ検証 pipeline を使います。ArchitectureScope ownership、component reference、target capability declaration、Git の分割 JSON、使い捨て SQLite query index、CLI skills、v1→2→3 / v2→3 reviewed migration、有限候補の typed Human resolution、隔離した v3 candidate preparation、exact-OID CAS publication と restart recovery、検証済み CanonicalSnapshot からの Index full rebuild 自動復旧、exact precondition 検証を共用する process-local context session CLI を実装しています。 |
 | Needs Refactor | Canvas は小さな SwiftUI editor です。IR が扱う意味を落とさず、描画と Inspector を拡張する必要があります。Canonical save の process-crash recovery は実装済みですが、停電耐久性は未確立です。同じ worktree の非協調 writer は Product Contract 外です。 |
-| Missing | iOS Simulator / Android Preview Host、product repository integration adapter、migration resolution の GUI editor と LFS transfer、semantic merge、state を保持する runtime reconciliation、custom native component build、remote asset cache、Interaction と Token の全種別の編集機能、ComponentInstance の Variant・property・slot を変更する GUI / CLI AuthoringIntent。 |
+| Missing | iOS Simulator / Android Preview Host、product repository integration adapter、migration resolution の GUI editor と LFS transfer、semantic merge、state を保持する runtime reconciliation、custom native component build、remote asset cache、Interaction と Token の全種別の編集機能、ComponentInstance の property・slot・override 編集と GUI Inspector。 |
 | Obsolete | Runtime の legacy format parser、MCP adapter、GUI/CLI 別々の mutation engine は package に含めません。 |
 | Unresolved | 狭い決定境界と必要な調査・計測は ADR queue にあります。 |
 
 ComponentInstance の解決は現在、1つの Definition tree を直接 materialize します。Resolver cache、局所再計算、Variant 組合せ数の閾値、編集から表示までの end-to-end 性能保証はありません。これらは具体的な性能要件と測定条件が定まった時点で評価します。
+
+Screen 上の ComponentInstance の Variant selection は、共通 `AuthoringIntent` を介して1軸ずつ変更できます。CLI は `component variant set SCREEN_ID LAYER_ID AXIS VALUE --state TOKEN` と `component variant unset SCREEN_ID LAYER_ID AXIS --state TOKEN` を提供します。`-` は通常の値であり、option と同じ表記の axis/value は `--` より後に渡します。unknown selection と Resolver conflict は Canonical save 前に拒否され、同値 set と既知未選択 axis の unset は revision と patch を増やしません。GUI Inspector からの Variant 編集は未実装です。
 
 Authoring Harness v1 の `requireAccessibleControls` と `requireTokenSpacing` は、Human/Agent 共通の `DocumentValidator` が候補 Document 全体で評価します。`maximumMutationNodes` は `MutationEngine` の共通 intent 件数上限で、Agent profile の `maximumMutations` と `mayPromoteScope` は追加の actor 権限です。`ProjectService` からの拒否済み候補は Canonical Document として保存しません。Canonical Repository も現在の policy に違反する Document の保存と読込を拒否します。既存 Layer が違反するような厳格化は、無効な中間状態を保存せずに拒否します。外部編集で無効になった Project は読込時に fail closed となります。v1 の waiver、waiver の承認・監査・保存形式は実装されていません。Asset import は mutation が拒否された後に未参照 blob が残る可能性があります。
 

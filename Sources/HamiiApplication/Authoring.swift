@@ -37,6 +37,8 @@ public enum AuthoringIntent {
     case setLayoutToken(screenID: EntityID, layerID: EntityID, property: LayoutTokenProperty, tokenID: EntityID?)
     case createComponent(name: String, scopeID: EntityID)
     case instantiate(screenID: EntityID, parentID: EntityID, definitionID: EntityID)
+    case setComponentVariant(screenID: EntityID, layerID: EntityID, axis: String, value: String)
+    case unsetComponentVariant(screenID: EntityID, layerID: EntityID, axis: String)
     case promoteComponent(definitionID: EntityID, newOwnerID: EntityID)
 }
 
@@ -185,6 +187,28 @@ public enum MutationEngine {
             let layer = Layer(id: .new("layer"), name: definition.name, payload: .componentInstance(ComponentInstanceLayerPayload(instance: ComponentInstance(definitionID: definitionID))))
             guard append(layer, to: &document.screens[screenIndex].root, parentID: parentID) else { throw AuthoringError.notFound(parentID.rawValue) }
             patches.append(SemanticPatch(entityID: layer.id, path: "component.definitionID", oldValue: nil, newValue: definitionID.rawValue))
+        case .setComponentVariant(let screenID, let layerID, let axis, let value):
+            guard let screenIndex = document.screens.firstIndex(where: { $0.id == screenID }) else { throw AuthoringError.notFound(screenID.rawValue) }
+            guard case .found(let old) = try editComponentVariant(value, axis: axis,
+                in: &document.screens[screenIndex].root, id: layerID,
+                definitions: document.components, requireKnownAxis: false) else {
+                throw AuthoringError.notFound(layerID.rawValue)
+            }
+            if old != value {
+                patches.append(SemanticPatch(entityID: layerID, path: try componentVariantPath(axis: axis),
+                                             oldValue: old, newValue: value))
+            }
+        case .unsetComponentVariant(let screenID, let layerID, let axis):
+            guard let screenIndex = document.screens.firstIndex(where: { $0.id == screenID }) else { throw AuthoringError.notFound(screenID.rawValue) }
+            guard case .found(let old) = try editComponentVariant(nil, axis: axis,
+                in: &document.screens[screenIndex].root, id: layerID,
+                definitions: document.components, requireKnownAxis: true) else {
+                throw AuthoringError.notFound(layerID.rawValue)
+            }
+            if old != nil {
+                patches.append(SemanticPatch(entityID: layerID, path: try componentVariantPath(axis: axis),
+                                             oldValue: old, newValue: nil))
+            }
         case .promoteComponent(let definitionID, let newOwnerID):
             guard author == .human || agent?.mayPromoteScope == true else { throw AuthoringError.approvalRequired("component scope promotion") }
             guard let index = document.components.firstIndex(where: { $0.id == definitionID }) else { throw AuthoringError.notFound(definitionID.rawValue) }
@@ -234,6 +258,51 @@ public enum MutationEngine {
             if let old = setText(value, in: &root.children[index], id: id) { return old }
         }
         return nil
+    }
+
+    private enum ComponentVariantEdit {
+        case notFound
+        case found(oldValue: String?)
+    }
+
+    private static func editComponentVariant(_ value: String?, axis: String, in root: inout Layer,
+                                             id: EntityID, definitions: [ComponentDefinition],
+                                             requireKnownAxis: Bool) throws -> ComponentVariantEdit {
+        if root.id == id {
+            guard case .componentInstance(var payload) = root.payload, var instance = payload.instance else {
+                throw AuthoringError.validation([Diagnostic("component.instanceRequired",
+                    "Layer must contain a ComponentInstance", entityID: id)])
+            }
+            if requireKnownAxis {
+                guard let definition = definitions.first(where: { $0.id == instance.definitionID }) else {
+                    throw AuthoringError.validation([Diagnostic("component.missing",
+                        "Component definition is missing", entityID: id)])
+                }
+                guard definition.variants.contains(where: { $0.axis == axis }) else {
+                    throw AuthoringError.validation([Diagnostic("component.variant",
+                        "Unknown variant axis", entityID: id)])
+                }
+            }
+            let old = instance.variantSelection[axis]
+            if old != value {
+                if let value { instance.variantSelection[axis] = value }
+                else { instance.variantSelection.removeValue(forKey: axis) }
+                payload.instance = instance
+                root.payload = .componentInstance(payload)
+            }
+            return .found(oldValue: old)
+        }
+        for index in root.children.indices {
+            let result = try editComponentVariant(value, axis: axis, in: &root.children[index],
+                                                  id: id, definitions: definitions, requireKnownAxis: requireKnownAxis)
+            if case .found = result { return result }
+        }
+        return .notFound
+    }
+
+    private static func componentVariantPath(axis: String) throws -> String {
+        let quoted = String(decoding: try JSONEncoder().encode(axis), as: UTF8.self)
+        return "component.variantSelection[\(quoted)]"
     }
 
     private static func setLayoutToken(_ tokenID: EntityID?, property: LayoutTokenProperty, in root: inout Layer, id: EntityID) throws -> EntityID?? {
