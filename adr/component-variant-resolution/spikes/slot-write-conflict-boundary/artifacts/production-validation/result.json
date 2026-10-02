@@ -1,0 +1,280 @@
+{
+  "nested" : {
+    "acyclicCommit" : "accepted",
+    "acyclicReopenEqualsCandidate" : true,
+    "acyclicValidationRules" : [
+
+    ],
+    "afterRejectedCycleStillAcyclic" : true,
+    "cycleCanonicalByteCountAfter" : 4041,
+    "cycleCanonicalByteCountBefore" : 4041,
+    "cycleCanonicalBytesUnchangedAfterRejection" : true,
+    "cycleCommit" : "rejectedInvalid",
+    "cycleCommitRules" : [
+      "component.cycle@definition_a_to_b",
+      "component.cycle@definition_b_to_a",
+      "component.cycle@screen_a_instance"
+    ],
+    "cycleValidationRules" : [
+      "component.cycle@definition_a_to_b",
+      "component.cycle@definition_b_to_a",
+      "component.cycle@screen_a_instance"
+    ],
+    "directResolverNestedDefinitionID" : "component_b",
+    "directResolverNestedNodeKind" : "componentInstance"
+  },
+  "slotWriteMatrix" : [
+    {
+      "afterRejectedStillOriginal" : null,
+      "canonicalByteCountAfter" : 5289,
+      "canonicalByteCountBefore" : 787,
+      "canonicalBytesEqualBeforeAfterCommitAttempt" : false,
+      "canonicalCommit" : "accepted",
+      "canonicalCommitRules" : [
+
+      ],
+      "directValidationRules" : [
+
+      ],
+      "name" : "slot_target_container_itself_retained",
+      "reopenedEqualsCandidate" : true,
+      "resolvedInside" : null,
+      "resolvedNested" : null,
+      "resolvedOutside" : "DefaultOutside",
+      "resolvedSlotChildren" : [
+        "replacement_text"
+      ],
+      "resolvedSlotTargetPresent" : true,
+      "resolver" : "success"
+    },
+    {
+      "afterRejectedStillOriginal" : null,
+      "canonicalByteCountAfter" : 5333,
+      "canonicalByteCountBefore" : 787,
+      "canonicalBytesEqualBeforeAfterCommitAttempt" : false,
+      "canonicalCommit" : "accepted",
+      "canonicalCommitRules" : [
+
+      ],
+      "directValidationRules" : [
+
+      ],
+      "name" : "selected_variant_inside_slot_replaced",
+      "reopenedEqualsCandidate" : true,
+      "resolvedInside" : null,
+      "resolvedNested" : null,
+      "resolvedOutside" : "DefaultOutside",
+      "resolvedSlotChildren" : [
+        "replacement_text"
+      ],
+      "resolvedSlotTargetPresent" : true,
+      "resolver" : "success"
+    },
+    {
+      "afterRejectedStillOriginal" : null,
+      "canonicalByteCountAfter" : 5328,
+      "canonicalByteCountBefore" : 787,
+      "canonicalBytesEqualBeforeAfterCommitAttempt" : false,
+      "canonicalCommit" : "accepted",
+      "canonicalCommitRules" : [
+
+      ],
+      "directValidationRules" : [
+
+      ],
+      "name" : "property_inside_slot_replaced",
+      "reopenedEqualsCandidate" : true,
+      "resolvedInside" : null,
+      "resolvedNested" : null,
+      "resolvedOutside" : "DefaultOutside",
+      "resolvedSlotChildren" : [
+        "replacement_text"
+      ],
+      "resolvedSlotTargetPresent" : true,
+      "resolver" : "success"
+    },
+    {
+      "afterRejectedStillOriginal" : null,
+      "canonicalByteCountAfter" : 5330,
+      "canonicalByteCountBefore" : 787,
+      "canonicalBytesEqualBeforeAfterCommitAttempt" : false,
+      "canonicalCommit" : "accepted",
+      "canonicalCommitRules" : [
+
+      ],
+      "directValidationRules" : [
+
+      ],
+      "name" : "property_outside_slot_survives",
+      "reopenedEqualsCandidate" : true,
+      "resolvedInside" : null,
+      "resolvedNested" : null,
+      "resolvedOutside" : "PropertyOutside",
+      "resolvedSlotChildren" : [
+        "replacement_text"
+      ],
+      "resolvedSlotTargetPresent" : true,
+      "resolver" : "success"
+    },
+    {
+      "afterRejectedStillOriginal" : null,
+      "canonicalByteCountAfter" : 4851,
+      "canonicalByteCountBefore" : 787,
+      "canonicalBytesEqualBeforeAfterCommitAttempt" : false,
+      "canonicalCommit" : "accepted",
+      "canonicalCommitRules" : [
+
+      ],
+      "directValidationRules" : [
+
+      ],
+      "name" : "slot_unselected_selected_variant_inside_survives",
+      "reopenedEqualsCandidate" : true,
+      "resolvedInside" : "VariantInside",
+      "resolvedNested" : "DefaultNested",
+      "resolvedOutside" : "DefaultOutside",
+      "resolvedSlotChildren" : [
+        "inside_text",
+        "nested_container"
+      ],
+      "resolvedSlotTargetPresent" : true,
+      "resolver" : "success"
+    },
+    {
+      "afterRejectedStillOriginal" : null,
+      "canonicalByteCountAfter" : 5304,
+      "canonicalByteCountBefore" : 787,
+      "canonicalBytesEqualBeforeAfterCommitAttempt" : false,
+      "canonicalCommit" : "accepted",
+      "canonicalCommitRules" : [
+
+      ],
+      "directValidationRules" : [
+
+      ],
+      "name" : "variant_unselected_slot_selected_no_write",
+      "reopenedEqualsCandidate" : true,
+      "resolvedInside" : null,
+      "resolvedNested" : null,
+      "resolvedOutside" : "DefaultOutside",
+      "resolvedSlotChildren" : [
+        "replacement_text"
+      ],
+      "resolvedSlotTargetPresent" : true,
+      "resolver" : "success"
+    },
+    {
+      "afterRejectedStillOriginal" : null,
+      "canonicalByteCountAfter" : 4883,
+      "canonicalByteCountBefore" : 787,
+      "canonicalBytesEqualBeforeAfterCommitAttempt" : false,
+      "canonicalCommit" : "accepted",
+      "canonicalCommitRules" : [
+
+      ],
+      "directValidationRules" : [
+
+      ],
+      "name" : "empty_slot_removes_written_descendant",
+      "reopenedEqualsCandidate" : true,
+      "resolvedInside" : null,
+      "resolvedNested" : null,
+      "resolvedOutside" : "DefaultOutside",
+      "resolvedSlotChildren" : [
+
+      ],
+      "resolvedSlotTargetPresent" : true,
+      "resolver" : "success"
+    },
+    {
+      "afterRejectedStillOriginal" : null,
+      "canonicalByteCountAfter" : 5333,
+      "canonicalByteCountBefore" : 787,
+      "canonicalBytesEqualBeforeAfterCommitAttempt" : false,
+      "canonicalCommit" : "accepted",
+      "canonicalCommitRules" : [
+
+      ],
+      "directValidationRules" : [
+
+      ],
+      "name" : "nested_descendant_under_slot_replaced",
+      "reopenedEqualsCandidate" : true,
+      "resolvedInside" : null,
+      "resolvedNested" : null,
+      "resolvedOutside" : "DefaultOutside",
+      "resolvedSlotChildren" : [
+        "replacement_text"
+      ],
+      "resolvedSlotTargetPresent" : true,
+      "resolver" : "success"
+    },
+    {
+      "afterRejectedStillOriginal" : true,
+      "canonicalByteCountAfter" : 787,
+      "canonicalByteCountBefore" : 787,
+      "canonicalBytesEqualBeforeAfterCommitAttempt" : true,
+      "canonicalCommit" : "rejectedInvalid",
+      "canonicalCommitRules" : [
+        "component.resolution@screen_instance"
+      ],
+      "directValidationRules" : [
+        "component.resolution@screen_instance"
+      ],
+      "name" : "allowed_override_after_slot_missing_path",
+      "reopenedEqualsCandidate" : null,
+      "resolvedInside" : null,
+      "resolvedNested" : null,
+      "resolvedOutside" : null,
+      "resolvedSlotChildren" : null,
+      "resolvedSlotTargetPresent" : null,
+      "resolver" : "Unknown property path: inside_text.text"
+    },
+    {
+      "afterRejectedStillOriginal" : null,
+      "canonicalByteCountAfter" : 5340,
+      "canonicalByteCountBefore" : 787,
+      "canonicalBytesEqualBeforeAfterCommitAttempt" : false,
+      "canonicalCommit" : "accepted",
+      "canonicalCommitRules" : [
+
+      ],
+      "directValidationRules" : [
+
+      ],
+      "name" : "allowed_override_outside_slot_survives",
+      "reopenedEqualsCandidate" : true,
+      "resolvedInside" : null,
+      "resolvedNested" : null,
+      "resolvedOutside" : "OverrideOutside",
+      "resolvedSlotChildren" : [
+        "replacement_text"
+      ],
+      "resolvedSlotTargetPresent" : true,
+      "resolver" : "success"
+    },
+    {
+      "afterRejectedStillOriginal" : true,
+      "canonicalByteCountAfter" : 787,
+      "canonicalByteCountBefore" : 787,
+      "canonicalBytesEqualBeforeAfterCommitAttempt" : true,
+      "canonicalCommit" : "rejectedInvalid",
+      "canonicalCommitRules" : [
+        "component.resolution@screen_instance",
+        "component.variantPath@variant_active"
+      ],
+      "directValidationRules" : [
+        "component.resolution@screen_instance",
+        "component.variantPath@variant_active"
+      ],
+      "name" : "write_to_slot_target_itself_unsupported",
+      "reopenedEqualsCandidate" : null,
+      "resolvedInside" : null,
+      "resolvedNested" : null,
+      "resolvedOutside" : null,
+      "resolvedSlotChildren" : null,
+      "resolvedSlotTargetPresent" : null,
+      "resolver" : "Unknown property path: slot_container.text"
+    }
+  ]
+}

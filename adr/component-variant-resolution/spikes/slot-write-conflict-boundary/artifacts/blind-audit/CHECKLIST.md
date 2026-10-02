@@ -1,0 +1,24 @@
+# Independent audit checklist: slot write conflict boundary
+
+This checklist was fixed before inspecting the new slot-conflict probes or their results. It derives from [the decision boundary](../../../../ADR.md), the [prior instance-resolution evidence](../../../instance-resolution/SPIKE.md), and the current `ComponentResolver` and `DocumentValidator`. Probe results are not a production decision.
+
+## Required inputs
+
+- Exact probe source, invocation, raw output, exit status, and any generated Canonical files for each claimed case. Compare assertions to the generated fixture and actual result, rather than trusting a case name or summary.
+- The current resolver implementation and `DocumentValidator.validate`, including its `component.resolution` bridge. If Canonical persistence is claimed, inspect the call through `CanonicalRepository` and the resulting bytes after success or rejection.
+- Distinguish a direct resolver outcome, full-Document validation, and a persisted Canonical result. A fixture with a missing nested Definition is not evidence for a valid nested Document.
+
+## Gates
+
+1. **Path relation and descendant boundary.** Identify the selected slot target Layer by stable ID. Classify every property/Variant/public-override write as targeting (a) that Layer itself, (b) a strict descendant of its original children, (c) an ancestor, (d) a sibling, or (e) an unrelated path. Confirm behavior for exact versus prefix-like IDs, and verify the test uses tree ancestry rather than lexical string prefix. Establish which writes are actually discarded by replacement; do not label every path under a similarly named ID a conflict.
+2. **Slot target itself.** `replaceChildren` keeps the target container and replaces only its children. Test or explicitly exclude a write aimed at the target itself, including an invalid `.text` path on a container. A rejected unsupported path is different from a valid descendant write being lost. Preserve the target's identity, payload, and non-child properties in comparison.
+3. **Selected versus unselected Variant.** A Variant is relevant only when selected by the Instance. Test the same path under a selected Variant and an unselected Variant. Do not infer a conflict from a Definition's dormant Variant. For two selected axes, separate same-path `conflictingVariants` from cross-stage slot loss, including equal values.
+4. **Empty replacement and slot ordering.** Test a slot key present with `[]`: it is an intentional replacement, not absence. Compare it to no `slotContent` key. For multiple slots, include an ancestor/descendant target relationship; sorted slot-name application can make one replacement remove another target. Verify whether an unknown target or a silent loss occurs, and do not assume slot-order independence.
+5. **Nested ancestor and path ownership.** Test writes to an ancestor of the slot target and to a descendant inside a nested container. Check whether those writes remain observable or disappear after child replacement. For nested Component Instance references, distinguish a nested *Layer* ancestry case from recursion across Component Definitions.
+6. **Valid nested Document and cycle.** Build all referenced Definitions with unique stable IDs and valid owner Scope. Run `DocumentValidator` on A→B and A→B→A, with valid slot targets and public API paths, and record the exact diagnostic. Direct `ComponentResolver.resolve` retaining a nested reference is not proof of recursive expansion or rejection. If a proposed rule depends on expansion, test that operation explicitly.
+7. **Canonical persistence boundary.** For an invalid cross-stage candidate, record `DocumentValidator` diagnostics, `CanonicalRepository` save result, and before/after Canonical bytes. Confirm whether rejection keeps the old project data; do not equate a resolver throw with non-persistence. For a valid control, demonstrate successful Canonical round trip and no unexpected rewriting of unrelated shards. Record whether test-only fixtures are production-reachable through normal mutation/Application Service routes.
+8. **Completeness and claim strength.** Compare full resolved Layer trees or all affected fields for claimed equivalence, plus exact typed errors and diagnostic rules for rejection. Include at least one negative control with disjoint writes. Identify any direct-only probe, fixture invalidity, missing permutation, or lack of production integration. Label Confirmed, Measured, Inferred, Unknown, and Not implemented separately.
+
+## Decision guard
+
+The prior Spike observed property/Variant writes to a replaced child being silently discarded while a later allowed override to the removed path failed. The new evidence must establish the exact boundary and whether that loss is rejected, deliberately resolved by precedence, or still undecided. A passing probe cannot by itself promote a proposed behavior into the Current architecture.
