@@ -1,0 +1,96 @@
+{
+  "channel": "controlled-synthetic-artifacts",
+  "limits": [
+    "The forged warm line was appended to a scratch copy of a real warm log; no Xcode Run Script was executed.",
+    "The committed evaluate.py consumes compact JSON; it does not authenticate raw logs or file lists.",
+    "The pure join accepts normalized records as trusted inputs; forged normalized records demonstrate missing provenance at an acquisition boundary, not a defect in an isolated join."
+  ],
+  "observedRawFacts": {
+    "fileList": {
+      "containsPinnedSource": "/tmp/hamii-bridge-build-5_rduf7f/first/App/General/FlowLayout.swift",
+      "lineCount": 45,
+      "replacementChangedBytes": true,
+      "replacementContainsPinnedSource": true,
+      "sha256AfterReplacement": "9cc2c40bc1f404631a62b507c4fa9783d62203a9d91b2ad36f11da8bbae5b718",
+      "sha256BeforeReplacement": "da5e97f05f6315fdb2c37882ff45486146c4f41a11d44697d45939385ac14d6d",
+      "staleFileListPath": "/tmp/hamii-evidence-channel-AfQddk/DerivedData/Stale/Food_Truck_All.SwiftFileList",
+      "staleListReadableAfterWarmNoInvocation": true
+    },
+    "log": {
+      "forgedLineMatchesSimpleScanner": true,
+      "forgedWarmDriverLines": 1,
+      "realColdAppDriverLines": 1,
+      "realWarmDriverLines": 0
+    }
+  },
+  "productionBuildAdapterImplemented": false,
+  "pureJoinOutcomes": {
+    "baselineExplicitKit": {
+      "evidence": {
+        "path": "App/General/FlowLayout.swift"
+      },
+      "reason": "sourceAbsent",
+      "status": "missingFromSelection"
+    },
+    "baselineWarm": {
+      "evidence": {},
+      "reason": "noExecutedInvocation",
+      "status": "unverifiable"
+    },
+    "duplicateLogicalInput": {
+      "evidence": {
+        "count": 2,
+        "path": "App/General/FlowLayout.swift"
+      },
+      "reason": "duplicateLogicalPath",
+      "status": "ambiguous"
+    },
+    "duplicateSelectedInvocation": {
+      "evidence": {
+        "count": 2
+      },
+      "reason": "multipleSelectedInvocations",
+      "status": "ambiguous"
+    },
+    "forgedKitInputRecord": {
+      "evidence": {
+        "blobOID": "92c12dc1f8ed077e2384d99792310648b9c8f718",
+        "descriptor": {
+          "architecture": "arm64",
+          "compiler": "/Applications/Xcode-27.0.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc|6.4 (swiftlang-6.4.0.34.1)",
+          "configuration": "Debug",
+          "module": "FoodTruckKit",
+          "rootTarget": "Food Truck All",
+          "scheme": "Food Truck All",
+          "sdk": "iPhoneSimulator27.0.sdk",
+          "target": "FoodTruckKit"
+        },
+        "invocationID": "41cdf23f4c4e66a8a319e28c7082f5f3b3cc81baedacf895fa21d834837d99e4",
+        "path": "App/General/FlowLayout.swift",
+        "productCommitOID": "3cf70a8775a8d528d27b560185ed6d1116557b99"
+      },
+      "reason": "exactTrackedInputObserved",
+      "status": "selectedBuildMember"
+    },
+    "forgedWarmNormalizedInvocation": {
+      "evidence": {
+        "blobOID": "92c12dc1f8ed077e2384d99792310648b9c8f718",
+        "descriptor": {
+          "architecture": "arm64",
+          "compiler": "/Applications/Xcode-27.0.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc|6.4 (swiftlang-6.4.0.34.1)",
+          "configuration": "Debug",
+          "module": "Food_Truck_All",
+          "rootTarget": "Food Truck All",
+          "scheme": "Food Truck All",
+          "sdk": "iPhoneSimulator27.0.sdk",
+          "target": "Food Truck All"
+        },
+        "invocationID": "9b02adc4a560fee77691e518b7483f05f82a8b1ad4ff42669565c83954cdee9e",
+        "path": "App/General/FlowLayout.swift",
+        "productCommitOID": "3cf70a8775a8d528d27b560185ed6d1116557b99"
+      },
+      "reason": "exactTrackedInputObserved",
+      "status": "selectedBuildMember"
+    }
+  }
+}

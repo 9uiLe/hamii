@@ -1,0 +1,61 @@
+{
+  "fixture": "/tmp/hamii-xcode-protected.Pu25SN",
+  "passed": true,
+  "postflight": {
+    "mountRestored": true,
+    "rootRestored": true,
+    "sourceBlobOID": "92c12dc1f8ed077e2384d99792310648b9c8f718"
+  },
+  "preflight": {
+    "imageSHA256": "63cffc77db1be43197818dcd09f362fff049fbfb4260468216547a39afc7d309",
+    "mountLine": "/dev/disk17s1 on /private/tmp/hamii-xcode-protected.Pu25SN/mount (apfs, local, nodev, nosuid, read-only, journaled, noowners, nobrowse, mounted by t.kobayashi)",
+    "sourceBlobOID": "92c12dc1f8ed077e2384d99792310648b9c8f718",
+    "uid": 501
+  },
+  "source": "App/General/FlowLayout.swift",
+  "tests": [
+    {
+      "elapsedSeconds": 0.016,
+      "movedMountBlobOID": "92c12dc1f8ed077e2384d99792310648b9c8f718",
+      "name": "mounted-parent-rename-and-symlink-rebind",
+      "originalPathBytes": "struct FlowLayout { let spacing = 999 }",
+      "originalPathIsFake": true,
+      "parentRename": "succeeded",
+      "restoredMountPresent": true,
+      "restoredMountedBlobOID": "92c12dc1f8ed077e2384d99792310648b9c8f718"
+    },
+    {
+      "elapsedSeconds": 0.492,
+      "name": "same-uid-unmount-and-recreate",
+      "remount": {
+        "command": [
+          "diskutil",
+          "image",
+          "attach",
+          "--readOnly",
+          "--nobrowse",
+          "--mountPoint",
+          "/tmp/hamii-xcode-protected.Pu25SN/mount",
+          "/tmp/hamii-xcode-protected.Pu25SN/pinned.dmg"
+        ],
+        "exitCode": 0,
+        "stderr": "",
+        "stdout": "/dev/disk16  \tGUID_partition_scheme\n/dev/disk16s1\tApple_APFS\n/dev/disk17  \tApple_APFS_Container\n/dev/disk17s1\tApple_APFS_Volume    \t/private/tmp/hamii-xcode-protected.Pu25SN/mount\n"
+      },
+      "restoredMountPresent": true,
+      "restoredMountedBlobOID": "92c12dc1f8ed077e2384d99792310648b9c8f718",
+      "samePathBytes": "struct FlowLayout { let spacing = 123 }",
+      "samePathIsFake": true,
+      "unmount": {
+        "command": [
+          "diskutil",
+          "unmount",
+          "/tmp/hamii-xcode-protected.Pu25SN/mount"
+        ],
+        "exitCode": 0,
+        "stderr": "",
+        "stdout": "Volume HamiiPinnedC1 on disk17s1 unmounted\n"
+      }
+    }
+  ]
+}
