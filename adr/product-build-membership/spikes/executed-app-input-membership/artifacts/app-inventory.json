@@ -1,0 +1,122 @@
+{
+  "allOnlyInputs": [
+    "App/Account/AccountView.swift"
+  ],
+  "commit": "3954a769e99f3cc53297d94f2b960ceb2665b3d6",
+  "environment": {
+    "appleSwift": "6.4",
+    "architecture": "arm64",
+    "configuration": "Debug",
+    "sdk": "iPhoneSimulator27.0",
+    "swiftLanguageMode": "5",
+    "targetTriple": "arm64-apple-ios16.4-simulator",
+    "xcode": "27.0 (27A266a)"
+  },
+  "normalOnlyInputs": [],
+  "sidebarBlobOID": "2a2ab91bfe71690dd0d773af080f9a528113bea9",
+  "sidebarPath": "App/Navigation/Sidebar.swift",
+  "targetBlobOID": "71acb5926563e001db78556752be10d75a7b9279",
+  "targetPath": "App/Account/AccountView.swift",
+  "trials": {
+    "all": {
+      "AccountViewInFileList": true,
+      "AccountViewSwiftCompile": true,
+      "SidebarInFileList": true,
+      "SidebarSwiftCompile": true,
+      "allSelectedArm64SwiftDriverInvocations": 3,
+      "allSelectedArm64SwiftFileLists": 3,
+      "blobMismatches": [],
+      "defines": [
+        "DEBUG",
+        "EXTENDED_ALL",
+        "DEBUG"
+      ],
+      "generatedInputs": [
+        "GeneratedAssetSymbols.swift"
+      ],
+      "inputCount": 45,
+      "module": "Food_Truck_All",
+      "outsideInputs": [],
+      "sameRelativeInputsAtRelocation": true,
+      "scheme": "Food Truck All",
+      "success": true,
+      "swiftDriverArm64Commands": 1,
+      "trackedInputs": 44,
+      "wallSeconds": 33.07
+    },
+    "normal": {
+      "AccountViewInFileList": false,
+      "AccountViewSwiftCompile": false,
+      "SidebarInFileList": true,
+      "SidebarSwiftCompile": true,
+      "allSelectedArm64SwiftDriverInvocations": 3,
+      "allSelectedArm64SwiftFileLists": 3,
+      "blobMismatches": [],
+      "defines": [
+        "DEBUG",
+        "DEBUG"
+      ],
+      "generatedInputs": [
+        "GeneratedAssetSymbols.swift"
+      ],
+      "inputCount": 44,
+      "module": "Food_Truck",
+      "outsideInputs": [],
+      "sameRelativeInputsAtRelocation": true,
+      "scheme": "Food Truck",
+      "success": true,
+      "swiftDriverArm64Commands": 1,
+      "trackedInputs": 43,
+      "wallSeconds": 28.74
+    },
+    "relocated-all": {
+      "AccountViewInFileList": true,
+      "AccountViewSwiftCompile": true,
+      "SidebarInFileList": true,
+      "SidebarSwiftCompile": true,
+      "allSelectedArm64SwiftDriverInvocations": 3,
+      "allSelectedArm64SwiftFileLists": 3,
+      "blobMismatches": [],
+      "defines": [
+        "DEBUG",
+        "EXTENDED_ALL",
+        "DEBUG"
+      ],
+      "generatedInputs": [
+        "GeneratedAssetSymbols.swift"
+      ],
+      "inputCount": 45,
+      "module": "Food_Truck_All",
+      "outsideInputs": [],
+      "scheme": "Food Truck All",
+      "success": true,
+      "swiftDriverArm64Commands": 1,
+      "trackedInputs": 44,
+      "wallSeconds": 28.95
+    },
+    "relocated-normal": {
+      "AccountViewInFileList": false,
+      "AccountViewSwiftCompile": false,
+      "SidebarInFileList": true,
+      "SidebarSwiftCompile": true,
+      "allSelectedArm64SwiftDriverInvocations": 3,
+      "allSelectedArm64SwiftFileLists": 3,
+      "blobMismatches": [],
+      "defines": [
+        "DEBUG",
+        "DEBUG"
+      ],
+      "generatedInputs": [
+        "GeneratedAssetSymbols.swift"
+      ],
+      "inputCount": 44,
+      "module": "Food_Truck",
+      "outsideInputs": [],
+      "scheme": "Food Truck",
+      "success": true,
+      "swiftDriverArm64Commands": 1,
+      "trackedInputs": 43,
+      "wallSeconds": 28.75
+    }
+  }
+}

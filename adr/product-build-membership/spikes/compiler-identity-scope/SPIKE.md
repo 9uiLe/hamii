@@ -6,14 +6,14 @@
 
 ## Hypothesis
 
-A kind-tagged compiler symbol in an artifact built from a pinned Product tree can support selected-module membership when the root target, configuration, module, compiler invocation, and complete transitive input set are known. A USR, symbol graph, or IndexStore record alone cannot establish the selected Product app target, source freshness, or the provenance of all compiler inputs.
+A kind-tagged compiler symbol in an artifact built from a pinned Product tree can corroborate selected-module membership when the root target, configuration, module, and compiler invocation are known. A USR, symbol graph, or IndexStore record alone cannot establish the selected Product app target, source freshness, or the provenance of all compiler inputs. A complete transitive closure belongs to a stronger build reproducibility claim.
 
 ## Questions
 
 - Which previously measured symbols prove presence in an actual pinned Product package module, and which selected-app claim remains untested?
 - Can the same pinned source be present yet excluded by a target or compilation condition?
 - Does a compiler identity remain useful after a commit change, module change, or source input escaping the pinned tree?
-- What input-closure evidence would a production selected-build claim require, and what is its unmeasured cost?
+- What selected compiler-invocation input inventory would a narrow tracked-source membership claim require, which other inputs remain unbound, and what is the unmeasured cost?
 
 ## Prototype Scope
 
@@ -64,13 +64,13 @@ The prior full graph triples matched across relocated builds: `Domain` 566/566, 
 
 **Measured cost boundary:** The table reports prior package builds, module extraction, and one-file IndexStore generation. It does not include a production IndexStore reader, selected root-target build, complete input audit, failure recovery, or end-to-end membership validation. Compiler symbol graphs did not supply asset catalog entry or token/native semantic identity in the prior probe.
 
-**Inferred safe requirement:** A selected-build result needs a named Product root target, destination/platform and configuration, resolved target/module graph, compiler and SDK identity, exact tracked source/object inputs plus controlled generated/external inputs, observed compiler artifact for that context, and a binding from the artifact's declaration kind/identity to the reviewed Product commit. Unknown or escaping inputs must keep the membership result `unverifiable`.
+**Inferred safe requirement:** A narrow `selectedBuildMember` result needs a named Product root target, destination/platform and configuration, compiler and SDK identity, an executed compiler invocation attributable to that selected build, and exact path/blob binding for the **target tracked source input**. A complete inventory of relevant Swift invocations is needed before declaring the target absent. Generated, external, and other transitive inputs must be classified; their unbound state limits a broader reproducible-build claim, but does not by itself negate the observed target-blob membership. If the target input itself is unknown or escapes the pinned tree, its membership remains `unverifiable`.
 
 **Unknown:** Whether both real Product app targets and their relevant negative configurations can be reproduced from a fully pinned input closure; whether an IndexStore reader can authenticate its records against that closure; stability under other Xcode/Swift/SDK settings; complete private/local/macro declaration coverage; resources and bundle membership; end-to-end latency and failure rate. No evidence here proves Product action/route behavior or patch permission.
 
 ## Conclusion
 
-Compiler evidence corroborates the seven tested declarations in their actual pinned **package module builds** and distinguishes kinds and overloads under measured settings. It does not yet prove membership in a selected Product **app target/configuration**. A source-present conditional declaration and the untested target-exclusion case show why the selected build context matters; unchanged USRs across commits and outside-root compiler inputs show why a graph cannot be its own authority. The next focused experiment should build named positive and negative Product root targets/configurations from immutable pinned trees, record the complete compiler input closure, and verify both symbol presence and absence. Until that evidence exists, the existing `pinnedSourceDeclaration` result must not be elevated to selected-build membership.
+Compiler evidence corroborates the seven tested declarations in their actual pinned **package module builds** and distinguishes kinds and overloads under measured settings. It does not yet prove membership in a selected Product **app target/configuration**. A source-present conditional declaration and the untested target-exclusion case show why the selected build context matters; unchanged USRs across commits and outside-root compiler inputs show why a graph cannot be its own authority. The next focused experiment should build named positive and negative Product root targets/configurations from immutable pinned trees, record the executed compiler invocation input inventory, explicitly classify unbound/transitive inputs, and verify exact tracked source membership. Conditional declaration presence remains a separate claim. Until that evidence exists, the existing `pinnedSourceDeclaration` result must not be elevated to selected-build membership.
 
 ## Artifacts
 

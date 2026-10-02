@@ -6,7 +6,7 @@
 
 ## Hypothesis
 
-A selected Xcode package build exposes an arm64 Swift input list and compiler command that can be reconciled with exact Git blobs, while full build membership still depends on transitive build inputs outside that list.
+A selected Xcode package build exposes an arm64 Swift input list and compiler command that can be reconciled with exact Git blobs. Whole-build reproducibility additionally depends on transitive inputs outside that list.
 
 ## Questions
 
@@ -91,7 +91,7 @@ This Spike did not test the **same tracked path** as both included and excluded 
 
 ## Conclusion
 
-**Observed:** exact Git blob binding is feasible for the selected tracked Swift inputs in these two package builds; relative file lists and sampled compiler commands survived relocation. **Inferred:** a future selected-build membership receipt would need a normalized build-target identity and a transitive input/toolchain closure, not only a path or SwiftFileList. **Unknown:** a stable portable Xcode build-plan contract, complete generated/resource dependency capture, app and Widget target behavior, other configurations or architectures, and whether such a receipt can be replayed independently. This Spike supports further ADR evaluation but does not establish a general Product build-membership validator.
+**Observed:** exact Git blob binding is feasible for the selected tracked Swift inputs in these two package builds; relative file lists and sampled compiler commands survived relocation. **Inferred:** a future narrow selected-build membership receipt would need a normalized selected invocation identity, its relevant compiler arguments, and an exact target source blob binding, not only a path or SwiftFileList. A **reproducible selected-build closure** would additionally need to bind transitive inputs and toolchain dependencies. **Unknown:** a stable portable Xcode build-plan contract, complete generated/resource dependency capture, app and Widget target behavior, other configurations or architectures, and whether a broader reproducibility receipt can be replayed independently. This Spike supports further ADR evaluation but does not establish a general Product build-membership validator.
 
 ## Artifacts
 
