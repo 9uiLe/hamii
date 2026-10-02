@@ -31,8 +31,89 @@ public enum IntegrationProfileFile {
         return try decode(data: data)
     }
 
+    public static func loadV2(at url: URL) throws -> IntegrationProfileV2 {
+        let data: Data
+        do { data = try Data(contentsOf: url) }
+        catch { throw IntegrationProfileFileError.unreadable }
+        return try decodeV2(data: data)
+    }
+
+    public static func decodeVersioned(data: Data) throws -> IntegrationProfileDocument {
+        let version = try profileVersion(data)
+        switch version {
+        case 1: return .v1(try decode(data: data))
+        case 2: return .v2(try decodeV2(data: data))
+        default: throw IntegrationProfileFileError.unsupportedVersion(version)
+        }
+    }
+
     /// Validate already captured Profile bytes without reading a mutable path again.
     public static func decode(data: Data) throws -> IntegrationProfile {
+        let object = try validatedObject(data)
+        let version = try profileVersion(data)
+        guard version == 1 else { throw IntegrationProfileFileError.unsupportedVersion(version) }
+        let allowed: Set<String> = [
+            "formatVersion", "repositoryName", "architectureRules", "componentMappings",
+            "tokenMappings", "assetMappings", "routingMappings", "stateMappings",
+            "nativeMappings", "codeModificationPolicy"
+        ]
+        guard Set(object.keys).isSubset(of: allowed) else {
+            throw IntegrationProfileFileError.invalid("Unknown profile field")
+        }
+        let profile: IntegrationProfile
+        do { profile = try JSONDecoder().decode(IntegrationProfile.self, from: data) }
+        catch { throw IntegrationProfileFileError.invalid("Malformed v1 profile") }
+        try validateStructuralFields(profile.repositoryName, routing: profile.routingMappings,
+            state: profile.stateMappings, native: profile.nativeMappings,
+            component: profile.componentMappings, token: profile.tokenMappings, asset: profile.assetMappings)
+        return profile
+    }
+
+    /// A separate format boundary: v1 strings remain structural-only and are
+    /// never inferred to be v2 source locators. A well-typed locator with a
+    /// malformed target, or a key also present in a structural map, is kept
+    /// for Runtime's per-mapping failure classification.
+    public static func decodeV2(data: Data) throws -> IntegrationProfileV2 {
+        let object = try validatedObject(data)
+        let version = try profileVersion(data)
+        guard version == 2 else { throw IntegrationProfileFileError.unsupportedVersion(version) }
+        let allowed: Set<String> = [
+            "formatVersion", "repositoryName", "architectureRules", "componentMappings",
+            "tokenMappings", "assetMappings", "routingMappings", "stateMappings",
+            "nativeMappings", "codeModificationPolicy", "sourceLocators"
+        ]
+        guard Set(object.keys).isSubset(of: allowed) else {
+            throw IntegrationProfileFileError.invalid("Unknown profile field")
+        }
+        guard let locators = object["sourceLocators"] as? [String: Any] else {
+            throw IntegrationProfileFileError.invalid("Missing or invalid sourceLocators")
+        }
+        let locatorFields: Set<String> = [
+            "kind", "path", "enclosingKind", "enclosingName", "memberKind", "memberName"
+        ]
+        for (key, value) in locators {
+            guard validLocatorKey(key) else {
+                throw IntegrationProfileFileError.invalid("Invalid source locator key")
+            }
+            guard let fields = value as? [String: Any], Set(fields.keys) == locatorFields else {
+                throw IntegrationProfileFileError.invalid("Invalid source locator fields")
+            }
+        }
+        let profile: IntegrationProfileV2
+        do { profile = try JSONDecoder().decode(IntegrationProfileV2.self, from: data) }
+        catch { throw IntegrationProfileFileError.invalid("Malformed v2 profile") }
+        try validateStructuralFields(profile.repositoryName, routing: profile.routingMappings,
+            state: profile.stateMappings, native: profile.nativeMappings,
+            component: profile.componentMappings, token: profile.tokenMappings, asset: profile.assetMappings)
+        return profile
+    }
+
+    private static func profileVersion(_ data: Data) throws -> Int {
+        do { return try JSONDecoder().decode(Header.self, from: data).formatVersion }
+        catch { throw IntegrationProfileFileError.invalid("Missing or invalid formatVersion") }
+    }
+
+    private static func validatedObject(_ data: Data) throws -> [String: Any] {
         let object: [String: Any]
         do {
             guard let parsed = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
@@ -57,34 +138,28 @@ public enum IntegrationProfileFile {
             }
         }
 
-        let allowed: Set<String> = [
-            "formatVersion", "repositoryName", "architectureRules", "componentMappings",
-            "tokenMappings", "assetMappings", "routingMappings", "stateMappings",
-            "nativeMappings", "codeModificationPolicy"
-        ]
-        guard Set(object.keys).isSubset(of: allowed) else {
-            throw IntegrationProfileFileError.invalid("Unknown profile field")
-        }
-        let decoder = JSONDecoder()
-        let header: Header
-        do { header = try decoder.decode(Header.self, from: data) }
-        catch { throw IntegrationProfileFileError.invalid("Missing or invalid formatVersion") }
-        guard header.formatVersion == 1 else {
-            throw IntegrationProfileFileError.unsupportedVersion(header.formatVersion)
-        }
-        let profile: IntegrationProfile
-        do { profile = try decoder.decode(IntegrationProfile.self, from: data) }
-        catch { throw IntegrationProfileFileError.invalid("Malformed v1 profile") }
-        guard !profile.repositoryName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+        return object
+    }
+
+    private static func validateStructuralFields(_ repositoryName: String,
+                                                  routing: [String: String], state: [String: String],
+                                                  native: [String: String], component: [EntityID: String],
+                                                  token: [EntityID: String], asset: [EntityID: String]) throws {
+        guard !repositoryName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             throw IntegrationProfileFileError.invalid("Empty repositoryName")
         }
-        let keys = Array(profile.routingMappings.keys) + Array(profile.stateMappings.keys) + Array(profile.nativeMappings.keys) +
-            profile.componentMappings.keys.map(\.rawValue) + profile.tokenMappings.keys.map(\.rawValue) +
-            profile.assetMappings.keys.map(\.rawValue)
+        let keys = Array(routing.keys) + Array(state.keys) + Array(native.keys) +
+            component.keys.map(\.rawValue) + token.keys.map(\.rawValue) + asset.keys.map(\.rawValue)
         guard keys.allSatisfy(validMappingKey) else {
             throw IntegrationProfileFileError.invalid("Invalid mapping key")
         }
-        return profile
+    }
+
+    private static func validLocatorKey(_ key: String) -> Bool {
+        guard let separator = key.firstIndex(of: ":") else { return false }
+        let kind = String(key[..<separator])
+        let semanticID = String(key[key.index(after: separator)...])
+        return IntegrationMappingKind(rawValue: kind) != nil && validMappingKey(semanticID)
     }
 
     private static func validMappingKey(_ key: String) -> Bool {

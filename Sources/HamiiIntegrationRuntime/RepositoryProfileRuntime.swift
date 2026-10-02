@@ -8,10 +8,14 @@ import HamiiIntegration
 public struct RepositoryProfilePlanResult {
     public let plan: IntegrationPlan
     public let receipt: RepositoryProfileReceipt
+    /// Nil for Profile v1; one source assessment per required mapping for v2.
+    public let repositoryMappingEvidence: [RepositorySourceEvidence]?
 
-    public init(plan: IntegrationPlan, receipt: RepositoryProfileReceipt) {
+    public init(plan: IntegrationPlan, receipt: RepositoryProfileReceipt,
+                repositoryMappingEvidence: [RepositorySourceEvidence]? = nil) {
         self.plan = plan
         self.receipt = receipt
+        self.repositoryMappingEvidence = repositoryMappingEvidence
     }
 }
 
@@ -39,7 +43,7 @@ public enum RepositoryProfileRuntime {
         hamiiRoot: URL,
         productRoot: URL
     ) throws -> RepositoryProfilePlanResult {
-        guard receipt.receiptFormatVersion == 1, receipt.profileFormatVersion == 1 else {
+        guard receipt.receiptFormatVersion == 1, [1, 2].contains(receipt.profileFormatVersion) else {
             throw issue("contract", "invalidReceipt")
         }
         let result = try plan(hamiiRoot: hamiiRoot, productRoot: productRoot,
@@ -87,8 +91,8 @@ public enum RepositoryProfileRuntime {
 
         let source = try ProductSource(root: productRoot, profilePath: profilePath)
         let captured = try source.capture()
-        let profile: IntegrationProfile
-        do { profile = try IntegrationProfileFile.decode(data: captured.profileBytes) }
+        let profile: IntegrationProfileDocument
+        do { profile = try IntegrationProfileFile.decodeVersioned(data: captured.profileBytes) }
         catch IntegrationProfileFileError.unsupportedVersion(_) {
             throw issue("migrationRequired", "unsupportedProfileVersion")
         } catch {
@@ -101,7 +105,68 @@ public enum RepositoryProfileRuntime {
             encoder.outputFormatting = [.sortedKeys]
             contractBytes = try encoder.encode(contract)
         } catch { throw issue("contract", "invalidContract") }
-        let plan = IntegrationContracts.plan(contract, profile: profile)
+        let plan: IntegrationPlan
+        let evidence: [RepositorySourceEvidence]?
+        let profileFormatVersion: Int
+        switch profile {
+        case .v1(let v1):
+            plan = IntegrationContracts.plan(contract, profile: v1)
+            evidence = nil
+            profileFormatVersion = 1
+        case .v2(let v2):
+            var assessments = IntegrationPlanner.assessments(for: contract, profile: v2.structuralProfile)
+            var sourceEvidence: [RepositorySourceEvidence] = []
+            for index in assessments.indices {
+                let key = assessments[index].key
+                let identifier = key.identifier
+                let locator = v2.sourceLocators[identifier]
+                let item: RepositorySourceEvidence
+                switch (assessments[index].status, locator) {
+                case (.missing, nil):
+                    item = RepositorySourceEvidence(mappingKey: identifier, status: .unverifiable,
+                        reason: "missingMappingAuthority")
+                case (.empty, nil):
+                    item = RepositorySourceEvidence(mappingKey: identifier, status: .unverifiable,
+                        reason: "emptyStructuralMapping")
+                case (.resolved, nil):
+                    item = RepositorySourceEvidence(mappingKey: identifier, status: .unverifiable,
+                        reason: "structuralValueWithoutLocator")
+                    assessments[index].status = .invalid
+                case (.missing, .some(let typedLocator)):
+                    if key.kind == .input || key.kind == .event || key.kind == .source {
+                        let expectedMember: SwiftDirectMemberKind = key.kind == .event ? .enumCase : .storedProperty
+                        if typedLocator.memberKind == expectedMember {
+                            item = RepositorySourceValidator.inspect(mappingKey: identifier, locator: typedLocator,
+                                productRoot: source.root, commitOID: captured.commitOID)
+                        } else {
+                            item = RepositorySourceEvidence(mappingKey: identifier, status: .kindMismatch,
+                                reason: "mappingKindMemberKindMismatch", locator: typedLocator)
+                        }
+                    } else {
+                        item = RepositorySourceEvidence(mappingKey: identifier, status: .unverifiable,
+                            reason: "unsupportedMappingKind", locator: typedLocator)
+                    }
+                    switch item.status {
+                    case .verified:
+                        assessments[index].status = .resolved(locatorLabel(typedLocator))
+                    case .ambiguous: assessments[index].status = .ambiguous
+                    default: assessments[index].status = .invalid
+                    }
+                case (_, .some(let typedLocator)):
+                    item = RepositorySourceEvidence(mappingKey: identifier, status: .unverifiable,
+                        reason: "duplicateMappingAuthority", locator: typedLocator)
+                    assessments[index].status = .invalid
+                case (.invalid, nil), (.ambiguous, nil), (.conflicting, nil):
+                    item = RepositorySourceEvidence(mappingKey: identifier, status: .unverifiable,
+                        reason: "invalidStructuralMapping")
+                    assessments[index].status = .invalid
+                }
+                sourceEvidence.append(item)
+            }
+            plan = IntegrationPlanner.plan(contract, assessments: assessments)
+            evidence = sourceEvidence.sorted { $0.mappingKey < $1.mappingKey }
+            profileFormatVersion = 2
+        }
 
         try beforeFinalVerification()
         try source.verifyUnchanged(captured)
@@ -113,14 +178,15 @@ public enum RepositoryProfileRuntime {
             profilePath: profilePath,
             profileBlobOID: captured.blobOID,
             profileSHA256: digest(captured.profileBytes),
-            profileFormatVersion: profile.formatVersion,
+            profileFormatVersion: profileFormatVersion,
             hamiiDocumentID: observation.document.id,
             hamiiDocumentRevision: observation.document.revision,
             hamiiStatePrecondition: observation.statePrecondition,
             screenID: screenID,
             contractSHA256: digest(contractBytes)
         )
-        return RepositoryProfilePlanResult(plan: plan, receipt: receipt)
+        return RepositoryProfilePlanResult(plan: plan, receipt: receipt,
+            repositoryMappingEvidence: evidence)
     }
 }
 
@@ -130,6 +196,12 @@ private func issue(_ category: String, _ reason: String) -> RepositoryProfileRun
 
 private func digest(_ data: Data) -> String {
     SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+}
+
+/// A planner-only opaque marker; consumers must use typed locator evidence,
+/// never parse this string as a Product source expression.
+private func locatorLabel(_ locator: SwiftDirectDeclarationLocator) -> String {
+    "locator:swiftDirectDeclaration:\(locator.path)#\(locator.enclosingKind.rawValue):\(locator.enclosingName)/\(locator.memberKind.rawValue):\(locator.memberName)"
 }
 
 private struct ProductCapture {

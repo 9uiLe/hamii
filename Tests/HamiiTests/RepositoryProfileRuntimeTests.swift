@@ -89,6 +89,7 @@ final class RepositoryProfileRuntimeTests: XCTestCase {
         let indexBefore = try Data(contentsOf: indexURL)
         let worktreeBefore = try Data(contentsOf: item.product.appendingPathComponent(profilePath))
         let result = try plan(item)
+        XCTAssertNil(result.repositoryMappingEvidence)
         XCTAssertEqual(try git(item.product, "rev-parse", "HEAD"), headBefore)
         XCTAssertEqual(try git(item.product, "branch", "--show-current"), branchBefore)
         XCTAssertEqual(try git(item.product, "status", "--porcelain=v2", "--untracked-files=all"), statusBefore)
@@ -317,12 +318,12 @@ final class RepositoryProfileRuntimeTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: item.directory) }
         let file = item.product.appendingPathComponent(profilePath)
         let original = try String(contentsOf: file, encoding: .utf8)
-        try Data(original.replacingOccurrences(of: "\"formatVersion\":1", with: "\"formatVersion\":2").utf8).write(to: file)
+        try Data(original.replacingOccurrences(of: "\"formatVersion\":1", with: "\"formatVersion\":3").utf8).write(to: file)
         try git(item.product, "add", "--", profilePath)
         try git(item.product, "commit", "-qm", "Future profile")
         assertIssue("migrationRequired", "unsupportedProfileVersion") { _ = try plan(item) }
         let future = try String(contentsOf: file, encoding: .utf8)
-        try Data(future.replacingOccurrences(of: "\"formatVersion\":2", with: "\"formatVersion\":1,\"formatVersion\":1").utf8).write(to: file)
+        try Data(future.replacingOccurrences(of: "\"formatVersion\":3", with: "\"formatVersion\":1,\"formatVersion\":1").utf8).write(to: file)
         try git(item.product, "add", "--", profilePath)
         try git(item.product, "commit", "-qm", "Duplicate key")
         assertIssue("contract", "invalidProfile") { _ = try plan(item) }

@@ -90,6 +90,7 @@ with tempfile.TemporaryDirectory(prefix="hamii-cli-") as directory:
                             "--repository-profile", "profile.json")
         assert authoritative["ok"] and authoritative["integrationPlan"] == resolved["integrationPlan"]
         assert authoritative["resolutionIssues"] == [] and authoritative["blockedOutputs"] == []
+        assert "repositoryMappingEvidence" not in authoritative
         receipt = authoritative["repositoryProfileReceipt"]
         assert receipt["receiptFormatVersion"] == 1
         assert receipt["productCommitOID"] == product_head
@@ -348,6 +349,127 @@ with tempfile.TemporaryDirectory(prefix="hamii-cli-") as directory:
     )
     assert filtered_rebuild.returncode == 8 and json.loads(filtered_rebuild.stdout)["category"] == "staleIndex"
 print("CLI contract valid")
+
+# Test-only canonical fixture setup: the CLI currently has no binding insertion
+# command. These temporary files are never used as an authoring workflow or sample.
+with tempfile.TemporaryDirectory(prefix="hamii-source-evidence-cli-") as temporary:
+    fixture = Path(temporary)
+    project = fixture / "hamii"
+    product = fixture / "product"
+    project.mkdir()
+    product.mkdir()
+
+    def source_cli(*args, expected=0):
+        result = subprocess.run(
+            [str(binary), "--project", str(project), "--json", *args],
+            capture_output=True, text=True, timeout=30,
+        )
+        assert result.returncode == expected, (args, result.returncode, result.stdout, result.stderr)
+        return json.loads(result.stdout)
+
+    created = source_cli("init", "SourceEvidence")
+    scope_id = created["document"]["scopes"][0]["id"]["rawValue"]
+    state = created["statePrecondition"]["rawValue"]
+
+    def source_mutate(*args):
+        global state
+        result = source_cli(*args, "--state", state)
+        state = result["mutation"]["statePrecondition"]["rawValue"]
+        return result
+
+    screen_id = source_mutate("screen", "create", scope_id, "Profile")["mutation"]["patches"][0]["entityID"]["rawValue"]
+    root_id = source_cli("inspect")["document"]["screens"][0]["root"]["id"]["rawValue"]
+    for name in ("Name", "Email"):
+        source_mutate("layer", "add", screen_id, root_id, "text", name, name)
+    screen_path = project / "screens" / f"{screen_id}.json"
+    screen_data = json.loads(screen_path.read_text())
+    for child in screen_data["root"]["children"]:
+        child["textBinding"] = "user.name" if child["name"] == "Name" else "user.email"
+    screen_path.write_text(json.dumps(screen_data, sort_keys=True, indent=2) + "\n")
+    assert source_cli("validate")["diagnostics"] == []
+    assert source_cli("integration", "contract", screen_id)["contract"]["inputs"] == ["user.email", "user.name"]
+
+    (product / "Sources").mkdir()
+    (product / "Sources" / "ProductUser.swift").write_text(
+        "struct ProductUser {\n    let displayName: String\n    let email: String\n}\n"
+    )
+    profile_v2 = {
+        "formatVersion": 2, "repositoryName": "Product", "architectureRules": [],
+        "componentMappings": [], "tokenMappings": [], "assetMappings": [],
+        "routingMappings": {},
+        "stateMappings": {},
+        "nativeMappings": {}, "codeModificationPolicy": [],
+        "sourceLocators": {
+            "input:user.name": {
+                "kind": "swiftDirectDeclaration", "path": "Sources/ProductUser.swift",
+                "enclosingKind": "struct", "enclosingName": "ProductUser",
+                "memberKind": "storedProperty", "memberName": "displayName",
+            },
+            "input:user.email": {
+                "kind": "swiftDirectDeclaration", "path": "Sources/ProductUser.swift",
+                "enclosingKind": "struct", "enclosingName": "ProductUser",
+                "memberKind": "storedProperty", "memberName": "email",
+            },
+        },
+    }
+    profile_path = product / "profile.json"
+    profile_path.write_text(json.dumps(profile_v2))
+    subprocess.run(["git", "-C", str(product), "init", "-q"], check=True, timeout=15)
+
+    def commit_product():
+        subprocess.run(["git", "-C", str(product), "add", "-A"], check=True, timeout=15)
+        subprocess.run(["git", "-C", str(product), "-c", "user.name=Smoke",
+                        "-c", "user.email=smoke@example.invalid", "commit", "-qm", "profile"],
+                       check=True, timeout=15)
+
+    commit_product()
+    plan_options = ("integration", "plan", screen_id, "--product-repository", str(product),
+                    "--repository-profile", "profile.json")
+    verified = source_cli(*plan_options)
+    assert verified["ok"] and verified["repositoryProfileReceipt"]["profileFormatVersion"] == 2
+    assert verified["resolutionIssues"] == [] and verified["blockedOutputs"] == []
+    evidence = verified["repositoryMappingEvidence"]
+    assert [item["mappingKey"] for item in evidence] == ["input:user.email", "input:user.name"]
+    assert all(item["status"] == "verified" and item["scope"] == "pinnedSourceDeclaration"
+               and item["sourceBlobOID"] for item in evidence)
+
+    profile_v2["sourceLocators"]["input:user.email"]["memberName"] = "missingEmail"
+    profile_path.write_text(json.dumps(profile_v2))
+    commit_product()
+    missing = source_cli(*plan_options, expected=5)
+    assert missing["category"] == "contract" and missing["ok"] is False
+    evidence = missing["repositoryMappingEvidence"]
+    assert [item["mappingKey"] for item in evidence] == ["input:user.email", "input:user.name"]
+    assert [item["status"] for item in evidence] == ["missing", "verified"]
+    assert missing["resolutionIssues"] == [{"code": "invalidMapping", "semanticID": "input:user.email"}]
+    assert missing["integrationPlan"]["unresolvedMappings"] == ["input:user.email"]
+
+    profile_v2["sourceLocators"]["input:user.email"]["memberName"] = "email"
+    profile_v2["stateMappings"]["user.email"] = "ProductUser.email"
+    profile_path.write_text(json.dumps(profile_v2))
+    commit_product()
+    duplicate = source_cli(*plan_options, expected=5)
+    assert duplicate["category"] == "contract" and duplicate["ok"] is False
+    assert duplicate["repositoryMappingEvidence"][0]["mappingKey"] == "input:user.email"
+    assert duplicate["repositoryMappingEvidence"][0]["reason"] == "duplicateMappingAuthority"
+    assert duplicate["resolutionIssues"] == [{"code": "invalidMapping", "semanticID": "input:user.email"}]
+
+    del profile_v2["sourceLocators"]["input:user.email"]
+    profile_path.write_text(json.dumps(profile_v2))
+    commit_product()
+    structural_only = source_cli(*plan_options, expected=5)
+    assert structural_only["repositoryMappingEvidence"][0]["reason"] == "structuralValueWithoutLocator"
+    assert structural_only["resolutionIssues"] == [{"code": "invalidMapping", "semanticID": "input:user.email"}]
+
+    del profile_v2["stateMappings"]["user.email"]
+    profile_path.write_text(json.dumps(profile_v2))
+    commit_product()
+    missing_both = source_cli(*plan_options, expected=5)
+    assert missing_both["repositoryMappingEvidence"][0]["reason"] == "missingMappingAuthority"
+    assert missing_both["resolutionIssues"] == [{"code": "missingMapping", "semanticID": "input:user.email"}]
+    assert subprocess.check_output(["git", "-C", str(product), "status", "--porcelain"],
+                                   text=True, timeout=15) == ""
+print("Repository Profile v2 source-evidence CLI contract valid")
 
 with tempfile.TemporaryDirectory(prefix="hamii-resolution-cli-") as directory:
     source = root / "Tests" / "Fixtures" / "format-v1-safe-project"

@@ -127,6 +127,7 @@ with tempfile.TemporaryDirectory(prefix="hamii-cli-errors-") as temporary:
                "--repository-profile", "profile.json")
     resolved = success(project, *options)
     assert resolved["repositoryProfileReceipt"]["profilePath"] == "profile.json"
+    assert "repositoryMappingEvidence" not in resolved
     assert "repositoryProfileIssue" not in resolved
     failure(project, "usage", 2, "integration", "plan", screen,
             "--product-repository", str(product))
@@ -145,7 +146,7 @@ with tempfile.TemporaryDirectory(prefix="hamii-cli-errors-") as temporary:
                       "--product-repository", str(product),
                       "--repository-profile", "missing.json")
     assert missing["repositoryProfileIssue"]["code"] == "missingProfile"
-    profile["formatVersion"] = 2
+    profile["formatVersion"] = 3
     repository_profile.write_text(json.dumps(profile))
     commit(product)
     version = failure(project, "migrationRequired", 6, *options)
