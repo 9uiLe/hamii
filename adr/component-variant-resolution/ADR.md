@@ -18,11 +18,23 @@ Scope owner は Definition に属する。Instance は公開された property/s
 
 ## Current Hypothesis
 
-**未確定:** base tree + sparse deltas + typed override precedence で 1k instance を局所的に解決できる。
+**実装については仮説:** 下記 Decision の疎な表現と typed validation を、現在の Component IR / Canonical Format に接続できる。1,000 Instance の直接 resolve 測定は実行可能性の Evidence だが、production cache や局所再計算の性能は未検証。
+
+## Decision
+
+- Canonical representation は ComponentDefinition の base Layer tree、疎な ComponentVariant delta、Definition 参照と選択・値・slot・公開 override を持つ疎な ComponentInstance とする。resolved subtree を Instance 内や Canonical Data に複製しない。ownerScope は Definition に属する。
+- 選択済み Variant が同じ property path へ複数書く場合は、値が同じでも `conflictingVariants` として拒否する。正常に解決でき、書込み対象が最終 tree に残る場合の適用順は base → selected variants → `propertyValues` → `slotContent` → public `allowedOverrides` とする。`propertyValues` は Variant 値を、public override は最終 tree 上の先行値を上書きできる。
+- 1 Instance 内の複数 selected slots は、Definition base tree 上の target 同士が**同一 EntityID**、または一方が他方の strict ancestor / descendant なら Instance を不正として拒否する。判定は slot replacement より前に行い、slot 名、Dictionary 挿入順、replacement が空かどうかに依存させない。空配列も selected replacement である。この拒否後、同じ旧 descendant を消す selected slot は高々1つとなり、重複 owner の診断規則は不要となる。
+- overlap のない selected slot が selected Variant または instance `propertyValues` の write target を Definition base tree 上の **strict descendant** として除去する場合は typed conflict として拒否する。slot target 自身は含めない。`allowedOverrides` はこの先行書込み conflict に含めず、slot 適用後の tree に対して評価する。public override が消えた path に書けば `unknownPath`、非公開 path なら `forbiddenOverride` とする。
+- Resolver が返す最初の typed error の**phase 間**優先順位は、(1) unknown variant / property / slot や `forbiddenOverride` を含む Instance API validity、(2) selected Variant 同一 path conflict、(3) selected-slot target overlap、(4) selected prior write / slot conflict、(5) 実際の resolution と後段 `unknownPath` とする。同じ phase 内の複数不正について細かな first-error 順は固定しないが、決定的で fail closed とする。`conflictingVariants` と forbidden override が同時にある場合は、今後は `forbiddenOverride` を先に返す。これは現行 Resolver の first-error 順を意図的に変更する。DocumentValidator が他の診断も集める挙動を単一診断へ制限する決定ではない。
+- `ComponentResolver.resolve` は1 Definition の tree を materialize し、nested Component Instance は参照 node のまま保持する。再帰的な component dependency と cycle safety は Document / ComponentAvailability validation の責務とする。
+- cache key、実際の invalidation、variant explosion の閾値、局所再計算の latency はこの correctness Decision では決めない。Spike の 1,000 Instance 直接 resolve 時間、論理的な affected output set、異なる JSON shape 同士の保存 bytes 比較を production 性能・cache の保証として扱わない。
+
+この Decision は [instance-resolution](spikes/instance-resolution/SPIKE.md)、[slot-write-conflict-boundary](spikes/slot-write-conflict-boundary/SPIKE.md)、[slot-conflict-priority](spikes/slot-conflict-priority/SPIKE.md) の Evidence に基づく。現行 Resolver は nested slot の名前順で silent discard と `unknownSlot` が分かれ、混合不正では `conflictingVariants` を `forbiddenOverride` より先に返す。これらを保存するのではなく、選択 slot の overlap 拒否と明示した phase priority を新しい契約とする。同一 target ID の別 slot 名も現在の source では名前順の後の置換が勝つため、同じ overlap 禁止に含める。この同一 target ケースは source からの推論であり、3 Spike の raw fixture による実測ではない。
 
 ## Unknowns
 
-selected Variant 同士の同一 path は現在 typed conflict になるが、その契約を採用するか。Variant → property → slot → allowed override の cross-stage precedence、特に slot が先行書込みの対象 Layer を消す場合の診断。nested selected slots では現在の slot 名順により silent discard と `unknownSlot` が分かれるため、その overlap の扱いと優先順位。`conflictingVariants` と `forbiddenOverride` が同時にある場合の優先順位。nested Definition の再帰解決と cycle をこの Decision に含める境界。cache key / actual invalidation、variant explosion の閾値。
+決定した overlap / write conflict / priority を production ComponentResolver、DocumentValidator、Canonical validation に実装し、typed diagnostic と保存拒否を恒久 test で保証する作業。GUI / CLI / AI で ComponentInstance の Variant・property・slot 等を編集する AuthoringIntent の実装範囲と共通 mutation 経路。production cache / locality / end-to-end performance は今回未決定の最適化であり、この Decision の実装完了を主張する根拠にはしない。独立した不可逆な判断が必要になった場合だけ別 ADR に分離する。
 
 ## Required Evidence
 
@@ -34,4 +46,4 @@ Spike の成功/失敗基準に照らして方式を選び、必要な実装・�
 
 ## Status
 
-Spike Required
+Implementation Required
