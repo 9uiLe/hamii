@@ -1,0 +1,449 @@
+{
+  "cases": [
+    {
+      "blobSHA256": "c6a27abe08e93befcf6c3d11f1950b63024274df0aaa96a191441565a20a22d4",
+      "candidates": [
+        {
+          "enclosingKind": "struct_decl",
+          "kind": "var_decl",
+          "line": 10
+        }
+      ],
+      "case": "profileNickname",
+      "elapsedMs": 275.52,
+      "gitBlobOID": "f15ccde1464aea6db82685fde706b81f47e7f9d5",
+      "inputMode": "pinnedGitBlob",
+      "locator": {
+        "enclosing": "Profile",
+        "kind": "property",
+        "member": "nickname",
+        "path": "Packages/Domain/Sources/Domain/Entities/Profile.swift"
+      },
+      "status": "candidateUniqueSyntax",
+      "target": "team-mino"
+    },
+    {
+      "blobSHA256": "c6a27abe08e93befcf6c3d11f1950b63024274df0aaa96a191441565a20a22d4",
+      "candidates": [
+        {
+          "enclosingKind": "struct_decl",
+          "kind": "var_decl",
+          "line": 12
+        }
+      ],
+      "case": "profileCreatedAt",
+      "elapsedMs": 87.98,
+      "gitBlobOID": "f15ccde1464aea6db82685fde706b81f47e7f9d5",
+      "inputMode": "pinnedGitBlob",
+      "locator": {
+        "enclosing": "Profile",
+        "kind": "property",
+        "member": "createdAt",
+        "path": "Packages/Domain/Sources/Domain/Entities/Profile.swift"
+      },
+      "status": "candidateUniqueSyntax",
+      "target": "team-mino"
+    },
+    {
+      "blobSHA256": "75eae421d1cd50f4e0bfb98d07a88b3f84ceaa628c6389e9130379a11b057227",
+      "candidates": [
+        {
+          "enclosingKind": "enum_decl",
+          "kind": "enum_element_decl",
+          "line": 83
+        }
+      ],
+      "case": "editAction",
+      "elapsedMs": 91.49,
+      "gitBlobOID": "3538d4e7ffd38b7ce877a6fc70725fd36c94bb1e",
+      "inputMode": "pinnedGitBlob",
+      "locator": {
+        "enclosing": "ProfileMainAction",
+        "kind": "enumCase",
+        "member": "tapEditProfile",
+        "path": "Packages/FeatureProfile/Sources/FeatureProfile/Main/ProfileMainStore.swift"
+      },
+      "status": "candidateUniqueSyntax",
+      "target": "team-mino"
+    },
+    {
+      "blobSHA256": "caadb35192b8d572839c1dab13e300399f3d1cf4591ccb83cf385bd39802983e",
+      "candidates": [
+        {
+          "enclosingKind": "enum_decl",
+          "kind": "enum_element_decl",
+          "line": 11
+        }
+      ],
+      "case": "editRoute",
+      "elapsedMs": 90.53,
+      "gitBlobOID": "836e8470735bd66f7d36babe7b23f0e5554cd150",
+      "inputMode": "pinnedGitBlob",
+      "locator": {
+        "enclosing": "ProfileRoute",
+        "kind": "enumCase",
+        "member": "profileSetup",
+        "path": "Packages/FeatureProfile/Sources/FeatureProfile/ProfileCoordinator.swift"
+      },
+      "status": "candidateUniqueSyntax",
+      "target": "team-mino"
+    },
+    {
+      "blobSHA256": "5c1526572f476976215ddc749c6bda001b8347c113a8b01f347d724737b94293",
+      "candidates": [
+        {
+          "enclosingKind": "enum_decl",
+          "kind": "enum_element_decl",
+          "line": 10
+        }
+      ],
+      "case": "directAssociatedEnumCase",
+      "elapsedMs": 85.49,
+      "gitBlobOID": "8f6014b89a957f77a8caa11e30a08c69659fb359",
+      "inputMode": "pinnedGitBlob",
+      "locator": {
+        "enclosing": "User",
+        "kind": "enumCase",
+        "member": "authenticated",
+        "path": "FoodTruckKit/Sources/Account/User.swift"
+      },
+      "status": "candidateUniqueSyntax",
+      "target": "food-truck"
+    },
+    {
+      "blobSHA256": "e2c782520bb8a553efbab86dd5fdf3e07a704469da1e366dec6d2dfebb8cf903",
+      "case": "conditionalMember",
+      "elapsedMs": 8.84,
+      "gitBlobOID": "4ee93d388836456946c2c985db6f3eefe9693eb1",
+      "inputMode": "pinnedGitBlob",
+      "locator": {
+        "enclosing": "AccountStore",
+        "kind": "property",
+        "member": "currentUser",
+        "path": "FoodTruckKit/Sources/Account/AccountStore.swift"
+      },
+      "reason": "conditionalDeclarationOrUse",
+      "status": "unverifiable",
+      "target": "food-truck"
+    },
+    {
+      "blobSHA256": "edd56fe9c0e28e838466586f70bfe3f5a2ceec2598e628d7dc5fad320dd30d7f",
+      "candidates": [
+        {
+          "enclosingKind": "extension_decl",
+          "kind": "var_decl",
+          "line": 63
+        }
+      ],
+      "case": "extensionMember",
+      "elapsedMs": 89.61,
+      "gitBlobOID": "f35bcb8a21dc0d5d43d9090e4ce09360d5cb282c",
+      "inputMode": "pinnedGitBlob",
+      "locator": {
+        "enclosing": "Donut",
+        "kind": "property",
+        "member": "classic",
+        "path": "FoodTruckKit/Sources/Donut/Donut.swift"
+      },
+      "reason": "extensionMemberUnsupported",
+      "status": "unverifiable",
+      "target": "food-truck"
+    },
+    {
+      "blobSHA256": "00b15b6c6cfbabc8faa56b375f983927d9619803c531c3208d1fe4851f610db5",
+      "candidates": [
+        {
+          "enclosingKind": "struct_decl",
+          "kind": "var_decl",
+          "line": 10
+        },
+        {
+          "enclosingKind": "struct_decl",
+          "kind": "var_decl",
+          "line": 11
+        }
+      ],
+      "case": "duplicateSameFile",
+      "elapsedMs": 81.57,
+      "inputMode": "inMemoryControlledTreeEntry",
+      "locator": {
+        "enclosing": "Profile",
+        "kind": "property",
+        "member": "nickname",
+        "path": "Packages/Domain/Sources/Domain/Entities/Profile.swift"
+      },
+      "status": "ambiguous",
+      "target": "team-mino"
+    },
+    {
+      "blobSHA256": "c6a27abe08e93befcf6c3d11f1950b63024274df0aaa96a191441565a20a22d4",
+      "candidates": [
+        {
+          "enclosingKind": "struct_decl",
+          "kind": "var_decl",
+          "line": 10
+        }
+      ],
+      "case": "wrongExpectedKind",
+      "elapsedMs": 93.85,
+      "gitBlobOID": "f15ccde1464aea6db82685fde706b81f47e7f9d5",
+      "inputMode": "pinnedGitBlob",
+      "locator": {
+        "enclosing": "Profile",
+        "kind": "enumCase",
+        "member": "nickname",
+        "path": "Packages/Domain/Sources/Domain/Entities/Profile.swift"
+      },
+      "status": "kindMismatch",
+      "target": "team-mino"
+    },
+    {
+      "blobSHA256": "90179a26e1012cb49029fd7ec74dfe7e4ee5f0274869830a36ad095471ba31d8",
+      "candidates": [
+        {
+          "enclosingKind": "struct_decl",
+          "kind": "func_decl",
+          "line": 10
+        }
+      ],
+      "case": "wrongDeclarationKind",
+      "elapsedMs": 84.06,
+      "inputMode": "inMemoryControlledTreeEntry",
+      "locator": {
+        "enclosing": "Profile",
+        "kind": "property",
+        "member": "nickname",
+        "path": "Packages/Domain/Sources/Domain/Entities/Profile.swift"
+      },
+      "status": "kindMismatch",
+      "target": "team-mino"
+    },
+    {
+      "blobSHA256": "61d37412f5a1c0ea0d51c5ef9a34296cc41a6a2c00be9e340dded66c0c513c04",
+      "candidates": [],
+      "case": "deletedMember",
+      "elapsedMs": 77.8,
+      "inputMode": "inMemoryControlledTreeEntry",
+      "locator": {
+        "enclosing": "Profile",
+        "kind": "property",
+        "member": "nickname",
+        "path": "Packages/Domain/Sources/Domain/Entities/Profile.swift"
+      },
+      "status": "missing",
+      "target": "team-mino"
+    },
+    {
+      "blobSHA256": "f97d0fccb927a6f16287f8a7db23a1b1875bbbcc276074a520b7f0a054fdb123",
+      "candidates": [],
+      "case": "renamedMember",
+      "elapsedMs": 76.82,
+      "inputMode": "inMemoryControlledTreeEntry",
+      "locator": {
+        "enclosing": "Profile",
+        "kind": "property",
+        "member": "nickname",
+        "path": "Packages/Domain/Sources/Domain/Entities/Profile.swift"
+      },
+      "status": "missing",
+      "target": "team-mino"
+    },
+    {
+      "case": "movedFileOldLocator",
+      "elapsedMs": 0.0,
+      "inputMode": "pinnedGitBlob",
+      "locator": {
+        "enclosing": "Profile",
+        "kind": "property",
+        "member": "nickname",
+        "path": "Moved/Profile.swift"
+      },
+      "status": "invalidLocator",
+      "target": "team-mino"
+    },
+    {
+      "blobSHA256": "c6a27abe08e93befcf6c3d11f1950b63024274df0aaa96a191441565a20a22d4",
+      "candidates": [
+        {
+          "enclosingKind": "struct_decl",
+          "kind": "var_decl",
+          "line": 10
+        }
+      ],
+      "case": "movedFileUpdatedLocator",
+      "elapsedMs": 77.97,
+      "inputMode": "inMemoryControlledTreeEntry",
+      "locator": {
+        "enclosing": "Profile",
+        "kind": "property",
+        "member": "nickname",
+        "path": "Moved/Profile.swift"
+      },
+      "status": "candidateUniqueSyntax",
+      "target": "team-mino"
+    },
+    {
+      "case": "symlinkBlob",
+      "elapsedMs": 0.01,
+      "inputMode": "inMemoryControlledTreeEntry",
+      "locator": {
+        "enclosing": "Profile",
+        "kind": "property",
+        "member": "nickname",
+        "path": "Packages/Domain/Sources/Domain/Entities/Profile.swift"
+      },
+      "status": "invalidLocator",
+      "target": "team-mino"
+    },
+    {
+      "case": "traversalPath",
+      "elapsedMs": 0.0,
+      "inputMode": "pinnedGitBlob",
+      "locator": {
+        "enclosing": "Profile",
+        "kind": "property",
+        "member": "nickname",
+        "path": "../Profile.swift"
+      },
+      "status": "invalidLocator",
+      "target": "team-mino"
+    },
+    {
+      "case": "absolutePath",
+      "elapsedMs": 0.0,
+      "inputMode": "pinnedGitBlob",
+      "locator": {
+        "enclosing": "Profile",
+        "kind": "property",
+        "member": "nickname",
+        "path": "/tmp/Profile.swift"
+      },
+      "status": "invalidLocator",
+      "target": "team-mino"
+    },
+    {
+      "case": "staleCommit",
+      "elapsedMs": 0.0,
+      "gitBlobOID": "f15ccde1464aea6db82685fde706b81f47e7f9d5",
+      "inputMode": "pinnedGitBlob",
+      "locator": {
+        "enclosing": "Profile",
+        "kind": "property",
+        "member": "nickname",
+        "path": "Packages/Domain/Sources/Domain/Entities/Profile.swift"
+      },
+      "status": "staleCommit",
+      "target": "team-mino"
+    },
+    {
+      "blobSHA256": "b9b961484ae0c6415187e60ba184cfda36314e6ef5a137539fcf06b102419293",
+      "case": "syntheticConditional",
+      "elapsedMs": 0.09,
+      "inputMode": "inMemoryControlledTreeEntry",
+      "locator": {
+        "enclosing": "Profile",
+        "kind": "property",
+        "member": "nickname",
+        "path": "Packages/Domain/Sources/Domain/Entities/Profile.swift"
+      },
+      "reason": "conditionalDeclarationOrUse",
+      "status": "unverifiable",
+      "target": "team-mino"
+    },
+    {
+      "blobSHA256": "b29170a4efa6503bf0a699aa6caca9b9bc5626205df1fde67f54374dd44d9c4d",
+      "candidates": [
+        {
+          "enclosingKind": "extension_decl",
+          "kind": "var_decl",
+          "line": 2
+        }
+      ],
+      "case": "syntheticExtension",
+      "elapsedMs": 81.85,
+      "inputMode": "inMemoryControlledTreeEntry",
+      "locator": {
+        "enclosing": "Profile",
+        "kind": "property",
+        "member": "nickname",
+        "path": "Packages/Domain/Sources/Domain/Entities/Profile.swift"
+      },
+      "reason": "extensionMemberUnsupported",
+      "status": "unverifiable",
+      "target": "team-mino"
+    },
+    {
+      "blobSHA256": "d8f90b8fa16dad3c500b9408c60318b11c4acef8d96008e26d2616dfd2c79a5d",
+      "case": "syntheticOverload",
+      "elapsedMs": 0.01,
+      "inputMode": "inMemoryControlledTreeEntry",
+      "locator": {
+        "enclosing": "Profile",
+        "kind": "method",
+        "member": "nickname",
+        "path": "Packages/Domain/Sources/Domain/Entities/Profile.swift"
+      },
+      "reason": "methodOrOverloadUnsupported",
+      "status": "unverifiable",
+      "target": "team-mino"
+    },
+    {
+      "blobSHA256": "b0ec105e3fb4900b0f4efe935c78420472b0cf2433e394702ded8e2bbdade16c",
+      "case": "syntheticNestedEnclosing",
+      "elapsedMs": 78.7,
+      "inputMode": "inMemoryControlledTreeEntry",
+      "locator": {
+        "enclosing": "Profile",
+        "kind": "property",
+        "member": "nickname",
+        "path": "Packages/Domain/Sources/Domain/Entities/Profile.swift"
+      },
+      "reason": "nestedOrLocalEnclosingUnsupported",
+      "status": "unverifiable",
+      "target": "team-mino"
+    },
+    {
+      "blobSHA256": "1a012ee248c33e6bae3dbb11cd73282edb1176f32a7359c2775aa95a9a37d506",
+      "case": "syntheticMalformed",
+      "detail": "\n/var/folders/05/9dz9l23n10d4pk_yp0ktzb4m0000gn/T/typed-locator-6onu1l0l/Candidate.swift:1:32: error: expected type\n1 | struct Profile { let nickname: }\n  |                                `- error: expected type\n2 | \n",
+      "elapsedMs": 91.6,
+      "inputMode": "inMemoryControlledTreeEntry",
+      "locator": {
+        "enclosing": "Profile",
+        "kind": "property",
+        "member": "nickname",
+        "path": "Packages/Domain/Sources/Domain/Entities/Profile.swift"
+      },
+      "reason": "swiftParseFailed",
+      "status": "unverifiable",
+      "target": "team-mino"
+    }
+  ],
+  "commands": [
+    "git --no-optional-locks ls-tree -r --full-tree -z <sha>",
+    "git --no-optional-locks cat-file blob <oid>",
+    "swiftc -frontend -dump-parse <temporary Swift file>"
+  ],
+  "limitations": [
+    "Swift parse dump is syntactic, not type-checked or compiler-index identity",
+    "Only direct unconditional members of top-level nominal declarations are candidates",
+    "Methods/overloads, extensions, conditional declarations, nested/local enclosing declarations, macros/generated members and resources are unsupported",
+    "In-memory moved-file case is a controlled tree substitution, not a committed Product move",
+    "Swift compiler version and absolute temporary file path do not enter locator output"
+  ],
+  "probe": "typed Swift syntax only; no compiler verification",
+  "swiftCompiler": "Apple Swift version 6.4 (swift-6.4-RELEASE)\nTarget: arm64-apple-macosx27.0.0",
+  "targets": {
+    "food-truck": {
+      "cleanBeforeAfter": true,
+      "commit": "3954a769e99f3cc53297d94f2b960ceb2665b3d6",
+      "treeEntries": 553
+    },
+    "team-mino": {
+      "cleanBeforeAfter": true,
+      "commit": "dca2202f4be21869190d19bbcf223eb8646a2acd",
+      "treeEntries": 1256
+    }
+  },
+  "trialCountPerCase": 1
+}

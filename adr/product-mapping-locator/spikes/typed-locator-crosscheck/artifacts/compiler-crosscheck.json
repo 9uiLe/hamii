@@ -1,0 +1,181 @@
+{
+  "costSeconds": {
+    "firstGraphExtraction": {
+      "Domain": 26.636,
+      "FeatureProfile": 19.596,
+      "FoodTruckKit": 6.846
+    },
+    "initialFeatureProfileBuild": 27.9,
+    "initialFoodTruckKitBuild": 27.7,
+    "relocatedDomainBuild": 6.2,
+    "relocatedFeatureProfileBuild": 16.1,
+    "relocatedFoodTruckKitBuild": 27.1,
+    "warmGraphExtractionThreeTrials": {
+      "Domain": [
+        0.12,
+        0.111,
+        0.108
+      ],
+      "FeatureProfile": [
+        0.284,
+        0.277,
+        0.287
+      ],
+      "FoodTruckKit": [
+        0.735,
+        0.575,
+        0.604
+      ]
+    }
+  },
+  "environment": {
+    "arch": "arm64",
+    "compiler": "Apple Swift 6.4",
+    "foodTruckKitLanguageMode": "Swift 5",
+    "sdk": "iPhoneSimulator27.0.sdk",
+    "teamMinoLanguageMode": "Swift 6",
+    "xcode": "27.0 (27A266a)"
+  },
+  "limits": [
+    "Graph compiler identity confirms declarations for these exact modules/configurations, not runtime action/route semantics.",
+    "Graph source URIs are absolute scratch paths and are not stable locator authority.",
+    "Git blob checks cover selected files; transitive compiler inputs need a production-wide pinned-input audit.",
+    "Food Truck clone is local --shared and depends on source object store."
+  ],
+  "negative": {
+    "teamMinoIndependentNetworkClone": "not attempted in this crosscheck; prior partial-clone missing promisor object",
+    "unbuiltFeatureProfileGraph": "exit 1: Could not load module FeatureProfile"
+  },
+  "relocation": {
+    "Domain": {
+      "baseSymbols": 566,
+      "pathKindUSRTriplesEqual": true,
+      "relocatedSymbols": 566
+    },
+    "FeatureProfile": {
+      "baseSymbols": 1851,
+      "pathKindUSRTriplesEqual": true,
+      "relocatedSymbols": 1851
+    },
+    "FoodTruckKit": {
+      "baseSymbols": 5991,
+      "pathKindUSRTriplesEqual": true,
+      "relocatedSymbols": 5991
+    }
+  },
+  "schema": "typed-locator-compiler-crosscheck-v1",
+  "selectedIdentities": [
+    {
+      "kind": "swift.property",
+      "module": "Domain",
+      "sourceLineOneBased": 10,
+      "sourcePath": "Packages/Domain/Sources/Domain/Entities/Profile.swift",
+      "symbol": "Profile.nickname",
+      "usr": "s:6Domain7ProfileV8nicknameSSvp"
+    },
+    {
+      "kind": "swift.property",
+      "module": "Domain",
+      "sourceLineOneBased": 12,
+      "sourcePath": "Packages/Domain/Sources/Domain/Entities/Profile.swift",
+      "symbol": "Profile.createdAt",
+      "usr": "s:6Domain7ProfileV9createdAt10Foundation4DateVSgvp"
+    },
+    {
+      "kind": "swift.enum.case",
+      "module": "FeatureProfile",
+      "sourceLineOneBased": 83,
+      "sourcePath": "Packages/FeatureProfile/Sources/FeatureProfile/Main/ProfileMainStore.swift",
+      "symbol": "ProfileMainAction.tapEditProfile",
+      "usr": "s:14FeatureProfile0B10MainActionO07tapEditB0yA2CmF"
+    },
+    {
+      "kind": "swift.enum.case",
+      "module": "FeatureProfile",
+      "sourceLineOneBased": 94,
+      "sourcePath": "Packages/FeatureProfile/Sources/FeatureProfile/Main/ProfileMainStore.swift",
+      "symbol": "ProfileMainNav.pushProfileSetup",
+      "usr": "s:14FeatureProfile0B7MainNavO04pushB5SetupyA2CmF"
+    },
+    {
+      "kind": "swift.enum.case",
+      "module": "FeatureProfile",
+      "sourceLineOneBased": 11,
+      "sourcePath": "Packages/FeatureProfile/Sources/FeatureProfile/ProfileCoordinator.swift",
+      "symbol": "ProfileRoute.profileSetup",
+      "usr": "s:14FeatureProfile0B5RouteO12profileSetupyA2CmF"
+    },
+    {
+      "kind": "swift.enum.case",
+      "module": "FoodTruckKit",
+      "sourceLineOneBased": 10,
+      "sourcePath": "FoodTruckKit/Sources/Account/User.swift",
+      "symbol": "User.authenticated(username:)",
+      "usr": "s:12FoodTruckKit4UserO13authenticatedyACSS_tcACmF"
+    },
+    {
+      "kind": "swift.property",
+      "module": "FoodTruckKit",
+      "sourceLineOneBased": 39,
+      "sourcePath": "FoodTruckKit/Sources/Account/AccountStore.swift",
+      "symbol": "AccountStore.currentUser",
+      "usr": "s:12FoodTruckKit12AccountStoreC11currentUserAA0G0OSgvp"
+    }
+  ],
+  "sourceCommits": {
+    "foodTruck": "3954a769e99f3cc53297d94f2b960ceb2665b3d6",
+    "teamMino": "dca2202f4be21869190d19bbcf223eb8646a2acd"
+  },
+  "sources": [
+    {
+      "archivedBytesEqualGitBlob": true,
+      "blobOID": "f15ccde1464aea6db82685fde706b81f47e7f9d5",
+      "byteCount": 848,
+      "gitType": "blob",
+      "path": "Packages/Domain/Sources/Domain/Entities/Profile.swift",
+      "sha256": "c6a27abe08e93befcf6c3d11f1950b63024274df0aaa96a191441565a20a22d4",
+      "target": "teamMino",
+      "treeMode": "100644"
+    },
+    {
+      "archivedBytesEqualGitBlob": true,
+      "blobOID": "3538d4e7ffd38b7ce877a6fc70725fd36c94bb1e",
+      "byteCount": 10309,
+      "gitType": "blob",
+      "path": "Packages/FeatureProfile/Sources/FeatureProfile/Main/ProfileMainStore.swift",
+      "sha256": "75eae421d1cd50f4e0bfb98d07a88b3f84ceaa628c6389e9130379a11b057227",
+      "target": "teamMino",
+      "treeMode": "100644"
+    },
+    {
+      "archivedBytesEqualGitBlob": true,
+      "blobOID": "836e8470735bd66f7d36babe7b23f0e5554cd150",
+      "byteCount": 5805,
+      "gitType": "blob",
+      "path": "Packages/FeatureProfile/Sources/FeatureProfile/ProfileCoordinator.swift",
+      "sha256": "caadb35192b8d572839c1dab13e300399f3d1cf4591ccb83cf385bd39802983e",
+      "target": "teamMino",
+      "treeMode": "100644"
+    },
+    {
+      "archivedBytesEqualGitBlob": true,
+      "blobOID": "8f6014b89a957f77a8caa11e30a08c69659fb359",
+      "byteCount": 297,
+      "gitType": "blob",
+      "path": "FoodTruckKit/Sources/Account/User.swift",
+      "sha256": "5c1526572f476976215ddc749c6bda001b8347c113a8b01f347d724737b94293",
+      "target": "foodTruck",
+      "treeMode": "100644"
+    },
+    {
+      "archivedBytesEqualGitBlob": true,
+      "blobOID": "4ee93d388836456946c2c985db6f3eefe9693eb1",
+      "byteCount": 7635,
+      "gitType": "blob",
+      "path": "FoodTruckKit/Sources/Account/AccountStore.swift",
+      "sha256": "e2c782520bb8a553efbab86dd5fdf3e07a704469da1e366dec6d2dfebb8cf903",
+      "target": "foodTruck",
+      "treeMode": "100644"
+    }
+  ]
+}

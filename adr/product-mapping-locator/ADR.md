@@ -39,7 +39,7 @@ Git line numbers and raw substring matches are evidence controls, not source aut
 
 ## Required Evidence
 
-Compare all options against Team MINO iOS commit `dca2202f4be21869190d19bbcf223eb8646a2acd` and at least one other pinned Product repository. Record exact source files and candidate locators. Exercise duplicate names, deletion, file move, symbol rename, wrong kind, commit change, exact clone/relocation, symlink/path traversal, and internal/member/enum-case constructs. Measure build/index requirements, environment dependencies, and lookup cost with conditions and trial count. Keep controls and prototypes under focused Spikes: [qualified semantic symbol](spikes/qualified-semantic-symbol/SPIKE.md), [tracked file declaration](spikes/tracked-file-declaration/SPIKE.md), and [compiler/index identity](spikes/compiler-index-identity/SPIKE.md).
+Compare all options against Team MINO iOS commit `dca2202f4be21869190d19bbcf223eb8646a2acd` and at least one other pinned Product repository. Record exact source files and candidate locators. Exercise duplicate names, deletion, file move, symbol rename, wrong kind, commit change, exact clone/relocation, symlink/path traversal, and internal/member/enum-case constructs. Measure build/index requirements, environment dependencies, and lookup cost with conditions and trial count. Keep controls and prototypes under focused Spikes: [qualified semantic symbol](spikes/qualified-semantic-symbol/SPIKE.md), [tracked file declaration](spikes/tracked-file-declaration/SPIKE.md), [compiler/index identity](spikes/compiler-index-identity/SPIKE.md), and [typed locator/compiler cross-check](spikes/typed-locator-crosscheck/SPIKE.md).
 
 ## Decision Criteria
 
