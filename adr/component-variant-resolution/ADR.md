@@ -22,11 +22,11 @@ Scope owner は Definition に属する。Instance は公開された property/s
 
 ## Unknowns
 
-selected Variant 同士の同一 path は現在 typed conflict になるが、その契約を採用するか。Variant → property → slot → allowed override の cross-stage precedence、特に slot が先行書込みの対象 Layer を消す場合の診断と、既存 `forbiddenOverride` / `conflictingVariants` の error priority。nested selected slots の diagnostic owner。nested Definition の再帰解決と cycle をこの Decision に含める境界。cache key / actual invalidation、variant explosion の閾値。
+selected Variant 同士の同一 path は現在 typed conflict になるが、その契約を採用するか。Variant → property → slot → allowed override の cross-stage precedence、特に slot が先行書込みの対象 Layer を消す場合の診断。nested selected slots では現在の slot 名順により silent discard と `unknownSlot` が分かれるため、その overlap の扱いと優先順位。`conflictingVariants` と `forbiddenOverride` が同時にある場合の優先順位。nested Definition の再帰解決と cycle をこの Decision に含める境界。cache key / actual invalidation、variant explosion の閾値。
 
 ## Required Evidence
 
-[spikes/instance-resolution/SPIKE.md](spikes/instance-resolution/SPIKE.md) に direct Resolver の 16 ケース、Current Canonical sparse save、1,000 Instance の raw resolve cost / 論理 affected output set、独立監査を記録した。[slot-write-conflict-boundary Spike](spikes/slot-write-conflict-boundary/SPIKE.md) では selected write が slot 置換で消えても Canonical save が受理する現状、test-only conflict membership、既存 error を隠す素朴な候補方式、valid nested Definition / cycle の validation 境界を記録した。Decision 前には error priority と nested slot overlap の診断規則、選択済み write の扱いを解決する。実際の局所再計算と同一 encoding boundary での保存量比較は未検証のまま区別する。結果と判断を削除前の Git commit に残す。
+[spikes/instance-resolution/SPIKE.md](spikes/instance-resolution/SPIKE.md) に direct Resolver の 16 ケース、Current Canonical sparse save、1,000 Instance の raw resolve cost / 論理 affected output set、独立監査を記録した。[slot-write-conflict-boundary Spike](spikes/slot-write-conflict-boundary/SPIKE.md) では selected write が slot 置換で消えても Canonical save が受理する現状、test-only conflict membership、既存 error を隠す素朴な候補方式、valid nested Definition / cycle の validation 境界を記録した。[slot-conflict-priority Spike](spikes/slot-conflict-priority/SPIKE.md) は test-only 18ケース・Application 境界5ケース・独立監査を記録した。selected prior write を消す slot 名の全件集合は固定 fixture で導出できたが、outer-first nested slot の現行 `unknownSlot` と混合 `conflictingVariants` / `forbiddenOverride` を先行判定が覆う反例があるため Decision は保留する。実際の局所再計算と同一 encoding boundary での保存量比較は未検証のまま区別する。結果と判断を削除前の Git commit に残す。
 
 ## Decision Criteria
 

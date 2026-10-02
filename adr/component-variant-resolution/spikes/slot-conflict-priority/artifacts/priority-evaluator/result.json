@@ -1,0 +1,411 @@
+{
+  "candidateAlgorithm" : [
+    "existing selection\/API validity",
+    "selected variant duplicate path",
+    "selected variant\/property silent-discard conflict with sorted full slot-name set",
+    "current ComponentResolver; allowedOverrides excluded from new conflict"
+  ],
+  "caseCount" : 18,
+  "cases" : [
+    {
+      "candidate" : {
+        "error" : "slotWriteConflict",
+        "path" : "layer_old_text.text",
+        "phase" : "selectedWriteConflict",
+        "slotNames" : [
+          "outer"
+        ],
+        "status" : "error"
+      },
+      "case" : "outer-only-selected-variant",
+      "currentResolver" : {
+        "oldText" : "missing",
+        "outsideText" : "Outside",
+        "status" : "resolved"
+      },
+      "expected" : {
+        "error" : "slotWriteConflict",
+        "path" : "layer_old_text.text",
+        "phase" : "selectedWriteConflict",
+        "slotNames" : [
+          "outer"
+        ],
+        "status" : "error"
+      },
+      "passed" : true
+    },
+    {
+      "candidate" : {
+        "error" : "slotWriteConflict",
+        "path" : "layer_old_text.text",
+        "phase" : "selectedWriteConflict",
+        "slotNames" : [
+          "inner"
+        ],
+        "status" : "error"
+      },
+      "case" : "inner-only-selected-variant",
+      "currentResolver" : {
+        "oldText" : "missing",
+        "outsideText" : "Outside",
+        "status" : "resolved"
+      },
+      "expected" : {
+        "error" : "slotWriteConflict",
+        "path" : "layer_old_text.text",
+        "slotNames" : [
+          "inner"
+        ],
+        "status" : "error"
+      },
+      "passed" : true
+    },
+    {
+      "candidate" : {
+        "error" : "slotWriteConflict",
+        "path" : "layer_old_text.text",
+        "phase" : "selectedWriteConflict",
+        "slotNames" : [
+          "inner",
+          "outer"
+        ],
+        "status" : "error"
+      },
+      "case" : "both-selected-slots",
+      "currentResolver" : {
+        "oldText" : "missing",
+        "outsideText" : "Outside",
+        "status" : "resolved"
+      },
+      "expected" : {
+        "error" : "slotWriteConflict",
+        "path" : "layer_old_text.text",
+        "slotNames" : [
+          "inner",
+          "outer"
+        ],
+        "status" : "error"
+      },
+      "passed" : true
+    },
+    {
+      "candidate" : {
+        "error" : "slotWriteConflict",
+        "path" : "layer_old_text.text",
+        "phase" : "selectedWriteConflict",
+        "slotNames" : [
+          "inner",
+          "outer"
+        ],
+        "status" : "error"
+      },
+      "case" : "both-slots-reverse-dictionary-insertion",
+      "currentResolver" : {
+        "oldText" : "missing",
+        "outsideText" : "Outside",
+        "status" : "resolved"
+      },
+      "expected" : {
+        "error" : "slotWriteConflict",
+        "path" : "layer_old_text.text",
+        "slotNames" : [
+          "inner",
+          "outer"
+        ],
+        "status" : "error"
+      },
+      "passed" : true
+    },
+    {
+      "candidate" : {
+        "error" : "slotWriteConflict",
+        "path" : "layer_old_text.text",
+        "phase" : "selectedWriteConflict",
+        "slotNames" : [
+          "aOuter",
+          "zInner"
+        ],
+        "status" : "error"
+      },
+      "case" : "both-slots-renamed-sorted-set",
+      "currentResolver" : {
+        "error" : "unknownSlot:zInner",
+        "status" : "error"
+      },
+      "expected" : {
+        "error" : "slotWriteConflict",
+        "path" : "layer_old_text.text",
+        "slotNames" : [
+          "aOuter",
+          "zInner"
+        ],
+        "status" : "error"
+      },
+      "passed" : true
+    },
+    {
+      "candidate" : {
+        "error" : "slotWriteConflict",
+        "path" : "layer_old_text.text",
+        "phase" : "selectedWriteConflict",
+        "slotNames" : [
+          "outer"
+        ],
+        "status" : "error"
+      },
+      "case" : "empty-outer-slot",
+      "currentResolver" : {
+        "oldText" : "missing",
+        "outsideText" : "Outside",
+        "status" : "resolved"
+      },
+      "expected" : {
+        "error" : "slotWriteConflict",
+        "path" : "layer_old_text.text",
+        "slotNames" : [
+          "outer"
+        ],
+        "status" : "error"
+      },
+      "passed" : true
+    },
+    {
+      "candidate" : {
+        "oldText" : "Variant",
+        "outsideText" : "Outside",
+        "phase" : "currentResolver",
+        "status" : "resolved"
+      },
+      "case" : "no-slot",
+      "currentResolver" : {
+        "oldText" : "Variant",
+        "outsideText" : "Outside",
+        "status" : "resolved"
+      },
+      "expected" : {
+        "oldText" : "Variant",
+        "phase" : "currentResolver",
+        "status" : "resolved"
+      },
+      "passed" : true
+    },
+    {
+      "candidate" : {
+        "oldText" : "missing",
+        "outsideText" : "Outside",
+        "phase" : "currentResolver",
+        "status" : "resolved"
+      },
+      "case" : "unselected-variant",
+      "currentResolver" : {
+        "oldText" : "missing",
+        "outsideText" : "Outside",
+        "status" : "resolved"
+      },
+      "expected" : {
+        "oldText" : "missing",
+        "phase" : "currentResolver",
+        "status" : "resolved"
+      },
+      "passed" : true
+    },
+    {
+      "candidate" : {
+        "oldText" : "missing",
+        "outsideText" : "Outside variant",
+        "phase" : "currentResolver",
+        "status" : "resolved"
+      },
+      "case" : "outside-selected-variant",
+      "currentResolver" : {
+        "oldText" : "missing",
+        "outsideText" : "Outside variant",
+        "status" : "resolved"
+      },
+      "expected" : {
+        "outsideText" : "Outside variant",
+        "phase" : "currentResolver",
+        "status" : "resolved"
+      },
+      "passed" : true
+    },
+    {
+      "candidate" : {
+        "error" : "slotWriteConflict",
+        "path" : "layer_old_text.text",
+        "phase" : "selectedWriteConflict",
+        "slotNames" : [
+          "outer"
+        ],
+        "status" : "error"
+      },
+      "case" : "property-old-child",
+      "currentResolver" : {
+        "oldText" : "missing",
+        "outsideText" : "Outside",
+        "status" : "resolved"
+      },
+      "expected" : {
+        "error" : "slotWriteConflict",
+        "path" : "layer_old_text.text",
+        "slotNames" : [
+          "outer"
+        ],
+        "status" : "error"
+      },
+      "passed" : true
+    },
+    {
+      "candidate" : {
+        "error" : "unknownPath:layer_old_text.text",
+        "phase" : "currentResolver",
+        "status" : "error"
+      },
+      "case" : "public-removed-override-preserves-unknown-path",
+      "currentResolver" : {
+        "error" : "unknownPath:layer_old_text.text",
+        "status" : "error"
+      },
+      "expected" : {
+        "error" : "unknownPath:layer_old_text.text",
+        "phase" : "currentResolver",
+        "status" : "error"
+      },
+      "passed" : true
+    },
+    {
+      "candidate" : {
+        "error" : "forbiddenOverride:layer_outside_text.text",
+        "phase" : "existingValidity",
+        "status" : "error"
+      },
+      "case" : "forbidden-override-priority",
+      "currentResolver" : {
+        "error" : "forbiddenOverride:layer_outside_text.text",
+        "status" : "error"
+      },
+      "expected" : {
+        "error" : "forbiddenOverride:layer_outside_text.text",
+        "phase" : "existingValidity",
+        "status" : "error"
+      },
+      "passed" : true
+    },
+    {
+      "candidate" : {
+        "error" : "unknownVariant:state=missing",
+        "phase" : "existingValidity",
+        "status" : "error"
+      },
+      "case" : "unknown-variant-priority",
+      "currentResolver" : {
+        "error" : "unknownVariant:state=missing",
+        "status" : "error"
+      },
+      "expected" : {
+        "error" : "unknownVariant:state=missing",
+        "phase" : "existingValidity",
+        "status" : "error"
+      },
+      "passed" : true
+    },
+    {
+      "candidate" : {
+        "error" : "unknownProperty:missing",
+        "phase" : "existingValidity",
+        "status" : "error"
+      },
+      "case" : "unknown-property-priority",
+      "currentResolver" : {
+        "error" : "unknownProperty:missing",
+        "status" : "error"
+      },
+      "expected" : {
+        "error" : "unknownProperty:missing",
+        "phase" : "existingValidity",
+        "status" : "error"
+      },
+      "passed" : true
+    },
+    {
+      "candidate" : {
+        "error" : "unknownSlot:missing",
+        "phase" : "existingValidity",
+        "status" : "error"
+      },
+      "case" : "unknown-slot-priority",
+      "currentResolver" : {
+        "error" : "unknownSlot:missing",
+        "status" : "error"
+      },
+      "expected" : {
+        "error" : "unknownSlot:missing",
+        "phase" : "existingValidity",
+        "status" : "error"
+      },
+      "passed" : true
+    },
+    {
+      "candidate" : {
+        "error" : "conflictingVariants:layer_old_text.text",
+        "phase" : "variantConflict",
+        "status" : "error"
+      },
+      "case" : "duplicate-variant-path-priority",
+      "currentResolver" : {
+        "error" : "conflictingVariants:layer_old_text.text",
+        "status" : "error"
+      },
+      "expected" : {
+        "error" : "conflictingVariants:layer_old_text.text",
+        "phase" : "variantConflict",
+        "status" : "error"
+      },
+      "passed" : true
+    },
+    {
+      "candidate" : {
+        "error" : "forbiddenOverride:layer_outside_text.text",
+        "phase" : "existingValidity",
+        "status" : "error"
+      },
+      "case" : "mixed-invalidity-priority-divergence",
+      "currentResolver" : {
+        "error" : "conflictingVariants:layer_old_text.text",
+        "status" : "error"
+      },
+      "expected" : {
+        "error" : "forbiddenOverride:layer_outside_text.text",
+        "phase" : "existingValidity",
+        "status" : "error"
+      },
+      "passed" : true
+    },
+    {
+      "candidate" : {
+        "error" : "unknownPath:layer_old_text.text",
+        "phase" : "existingValidity",
+        "status" : "error"
+      },
+      "case" : "invalid-property-kind-priority",
+      "currentResolver" : {
+        "error" : "unknownPath:layer_old_text.text",
+        "status" : "error"
+      },
+      "expected" : {
+        "error" : "unknownPath:layer_old_text.text",
+        "phase" : "existingValidity",
+        "status" : "error"
+      },
+      "passed" : true
+    }
+  ],
+  "classification" : {
+    "Confirmed" : "current resolver control outcomes and test-only candidate outcomes for fixed cases",
+    "Inferred" : "a prior validity\/variant-conflict phase may preserve tested errors while rejecting silent discard",
+    "Measured" : "one run, 18 cases; no latency measurement",
+    "Unknown" : "complete error-priority equivalence, nested slot runtime ordering, Definition validation, generated\/persisted instance behavior, performance"
+  },
+  "passed" : true,
+  "sourceCommit" : "c43ea3179559d55049db4e98db4cf013e81b0588"
+}

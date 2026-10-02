@@ -1,0 +1,182 @@
+{
+  "cases" : [
+    {
+      "application" : {
+        "currentServiceCanonicalBytesChanged" : true,
+        "currentServicePreconditionChanged" : true,
+        "currentServiceResultRevision" : 2,
+        "currentServiceRevisionAdvancedByOne" : true,
+        "currentServiceUnrelatedCreatePage" : "accepted",
+        "testOnlyGateCanonicalBytesEqual" : true,
+        "testOnlyGateLeavesCanonicalBytesRevisionAndPreconditionUnchanged" : true,
+        "testOnlyGatePreconditionEqual" : true,
+        "testOnlyGateRevisionEqual" : true,
+        "testOnlyGateWouldRejectBeforeServiceCall" : true
+      },
+      "canonicalBytesEqualBeforeAfterCommitAttempt" : false,
+      "canonicalCommit" : "accepted",
+      "canonicalCommitRules" : [
+
+      ],
+      "directValidationRules" : [
+
+      ],
+      "name" : "inner_then_outer_nonempty",
+      "reopenedEqualsCandidate" : true,
+      "resolvedOldText" : null,
+      "resolvedOuterChildren" : [
+        "outer_replacement"
+      ],
+      "resolver" : "success",
+      "slotProcessingOrder" : [
+        "a_inner",
+        "z_outer"
+      ],
+      "testOnlyConflictSlots" : [
+        "a_inner",
+        "z_outer"
+      ],
+      "variantSelected" : true
+    },
+    {
+      "application" : {
+
+      },
+      "canonicalBytesEqualBeforeAfterCommitAttempt" : true,
+      "canonicalCommit" : "rejectedInvalid",
+      "canonicalCommitRules" : [
+        "component.resolution@screen_instance"
+      ],
+      "directValidationRules" : [
+        "component.resolution@screen_instance"
+      ],
+      "name" : "outer_then_inner_nonempty",
+      "reopenedEqualsCandidate" : null,
+      "resolvedOldText" : null,
+      "resolvedOuterChildren" : null,
+      "resolver" : "Unknown component slot: z_inner",
+      "slotProcessingOrder" : [
+        "a_outer",
+        "z_inner"
+      ],
+      "testOnlyConflictSlots" : [
+        "a_outer",
+        "z_inner"
+      ],
+      "variantSelected" : true
+    },
+    {
+      "application" : {
+        "currentServiceCanonicalBytesChanged" : true,
+        "currentServicePreconditionChanged" : true,
+        "currentServiceResultRevision" : 2,
+        "currentServiceRevisionAdvancedByOne" : true,
+        "currentServiceUnrelatedCreatePage" : "accepted",
+        "testOnlyGateCanonicalBytesEqual" : true,
+        "testOnlyGateLeavesCanonicalBytesRevisionAndPreconditionUnchanged" : true,
+        "testOnlyGatePreconditionEqual" : true,
+        "testOnlyGateRevisionEqual" : true,
+        "testOnlyGateWouldRejectBeforeServiceCall" : true
+      },
+      "canonicalBytesEqualBeforeAfterCommitAttempt" : false,
+      "canonicalCommit" : "accepted",
+      "canonicalCommitRules" : [
+
+      ],
+      "directValidationRules" : [
+
+      ],
+      "name" : "inner_empty_outer_nonempty",
+      "reopenedEqualsCandidate" : true,
+      "resolvedOldText" : null,
+      "resolvedOuterChildren" : [
+        "outer_replacement"
+      ],
+      "resolver" : "success",
+      "slotProcessingOrder" : [
+        "a_inner",
+        "z_outer"
+      ],
+      "testOnlyConflictSlots" : [
+        "a_inner",
+        "z_outer"
+      ],
+      "variantSelected" : true
+    },
+    {
+      "application" : {
+        "currentServiceCanonicalBytesChanged" : true,
+        "currentServicePreconditionChanged" : true,
+        "currentServiceResultRevision" : 2,
+        "currentServiceRevisionAdvancedByOne" : true,
+        "currentServiceUnrelatedCreatePage" : "accepted",
+        "testOnlyGateCanonicalBytesEqual" : true,
+        "testOnlyGateLeavesCanonicalBytesRevisionAndPreconditionUnchanged" : true,
+        "testOnlyGatePreconditionEqual" : true,
+        "testOnlyGateRevisionEqual" : true,
+        "testOnlyGateWouldRejectBeforeServiceCall" : true
+      },
+      "canonicalBytesEqualBeforeAfterCommitAttempt" : false,
+      "canonicalCommit" : "accepted",
+      "canonicalCommitRules" : [
+
+      ],
+      "directValidationRules" : [
+
+      ],
+      "name" : "inner_nonempty_outer_empty",
+      "reopenedEqualsCandidate" : true,
+      "resolvedOldText" : null,
+      "resolvedOuterChildren" : [
+
+      ],
+      "resolver" : "success",
+      "slotProcessingOrder" : [
+        "a_inner",
+        "z_outer"
+      ],
+      "testOnlyConflictSlots" : [
+        "a_inner",
+        "z_outer"
+      ],
+      "variantSelected" : true
+    },
+    {
+      "application" : {
+        "currentServiceCanonicalBytesChanged" : true,
+        "currentServicePreconditionChanged" : true,
+        "currentServiceResultRevision" : 2,
+        "currentServiceRevisionAdvancedByOne" : true,
+        "currentServiceUnrelatedCreatePage" : "accepted",
+        "testOnlyGateCanonicalBytesEqual" : true,
+        "testOnlyGateLeavesCanonicalBytesRevisionAndPreconditionUnchanged" : true,
+        "testOnlyGatePreconditionEqual" : true,
+        "testOnlyGateRevisionEqual" : true,
+        "testOnlyGateWouldRejectBeforeServiceCall" : false
+      },
+      "canonicalBytesEqualBeforeAfterCommitAttempt" : false,
+      "canonicalCommit" : "accepted",
+      "canonicalCommitRules" : [
+
+      ],
+      "directValidationRules" : [
+
+      ],
+      "name" : "variant_unselected_both_slots_selected",
+      "reopenedEqualsCandidate" : true,
+      "resolvedOldText" : null,
+      "resolvedOuterChildren" : [
+        "outer_replacement"
+      ],
+      "resolver" : "success",
+      "slotProcessingOrder" : [
+        "a_inner",
+        "z_outer"
+      ],
+      "testOnlyConflictSlots" : [
+
+      ],
+      "variantSelected" : false
+    }
+  ]
+}
