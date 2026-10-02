@@ -1,0 +1,291 @@
+{
+  "caseCount" : 16,
+  "cases" : [
+    {
+      "case" : "base-reference-and-nested-nonrecursive",
+      "expected" : {
+        "definitionBaseLabel" : "Default",
+        "label" : "Default",
+        "nestedDefinitionID" : "component_nested",
+        "nestedKind" : "componentInstance",
+        "status" : "resolved"
+      },
+      "observed" : {
+        "definitionBaseLabel" : "Default",
+        "label" : "Default",
+        "nestedDefinitionID" : "component_nested",
+        "nestedKind" : "componentInstance",
+        "secondary" : "Secondary",
+        "slotChildren" : "layer_slot_text",
+        "slotText" : "SlotDefault",
+        "status" : "resolved"
+      },
+      "passed" : true
+    },
+    {
+      "case" : "single-axis",
+      "expected" : {
+        "label" : "Large",
+        "secondary" : "Secondary",
+        "status" : "resolved"
+      },
+      "observed" : {
+        "definitionBaseLabel" : "Default",
+        "label" : "Large",
+        "nestedDefinitionID" : "component_nested",
+        "nestedKind" : "componentInstance",
+        "secondary" : "Secondary",
+        "slotChildren" : "layer_slot_text",
+        "slotText" : "SlotDefault",
+        "status" : "resolved"
+      },
+      "passed" : true
+    },
+    {
+      "case" : "two-axes-disjoint-paths",
+      "expected" : {
+        "label" : "Large",
+        "secondary" : "Loading",
+        "status" : "resolved"
+      },
+      "observed" : {
+        "definitionBaseLabel" : "Default",
+        "label" : "Large",
+        "nestedDefinitionID" : "component_nested",
+        "nestedKind" : "componentInstance",
+        "secondary" : "Loading",
+        "slotChildren" : "layer_slot_text",
+        "slotText" : "SlotDefault",
+        "status" : "resolved"
+      },
+      "passed" : true
+    },
+    {
+      "case" : "disjoint-axes-order-independence",
+      "expected" : {
+        "resolvedTreeEqual" : true
+      },
+      "observed" : {
+        "definitionVariantOrderA" : [
+          "variant_large",
+          "variant_loading",
+          "variant_pressed"
+        ],
+        "definitionVariantOrderB" : [
+          "variant_pressed",
+          "variant_loading",
+          "variant_large"
+        ],
+        "resolvedTreeEqual" : true,
+        "selectionInsertionOrderA" : [
+          "size",
+          "state"
+        ],
+        "selectionInsertionOrderB" : [
+          "state",
+          "size"
+        ],
+        "treeA" : {
+          "definitionBaseLabel" : "Default",
+          "label" : "Large",
+          "nestedDefinitionID" : "component_nested",
+          "nestedKind" : "componentInstance",
+          "secondary" : "Loading",
+          "slotChildren" : "layer_slot_text",
+          "slotText" : "SlotDefault",
+          "status" : "resolved"
+        },
+        "treeB" : {
+          "definitionBaseLabel" : "Default",
+          "label" : "Large",
+          "nestedDefinitionID" : "component_nested",
+          "nestedKind" : "componentInstance",
+          "secondary" : "Loading",
+          "slotChildren" : "layer_slot_text",
+          "slotText" : "SlotDefault",
+          "status" : "resolved"
+        }
+      },
+      "passed" : true
+    },
+    {
+      "case" : "two-axes-same-path-conflict",
+      "expected" : {
+        "error" : "conflictingVariants:layer_label.text",
+        "status" : "error"
+      },
+      "observed" : {
+        "error" : "conflictingVariants:layer_label.text",
+        "status" : "error"
+      },
+      "passed" : true
+    },
+    {
+      "case" : "two-axes-same-path-same-value-conflict",
+      "expected" : {
+        "error" : "conflictingVariants:layer_label.text",
+        "status" : "error"
+      },
+      "observed" : {
+        "error" : "conflictingVariants:layer_label.text",
+        "status" : "error"
+      },
+      "passed" : true
+    },
+    {
+      "case" : "variant-then-property",
+      "expected" : {
+        "definitionBaseLabel" : "Default",
+        "label" : "Property",
+        "status" : "resolved"
+      },
+      "observed" : {
+        "definitionBaseLabel" : "Default",
+        "label" : "Property",
+        "nestedDefinitionID" : "component_nested",
+        "nestedKind" : "componentInstance",
+        "secondary" : "Secondary",
+        "slotChildren" : "layer_slot_text",
+        "slotText" : "SlotDefault",
+        "status" : "resolved"
+      },
+      "passed" : true
+    },
+    {
+      "case" : "property-then-allowed-override",
+      "expected" : {
+        "label" : "Override",
+        "status" : "resolved"
+      },
+      "observed" : {
+        "definitionBaseLabel" : "Default",
+        "label" : "Override",
+        "nestedDefinitionID" : "component_nested",
+        "nestedKind" : "componentInstance",
+        "secondary" : "Secondary",
+        "slotChildren" : "layer_slot_text",
+        "slotText" : "SlotDefault",
+        "status" : "resolved"
+      },
+      "passed" : true
+    },
+    {
+      "case" : "property-then-slot-replacement-drops-property-target",
+      "expected" : {
+        "slotChildren" : "layer_replacement",
+        "slotText" : "missing",
+        "status" : "resolved"
+      },
+      "observed" : {
+        "definitionBaseLabel" : "Default",
+        "label" : "Default",
+        "nestedDefinitionID" : "component_nested",
+        "nestedKind" : "componentInstance",
+        "secondary" : "Secondary",
+        "slotChildren" : "layer_replacement",
+        "slotText" : "missing",
+        "status" : "resolved"
+      },
+      "passed" : true
+    },
+    {
+      "case" : "variant-then-slot-replacement-drops-variant-target",
+      "expected" : {
+        "slotChildren" : "layer_replacement",
+        "slotText" : "missing",
+        "status" : "resolved"
+      },
+      "observed" : {
+        "definitionBaseLabel" : "Default",
+        "label" : "Default",
+        "nestedDefinitionID" : "component_nested",
+        "nestedKind" : "componentInstance",
+        "secondary" : "Secondary",
+        "slotChildren" : "layer_replacement",
+        "slotText" : "missing",
+        "status" : "resolved"
+      },
+      "passed" : true
+    },
+    {
+      "case" : "slot-replacement-then-override-loses-path",
+      "expected" : {
+        "error" : "unknownPath:layer_slot_text.text",
+        "status" : "error"
+      },
+      "observed" : {
+        "error" : "unknownPath:layer_slot_text.text",
+        "status" : "error"
+      },
+      "passed" : true
+    },
+    {
+      "case" : "unknown-variant",
+      "expected" : {
+        "error" : "unknownVariant:size=huge",
+        "status" : "error"
+      },
+      "observed" : {
+        "error" : "unknownVariant:size=huge",
+        "status" : "error"
+      },
+      "passed" : true
+    },
+    {
+      "case" : "unknown-property",
+      "expected" : {
+        "error" : "unknownProperty:unknown",
+        "status" : "error"
+      },
+      "observed" : {
+        "error" : "unknownProperty:unknown",
+        "status" : "error"
+      },
+      "passed" : true
+    },
+    {
+      "case" : "unknown-slot",
+      "expected" : {
+        "error" : "unknownSlot:unknown",
+        "status" : "error"
+      },
+      "observed" : {
+        "error" : "unknownSlot:unknown",
+        "status" : "error"
+      },
+      "passed" : true
+    },
+    {
+      "case" : "forbidden-override",
+      "expected" : {
+        "error" : "forbiddenOverride:layer_secondary.text",
+        "status" : "error"
+      },
+      "observed" : {
+        "error" : "forbiddenOverride:layer_secondary.text",
+        "status" : "error"
+      },
+      "passed" : true
+    },
+    {
+      "case" : "unknown-path",
+      "expected" : {
+        "error" : "unknownPath:layer_missing.text",
+        "status" : "error"
+      },
+      "observed" : {
+        "error" : "unknownPath:layer_missing.text",
+        "status" : "error"
+      },
+      "passed" : true
+    }
+  ],
+  "classification" : {
+    "Confirmed" : "direct ComponentResolver behavior for fixed fixture and listed cases",
+    "Measured" : "one run, 16 cases, no latency benchmark",
+    "Unknown" : "DocumentValidator acceptance, cross-definition expansion, cache invalidation, 1k-instance scaling, and target generation"
+  },
+  "fixture" : "one fixed ComponentDefinition with two text properties, a replaceable slot, three sparse variants, and one nested instance reference",
+  "passed" : true,
+  "sourceCommit" : "e5bcd56c9e953a6e8d79661b35396d1cddff15c3"
+}

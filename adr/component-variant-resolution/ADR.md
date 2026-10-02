@@ -22,11 +22,11 @@ Scope owner は Definition に属する。Instance は公開された property/s
 
 ## Unknowns
 
-複数 axis が同じ path を変更した時の precedence、cache key/invalidation、variant explosion の閾値。
+selected Variant 同士の同一 path は現在 typed conflict になるが、その契約を採用するか。Variant → property → slot → allowed override の cross-stage precedence、特に slot が先行書込みの対象 Layer を消す場合の診断。nested Definition の再帰解決と cycle をこの Decision に含める境界。cache key / actual invalidation、variant explosion の閾値。
 
 ## Required Evidence
 
-[spikes/instance-resolution/SPIKE.md](spikes/instance-resolution/SPIKE.md) で検証する。結果と判断を削除前の Git commit に残す。
+[spikes/instance-resolution/SPIKE.md](spikes/instance-resolution/SPIKE.md) に direct Resolver の 16 ケース、Current Canonical sparse save、1,000 Instance の raw resolve cost / 論理 affected output set、独立監査を記録した。slot replacement の silent loss、invalid combination の DocumentValidator / Canonical save、valid nested Definition の解決 / cycle、実際の局所再計算と同一 encoding boundary での保存量比較が未検証。これらを Decision 前に狭く検証する。結果と判断を削除前の Git commit に残す。
 
 ## Decision Criteria
 
