@@ -61,7 +61,7 @@ Independent audit controls were kept distinct from the four real builds. A synth
 
 ## Success Criteria
 
-Both schemes build successfully at both locations; All's executed app invocation contains the exact pinned `AccountView.swift` blob; normal's complete selected Swift invocation inventory excludes it; relocation preserves those outcomes; tracked file-list sources match pinned Git bytes.
+Both schemes build successfully at both locations; All's executed app invocation contains the exact pinned `AccountView.swift` blob; the three **observed selected arm64 SwiftDriver invocations** in the normal build exclude it; relocation preserves those outcomes; tracked file-list sources match pinned Git bytes.
 
 ## Failure Criteria
 

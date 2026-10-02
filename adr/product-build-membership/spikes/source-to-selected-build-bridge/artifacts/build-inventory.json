@@ -1,0 +1,845 @@
+{
+  "artifactVersion": 1,
+  "buildRequest": {
+    "ARCHS": "arm64",
+    "CODE_SIGNING_ALLOWED": "NO",
+    "ONLY_ACTIVE_ARCH": "YES",
+    "configuration": "Debug",
+    "destination": "generic/platform=iOS Simulator",
+    "project": "Food Truck.xcodeproj",
+    "scheme": "Food Truck All",
+    "sdk": "iphonesimulator"
+  },
+  "c2CloneStatusCleanAfter": true,
+  "c2Falsification": {
+    "blobMismatch": true,
+    "c1BlobOID": "92c12dc1f8ed077e2384d99792310648b9c8f718",
+    "c1CommitOID": "3cf70a8775a8d528d27b560185ed6d1116557b99",
+    "c2BlobOID": "4be14546d1369f767c2c6a64284aef039acb37ee",
+    "c2CommitOID": "4050d4f2c5e7bf357e4b82af4ef39a1ad9c7ed1b",
+    "c2ExecutedModulesContainingPath": [
+      "Widgets",
+      "Food_Truck_All"
+    ],
+    "c2TrackedInputsMatchC2Git": true,
+    "changedPaths": [
+      "App/General/FlowLayout.swift"
+    ],
+    "moduleChangedTrackedBlobPaths": {
+      "FoodTruckKit": [],
+      "Food_Truck_All": [
+        "App/General/FlowLayout.swift"
+      ],
+      "Widgets": [
+        "App/General/FlowLayout.swift"
+      ]
+    },
+    "moduleInputPathSetsEqualToC1": {
+      "FoodTruckKit": true,
+      "Food_Truck_All": true,
+      "Widgets": true
+    },
+    "normalizedCommandHashesEqualToC1": {
+      "FoodTruckKit": true,
+      "Food_Truck_All": true,
+      "Widgets": true
+    },
+    "sourceCommitMismatch": true,
+    "targetPath": "App/General/FlowLayout.swift"
+  },
+  "controls": {
+    "unknownConfiguration": {
+      "exitCode": 0,
+      "rawLog": "/tmp/hamii-bridge-build-5_rduf7f/unknown-config.log",
+      "requested": "NoSuchConfig",
+      "requiresRequestedResolvedEquality": true,
+      "resolved": "Release"
+    },
+    "unknownScheme": {
+      "executedSwiftDriverInvocations": 0,
+      "exitCode": 65,
+      "rawLog": "/tmp/hamii-bridge-build-5_rduf7f/failed-unknown-scheme.log",
+      "requested": "NoSuchScheme"
+    }
+  },
+  "productCommitOID": "3cf70a8775a8d528d27b560185ed6d1116557b99",
+  "relocation": {
+    "normalizedCommandHashesEqual": {
+      "FoodTruckKit": true,
+      "Food_Truck_All": true,
+      "Widgets": true
+    },
+    "relativeInputRecordsEqual": {
+      "FoodTruckKit": true,
+      "Food_Truck_All": true,
+      "Widgets": true
+    },
+    "sameModules": true
+  },
+  "scratch": "/tmp/hamii-bridge-build-5_rduf7f",
+  "sourceCheckoutStatusCleanAfter": true,
+  "sourceRepoUsedOnlyForGitObjects": "/tmp/hamii-bridge-source-Cc4k8n/product",
+  "toolchain": {
+    "appleSwift": "6.4 (swiftlang-6.4.0.34.1)",
+    "xcode": "27.0 (27A266a)"
+  },
+  "trials": {
+    "c2": {
+      "buildSucceeded": true,
+      "commitOID": "4050d4f2c5e7bf357e4b82af4ef39a1ad9c7ed1b",
+      "executedSwiftDriverInvocations": [
+        {
+          "compiler": "/Applications/Xcode-27.0.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+          "explicitModuleBuild": true,
+          "externalOrInvalidInputs": [],
+          "fileList": "<DERIVED_DATA>/Build/Intermediates.noindex/FoodTruckKit.build/Debug-iphonesimulator/FoodTruckKit-t.build/Objects-normal/arm64/FoodTruckKit.SwiftFileList",
+          "generatedInputs": [
+            "/private<DERIVED_DATA>/Build/Intermediates.noindex/FoodTruckKit.build/Debug-iphonesimulator/FoodTruckKit-t.build/DerivedSources/resource_bundle_accessor.swift",
+            "/private<DERIVED_DATA>/Build/Intermediates.noindex/FoodTruckKit.build/Debug-iphonesimulator/FoodTruckKit-t.build/DerivedSources/GeneratedAssetSymbols.swift"
+          ],
+          "inputCount": 32,
+          "inputInventorySHA256": "0e8ed0804ca36190b4f8ca3b3e067ba274bade87f15ca7fa9dd5588887c58ba7",
+          "moduleName": "FoodTruckKit",
+          "normalizedCommandSHA256": "41cdf23f4c4e66a8a319e28c7082f5f3b3cc81baedacf895fa21d834837d99e4",
+          "ownerProject": "FoodTruckKit",
+          "ownerTarget": "FoodTruckKit",
+          "sdkPath": "/Applications/Xcode-27.0.0.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk",
+          "swiftDefines": [
+            "SWIFT_PACKAGE",
+            "DEBUG",
+            "SWIFT_MODULE_RESOURCE_BUNDLE_AVAILABLE",
+            "Xcode",
+            "SWIFT_PACKAGE"
+          ],
+          "swiftLanguageMode": "5",
+          "targetTriple": "arm64-apple-ios16.4-simulator",
+          "trackedInputCount": 30
+        },
+        {
+          "compiler": "/Applications/Xcode-27.0.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+          "explicitModuleBuild": true,
+          "externalOrInvalidInputs": [],
+          "fileList": "<DERIVED_DATA>/Build/Intermediates.noindex/Food Truck.build/Debug-iphonesimulator/Widgets.build/Objects-normal/arm64/Widgets.SwiftFileList",
+          "generatedInputs": [
+            "/private<DERIVED_DATA>/Build/Intermediates.noindex/Food\\ Truck.build/Debug-iphonesimulator/Widgets.build/DerivedSources/GeneratedAssetSymbols.swift"
+          ],
+          "inputCount": 10,
+          "inputInventorySHA256": "cabd8d1050b62ed676102c76c08cf9203cc51d253ffa2249e22f0bc657329c68",
+          "moduleName": "Widgets",
+          "normalizedCommandSHA256": "8e56be152b84059b7d1e20e0cea7753f020800ec832e7f1eb6157851829387ee",
+          "ownerProject": "Food Truck",
+          "ownerTarget": "Widgets",
+          "sdkPath": "/Applications/Xcode-27.0.0.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk",
+          "swiftDefines": [
+            "DEBUG"
+          ],
+          "swiftLanguageMode": "5",
+          "targetTriple": "arm64-apple-ios16.4-simulator",
+          "trackedInputCount": 9
+        },
+        {
+          "compiler": "/Applications/Xcode-27.0.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+          "explicitModuleBuild": true,
+          "externalOrInvalidInputs": [],
+          "fileList": "<DERIVED_DATA>/Build/Intermediates.noindex/Food Truck.build/Debug-iphonesimulator/Food Truck All.build/Objects-normal/arm64/Food Truck All.SwiftFileList",
+          "generatedInputs": [
+            "/private<DERIVED_DATA>/Build/Intermediates.noindex/Food\\ Truck.build/Debug-iphonesimulator/Food\\ Truck\\ All.build/DerivedSources/GeneratedAssetSymbols.swift"
+          ],
+          "inputCount": 45,
+          "inputInventorySHA256": "7ba93d90e149f2868498d369d6ae6571c8874737681bcc4adfd0ebe89b6bcae3",
+          "moduleName": "Food_Truck_All",
+          "normalizedCommandSHA256": "9b02adc4a560fee77691e518b7483f05f82a8b1ad4ff42669565c83954cdee9e",
+          "ownerProject": "Food Truck",
+          "ownerTarget": "Food Truck All",
+          "sdkPath": "/Applications/Xcode-27.0.0.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk",
+          "swiftDefines": [
+            "DEBUG",
+            "EXTENDED_ALL"
+          ],
+          "swiftLanguageMode": "5",
+          "targetTriple": "arm64-apple-ios16.4-simulator",
+          "trackedInputCount": 44
+        }
+      ],
+      "rawLog": "/tmp/hamii-bridge-build-5_rduf7f/c2-build.log",
+      "swiftCompileArm64Rows": 120,
+      "targetInputRecords": [
+        {
+          "blobOID": "4be14546d1369f767c2c6a64284aef039acb37ee",
+          "fileList": "<DERIVED_DATA>/Build/Intermediates.noindex/Food Truck.build/Debug-iphonesimulator/Widgets.build/Objects-normal/arm64/Widgets.SwiftFileList",
+          "inputOrdinal": 5,
+          "kind": "pinnedTrackedBlob",
+          "mode": "100644",
+          "moduleName": "Widgets",
+          "ownerTarget": "Widgets",
+          "path": "App/General/FlowLayout.swift"
+        },
+        {
+          "blobOID": "4be14546d1369f767c2c6a64284aef039acb37ee",
+          "fileList": "<DERIVED_DATA>/Build/Intermediates.noindex/Food Truck.build/Debug-iphonesimulator/Food Truck All.build/Objects-normal/arm64/Food Truck All.SwiftFileList",
+          "inputOrdinal": 20,
+          "kind": "pinnedTrackedBlob",
+          "mode": "100644",
+          "moduleName": "Food_Truck_All",
+          "ownerTarget": "Food Truck All",
+          "path": "App/General/FlowLayout.swift"
+        }
+      ],
+      "wallSeconds": 29.95
+    },
+    "first": {
+      "allTrackedBlobComparisonsPassed": true,
+      "buildSucceeded": true,
+      "commitOID": "3cf70a8775a8d528d27b560185ed6d1116557b99",
+      "executedSwiftDriverInvocations": [
+        {
+          "compiler": "/Applications/Xcode-27.0.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+          "explicitModuleBuild": true,
+          "externalOrInvalidInputs": [],
+          "fileList": "<DERIVED_DATA>/Build/Intermediates.noindex/FoodTruckKit.build/Debug-iphonesimulator/FoodTruckKit-t.build/Objects-normal/arm64/FoodTruckKit.SwiftFileList",
+          "generatedInputs": [
+            "/private<DERIVED_DATA>/Build/Intermediates.noindex/FoodTruckKit.build/Debug-iphonesimulator/FoodTruckKit-t.build/DerivedSources/resource_bundle_accessor.swift",
+            "/private<DERIVED_DATA>/Build/Intermediates.noindex/FoodTruckKit.build/Debug-iphonesimulator/FoodTruckKit-t.build/DerivedSources/GeneratedAssetSymbols.swift"
+          ],
+          "inputCount": 32,
+          "inputInventorySHA256": "0e8ed0804ca36190b4f8ca3b3e067ba274bade87f15ca7fa9dd5588887c58ba7",
+          "moduleName": "FoodTruckKit",
+          "normalizedCommandSHA256": "41cdf23f4c4e66a8a319e28c7082f5f3b3cc81baedacf895fa21d834837d99e4",
+          "ownerProject": "FoodTruckKit",
+          "ownerTarget": "FoodTruckKit",
+          "sdkPath": "/Applications/Xcode-27.0.0.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk",
+          "swiftDefines": [
+            "SWIFT_PACKAGE",
+            "DEBUG",
+            "SWIFT_MODULE_RESOURCE_BUNDLE_AVAILABLE",
+            "Xcode",
+            "SWIFT_PACKAGE"
+          ],
+          "swiftLanguageMode": "5",
+          "targetTriple": "arm64-apple-ios16.4-simulator",
+          "trackedInputCount": 30,
+          "trackedInputs": [
+            {
+              "blobOID": "4ee93d388836456946c2c985db6f3eefe9693eb1",
+              "mode": "100644",
+              "path": "FoodTruckKit/Sources/Account/AccountStore.swift"
+            },
+            {
+              "blobOID": "8f6014b89a957f77a8caa11e30a08c69659fb359",
+              "mode": "100644",
+              "path": "FoodTruckKit/Sources/Account/User.swift"
+            },
+            {
+              "blobOID": "c9f80261faf7be711468b5ba20a196cb3da76a97",
+              "mode": "100644",
+              "path": "FoodTruckKit/Sources/Brand/BrandHeader.swift"
+            },
+            {
+              "blobOID": "9c07fb3a6e534990617ed87902d617f926c203cd",
+              "mode": "100644",
+              "path": "FoodTruckKit/Sources/City/City.swift"
+            },
+            {
+              "blobOID": "5c395887b0fba73362472b16cde4f43bc6715cdf",
+              "mode": "100644",
+              "path": "FoodTruckKit/Sources/City/ParkingSpot.swift"
+            },
+            {
+              "blobOID": "3f3a0fcf257f91da4dcdce8ff4ea27edd6930221",
+              "mode": "100644",
+              "path": "FoodTruckKit/Sources/Donut/DiagonalDonutStackLayout.swift"
+            },
+            {
+              "blobOID": "f35bcb8a21dc0d5d43d9090e4ce09360d5cb282c",
+              "mode": "100644",
+              "path": "FoodTruckKit/Sources/Donut/Donut.swift"
+            },
+            {
+              "blobOID": "9cc0a9c290cb6cc887fac1a054658dfc27eed8c2",
+              "mode": "100644",
+              "path": "FoodTruckKit/Sources/Donut/DonutBoxView.swift"
+            },
+            {
+              "blobOID": "fa6d4360cd25333dd2b318d3ccccf6857486052b",
+              "mode": "100644",
+              "path": "FoodTruckKit/Sources/Donut/DonutRenderer.swift"
+            },
+            {
+              "blobOID": "879e02fd95db784003d2551fefb807ead4881833",
+              "mode": "100644",
+              "path": "FoodTruckKit/Sources/Donut/DonutSales.swift"
+            },
+            {
+              "blobOID": "dbbb71b56f26e0b22406436b701bd5c9026f310f",
+              "mode": "100644",
+              "path": "FoodTruckKit/Sources/Donut/DonutStackView.swift"
+            },
+            {
+              "blobOID": "3b3c873f2c27921b6e1858d4aefad8048dc041df",
+              "mode": "100644",
+              "path": "FoodTruckKit/Sources/Donut/DonutView.swift"
+            },
+            {
+              "blobOID": "ae784a85a20f13d4446e5837ec7fa1b81facd996",
+              "mode": "100644",
+              "path": "FoodTruckKit/Sources/Donut/FlavorProfile.swift"
+            },
+            {
+              "blobOID": "8d7769b04b4200b29213cf8bca3de80fd3573a12",
+              "mode": "100644",
+              "path": "FoodTruckKit/Sources/Donut/Ingredients/Dough.swift"
+            },
+            {
+              "blobOID": "f5f62f132b4b28c41eb1ec460a9256dbc9735ff1",
+              "mode": "100644",
+              "path": "FoodTruckKit/Sources/Donut/Ingredients/Glaze.swift"
+            },
+            {
+              "blobOID": "3e7ea751d28059bd9fa568e1efbbbba6158f9561",
+              "mode": "100644",
+              "path": "FoodTruckKit/Sources/Donut/Ingredients/Ingredient.swift"
+            },
+            {
+              "blobOID": "12f64e21575a61c1f431093a7cecbc1b4bb9c86b",
+              "mode": "100644",
+              "path": "FoodTruckKit/Sources/Donut/Ingredients/Topping.swift"
+            },
+            {
+              "blobOID": "cd091c5058b931e34ffb2e107edcf894b007a398",
+              "mode": "100644",
+              "path": "FoodTruckKit/Sources/General/Images.swift"
+            },
+            {
+              "blobOID": "0fc50056787b93873a8f23683598be580934cef7",
+              "mode": "100644",
+              "path": "FoodTruckKit/Sources/General/Interpolation.swift"
+            },
+            {
+              "blobOID": "a81c15815900781a9910caacd685e1154ab8bdb3",
+              "mode": "100644",
+              "path": "FoodTruckKit/Sources/General/TaskSeconds.swift"
+            },
+            {
+              "blobOID": "9d4f59460a894e9e8cc66837330288c158643540",
+              "mode": "100644",
+              "path": "FoodTruckKit/Sources/Model/FoodTruckModel.swift"
+            },
+            {
+              "blobOID": "6742fde513221474bb59437716b0e60b3fd45502",
+              "mode": "100644",
+              "path": "FoodTruckKit/Sources/Order/Order.swift"
+            },
+            {
+              "blobOID": "dd1b689cb062acd60ca1f9f9f4fd1c511a010cac",
+              "mode": "100644",
+              "path": "FoodTruckKit/Sources/Order/OrderGenerator.swift"
+            },
+            {
+              "blobOID": "f61d27b89111d7d933dbf0ce2540e453718f9aa3",
+              "mode": "100644",
+              "path": "FoodTruckKit/Sources/Order/OrderSummary.swift"
+            },
+            {
+              "blobOID": "32400c1a123e171c4ac36c456912f80028e39c50",
+              "mode": "100644",
+              "path": "FoodTruckKit/Sources/Store/StoreActor.swift"
+            },
+            {
+              "blobOID": "66d6dd10e8935b629161b6f11b280c8af4ad076e",
+              "mode": "100644",
+              "path": "FoodTruckKit/Sources/Store/StoreMessagesManager.swift"
+            },
+            {
+              "blobOID": "76bd154db0a4d31b439ce64eb4b6d8e904c96214",
+              "mode": "100644",
+              "path": "FoodTruckKit/Sources/Store/StoreProductController.swift"
+            },
+            {
+              "blobOID": "f39d01541ea45ea4bc9e56f7ea57fc7ae6103a68",
+              "mode": "100644",
+              "path": "FoodTruckKit/Sources/Store/StoreSubscriptionController.swift"
+            },
+            {
+              "blobOID": "a665bf3b425d81a6d1df2a5c8a3e1b1eb8093030",
+              "mode": "100644",
+              "path": "FoodTruckKit/Sources/Store/Subscription.swift"
+            },
+            {
+              "blobOID": "3986cb5930c013a96a47729a3ebdac4240c0fb44",
+              "mode": "100644",
+              "path": "FoodTruckKit/Sources/Truck.swift"
+            }
+          ]
+        },
+        {
+          "compiler": "/Applications/Xcode-27.0.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+          "explicitModuleBuild": true,
+          "externalOrInvalidInputs": [],
+          "fileList": "<DERIVED_DATA>/Build/Intermediates.noindex/Food Truck.build/Debug-iphonesimulator/Widgets.build/Objects-normal/arm64/Widgets.SwiftFileList",
+          "generatedInputs": [
+            "/private<DERIVED_DATA>/Build/Intermediates.noindex/Food\\ Truck.build/Debug-iphonesimulator/Widgets.build/DerivedSources/GeneratedAssetSymbols.swift"
+          ],
+          "inputCount": 10,
+          "inputInventorySHA256": "f8e67fd78fee2669bef802a3a27592648ceed893597793b572fff37530257ac1",
+          "moduleName": "Widgets",
+          "normalizedCommandSHA256": "8e56be152b84059b7d1e20e0cea7753f020800ec832e7f1eb6157851829387ee",
+          "ownerProject": "Food Truck",
+          "ownerTarget": "Widgets",
+          "sdkPath": "/Applications/Xcode-27.0.0.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk",
+          "swiftDefines": [
+            "DEBUG"
+          ],
+          "swiftLanguageMode": "5",
+          "targetTriple": "arm64-apple-ios16.4-simulator",
+          "trackedInputCount": 9,
+          "trackedInputs": [
+            {
+              "blobOID": "ee7dc59e09a9f32f5004c09a4878f095fa42705a",
+              "mode": "100644",
+              "path": "Widgets/TruckActivityWidget.swift"
+            },
+            {
+              "blobOID": "d7941fa7ae71eeaf441146a45f2810d10dd6bcfd",
+              "mode": "100644",
+              "path": "Widgets/Widgets.swift"
+            },
+            {
+              "blobOID": "6fe288cdb4b32bf60031d2aaaae4e1149268b135",
+              "mode": "100644",
+              "path": "Widgets/SegmentedGauge.swift"
+            },
+            {
+              "blobOID": "d35edacbc2a4117ca7610cfcda97ef2ecda59993",
+              "mode": "100644",
+              "path": "Widgets/ParkingSpotAccessory.swift"
+            },
+            {
+              "blobOID": "92c12dc1f8ed077e2384d99792310648b9c8f718",
+              "mode": "100644",
+              "path": "App/General/FlowLayout.swift"
+            },
+            {
+              "blobOID": "3cb5ff05149cbe1d39b641d7909edad4f2141793",
+              "mode": "100644",
+              "path": "Widgets/OrdersWidget.swift"
+            },
+            {
+              "blobOID": "4fcc16d2d8bd1ab43e9d79fa2b1bbcec61c0335b",
+              "mode": "100644",
+              "path": "Widgets/TruckActivityAttributes.swift"
+            },
+            {
+              "blobOID": "3764b4f1f9b64218330963d0e64c1a25a619f43a",
+              "mode": "100644",
+              "path": "Widgets/WidgetColors.swift"
+            },
+            {
+              "blobOID": "f384ee05d84a47aca555bc41a965f18cdee27eef",
+              "mode": "100644",
+              "path": "Widgets/DailyDonutWidget.swift"
+            }
+          ]
+        },
+        {
+          "compiler": "/Applications/Xcode-27.0.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+          "explicitModuleBuild": true,
+          "externalOrInvalidInputs": [],
+          "fileList": "<DERIVED_DATA>/Build/Intermediates.noindex/Food Truck.build/Debug-iphonesimulator/Food Truck All.build/Objects-normal/arm64/Food Truck All.SwiftFileList",
+          "generatedInputs": [
+            "/private<DERIVED_DATA>/Build/Intermediates.noindex/Food\\ Truck.build/Debug-iphonesimulator/Food\\ Truck\\ All.build/DerivedSources/GeneratedAssetSymbols.swift"
+          ],
+          "inputCount": 45,
+          "inputInventorySHA256": "5f883146cd9d9b243c7e7e3b72659eeb11efeb1e908d64a98947d8262ccd898f",
+          "moduleName": "Food_Truck_All",
+          "normalizedCommandSHA256": "9b02adc4a560fee77691e518b7483f05f82a8b1ad4ff42669565c83954cdee9e",
+          "ownerProject": "Food Truck",
+          "ownerTarget": "Food Truck All",
+          "sdkPath": "/Applications/Xcode-27.0.0.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk",
+          "swiftDefines": [
+            "DEBUG",
+            "EXTENDED_ALL"
+          ],
+          "swiftLanguageMode": "5",
+          "targetTriple": "arm64-apple-ios16.4-simulator",
+          "trackedInputCount": 44,
+          "trackedInputs": [
+            {
+              "blobOID": "a9bb87d2e2671de2cfcae57b6f051285c3fa7920",
+              "mode": "100644",
+              "path": "App/Donut/DonutGalleryGrid.swift"
+            },
+            {
+              "blobOID": "2203b51e5fe2ce8eb3183f430d8b420c89695438",
+              "mode": "100644",
+              "path": "App/Donut/ShowTopDonutsIntentView.swift"
+            },
+            {
+              "blobOID": "0448fe9af5f2123eaedba0f44430354d3fa0d717",
+              "mode": "100644",
+              "path": "App/Truck/Cards/TruckOrdersCard.swift"
+            },
+            {
+              "blobOID": "701b5ffc2ac732982e571455a0aee76d49ca8bec",
+              "mode": "100644",
+              "path": "App/Navigation/ContentView.swift"
+            },
+            {
+              "blobOID": "d72e7ca89eb661fbc84ee20e9499ca2846be82cd",
+              "mode": "100644",
+              "path": "App/App.swift"
+            },
+            {
+              "blobOID": "3d430f80d62f2632b6a6cc59f3d0f11252372c8b",
+              "mode": "100644",
+              "path": "App/Orders/OrderDetailView.swift"
+            },
+            {
+              "blobOID": "0adc1a519330abcf66f4044e900300b311a3d992",
+              "mode": "100644",
+              "path": "App/Truck/SocialFeedView.swift"
+            },
+            {
+              "blobOID": "68183982db049041db22569f4282fc9bbc0bd2ce",
+              "mode": "100644",
+              "path": "App/Orders/OrderCompleteView.swift"
+            },
+            {
+              "blobOID": "1d33798fba26a5e3b6f14258a8426b587c9ce9b1",
+              "mode": "100644",
+              "path": "App/City/RecommendedParkingSpotCard.swift"
+            },
+            {
+              "blobOID": "3ab16f69b33ed8cd005dc7f0c0505fcb7b71bb63",
+              "mode": "100644",
+              "path": "App/Store/StoreSupportView.swift"
+            },
+            {
+              "blobOID": "0fbb3090c40ae06db85aa4e42020bec6ffba0ff3",
+              "mode": "100644",
+              "path": "App/Donut/DonutEditor.swift"
+            },
+            {
+              "blobOID": "f9371ebde82717a9b114c46ccf3b638ff86bf56a",
+              "mode": "100644",
+              "path": "App/Truck/SalesHistoryChart.swift"
+            },
+            {
+              "blobOID": "64f899436dd667f1b2bb0aea244bacfce478b826",
+              "mode": "100644",
+              "path": "App/Donut/ShowTopDonutsIntent.swift"
+            },
+            {
+              "blobOID": "1a75d3a7a465eee944b1eb36bac980560a25ba6e",
+              "mode": "100644",
+              "path": "App/Store/RefundView.swift"
+            },
+            {
+              "blobOID": "00846ff93f7fdeb7dcd2d907554973cc07e7c12a",
+              "mode": "100644",
+              "path": "App/Store/UnlockFeatureView.swift"
+            },
+            {
+              "blobOID": "a94d080f1eb64c5b9330d7493691ba1dd7c0e6cb",
+              "mode": "100644",
+              "path": "App/Truck/Cards/CardNavigationHeaderLabelStyle.swift"
+            },
+            {
+              "blobOID": "52a7b925104d0160f98047a9199593b43cb1e795",
+              "mode": "100644",
+              "path": "App/Truck/Cards/TruckDonutsCard.swift"
+            },
+            {
+              "blobOID": "f08a900ad176c6a697c5da62e9194f343afac86e",
+              "mode": "100644",
+              "path": "App/Donut/DonutGallery.swift"
+            },
+            {
+              "blobOID": "b9485c3be700625e0f9a3caead356075b2072d2f",
+              "mode": "100644",
+              "path": "App/Store/SocialFeedPlusSettings.swift"
+            },
+            {
+              "blobOID": "92c12dc1f8ed077e2384d99792310648b9c8f718",
+              "mode": "100644",
+              "path": "App/General/FlowLayout.swift"
+            },
+            {
+              "blobOID": "d073ae4f1e0ca3dd85392673c619fd40b8a06fc8",
+              "mode": "100644",
+              "path": "App/Navigation/DetailColumn.swift"
+            },
+            {
+              "blobOID": "f6d9557d9fb4eeb88580df5dade83a4dc4916e80",
+              "mode": "100644",
+              "path": "App/General/WidthThresholdReader.swift"
+            },
+            {
+              "blobOID": "5c454c006951dbcecca0678cf9d0986709c96299",
+              "mode": "100644",
+              "path": "App/Account/SignUpView.swift"
+            },
+            {
+              "blobOID": "01655102580ce79011ec7ccd1298a5bb27b2064a",
+              "mode": "100644",
+              "path": "App/City/CityWeatherCard.swift"
+            },
+            {
+              "blobOID": "dd49f14c713623c18cbeed714da79ccd90e40d11",
+              "mode": "100644",
+              "path": "App/Store/SubscriptionStoreView.swift"
+            },
+            {
+              "blobOID": "0b1fb6cc7c829f6a4fac64acabe2ca5892b50bba",
+              "mode": "100644",
+              "path": "App/Truck/Cards/TruckSocialFeedCard.swift"
+            },
+            {
+              "blobOID": "c491b6b3c6429fb23ea6847f5721bef28b4aca6a",
+              "mode": "100644",
+              "path": "App/Truck/SocialFeedContent.swift"
+            },
+            {
+              "blobOID": "e46ed85c3d50cefb90e90cf33a0eba9341c757fb",
+              "mode": "100644",
+              "path": "App/Truck/Cards/TruckWeatherCard.swift"
+            },
+            {
+              "blobOID": "e128d16112c17cbc474f96002173e51b92887c5e",
+              "mode": "100644",
+              "path": "App/City/DetailedMapView.swift"
+            },
+            {
+              "blobOID": "4fcc16d2d8bd1ab43e9d79fa2b1bbcec61c0335b",
+              "mode": "100644",
+              "path": "Widgets/TruckActivityAttributes.swift"
+            },
+            {
+              "blobOID": "e6e63d52de572c9bf671e88b088b647d270bd261",
+              "mode": "100644",
+              "path": "App/City/ParkingSpotShowcaseView.swift"
+            },
+            {
+              "blobOID": "5ed9a4554b3dad37cb2d26cd6afcf04cee15826c",
+              "mode": "100644",
+              "path": "App/City/CityView.swift"
+            },
+            {
+              "blobOID": "2a2ab91bfe71690dd0d773af080f9a528113bea9",
+              "mode": "100644",
+              "path": "App/Navigation/Sidebar.swift"
+            },
+            {
+              "blobOID": "4e3b5ea7b46d4b714051f6b26051c1c2ab278396",
+              "mode": "100644",
+              "path": "App/Donut/TopFiveDonutsView.swift"
+            },
+            {
+              "blobOID": "2b0d9dbddce35bbb1226d639a0bdc47ae1b17fdd",
+              "mode": "100644",
+              "path": "App/Orders/OrdersView.swift"
+            },
+            {
+              "blobOID": "8ad81708b4eb62722994687a5144dea27d4bfa4a",
+              "mode": "100644",
+              "path": "App/Truck/SalesHistoryView.swift"
+            },
+            {
+              "blobOID": "9a89709685b1151fb11e13fa8e52cee54c0eb1d4",
+              "mode": "100644",
+              "path": "App/Truck/TruckView.swift"
+            },
+            {
+              "blobOID": "53e8c9277cc942dff3020df51197b0594e0a5855",
+              "mode": "100644",
+              "path": "App/Donut/TopDonutSalesChart.swift"
+            },
+            {
+              "blobOID": "8740a2e25eb35d82b578d902092bd35d23ff0157",
+              "mode": "100644",
+              "path": "App/Orders/OrdersTable.swift"
+            },
+            {
+              "blobOID": "a3125d92ba891671cd527ba385deb626c6175a25",
+              "mode": "100644",
+              "path": "App/Truck/SocialFeedPostView.swift"
+            },
+            {
+              "blobOID": "9220d87b9ea040228ae3062e27bdec757ac46f25",
+              "mode": "100644",
+              "path": "App/Truck/Cards/CardNavigationHeader.swift"
+            },
+            {
+              "blobOID": "75b8d0de63b59e495ebe18a9499d2dc6ecfcf6df",
+              "mode": "100644",
+              "path": "App/Orders/OrderRow.swift"
+            },
+            {
+              "blobOID": "71acb5926563e001db78556752be10d75a7b9279",
+              "mode": "100644",
+              "path": "App/Account/AccountView.swift"
+            },
+            {
+              "blobOID": "86695c0916a42d5de9fc385e9ee1597d6e88af84",
+              "mode": "100644",
+              "path": "App/Donut/TopFiveDonutsChart.swift"
+            }
+          ]
+        }
+      ],
+      "foodTruckKitHasAppAccountView": false,
+      "rawLog": "/tmp/hamii-bridge-build-5_rduf7f/first-build.log",
+      "resolvedAppSettings": {
+        "ARCHS": "arm64 (requested; executed compiler target arm64)",
+        "CONFIGURATION": "Debug",
+        "SWIFT_ACTIVE_COMPILATION_CONDITIONS": "DEBUG EXTENDED_ALL",
+        "SWIFT_VERSION": "5.0",
+        "TARGET_NAME": "Food Truck All"
+      },
+      "swiftCompileArm64Rows": 120,
+      "targetInputRecords": [
+        {
+          "blobOID": "92c12dc1f8ed077e2384d99792310648b9c8f718",
+          "fileList": "<DERIVED_DATA>/Build/Intermediates.noindex/Food Truck.build/Debug-iphonesimulator/Widgets.build/Objects-normal/arm64/Widgets.SwiftFileList",
+          "inputOrdinal": 5,
+          "kind": "pinnedTrackedBlob",
+          "mode": "100644",
+          "moduleName": "Widgets",
+          "ownerTarget": "Widgets",
+          "path": "App/General/FlowLayout.swift"
+        },
+        {
+          "blobOID": "92c12dc1f8ed077e2384d99792310648b9c8f718",
+          "fileList": "<DERIVED_DATA>/Build/Intermediates.noindex/Food Truck.build/Debug-iphonesimulator/Food Truck All.build/Objects-normal/arm64/Food Truck All.SwiftFileList",
+          "inputOrdinal": 20,
+          "kind": "pinnedTrackedBlob",
+          "mode": "100644",
+          "moduleName": "Food_Truck_All",
+          "ownerTarget": "Food Truck All",
+          "path": "App/General/FlowLayout.swift"
+        }
+      ],
+      "wallSeconds": 33.24
+    },
+    "relocated": {
+      "allTrackedBlobComparisonsPassed": true,
+      "buildSucceeded": true,
+      "commitOID": "3cf70a8775a8d528d27b560185ed6d1116557b99",
+      "executedSwiftDriverInvocations": [
+        {
+          "compiler": "/Applications/Xcode-27.0.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+          "explicitModuleBuild": true,
+          "externalOrInvalidInputs": [],
+          "fileList": "<DERIVED_DATA>/Build/Intermediates.noindex/FoodTruckKit.build/Debug-iphonesimulator/FoodTruckKit-t.build/Objects-normal/arm64/FoodTruckKit.SwiftFileList",
+          "generatedInputs": [
+            "/private<DERIVED_DATA>/Build/Intermediates.noindex/FoodTruckKit.build/Debug-iphonesimulator/FoodTruckKit-t.build/DerivedSources/resource_bundle_accessor.swift",
+            "/private<DERIVED_DATA>/Build/Intermediates.noindex/FoodTruckKit.build/Debug-iphonesimulator/FoodTruckKit-t.build/DerivedSources/GeneratedAssetSymbols.swift"
+          ],
+          "inputCount": 32,
+          "inputInventorySHA256": "0e8ed0804ca36190b4f8ca3b3e067ba274bade87f15ca7fa9dd5588887c58ba7",
+          "moduleName": "FoodTruckKit",
+          "normalizedCommandSHA256": "41cdf23f4c4e66a8a319e28c7082f5f3b3cc81baedacf895fa21d834837d99e4",
+          "ownerProject": "FoodTruckKit",
+          "ownerTarget": "FoodTruckKit",
+          "sdkPath": "/Applications/Xcode-27.0.0.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk",
+          "swiftDefines": [
+            "SWIFT_PACKAGE",
+            "DEBUG",
+            "SWIFT_MODULE_RESOURCE_BUNDLE_AVAILABLE",
+            "Xcode",
+            "SWIFT_PACKAGE"
+          ],
+          "swiftLanguageMode": "5",
+          "targetTriple": "arm64-apple-ios16.4-simulator",
+          "trackedInputCount": 30
+        },
+        {
+          "compiler": "/Applications/Xcode-27.0.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+          "explicitModuleBuild": true,
+          "externalOrInvalidInputs": [],
+          "fileList": "<DERIVED_DATA>/Build/Intermediates.noindex/Food Truck.build/Debug-iphonesimulator/Widgets.build/Objects-normal/arm64/Widgets.SwiftFileList",
+          "generatedInputs": [
+            "/private<DERIVED_DATA>/Build/Intermediates.noindex/Food\\ Truck.build/Debug-iphonesimulator/Widgets.build/DerivedSources/GeneratedAssetSymbols.swift"
+          ],
+          "inputCount": 10,
+          "inputInventorySHA256": "f8e67fd78fee2669bef802a3a27592648ceed893597793b572fff37530257ac1",
+          "moduleName": "Widgets",
+          "normalizedCommandSHA256": "8e56be152b84059b7d1e20e0cea7753f020800ec832e7f1eb6157851829387ee",
+          "ownerProject": "Food Truck",
+          "ownerTarget": "Widgets",
+          "sdkPath": "/Applications/Xcode-27.0.0.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk",
+          "swiftDefines": [
+            "DEBUG"
+          ],
+          "swiftLanguageMode": "5",
+          "targetTriple": "arm64-apple-ios16.4-simulator",
+          "trackedInputCount": 9
+        },
+        {
+          "compiler": "/Applications/Xcode-27.0.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+          "explicitModuleBuild": true,
+          "externalOrInvalidInputs": [],
+          "fileList": "<DERIVED_DATA>/Build/Intermediates.noindex/Food Truck.build/Debug-iphonesimulator/Food Truck All.build/Objects-normal/arm64/Food Truck All.SwiftFileList",
+          "generatedInputs": [
+            "/private<DERIVED_DATA>/Build/Intermediates.noindex/Food\\ Truck.build/Debug-iphonesimulator/Food\\ Truck\\ All.build/DerivedSources/GeneratedAssetSymbols.swift"
+          ],
+          "inputCount": 45,
+          "inputInventorySHA256": "5f883146cd9d9b243c7e7e3b72659eeb11efeb1e908d64a98947d8262ccd898f",
+          "moduleName": "Food_Truck_All",
+          "normalizedCommandSHA256": "9b02adc4a560fee77691e518b7483f05f82a8b1ad4ff42669565c83954cdee9e",
+          "ownerProject": "Food Truck",
+          "ownerTarget": "Food Truck All",
+          "sdkPath": "/Applications/Xcode-27.0.0.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk",
+          "swiftDefines": [
+            "DEBUG",
+            "EXTENDED_ALL"
+          ],
+          "swiftLanguageMode": "5",
+          "targetTriple": "arm64-apple-ios16.4-simulator",
+          "trackedInputCount": 44
+        }
+      ],
+      "foodTruckKitHasAppAccountView": false,
+      "rawLog": "/tmp/hamii-bridge-build-5_rduf7f/relocated-build.log",
+      "resolvedAppSettings": {
+        "ARCHS": "arm64 (requested; executed compiler target arm64)",
+        "CONFIGURATION": "Debug",
+        "SWIFT_ACTIVE_COMPILATION_CONDITIONS": "DEBUG EXTENDED_ALL",
+        "SWIFT_VERSION": "5.0",
+        "TARGET_NAME": "Food Truck All"
+      },
+      "swiftCompileArm64Rows": 120,
+      "targetInputRecords": [
+        {
+          "blobOID": "92c12dc1f8ed077e2384d99792310648b9c8f718",
+          "fileList": "<DERIVED_DATA>/Build/Intermediates.noindex/Food Truck.build/Debug-iphonesimulator/Widgets.build/Objects-normal/arm64/Widgets.SwiftFileList",
+          "inputOrdinal": 5,
+          "kind": "pinnedTrackedBlob",
+          "mode": "100644",
+          "moduleName": "Widgets",
+          "ownerTarget": "Widgets",
+          "path": "App/General/FlowLayout.swift"
+        },
+        {
+          "blobOID": "92c12dc1f8ed077e2384d99792310648b9c8f718",
+          "fileList": "<DERIVED_DATA>/Build/Intermediates.noindex/Food Truck.build/Debug-iphonesimulator/Food Truck All.build/Objects-normal/arm64/Food Truck All.SwiftFileList",
+          "inputOrdinal": 20,
+          "kind": "pinnedTrackedBlob",
+          "mode": "100644",
+          "moduleName": "Food_Truck_All",
+          "ownerTarget": "Food Truck All",
+          "path": "App/General/FlowLayout.swift"
+        }
+      ],
+      "wallSeconds": 28.81
+    },
+    "warm": {
+      "buildSucceeded": true,
+      "commitOID": "3cf70a8775a8d528d27b560185ed6d1116557b99",
+      "executedSwiftDriverInvocations": [],
+      "rawLog": "/tmp/hamii-bridge-build-5_rduf7f/warm-build.log",
+      "swiftCompileArm64Rows": 0,
+      "targetInputRecords": [],
+      "wallSeconds": 2.35
+    }
+  }
+}

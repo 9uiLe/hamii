@@ -31,7 +31,7 @@ What fail-closed evidence is sufficient to establish that the exact receipt-pinn
 ## Unknowns
 
 - Whether Xcode and SwiftPM expose a stable, portable selected-build input inventory without relying on private output conventions.
-- Whether a source-verified direct declaration accepted by the current v2 validator can be linked to an observed selected app compiler input in one end-to-end trial. The Food Truck `AccountView.swift` differential is file-level evidence only because that file contains conditional compilation and is currently `unverifiable` to the source validator. `FlowLayout.spacing` has a plausible direct declaration and an observed app input, but no authoritative v2 Profile/receipt trial has validated that combination.
+- How to obtain and validate selected executed Swift invocation evidence in a supported production path. The [source-to-selected-build bridge](spikes/source-to-selected-build-bridge/SPIKE.md) linked a production C1 Profile v2 `pinnedSourceDeclaration` for `FlowLayout.spacing` to an observed C1 app input, but its Xcode log/file-list adapter is a Spike tool and a successful warm build executed no compiler invocation.
 - How to capture an executed selected invocation and classify generated, untracked, external, and transitive inputs without claiming a hermetic or fully reproducible build.
 - How conditional compilation and target membership interact when the same source path is present in multiple Product targets or configurations.
 - How to handle app/Widget targets, multi-architecture builds, build-system caches, and a relocated exact clone.
@@ -45,7 +45,7 @@ What fail-closed evidence is sufficient to establish that the exact receipt-pinn
 - Bind tracked compiler inputs to exact pinned Git blobs; inventory and classify generated, untracked, external, and unbound transitive inputs without requiring a complete build closure for the narrow membership claim. Repeat from a relocated exact archive or detached copy.
 - Test nonexistent target, unknown configuration, failed build, unavailable compiler inventory, changed blob, omitted target input, ambiguous inputs, and outside-repository symlink as fail-closed cases.
 - Measure evidence collection cost with trial counts and cold/warm conditions. Preserve complete commands and compact result artifacts; do not infer Product runtime behavior or patch safety from build membership.
-- Focused Spikes: [static target membership](spikes/static-target-membership/SPIKE.md), [compiled input inventory](spikes/compiled-input-inventory/SPIKE.md), [compiler identity scope](spikes/compiler-identity-scope/SPIKE.md), and [executed app input membership](spikes/executed-app-input-membership/SPIKE.md). Whole-build reproducibility is outside this decision.
+- Focused Spikes: [static target membership](spikes/static-target-membership/SPIKE.md), [compiled input inventory](spikes/compiled-input-inventory/SPIKE.md), [compiler identity scope](spikes/compiler-identity-scope/SPIKE.md), [executed app input membership](spikes/executed-app-input-membership/SPIKE.md), and [source-to-selected-build bridge](spikes/source-to-selected-build-bridge/SPIKE.md). Whole-build reproducibility is outside this decision.
 
 ## Decision Criteria
 

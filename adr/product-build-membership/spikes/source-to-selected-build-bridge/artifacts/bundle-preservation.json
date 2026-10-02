@@ -1,0 +1,36 @@
+{
+  "baseCommitOID": "3954a769e99f3cc53297d94f2b960ceb2665b3d6",
+  "bundles": {
+    "c1Incremental": {
+      "bytes": 795,
+      "path": "/tmp/hamii-bridge-build-5_rduf7f/c1-incremental.bundle",
+      "prerequisite": "3954a769e99f3cc53297d94f2b960ceb2665b3d6",
+      "sha256": "ed5cbb3a8ccc4306d6cb3f5363b0ebb94530e48fd53874e1a265d4c463ff2889"
+    },
+    "c2Incremental": {
+      "bytes": 691,
+      "path": "/tmp/hamii-bridge-build-5_rduf7f/c2-incremental.bundle",
+      "prerequisite": "3cf70a8775a8d528d27b560185ed6d1116557b99",
+      "sha256": "19a0abe6a660dad81b386586510b7280a885b7c05e72d7a0ecb1cb986f075082"
+    }
+  },
+  "c1CommitOID": "3cf70a8775a8d528d27b560185ed6d1116557b99",
+  "c2CommitOID": "4050d4f2c5e7bf357e4b82af4ef39a1ad9c7ed1b",
+  "creationCommands": [
+    "git -C /tmp/hamii-bridge-build-5_rduf7f/c1-preservation-clone bundle create /tmp/hamii-bridge-build-5_rduf7f/c1-incremental.bundle HEAD ^3954a769e99f3cc53297d94f2b960ceb2665b3d6",
+    "git -C /tmp/hamii-bridge-build-5_rduf7f/c2-clone bundle create /tmp/hamii-bridge-build-5_rduf7f/c2-incremental.bundle HEAD ^3cf70a8775a8d528d27b560185ed6d1116557b99"
+  ],
+  "limit": "The base Product checkout lacks an older parent object, so a purported self-contained C1 HEAD bundle failed fetch into an empty repository. Replay verification uses a fresh clone sharing the pinned base object store, then fetches C1 and C2 incremental bundles.",
+  "replay": {
+    "initialBaseClone": "git clone --shared -q /tmp/hamii-integration-spike/targets/food-truck /tmp/hamii-bridge-build-5_rduf7f/bundle-replay-from-base",
+    "repository": "/tmp/hamii-bridge-build-5_rduf7f/bundle-replay-from-base",
+    "steps": [
+      "git -C /tmp/hamii-bridge-build-5_rduf7f/bundle-replay-from-base bundle verify /tmp/hamii-bridge-build-5_rduf7f/c1-incremental.bundle",
+      "git -C /tmp/hamii-bridge-build-5_rduf7f/bundle-replay-from-base fetch /tmp/hamii-bridge-build-5_rduf7f/c1-incremental.bundle HEAD:refs/heads/c1",
+      "git -C /tmp/hamii-bridge-build-5_rduf7f/bundle-replay-from-base bundle verify /tmp/hamii-bridge-build-5_rduf7f/c2-incremental.bundle",
+      "git -C /tmp/hamii-bridge-build-5_rduf7f/bundle-replay-from-base fetch /tmp/hamii-bridge-build-5_rduf7f/c2-incremental.bundle HEAD:refs/heads/c2"
+    ],
+    "verifiedC2OID": "4050d4f2c5e7bf357e4b82af4ef39a1ad9c7ed1b",
+    "verifiedFlowLayoutBlobOID": "4be14546d1369f767c2c6a64284aef039acb37ee"
+  }
+}

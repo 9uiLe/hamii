@@ -1,0 +1,22 @@
+{
+  "formatVersion": 2,
+  "repositoryName": "Food Truck",
+  "architectureRules": [],
+  "componentMappings": [],
+  "tokenMappings": [],
+  "assetMappings": [],
+  "routingMappings": {},
+  "stateMappings": {},
+  "nativeMappings": {},
+  "codeModificationPolicy": [],
+  "sourceLocators": {
+    "input:probe.flowSpacing": {
+      "kind": "swiftDirectDeclaration",
+      "path": "App/General/FlowLayout.swift",
+      "enclosingKind": "struct",
+      "enclosingName": "FlowLayout",
+      "memberKind": "storedProperty",
+      "memberName": "spacing"
+    }
+  }
+}

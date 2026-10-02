@@ -1,0 +1,155 @@
+{
+  "artifactChecks": {
+    "c2TargetBlobDiffersFromC1": true,
+    "compactTargetRecordsInternallyConsistent": true,
+    "scratchSymlinkResolvesOutsideArchive": true,
+    "sourceInternalBinding": true
+  },
+  "buildArtifact": "/tmp/hamii-bridge-build-5_rduf7f/build-inventory.json",
+  "limits": [
+    "File input membership only; no conditional declaration, runtime behavior or patch permission.",
+    "Compact targetInputRecords are scoped path-match records, not a complete raw file list.",
+    "This artifact-only join cannot independently authenticate the original Xcode logs or Git bytes.",
+    "Unbound transitive inputs prevent a reproducible-build claim, not this exact tracked-input fact."
+  ],
+  "observedJoins": {
+    "c1App": {
+      "evidence": {
+        "blobOID": "92c12dc1f8ed077e2384d99792310648b9c8f718",
+        "descriptor": {
+          "architecture": "arm64",
+          "compiler": "/Applications/Xcode-27.0.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc|6.4 (swiftlang-6.4.0.34.1)",
+          "configuration": "Debug",
+          "module": "Food_Truck_All",
+          "rootTarget": "Food Truck All",
+          "scheme": "Food Truck All",
+          "sdk": "iPhoneSimulator27.0.sdk",
+          "target": "Food Truck All"
+        },
+        "invocationID": "9b02adc4a560fee77691e518b7483f05f82a8b1ad4ff42669565c83954cdee9e",
+        "path": "App/General/FlowLayout.swift",
+        "productCommitOID": "3cf70a8775a8d528d27b560185ed6d1116557b99"
+      },
+      "reason": "exactTrackedInputObserved",
+      "status": "selectedBuildMember"
+    },
+    "c1FoodTruckKit": {
+      "evidence": {
+        "path": "App/General/FlowLayout.swift"
+      },
+      "reason": "sourceAbsent",
+      "status": "missingFromSelection"
+    },
+    "c1ModuleOmitted": {
+      "evidence": {
+        "modules": [
+          "Food_Truck_All",
+          "Widgets"
+        ]
+      },
+      "reason": "moduleOrTargetOmitted",
+      "status": "ambiguous"
+    },
+    "c1RelocatedApp": {
+      "evidence": {
+        "blobOID": "92c12dc1f8ed077e2384d99792310648b9c8f718",
+        "descriptor": {
+          "architecture": "arm64",
+          "compiler": "/Applications/Xcode-27.0.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc|6.4 (swiftlang-6.4.0.34.1)",
+          "configuration": "Debug",
+          "module": "Food_Truck_All",
+          "rootTarget": "Food Truck All",
+          "scheme": "Food Truck All",
+          "sdk": "iPhoneSimulator27.0.sdk",
+          "target": "Food Truck All"
+        },
+        "invocationID": "9b02adc4a560fee77691e518b7483f05f82a8b1ad4ff42669565c83954cdee9e",
+        "path": "App/General/FlowLayout.swift",
+        "productCommitOID": "3cf70a8775a8d528d27b560185ed6d1116557b99"
+      },
+      "reason": "exactTrackedInputObserved",
+      "status": "selectedBuildMember"
+    },
+    "c2Stale": {
+      "evidence": {
+        "buildCommit": "4050d4f2c5e7bf357e4b82af4ef39a1ad9c7ed1b",
+        "sourceCommit": "3cf70a8775a8d528d27b560185ed6d1116557b99"
+      },
+      "reason": "commitMismatch",
+      "status": "staleProduct"
+    },
+    "warmNoInvocation": {
+      "evidence": {},
+      "reason": "noExecutedInvocation",
+      "status": "unverifiable"
+    }
+  },
+  "observedXcodeControls": {
+    "unknownConfiguration": {
+      "exitCode": 0,
+      "requested": "NoSuchConfig",
+      "resolved": "Release"
+    },
+    "unknownScheme": {
+      "executedInvocations": 0,
+      "exitCode": 65
+    }
+  },
+  "schema": "independent-bridge-join-v1",
+  "sourceArtifact": "/tmp/hamii-bridge-source-Cc4k8n/source-evidence.json",
+  "syntheticClassifierControls": {
+    "duplicateConflictingInput": {
+      "evidence": {
+        "count": 2,
+        "path": "App/General/FlowLayout.swift"
+      },
+      "reason": "duplicateLogicalPath",
+      "status": "ambiguous"
+    },
+    "failedBuild": {
+      "evidence": {},
+      "reason": "buildNotSuccessful",
+      "status": "unverifiable"
+    },
+    "generatedOnlyTarget": {
+      "evidence": {
+        "kind": "generated"
+      },
+      "reason": "generatedOrExternalOnlyTarget",
+      "status": "unverifiable"
+    },
+    "missingInventory": {
+      "evidence": {},
+      "reason": "missingInventory",
+      "status": "unverifiable"
+    },
+    "outsideSymlinkAsTarget": {
+      "evidence": {
+        "kind": "externalSymlink"
+      },
+      "reason": "generatedOrExternalOnlyTarget",
+      "status": "unverifiable"
+    },
+    "unknownConfigFallback": {
+      "evidence": {
+        "requested": "NoSuchConfig",
+        "resolved": "Release"
+      },
+      "reason": "configurationMismatch",
+      "status": "unverifiable"
+    },
+    "unknownTarget": {
+      "evidence": {},
+      "reason": "unknownOrUnselectedTarget",
+      "status": "unverifiable"
+    },
+    "wrongBlob": {
+      "evidence": {
+        "actual": "0000000000000000000000000000000000000000",
+        "expected": "92c12dc1f8ed077e2384d99792310648b9c8f718"
+      },
+      "reason": "blobMismatch",
+      "status": "mismatchedSource"
+    }
+  }
+}

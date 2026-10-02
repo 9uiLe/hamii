@@ -1,0 +1,59 @@
+{
+  "baseCommitOID": "3954a769e99f3cc53297d94f2b960ceb2665b3d6",
+  "blockedOutputs": [],
+  "changedPaths": [
+    "config/hamii-profile.json"
+  ],
+  "childCommitOID": "3cf70a8775a8d528d27b560185ed6d1116557b99",
+  "cliExitCode": 0,
+  "clonePath": "/tmp/hamii-bridge-source-Cc4k8n/product",
+  "contractInputs": [
+    "probe.flowSpacing"
+  ],
+  "failures": [],
+  "limitations": [
+    "pinnedSourceDeclaration proves source declaration existence only; selected-build input membership is separate evidence"
+  ],
+  "productClean": true,
+  "profileBlobOID": "ddd35c473a7b4d59cd45e155b69340d8fcd564c0",
+  "profilePath": "config/hamii-profile.json",
+  "receipt": {
+    "contractSHA256": "96f9ba4cf7c7974a82602817fd1f72b3e77a314e3c00f3fc4bde825da6cd7897",
+    "hamiiDocumentID": {
+      "rawValue": "doc_067223de-e1fa-4b76-a154-84f38b294e38"
+    },
+    "hamiiDocumentRevision": 1,
+    "hamiiStatePrecondition": {
+      "rawValue": "1e0f27d0c1d726e642aae32837461096f14b81132053eeed8145bb7fb37ee5f6"
+    },
+    "productCommitOID": "3cf70a8775a8d528d27b560185ed6d1116557b99",
+    "profileBlobOID": "ddd35c473a7b4d59cd45e155b69340d8fcd564c0",
+    "profileFormatVersion": 2,
+    "profilePath": "config/hamii-profile.json",
+    "profileSHA256": "9e6e1f45cbbe43cbc816451f88e5eae7777c511624ef87fbc87ae55d479c5d41",
+    "receiptFormatVersion": 1,
+    "screenID": {
+      "rawValue": "screen_bridge"
+    }
+  },
+  "repositoryMappingEvidence": [
+    {
+      "line": 12,
+      "locator": {
+        "enclosingKind": "struct",
+        "enclosingName": "FlowLayout",
+        "kind": "swiftDirectDeclaration",
+        "memberKind": "storedProperty",
+        "memberName": "spacing",
+        "path": "App/General/FlowLayout.swift"
+      },
+      "mappingKey": "input:probe.flowSpacing",
+      "scope": "pinnedSourceDeclaration",
+      "sourceBlobOID": "92c12dc1f8ed077e2384d99792310648b9c8f718",
+      "status": "verified"
+    }
+  ],
+  "resolutionIssues": [],
+  "sourceBlobOID": "92c12dc1f8ed077e2384d99792310648b9c8f718",
+  "sourcePath": "App/General/FlowLayout.swift"
+}
