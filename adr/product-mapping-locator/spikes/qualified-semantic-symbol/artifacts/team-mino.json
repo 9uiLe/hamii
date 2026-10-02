@@ -1,0 +1,183 @@
+{
+  "baseline": [
+    {
+      "candidates": [
+        {
+          "kind": "var_decl",
+          "line": 10,
+          "path": "Packages/Domain/Sources/Domain/Entities/Profile.swift"
+        }
+      ],
+      "elapsed_ms": 4137.2,
+      "expected_kind": "var_decl",
+      "grep_candidates": 54,
+      "parsed_files": 47,
+      "status": "oneSyntaxCandidate",
+      "symbol": "Profile.nickname"
+    },
+    {
+      "candidates": [
+        {
+          "kind": "var_decl",
+          "line": 12,
+          "path": "Packages/Domain/Sources/Domain/Entities/Profile.swift"
+        }
+      ],
+      "elapsed_ms": 3530.8,
+      "expected_kind": "var_decl",
+      "grep_candidates": 79,
+      "parsed_files": 37,
+      "status": "oneSyntaxCandidate",
+      "symbol": "Profile.createdAt"
+    },
+    {
+      "candidates": [
+        {
+          "kind": "enum_element_decl",
+          "line": 83,
+          "path": "Packages/FeatureProfile/Sources/FeatureProfile/Main/ProfileMainStore.swift"
+        }
+      ],
+      "elapsed_ms": 277.7,
+      "expected_kind": "enum_element_decl",
+      "grep_candidates": 4,
+      "parsed_files": 3,
+      "status": "oneSyntaxCandidate",
+      "symbol": "ProfileMainAction.tapEditProfile"
+    },
+    {
+      "candidates": [
+        {
+          "kind": "enum_element_decl",
+          "line": 94,
+          "path": "Packages/FeatureProfile/Sources/FeatureProfile/Main/ProfileMainStore.swift"
+        }
+      ],
+      "elapsed_ms": 364.5,
+      "expected_kind": "enum_element_decl",
+      "grep_candidates": 4,
+      "parsed_files": 4,
+      "status": "oneSyntaxCandidate",
+      "symbol": "ProfileMainNav.pushProfileSetup"
+    },
+    {
+      "candidates": [
+        {
+          "kind": "enum_element_decl",
+          "line": 11,
+          "path": "Packages/FeatureProfile/Sources/FeatureProfile/ProfileCoordinator.swift"
+        }
+      ],
+      "elapsed_ms": 227.2,
+      "expected_kind": "enum_element_decl",
+      "grep_candidates": 7,
+      "parsed_files": 2,
+      "status": "oneSyntaxCandidate",
+      "symbol": "ProfileRoute.profileSetup"
+    },
+    {
+      "candidates": [
+        {
+          "kind": "var_decl",
+          "line": 117,
+          "path": "Packages/DesignSystem/Sources/DesignSystem/MHTypography.swift"
+        }
+      ],
+      "elapsed_ms": 193.9,
+      "expected_kind": "var_decl",
+      "grep_candidates": 2,
+      "parsed_files": 2,
+      "status": "oneSyntaxCandidate",
+      "symbol": "MHTypography.display1Bold"
+    }
+  ],
+  "commit": "dca2202f4be21869190d19bbcf223eb8646a2acd",
+  "controlled": {
+    "delete_member": {
+      "candidates": [],
+      "expected_kind": "var_decl",
+      "parsed_files": 1,
+      "status": "missing",
+      "symbol": "Profile.nickname"
+    },
+    "duplicate_other_module": {
+      "candidates": [
+        {
+          "kind": "var_decl",
+          "line": 10,
+          "path": "IndependentModule/Profile.swift"
+        },
+        {
+          "kind": "var_decl",
+          "line": 10,
+          "path": "Packages/Domain/Sources/Domain/Entities/Profile.swift"
+        }
+      ],
+      "expected_kind": "var_decl",
+      "parsed_files": 2,
+      "status": "ambiguous",
+      "symbol": "Profile.nickname"
+    },
+    "move_file": {
+      "candidates": [
+        {
+          "kind": "var_decl",
+          "line": 10,
+          "path": "Moved/Profile.swift"
+        }
+      ],
+      "expected_kind": "var_decl",
+      "parsed_files": 1,
+      "status": "oneSyntaxCandidate",
+      "symbol": "Profile.nickname"
+    },
+    "original": {
+      "candidates": [
+        {
+          "kind": "var_decl",
+          "line": 10,
+          "path": "Packages/Domain/Sources/Domain/Entities/Profile.swift"
+        }
+      ],
+      "expected_kind": "var_decl",
+      "parsed_files": 1,
+      "status": "oneSyntaxCandidate",
+      "symbol": "Profile.nickname"
+    },
+    "rename_member": {
+      "candidates": [],
+      "expected_kind": "var_decl",
+      "parsed_files": 0,
+      "status": "missing",
+      "symbol": "Profile.nickname"
+    },
+    "wrong_expected_kind": {
+      "candidates": [
+        {
+          "kind": "var_decl",
+          "line": 10,
+          "path": "Packages/Domain/Sources/Domain/Entities/Profile.swift"
+        }
+      ],
+      "expected_kind": "enum_element_decl",
+      "parsed_files": 1,
+      "status": "kindMismatch",
+      "symbol": "Profile.nickname"
+    },
+    "wrong_kind": {
+      "candidates": [
+        {
+          "kind": "func_decl",
+          "line": 10,
+          "path": "Packages/Domain/Sources/Domain/Entities/Profile.swift"
+        }
+      ],
+      "expected_kind": "var_decl",
+      "parsed_files": 1,
+      "status": "kindMismatch",
+      "symbol": "Profile.nickname"
+    }
+  },
+  "swift_files": 545,
+  "target": "team-mino"
+}

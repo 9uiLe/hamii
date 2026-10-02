@@ -1,0 +1,68 @@
+{
+  "baseline": [
+    {
+      "candidates": [
+        {
+          "kind": "var_decl",
+          "line": 13,
+          "path": "FoodTruckKit/Sources/Donut/Donut.swift"
+        }
+      ],
+      "elapsed_ms": 1417.7,
+      "expected_kind": "var_decl",
+      "grep_candidates": 29,
+      "parsed_files": 15,
+      "status": "oneSyntaxCandidate",
+      "symbol": "Donut.name"
+    },
+    {
+      "candidates": [
+        {
+          "kind": "var_decl",
+          "line": 13,
+          "path": "FoodTruckKit/Sources/City/City.swift"
+        }
+      ],
+      "elapsed_ms": 880.7,
+      "expected_kind": "var_decl",
+      "grep_candidates": 29,
+      "parsed_files": 8,
+      "status": "oneSyntaxCandidate",
+      "symbol": "City.name"
+    },
+    {
+      "candidates": [],
+      "elapsed_ms": 316.7,
+      "expected_kind": "enum_element_decl",
+      "grep_candidates": 8,
+      "parsed_files": 3,
+      "status": "missing",
+      "symbol": "Panel.account"
+    },
+    {
+      "candidates": [
+        {
+          "kind": "var_decl",
+          "line": 63,
+          "path": "FoodTruckKit/Sources/Donut/Donut.swift"
+        }
+      ],
+      "elapsed_ms": 547.5,
+      "expected_kind": "var_decl",
+      "grep_candidates": 6,
+      "parsed_files": 6,
+      "status": "oneSyntaxCandidate",
+      "symbol": "Donut.classic"
+    }
+  ],
+  "commit": "3954a769e99f3cc53297d94f2b960ceb2665b3d6",
+  "conditional": {
+    "candidates": [],
+    "expected_kind": "enum_element_decl",
+    "parsed_files": 1,
+    "status": "missing",
+    "symbol": "Panel.account"
+  },
+  "swift_files": 82,
+  "target": "food-truck"
+}

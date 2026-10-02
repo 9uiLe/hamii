@@ -1,0 +1,211 @@
+{
+  "cases": [
+    {
+      "case": "mino.nickname",
+      "elapsedMicroseconds": 17772,
+      "enclosingPublic": true,
+      "line": 10,
+      "outcome": "candidateUniqueLexical",
+      "target": "team-mino"
+    },
+    {
+      "case": "mino.createdAt.optional",
+      "elapsedMicroseconds": 14752,
+      "enclosingPublic": true,
+      "line": 12,
+      "outcome": "candidateUniqueLexical",
+      "target": "team-mino"
+    },
+    {
+      "case": "mino.action",
+      "elapsedMicroseconds": 15828,
+      "enclosingPublic": true,
+      "line": 83,
+      "outcome": "candidateUniqueLexical",
+      "target": "team-mino"
+    },
+    {
+      "case": "mino.route",
+      "elapsedMicroseconds": 15238,
+      "enclosingPublic": true,
+      "line": 11,
+      "outcome": "candidateUniqueLexical",
+      "target": "team-mino"
+    },
+    {
+      "case": "mino.internalMember",
+      "elapsedMicroseconds": 16074,
+      "enclosingPublic": false,
+      "line": 22,
+      "outcome": "candidateUniqueLexical",
+      "target": "team-mino"
+    },
+    {
+      "case": "mino.otherNickname",
+      "elapsedMicroseconds": 15368,
+      "enclosingPublic": true,
+      "line": 10,
+      "outcome": "candidateUniqueLexical",
+      "target": "team-mino"
+    },
+    {
+      "case": "food.enumCase",
+      "elapsedMicroseconds": 14903,
+      "enclosingPublic": true,
+      "line": 10,
+      "outcome": "candidateUniqueLexical",
+      "target": "food-truck"
+    },
+    {
+      "case": "food.classMember",
+      "elapsedMicroseconds": 16410,
+      "outcome": "unverifiable",
+      "reason": "conditionalCompilationWithoutBuildConfiguration",
+      "target": "food-truck"
+    },
+    {
+      "case": "food.methodOrOverload",
+      "elapsedMicroseconds": 16064,
+      "outcome": "unverifiable",
+      "reason": "unsupportedDeclarationKindOrOverload",
+      "target": "food-truck"
+    },
+    {
+      "case": "mino.extensionToken",
+      "elapsedMicroseconds": 16835,
+      "outcome": "unverifiable",
+      "reason": "extensionMember",
+      "target": "team-mino"
+    },
+    {
+      "case": "mino.macroGenerated",
+      "elapsedMicroseconds": 15818,
+      "outcome": "unverifiable",
+      "reason": "generatedDeclaration",
+      "target": "team-mino"
+    },
+    {
+      "case": "duplicate.sameNameOtherType",
+      "elapsedMicroseconds": 110,
+      "enclosingPublic": true,
+      "line": 10,
+      "outcome": "candidateUniqueLexical",
+      "target": "team-mino"
+    },
+    {
+      "case": "duplicate.sameEnclosingSynthetic",
+      "count": 2,
+      "elapsedMicroseconds": 36,
+      "outcome": "ambiguous",
+      "target": "team-mino"
+    },
+    {
+      "case": "deletion",
+      "elapsedMicroseconds": 150,
+      "outcome": "missing",
+      "target": "team-mino"
+    },
+    {
+      "case": "rename.oldLocator",
+      "elapsedMicroseconds": 37,
+      "outcome": "missing",
+      "target": "team-mino"
+    },
+    {
+      "case": "wrongKind",
+      "elapsedMicroseconds": 15971,
+      "observedKinds": [
+        "property"
+      ],
+      "outcome": "kindMismatch",
+      "target": "team-mino"
+    },
+    {
+      "case": "move.oldLocator",
+      "elapsedMicroseconds": 9,
+      "outcome": "invalidLocator",
+      "target": "team-mino"
+    },
+    {
+      "case": "move.newLocator",
+      "elapsedMicroseconds": 32,
+      "enclosingPublic": true,
+      "line": 10,
+      "outcome": "candidateUniqueLexical",
+      "target": "team-mino"
+    },
+    {
+      "case": "commitChanged",
+      "elapsedMicroseconds": 0,
+      "outcome": "staleCommit",
+      "target": "team-mino"
+    },
+    {
+      "case": "symlinkMode",
+      "elapsedMicroseconds": 4,
+      "outcome": "invalidLocator",
+      "target": "team-mino",
+      "treeMode": "120000"
+    },
+    {
+      "case": "traversal",
+      "elapsedMicroseconds": 1,
+      "outcome": "invalidLocator",
+      "target": "team-mino"
+    },
+    {
+      "case": "absolutePath",
+      "elapsedMicroseconds": 0,
+      "outcome": "invalidLocator",
+      "target": "team-mino"
+    },
+    {
+      "case": "mino.exactCheckoutCopyRelocated",
+      "elapsedMicroseconds": 17679,
+      "enclosingPublic": true,
+      "line": 10,
+      "outcome": "candidateUniqueLexical",
+      "target": "team-mino"
+    },
+    {
+      "case": "food.exactCleanCloneRelocated",
+      "elapsedMicroseconds": 16547,
+      "enclosingPublic": true,
+      "line": 10,
+      "outcome": "candidateUniqueLexical",
+      "target": "food-truck"
+    }
+  ],
+  "conditions": "macOS local Git object cache; Python stdlib lexical probe; no build/index; clean pinned targets",
+  "limits": "candidateUniqueLexical is not verified Swift semantics; synthetic variants are in-memory, not compilable commits",
+  "schema": "tracked-file-declaration-spike-v1",
+  "sourceIndexSHA256BeforeAfterEqual": true,
+  "targets": {
+    "food-truck": "3954a769e99f3cc53297d94f2b960ceb2665b3d6",
+    "team-mino": "dca2202f4be21869190d19bbcf223eb8646a2acd"
+  },
+  "warmLookupTiming": {
+    "food": {
+      "medianMicroseconds": 15518,
+      "microseconds": [
+        15592,
+        15511,
+        16430,
+        15208,
+        15518
+      ],
+      "trials": 5
+    },
+    "mino": {
+      "medianMicroseconds": 16592,
+      "microseconds": [
+        17410,
+        17062,
+        15836,
+        16510,
+        16592
+      ],
+      "trials": 5
+    }
+  }
+}
