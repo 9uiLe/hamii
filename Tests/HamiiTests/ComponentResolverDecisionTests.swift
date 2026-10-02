@@ -175,6 +175,20 @@ final class ComponentResolverDecisionTests: XCTestCase {
             slotContent: ["outer": [replacement()]]), definition: definition)
     }
 
+    func testVariantSamePathConflictPrecedesSelectedSlotOverlap() {
+        let definition = fixture()
+        assertError(.conflictingVariants(oldPath), ComponentInstance(definitionID: definitionID,
+            variantSelection: ["size": "large", "state": "active"],
+            slotContent: ["inner": [], "outer": [replacement()]]), definition: definition)
+    }
+
+    func testSelectedSlotOverlapPrecedesPriorWriteConflict() {
+        let definition = fixture()
+        assertError(.overlappingSlots(["inner", "outer"]), ComponentInstance(definitionID: definitionID,
+            propertyValues: ["oldLabel": "Property"],
+            slotContent: ["inner": [], "outer": [replacement()]]), definition: definition)
+    }
+
     func testInvalidDefinitionWritePathWaitsForResolutionAfterVariantConflictPhase() {
         var definition = fixture()
         let missingPath = "layer_missing.text"
