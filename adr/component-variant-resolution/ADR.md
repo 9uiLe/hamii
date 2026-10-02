@@ -38,11 +38,11 @@ Scope owner は Definition に属する。Instance は公開された property/s
 
 ## Required Evidence
 
-[spikes/instance-resolution/SPIKE.md](spikes/instance-resolution/SPIKE.md) に direct Resolver の 16 ケース、Current Canonical sparse save、1,000 Instance の raw resolve cost / 論理 affected output set、独立監査を記録した。[slot-write-conflict-boundary Spike](spikes/slot-write-conflict-boundary/SPIKE.md) では selected write が slot 置換で消えても Canonical save が受理する現状、test-only conflict membership、既存 error を隠す素朴な候補方式、valid nested Definition / cycle の validation 境界を記録した。[slot-conflict-priority Spike](spikes/slot-conflict-priority/SPIKE.md) は test-only 18ケース・Application 境界5ケース・独立監査を記録した。selected prior write を消す slot 名の全件集合は固定 fixture で導出できたが、outer-first nested slot の現行 `unknownSlot` と混合 `conflictingVariants` / `forbiddenOverride` を先行判定が覆う反例があるため Decision は保留する。実際の局所再計算と同一 encoding boundary での保存量比較は未検証のまま区別する。結果と判断を削除前の Git commit に残す。
+[spikes/instance-resolution/SPIKE.md](spikes/instance-resolution/SPIKE.md) に direct Resolver の 16 ケース、Current Canonical sparse save、1,000 Instance の raw resolve cost / 論理 affected output set、独立監査を記録した。[slot-write-conflict-boundary Spike](spikes/slot-write-conflict-boundary/SPIKE.md) では selected write が slot 置換で消えても Canonical save が受理する現状、test-only conflict membership、既存 error を隠す素朴な候補方式、valid nested Definition / cycle の validation 境界を記録した。[slot-conflict-priority Spike](spikes/slot-conflict-priority/SPIKE.md) は test-only 18ケース・Application 境界5ケース・独立監査を記録した。selected prior write を消す slot 名の全件集合は固定 fixture で導出できた。outer-first nested slot の現行 `unknownSlot` と混合 `conflictingVariants` / `forbiddenOverride` を先行判定が覆う反例は、上記 overlap 禁止と新しい phase priority を明示する判断材料にした。実際の局所再計算と同一 encoding boundary での保存量比較は未検証のまま区別する。結果と判断を削除前の Git commit に残す。
 
 ## Decision Criteria
 
-Spike の成功/失敗基準に照らして方式を選び、必要な実装・検証を完了し、恒久的なルールを Current Architecture または code に移す。[ADR workflow](../../docs/adr-workflow.md) の削除条件と commit 順に従う。
+Spike の成功/失敗基準と反例に照らして上記方式を選んだ。今後は実装・検証を完了し、恒久的なルールを Current Architecture と code/tests に移す。[ADR workflow](../../docs/adr-workflow.md) の削除条件と commit 順に従う。
 
 ## Status
 
