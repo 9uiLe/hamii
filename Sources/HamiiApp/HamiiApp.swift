@@ -126,18 +126,28 @@ final class EditorSession {
     }
     func setComponentVariant(screenID: EntityID, layerID: EntityID, observedState: ClientPrecondition,
                              axis: String, value: String) {
-        guard variantPickerIsCurrent(screenID: screenID, layerID: layerID, observedState: observedState) else { return }
+        guard inspectorControlIsCurrent(screenID: screenID, layerID: layerID, observedState: observedState) else { return }
         perform(.setComponentVariant(screenID: screenID, layerID: layerID, axis: axis, value: value))
     }
     func unsetComponentVariant(screenID: EntityID, layerID: EntityID, observedState: ClientPrecondition,
                                axis: String) {
-        guard variantPickerIsCurrent(screenID: screenID, layerID: layerID, observedState: observedState) else { return }
+        guard inspectorControlIsCurrent(screenID: screenID, layerID: layerID, observedState: observedState) else { return }
         perform(.unsetComponentVariant(screenID: screenID, layerID: layerID, axis: axis))
     }
-    private func variantPickerIsCurrent(screenID: EntityID, layerID: EntityID,
-                                        observedState: ClientPrecondition) -> Bool {
+    func setComponentProperty(screenID: EntityID, layerID: EntityID, observedState: ClientPrecondition,
+                              name: String, value: String) {
+        guard inspectorControlIsCurrent(screenID: screenID, layerID: layerID, observedState: observedState) else { return }
+        perform(.setComponentProperty(screenID: screenID, layerID: layerID, name: name, value: value))
+    }
+    func unsetComponentProperty(screenID: EntityID, layerID: EntityID, observedState: ClientPrecondition,
+                                name: String) {
+        guard inspectorControlIsCurrent(screenID: screenID, layerID: layerID, observedState: observedState) else { return }
+        perform(.unsetComponentProperty(screenID: screenID, layerID: layerID, name: name))
+    }
+    private func inspectorControlIsCurrent(screenID: EntityID, layerID: EntityID,
+                                           observedState: ClientPrecondition) -> Bool {
         guard selectedScreenID == screenID, selectedLayerID == layerID else {
-            errorMessage = "Selected Layer changed. Choose a Variant in the current Inspector."
+            errorMessage = "Selected Layer changed. Use the current Inspector."
             return false
         }
         guard statePrecondition == observedState else {
@@ -442,6 +452,12 @@ struct EditorView: View {
         let id: String
         let values: [String]
     }
+    private struct PropertyEditorIdentity: Hashable {
+        let screenID: EntityID
+        let layerID: EntityID
+        let name: String
+        let observedState: ClientPrecondition
+    }
     private var selectedVariantAxes: [VariantAxis] {
         guard let instance = selectedLayer?.component,
               let definition = session.document?.components.first(where: { $0.id == instance.definitionID }) else {
@@ -451,6 +467,13 @@ struct EditorView: View {
         return grouped.map { axis, variants in
             VariantAxis(id: axis, values: Array(Set(variants.map(\.value))).sorted())
         }.sorted { $0.id < $1.id }
+    }
+    private var selectedTextProperties: [ComponentProperty] {
+        guard let instance = selectedLayer?.component,
+              let definition = session.document?.components.first(where: { $0.id == instance.definitionID }) else {
+            return []
+        }
+        return definition.api.properties.filter { $0.kind == .text }.sorted { $0.name < $1.name }
     }
 
     var body: some View {
@@ -549,6 +572,20 @@ struct EditorView: View {
                                 ForEach(selectedVariantAxes) { axis in
                                     componentVariantPicker(axis, screenID: screenID, layerID: layer.id,
                                                            observedState: observedState)
+                                }
+                                ForEach(selectedTextProperties, id: \.name) { property in
+                                    ComponentTextPropertyEditor(name: property.name,
+                                        storedValue: layer.component?.propertyValues[property.name],
+                                        onSet: { value in
+                                            session.setComponentProperty(screenID: screenID, layerID: layer.id,
+                                                observedState: observedState, name: property.name, value: value)
+                                        },
+                                        onUnset: {
+                                            session.unsetComponentProperty(screenID: screenID, layerID: layer.id,
+                                                observedState: observedState, name: property.name)
+                                        })
+                                        .id(PropertyEditorIdentity(screenID: screenID, layerID: layer.id,
+                                                                   name: property.name, observedState: observedState))
                                 }
                             }
                             if layer.kind == .text || layer.kind == .button {
@@ -659,6 +696,41 @@ struct EditorView: View {
             Text("None").tag("")
             ForEach(session.availableSpacingTokens) { token in
                 Text(token.name).tag(token.id.rawValue)
+            }
+        }
+    }
+}
+
+private struct ComponentTextPropertyEditor: View {
+    let name: String
+    let storedValue: String?
+    let onSet: (String) -> Void
+    let onUnset: () -> Void
+    @State private var draft: String
+
+    init(name: String, storedValue: String?, onSet: @escaping (String) -> Void,
+         onUnset: @escaping () -> Void) {
+        self.name = name
+        self.storedValue = storedValue
+        self.onSet = onSet
+        self.onUnset = onUnset
+        _draft = State(initialValue: storedValue ?? "")
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Property \(String(reflecting: name))")
+            Text(storedValue.map { "Stored: \(String(reflecting: $0))" } ?? "Unset")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            TextField("Value", text: $draft)
+                .accessibilityLabel("Value for property \(String(reflecting: name))")
+                .onSubmit { onSet(draft) }
+            HStack {
+                Button("Set") { onSet(draft) }
+                    .accessibilityLabel("Set property \(String(reflecting: name))")
+                Button("Unset", action: onUnset)
+                    .accessibilityLabel("Unset property \(String(reflecting: name))")
             }
         }
     }
