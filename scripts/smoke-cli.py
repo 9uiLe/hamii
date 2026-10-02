@@ -91,6 +91,7 @@ with tempfile.TemporaryDirectory(prefix="hamii-cli-") as directory:
         assert authoritative["ok"] and authoritative["integrationPlan"] == resolved["integrationPlan"]
         assert authoritative["resolutionIssues"] == [] and authoritative["blockedOutputs"] == []
         assert "repositoryMappingEvidence" not in authoritative
+        assert "repositoryBuildEvidence" not in authoritative
         receipt = authoritative["repositoryProfileReceipt"]
         assert receipt["receiptFormatVersion"] == 1
         assert receipt["productCommitOID"] == product_head
@@ -159,6 +160,7 @@ with tempfile.TemporaryDirectory(prefix="hamii-cli-") as directory:
         payload = json.loads(unresolved.stdout)
         assert payload["ok"] is False and payload["category"] == "contract"
         assert "repositoryProfileReceipt" not in payload and "repositoryProfileIssue" not in payload
+        assert "repositoryBuildEvidence" not in payload
         assert payload["integrationPlan"]["unresolvedMappings"] == [f"asset:{asset['id']['rawValue']}"]
         assert payload["resolutionIssues"] == [{
             "code": "missingMapping", "semanticID": f"asset:{asset['id']['rawValue']}"}]
@@ -183,6 +185,7 @@ with tempfile.TemporaryDirectory(prefix="hamii-cli-") as directory:
         for field in ("integrationPlan", "resolutionIssues", "blockedOutputs"):
             assert authoritative_payload[field] == payload[field], field
         assert authoritative_payload["repositoryProfileReceipt"]["profilePath"] == "profile.json"
+        assert "repositoryBuildEvidence" not in authoritative_payload
         duplicate_asset = {**integration_profile, "assetMappings": [
             {"rawValue": asset["id"]["rawValue"]}, "Product.AvatarA",
             {"rawValue": asset["id"]["rawValue"]}, "Product.AvatarB",
@@ -427,6 +430,7 @@ with tempfile.TemporaryDirectory(prefix="hamii-source-evidence-cli-") as tempora
                     "--repository-profile", "profile.json")
     verified = source_cli(*plan_options)
     assert verified["ok"] and verified["repositoryProfileReceipt"]["profileFormatVersion"] == 2
+    assert "repositoryBuildEvidence" not in verified
     assert verified["resolutionIssues"] == [] and verified["blockedOutputs"] == []
     evidence = verified["repositoryMappingEvidence"]
     assert [item["mappingKey"] for item in evidence] == ["input:user.email", "input:user.name"]

@@ -49,7 +49,7 @@ An unverified `pinnedSourceDeclaration` is ineligible for build membership evalu
 
 Generated, untracked, external, and unbound transitive inputs remain separately classified. Their presence limits a whole-build reproducibility claim, but does not negate the observed membership of a distinct exact tracked source input. `reproducibleBuildClosure` is a separate decision boundary.
 
-The production read-only selected-build validator and its inventory acquisition adapter are **not implemented**. The Spike's Xcode log/`SwiftFileList` parser is not a supported production contract. If the installed build system/toolchain cannot provide a recognized, complete executed-invocation inventory, return `unverifiable`. A future receipt-reuse/cache mechanism requires its own validated contract; this Decision authorizes no inference from a previous no-op build.
+The internal receipt/source revalidation gate and pure classification join are implemented. The protected inventory acquisition adapter and public selected-build validation interface are **not implemented**. The gate returns `unverifiable` when protected acquisition is unavailable. The Spike's Xcode log/`SwiftFileList` parser is not a supported production contract. If the installed build system/toolchain cannot provide a recognized, complete executed-invocation inventory, return `unverifiable`. A future receipt-reuse/cache mechanism requires its own validated contract; this Decision authorizes no inference from a previous no-op build.
 
 ## Unknowns
 
