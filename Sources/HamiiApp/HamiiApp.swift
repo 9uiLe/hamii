@@ -124,6 +124,28 @@ final class EditorSession {
         guard let screenID = selectedScreenID, let layerID = selectedLayerID else { return }
         perform(.setText(screenID: screenID, layerID: layerID, text: value))
     }
+    func setComponentVariant(screenID: EntityID, layerID: EntityID, observedState: ClientPrecondition,
+                             axis: String, value: String) {
+        guard variantPickerIsCurrent(screenID: screenID, layerID: layerID, observedState: observedState) else { return }
+        perform(.setComponentVariant(screenID: screenID, layerID: layerID, axis: axis, value: value))
+    }
+    func unsetComponentVariant(screenID: EntityID, layerID: EntityID, observedState: ClientPrecondition,
+                               axis: String) {
+        guard variantPickerIsCurrent(screenID: screenID, layerID: layerID, observedState: observedState) else { return }
+        perform(.unsetComponentVariant(screenID: screenID, layerID: layerID, axis: axis))
+    }
+    private func variantPickerIsCurrent(screenID: EntityID, layerID: EntityID,
+                                        observedState: ClientPrecondition) -> Bool {
+        guard selectedScreenID == screenID, selectedLayerID == layerID else {
+            errorMessage = "Selected Layer changed. Choose a Variant in the current Inspector."
+            return false
+        }
+        guard statePrecondition == observedState else {
+            errorMessage = AuthoringError.staleState.description
+            return false
+        }
+        return true
+    }
     func createSpacingToken(name: String, value: String) {
         guard let scopeID = document?.screens.first(where: { $0.id == selectedScreenID })?.scopeID else { return }
         perform(.createToken(name: name, kind: .spacing, scopeID: scopeID, value: .literal(value)))
@@ -416,6 +438,20 @@ struct EditorView: View {
         guard let root = selectedScreen?.root, let id = session.selectedLayerID else { return nil }
         return find(id, in: root)
     }
+    private struct VariantAxis: Identifiable {
+        let id: String
+        let values: [String]
+    }
+    private var selectedVariantAxes: [VariantAxis] {
+        guard let instance = selectedLayer?.component,
+              let definition = session.document?.components.first(where: { $0.id == instance.definitionID }) else {
+            return []
+        }
+        let grouped = Dictionary(grouping: definition.variants, by: \.axis)
+        return grouped.map { axis, variants in
+            VariantAxis(id: axis, values: Array(Set(variants.map(\.value))).sorted())
+        }.sorted { $0.id < $1.id }
+    }
 
     var body: some View {
         NavigationSplitView {
@@ -508,6 +544,13 @@ struct EditorView: View {
                         Text("Inspector").font(.headline)
                         if let layer = selectedLayer {
                             Text(layer.name)
+                            if let screenID = session.selectedScreenID,
+                               let observedState = session.statePrecondition {
+                                ForEach(selectedVariantAxes) { axis in
+                                    componentVariantPicker(axis, screenID: screenID, layerID: layer.id,
+                                                           observedState: observedState)
+                                }
+                            }
                             if layer.kind == .text || layer.kind == .button {
                                 TextField("Text", text: $draftText)
                                     .onSubmit { session.setText(draftText) }
@@ -581,6 +624,31 @@ struct EditorView: View {
         if root.id == id { return root }
         for child in root.children { if let found = find(id, in: child) { return found } }
         return nil
+    }
+
+    private func componentVariantPicker(_ axis: VariantAxis, screenID: EntityID, layerID: EntityID,
+                                        observedState: ClientPrecondition) -> some View {
+        Picker("Variant \(String(reflecting: axis.id))", selection: Binding<String?>(
+            get: {
+                guard session.selectedScreenID == screenID, session.selectedLayerID == layerID,
+                      session.statePrecondition == observedState else { return nil }
+                return selectedLayer?.component?.variantSelection[axis.id]
+            },
+            set: { value in
+                if let value {
+                    session.setComponentVariant(screenID: screenID, layerID: layerID,
+                                                observedState: observedState, axis: axis.id, value: value)
+                } else {
+                    session.unsetComponentVariant(screenID: screenID, layerID: layerID,
+                                                  observedState: observedState, axis: axis.id)
+                }
+            }
+        )) {
+            Text("Unselected").tag(Optional<String>.none)
+            ForEach(axis.values, id: \.self) { value in
+                Text(String(reflecting: value)).tag(Optional.some(value))
+            }
+        }
     }
 
     private func tokenPicker(_ title: String, selected: EntityID?, property: LayoutTokenProperty) -> some View {
